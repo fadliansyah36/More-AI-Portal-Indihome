@@ -171,7 +171,7 @@ Not yet integrated:
 
 Latest verified workflows:
 - [Engine contract tests](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42890612659) — PASS.
-- [Latest API and worker tests + frontend baseline](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42891046534) — API tests PASS; worker tests PASS; baseline dependency install, lint and build PASS; application startup/browser screenshot step was still running at report time.
+- [Latest API and worker tests + frontend baseline](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42891046534) — API tests PASS; worker tests PASS; baseline dependency install, lint and build PASS; application startup did not complete during this run. New revalidation run 42891526705 is queued. Previous five-viewport browser screenshot baseline remains the last completed browser proof.
 - Prior browser screenshot baseline: [Phase 00 run](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42883484475) — PASS at 360, 390, 768, 1024 and 1440 px.
 
 No real Supabase Auth user token was supplied to CI, so live authenticated API E2E was not run. No worker deployment, provider call or production deployment occurred.
