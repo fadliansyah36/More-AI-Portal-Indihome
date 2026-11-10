@@ -198,7 +198,7 @@ declare
     v_reserved numeric;
     v_new_used numeric;
 begin
-    if p_actual_credits < 0 then
+    if p_actual_credits is null or p_actual_credits < 0 then
         raise exception 'invalid actual credits' using errcode = '22023';
     end if;
 
