@@ -1,5 +1,20 @@
 # MoreAI Worker Boundary
 
-The canonical database already has durable `agent_runs`, `agent_run_steps`, `agent_run_events`, `agent_run_checkpoints`, `outbox_events`, leases and worker RPCs. See `docs/implementation/supabase-schema-reconciliation.json`.
+This package now contains a server-only RPC adapter for the canonical durable run lifecycle:
+- `moreai_worker_claim_run`
+- `moreai_worker_heartbeat`
+- `moreai_worker_checkpoint`
+- `moreai_worker_finish_run`
 
-Worker execution must call the existing `moreai_worker_claim_run`, heartbeat/checkpoint and finish/cancel RPC lifecycle. **Do not start a worker that claims jobs until the OpenManus-compatible dispatcher and safe tool runtime are registered.** Otherwise it could consume real user runs without completing them. No worker polling process is enabled by this foundation increment.
+Run tests:
+
+```bash
+cd apps/worker
+python -m venv .venv && . .venv/bin/activate
+pip install -e '.[test]'
+pytest
+```
+
+Required environment when deployed: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a unique `WORKER_ID` (8–128 chars). The service-role key must exist only in the worker's secret store and must never be copied into frontend environment variables, logs or repository files.
+
+**Execution remains disabled until a reviewed production `AgentDispatcher` has been implemented and registered.** The lifecycle adapter does not pretend that upstream agents/tools have been ported. Never claim jobs with a placeholder dispatcher.
