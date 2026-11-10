@@ -7,7 +7,10 @@ from engine.agents.protocol import AgentRunContext, AgentRunResult
 
 class FakeGateway:
     async def complete(self, **kwargs):
-        return {"text": json.dumps({"title": "Plan", "steps": ["step one", "step two"]})}
+        return {"text": json.dumps({"title": "Plan", "steps": [
+            {"objective": "step one", "dependencies": [], "expected_output": "one", "tool_requirement": "none", "risk": "low", "estimated_usage": {"input_tokens": 10, "output_tokens": 10}},
+            {"objective": "step two", "dependencies": [0], "expected_output": "two", "tool_requirement": "none", "risk": "low", "estimated_usage": {"input_tokens": 10, "output_tokens": 10}},
+        ]})}
 
 
 class FakeStore:
