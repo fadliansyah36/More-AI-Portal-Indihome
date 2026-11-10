@@ -16,7 +16,7 @@ class SupabaseRouteRepository:
 
     async def list_enabled_routes(self, task_type: str, *, user_id: str | None, workspace_id: str | None, partner_id: str | None) -> list[dict[str, Any]]:
         scopes: list[tuple[str, str | None]] = [
-            ("platform", None),
+            ("platform", None),\n            ("global", None),
             ("user", user_id),
             ("workspace", workspace_id),
             ("partner", partner_id),
