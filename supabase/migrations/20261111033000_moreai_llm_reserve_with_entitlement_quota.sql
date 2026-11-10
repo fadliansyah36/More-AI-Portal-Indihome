@@ -75,7 +75,7 @@ begin
          where q.metric_key = p_quota_metric_key
            and q.enabled = true
            and (
-                (q.scope_type = 'platform' and q.scope_id is null)
+                (q.scope_type in ('platform', 'global') and q.scope_id is null)
              or (q.scope_type = 'user' and q.scope_id = p_user_id)
              or (q.scope_type = 'workspace' and p_workspace_id is not null and q.scope_id = p_workspace_id)
              or (q.scope_type = 'partner' and p_partner_id is not null and q.scope_id = p_partner_id)
