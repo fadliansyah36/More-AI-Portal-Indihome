@@ -2,7 +2,7 @@
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
-| 00 | Repository baseline & UI freeze | PREVIOUS SIGN-OFF; current revalidation lint/build PASS, browser smoke pending | [Latest baseline run](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42891046534); previous five-viewport screenshot run 42883484475 |
+| 00 | Repository baseline & UI freeze | PREVIOUS SIGN-OFF; current revalidation lint/build PASS; application startup/browser smoke revalidation pending | [Latest baseline run](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42891526705); previous five-viewport screenshot run 42883484475 |
 | 01 | Upstream source pin & provenance | COMPLETE | `dev_web_app` @ `3ceaa9182b39bbb9898ddda0a4b1c50c2758ab5f` |
 | 02 | Monorepo backend workspace foundation | COMPLETE — foundation | `apps/api`, `apps/worker`, `engine`, `packages` |
 | 03 | Complete upstream source copy | COMPLETE — hash verified | 111/111 matching Git blob SHA in `vendor/openmanusweb/` |
