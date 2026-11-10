@@ -25,5 +25,5 @@ def test_gateway_manus_runtime_uses_metered_gateway_and_checkpoints():
             asyncio.Event(),
         )
         assert result.output["text"] == "verified answer"
-        assert checkpoints[0][0] == "manus.response"
+        assert checkpoints[-1][0] == "manus.response"\n        assert checkpoints[0][0] == "stream.chunk.000001"
     asyncio.run(run())
