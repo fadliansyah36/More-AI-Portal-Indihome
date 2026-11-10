@@ -12,21 +12,20 @@ export async function moreAiApi<T>(path: string, init: RequestInit = {}): Promis
     throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
   }
   const headers = new Headers(init.headers);
-  headers.set('Authorization', `Bearer ${data.session.access_token}`);
+  headers.set('Authorization', \`Bearer \${data.session.access_token}\`);
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(\`\${API_BASE_URL}\${path}\`, {
     ...init,
     headers,
     cache: 'no-store',
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    const message = payload?.detail || payload?.error?.message || `MoreAI API error (${response.status})`;
+    const message = payload?.detail || payload?.error?.message || \`MoreAI API error (\${response.status})\`;
     throw new Error(message);
   }
   return response.json() as Promise<T>;
 }
-
 
 export type MoreAiStreamEvent = {
   event: string;
@@ -45,13 +44,13 @@ export async function moreAiApiStream(
   if (error || !data.session?.access_token) {
     throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
   }
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { Authorization: `Bearer ${data.session.access_token}`, Accept: 'text/event-stream' },
+  const response = await fetch(\`\${API_BASE_URL}\${path}\`, {
+    headers: { Authorization: \`Bearer \${data.session.access_token}\`, Accept: 'text/event-stream' },
     cache: 'no-store',
   });
   if (!response.ok || !response.body) {
     const payload = await response.json().catch(() => null);
-    throw new Error(payload?.detail || `MoreAI stream error (${response.status})`);
+    throw new Error(payload?.detail || \`MoreAI stream error (\${response.status})\`);
   }
 
   const reader = response.body.getReader();
