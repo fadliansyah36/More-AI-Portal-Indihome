@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 from app.client import WorkerRpcClient
@@ -8,9 +9,8 @@ from app.client import WorkerRpcClient
 class SupabasePlanStore:
     """Durable planning state backed by agent_run_steps and worker checkpoints."""
 
-    def __init__(self, client: WorkerRpcClient, *, user_id: str):
+    def __init__(self, client: WorkerRpcClient):
         self.client = client
-        self.user_id = user_id
 
     async def create(self, *, run_id: str, title: str, steps: list[dict[str, Any]]) -> dict[str, Any]:
         await self.client.checkpoint(run_id, "planning.manifest", {"title": title[:500], "step_count": len(steps)})
@@ -18,7 +18,7 @@ class SupabasePlanStore:
             "run_id": f"eq.{run_id}", "select": "sequence,step_key,status", "order": "sequence.asc", "limit": "200",
         })
         existing_keys = {row["step_key"] for row in existing}
-        for index, description in enumerate(steps, start=1):
+        for index, step in enumerate(steps, start=1):
             key = f"planning.step.{index}"
             if key in existing_keys:
                 continue
@@ -27,7 +27,14 @@ class SupabasePlanStore:
                 "sequence": index,
                 "step_key": key,
                 "status": "pending",
-                "input": {"objective": description["objective"],\n                "dependencies": description["dependencies"],\n                "expected_output": description["expected_output"],\n                "tool_requirement": description["tool_requirement"],\n                "risk": description["risk"],\n                "estimated_usage": description["estimated_usage"]},
+                "input": {
+                    "objective": step["objective"],
+                    "dependencies": step["dependencies"],
+                    "expected_output": step["expected_output"],
+                    "tool_requirement": step["tool_requirement"],
+                    "risk": step["risk"],
+                    "estimated_usage": step["estimated_usage"],
+                },
             })
         return await self.get(run_id=run_id)
 
