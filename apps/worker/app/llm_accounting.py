@@ -62,10 +62,16 @@ class SupabaseUsageAccounting:
             raise RuntimeError("llm_request_claim_failed")
         return result
 
-    async def reserve(self, *, request_id: str, user_id: str, run_id: str, request_key: str, estimated_credits: float, estimated_cost: float) -> str:
+    async def reserve(
+        self, *, request_id: str, user_id: str, run_id: str, request_key: str,
+        estimated_credits: float, estimated_cost: float,
+        workspace_id: str | None, partner_id: str | None,
+    ) -> str:
         currency = os.getenv("MOREAI_CREDIT_WALLET_CURRENCY")
-        if not currency:
-            raise RuntimeError("credit_wallet_currency_not_configured")
+        entitlement_key = os.getenv("MOREAI_LLM_ENTITLEMENT_KEY")
+        quota_metric_key = os.getenv("MOREAI_LLM_QUOTA_METRIC_KEY")
+        if not currency or not entitlement_key or not quota_metric_key:
+            raise RuntimeError("wallet_entitlement_and_quota_policy_must_be_configured")
         wallets = await self.client.select("wallet_accounts", {
             "owner_type": "eq.user",
             "owner_id": f"eq.{user_id}",
@@ -77,56 +83,21 @@ class SupabaseUsageAccounting:
         })
         if len(wallets) != 1:
             raise RuntimeError("user_credit_wallet_missing_or_ambiguous")
-        reservation = await self.client.rpc("moreai_credit_reserve", {
-            "p_wallet_id": wallets[0]["id"],
+        reservation = await self.client.rpc("moreai_llm_reserve_request", {
+            "p_request_id": request_id,
             "p_user_id": user_id,
-            "p_amount": estimated_credits,
-            "p_idempotency_key": f"{request_key}:reserve",
             "p_run_id": run_id,
-            "p_ttl_seconds": 900,
+            "p_wallet_id": wallets[0]["id"],
+            "p_credit_amount": estimated_credits,
+            "p_estimated_cost": estimated_cost,
+            "p_reservation_key": f"{request_key}:reserve",
+            "p_entitlement_key": entitlement_key,
+            "p_quota_metric_key": quota_metric_key,
+            "p_quota_amount": estimated_credits,
+            "p_workspace_id": workspace_id,
+            "p_partner_id": partner_id,
         })
         if not isinstance(reservation, dict) or not reservation.get("reservation_id"):
-            raise RuntimeError("credit_reservation_failed")
-        reservation_id = str(reservation["reservation_id"])
-        try:
-            await self.client.rpc("moreai_llm_set_reservation", {
-                "p_request_id": request_id,
-                "p_reservation_id": reservation_id,
-                "p_estimated_cost": estimated_cost,
-            })
-        except Exception:
-            await self.client.rpc("moreai_credit_release", {
-                "p_reservation_id": reservation_id,
-                "p_idempotency_key": f"{request_key}:reserve-rollback",
-            })
-            raise
-        return reservation_id
+            raise RuntimeError("atomic_llm_quota_credit_reservation_failed")
+        return str(reservation["reservation_id"])
 
-    async def record_provider_result(self, *, request_id: str, result: dict[str, Any], latency_ms: int) -> None:
-        await self.client.rpc("moreai_llm_mark_provider_result", {
-            "p_request_id": request_id,
-            "p_provider_key": result["provider_key"],
-            "p_model_key": result["model_key"],
-            "p_response_text": result["text"],
-            "p_input_tokens": int(result["input_tokens"]),
-            "p_output_tokens": int(result["output_tokens"]),
-            "p_actual_cost": float(result["actual_cost"]),
-            "p_latency_ms": max(0, latency_ms),
-            "p_provider_response_id": result.get("provider_response_id"),
-        })
-
-    async def finalize(self, *, request_id: str, actual_credits: float, request_key: str, provider_response_id: str | None) -> None:
-        await self.client.rpc("moreai_llm_finalize_request", {
-            "p_request_id": request_id,
-            "p_actual_credits": actual_credits,
-            "p_settlement_key": request_key,
-            "p_provider_response_id": provider_response_id,
-        })
-
-    async def fail(self, *, request_id: str, error_code: str, release_reservation: bool, request_key: str) -> None:
-        await self.client.rpc("moreai_llm_fail_request", {
-            "p_request_id": request_id,
-            "p_error_code": error_code[:120],
-            "p_release": release_reservation,
-            "p_release_key": request_key,
-        })
