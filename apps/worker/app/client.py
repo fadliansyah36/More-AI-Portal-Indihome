@@ -45,6 +45,52 @@ class WorkerRpcClient:
         response.raise_for_status()
         return response.json()
 
+    async def select(self, table: str, params: dict[str, str]) -> list[dict[str, Any]]:
+        response = await self.client.get(
+            f"{self.settings.supabase_url.rstrip('/')}/rest/v1/{table}",
+            params=params,
+            headers={
+                "apikey": self.settings.service_role_key,
+                "Authorization": f"Bearer {self.settings.service_role_key}",
+            },
+            timeout=15.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data if isinstance(data, list) else []
+
+    async def insert(self, table: str, payload: dict[str, Any]) -> dict[str, Any]:
+        response = await self.client.post(
+            f"{self.settings.supabase_url.rstrip('/')}/rest/v1/{table}",
+            json=payload,
+            headers={
+                "apikey": self.settings.service_role_key,
+                "Authorization": f"Bearer {self.settings.service_role_key}",
+                "Prefer": "return=representation",
+            },
+            timeout=15.0,
+        )
+        response.raise_for_status()
+        rows = response.json()
+        if not rows:
+            raise RuntimeError("Supabase insert returned no record")
+        return rows[0]
+
+    async def update(self, table: str, params: dict[str, str], payload: dict[str, Any]) -> list[dict[str, Any]]:
+        response = await self.client.patch(
+            f"{self.settings.supabase_url.rstrip('/')}/rest/v1/{table}",
+            params=params,
+            json=payload,
+            headers={
+                "apikey": self.settings.service_role_key,
+                "Authorization": f"Bearer {self.settings.service_role_key}",
+                "Prefer": "return=representation",
+            },
+            timeout=15.0,
+        )
+        response.raise_for_status()
+        return response.json() if response.content else []
+
     async def claim_run(self) -> dict[str, Any] | None:
         return await self.rpc("moreai_worker_claim_run", {
             "p_worker_id": self.settings.worker_id,
