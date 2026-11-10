@@ -7,7 +7,7 @@ from engine.agents.protocol import AgentRunContext, AgentRunResult, AgentRuntime
 
 
 class PlanningGateway(Protocol):
-    async def complete(self, *, user_id: str, run_id: str, request_key: str, messages: list[dict[str, Any]], task_type: str = "planning") -> dict[str, Any]: ...
+    async def complete(self, *, user_id: str, run_id: str, request_key: str, messages: list[dict[str, Any]], task_type: str = "planning", workspace_id: str | None = None, partner_id: str | None = None) -> dict[str, Any]: ...
 
 
 class PlanningStore(Protocol):
