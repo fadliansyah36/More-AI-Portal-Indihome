@@ -130,11 +130,13 @@ begin
         v_applied := v_applied || pg_catalog.jsonb_build_array(
             pg_catalog.jsonb_build_object(
                 'policy_id', v_policy.id,
-                'scope_type', v_policy.scope_type,\n                'scope_id', v_policy.scope_id,
+                'scope_type', v_policy.scope_type,
+                'scope_id', v_policy.scope_id,
                 'metric_key', v_policy.metric_key,
                 'window_start', v_window_start,
                 'limit_value', v_policy.limit_value,
-                'used_value', v_usage.used_value + p_quota_amount,\n                'reserved_amount', p_quota_amount
+                'used_value', v_usage.used_value + p_quota_amount,
+                'reserved_amount', p_quota_amount
             )
         );
     end loop;
@@ -143,7 +145,11 @@ begin
         raise exception 'no applicable quota policy' using errcode = '55000';
     end if;
 
-    update public.llm_request_records\n       set quota_reservation = v_applied, updated_at = now()\n     where id = p_request_id;\n\n    v_reservation := public.moreai_credit_reserve(
+    update public.llm_request_records
+       set quota_reservation = v_applied, updated_at = now()
+     where id = p_request_id;
+
+    v_reservation := public.moreai_credit_reserve(
         p_wallet_id,
         p_user_id,
         p_credit_amount,
