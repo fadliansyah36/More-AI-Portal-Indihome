@@ -5,7 +5,7 @@
 - Backend reference only: https://github.com/YunQiAI/OpenManusWeb
 - Canonical Supabase project ref: uunfgimtokhucegqbpce (https://uunfgimtokhucegqbpce.supabase.co).
 - The main repository is the canonical product, frontend, integration and deployment target.
-- OpenManusWeb is an upstream backend/agent-runtime reference, not a replacement frontend, product shell, design system or deployment target.
+- OpenManusWeb is the **authoritative source codebase for MoreAI's backend capabilities**. We must copy and integrate its complete backend/system implementation: architecture, domain logic, agents, engines, tools, workflows, orchestration, LLM layer, API/server logic, configuration and supporting runtime code. The only product layer not adopted from upstream is its user-facing frontend/UI, because the main repository already owns that surface. Do not downgrade this mandate to selective inspiration or a partial port.
 - Follow public/assets/aistudio/MoreAI_Master_PRD_v1.0_ID_2f5fa0c2.md as the product and architecture baseline.
 
 ## 2. Non-negotiable UI/UX preservation
@@ -46,7 +46,7 @@ Target structure, adapted with documented evidence:
 - apps/sandbox: isolated execution boundary where applicable
 - engine/agents, orchestration, tools, llm, memory, credits, entitlements, network_partnership
 - packages/api-client, types, validation, design-tokens
-- vendor/openmanusweb: pristine traceable upstream snapshot
+- vendor/openmanusweb: complete pristine upstream source snapshot, including files not directly deployed in production, for provenance and reproducibility
 - supabase/migrations and supabase/tests
 - infrastructure/ and docs/
 
@@ -56,18 +56,18 @@ Target structure, adapted with documented evidence:
 - Maintain a typed TypeScript API client from FastAPI OpenAPI where feasible.
 - Do not create a second canonical business database. Supabase PostgreSQL is the source of truth.
 
-## 5. Mandatory integration-first phase gate
+## 5. Mandatory full-backend-copy and integration-first phase gate
 No additional PRD feature/domain implementation may begin until phases 00–11 below pass, or a written exception is approved by the product owner.
 
 0. Phase 00 — Repository Baseline & UI Freeze: inventory routes/components/API/schema/RLS/config; record build/test baseline and UI screenshots; identify protected paths.
-1. Phase 01 — Upstream Source Pin & Provenance: inspect license, exact commit SHA, full tree, dependencies and security risks; produce manifest, hashes, notices and mapping.
-2. Phase 02 — Monorepo Backend Workspace Foundation: add isolated API/worker/engine/package workspaces without breaking frontend paths.
-3. Phase 03 — Complete Backend Source Copy: preserve upstream snapshot under vendor/openmanusweb; prove completeness with manifest/hash comparison; document exclusions.
-4. Phase 04 — Backend Adaptation & Security Hardening: adapt agent/planner/executor/LLM/tools; remove unsafe global process state; persist durable runs; isolate browser/Python execution and enforce SSRF/network/resource/secret boundaries.
+1. Phase 01 — Upstream Source Pin & Provenance: inspect license, exact commit SHA, full tree, dependencies and security risks; produce manifest, hashes, notices and a file-by-file classification (backend/runtime, frontend/UI, docs/examples/assets, build/config).
+2. Phase 02 — Monorepo Backend Workspace Foundation: add isolated API/worker/engine/package workspaces without breaking frontend paths; preserve upstream package/module boundaries where practical.
+3. Phase 03 — Complete Upstream Source Copy: copy the entire pinned upstream repository into vendor/openmanusweb (including backend, system, architecture, domain logic, agent/engine, tools, workflow, orchestration, LLM, API/server, configs, dependency/build files, docs, examples, assets and license notices). This is a mandatory full repository snapshot, not a selective code sample. Prove completeness with source-to-destination path, size and hash comparison. Keep upstream frontend/UI source in the archival snapshot for provenance if present, but do not mount, deploy, merge or use it as MoreAI's product frontend. Document any exclusions only for secrets, generated caches, VCS internals or legally/security-prohibited material, with exact path and reason.
+4. Phase 04 — Full Backend Integration & Security Hardening: integrate all upstream backend capabilities and their dependency graph into MoreAI's backend workspaces. Preserve behavior and domain coverage; adapt only interfaces needed for FastAPI, Supabase, multi-tenant authorization, durable workers and MoreAI policies. Remove unsafe global process state; persist durable runs; isolate browser/Python execution and enforce SSRF/network/resource/secret boundaries. No backend domain/engine/workflow may be silently omitted.
 5. Phase 05 — Supabase Schema Reconciliation: inspect existing tables, migrations, constraints, indexes, RLS, functions, triggers and storage policies. Map to existing schema first. Add only necessary forward-only, idempotent migrations. Never reset or destructively recreate the project.
 6. Phase 06 — FastAPI Core & OpenAPI Contract: versioned endpoints, Pydantic schemas, auth/tenant context, consistent errors, pagination, idempotency, correlation IDs, health/readiness and generated OpenAPI.
-7. Phase 07 — Worker, Durable Runs & Event Lifecycle: queue/outbox, persisted run/step/event/checkpoint state, retry, cancellation, timeout and recovery. Long-running work must not depend on an HTTP request staying open.
-8. Phase 08 — LLM Gateway & Tool Runtime Integration: provider/model routing, streaming/tool-call normalization, metering, retry/circuit breaker and isolated tools with policy/approval.
+7. Phase 07 — Worker, Durable Runs & Event Lifecycle: integrate upstream workflow/agent execution lifecycle end-to-end, with queue/outbox, persisted run/step/event/checkpoint state, retry, cancellation, timeout and recovery. Long-running work must not depend on an HTTP request staying open.
+8. Phase 08 — Complete LLM, Tool, Workflow & Orchestration Integration: connect the upstream LLM stack, model/provider clients, prompt/schema contracts, agent types, planner, flow/orchestration, tool registry and all supported tools. Add MoreAI gateway/routing/metering/entitlement controls without deleting upstream capability. Isolated tools require policy/approval.
 9. Phase 09 — Existing Frontend API Integration: connect current Next.js screens through typed API client and minimal adapters. Replace demo/fallback responses with real API behavior progressively without changing visual UI.
 10. Phase 10 — End-to-End Integration Verification: prove frontend → FastAPI → worker/engine → LLM/tool → Supabase persistence → events/status → frontend. Verify auth, RLS, tenant isolation, streaming, cancellation, retry, idempotency, artifacts, credits and partner session boundaries.
 11. Phase 11 — Integration Release Gate: CI/build/lint/type checks, migration validation, API contract tests, RLS/security tests, end-to-end smoke tests, UI regression screenshots and evidence report must pass.
@@ -87,16 +87,19 @@ After Phase 11, continue with post-integration product phases in Master PRD sect
 - Every LLM call records provider/model, usage, latency, status, cost/pricing version and credit/entitlement accounting.
 - Keep Wallet, immutable Ledger, Quota and Entitlement distinct.
 
-## 7. Upstream source-copy and adaptation
-- Pin a specific upstream commit SHA before copying. A moving branch is not reproducible.
+## 7. Mandatory complete upstream source-copy and backend parity
+- Pin a specific upstream commit SHA before copying. Current inspected upstream main tree SHA: 8d6dda9c27043ab0d3d5c7ae18062eae56763fe5 (reconfirm before execution; do not assume it remains current). A moving branch is not reproducible.
 - Preserve upstream license, copyright and attribution notices.
-- Keep the original snapshot separate from adapted code. Produce a manifest with path, size/hash, source commit, destination path and adaptation status.
+- Copy the complete upstream repository tree to vendor/openmanusweb as an immutable source snapshot. Keep it separate from adapted production code. Produce a manifest with every source path, blob SHA/hash, size, source commit, destination path and status (copied, excluded with reason, adapted/ported to production module). The inspected commit contained 63 tracked files; this is a baseline observation only and must be re-counted at the pinned execution commit.
+- Backend parity is mandatory: inventory and integrate every backend-capable module, domain, agent type, planner, flow, prompt, schema, LLM feature, tool, API/server function, runtime/configuration and workflow. If a capability cannot be used in production, document the technical/security blocker and provide an equivalent safe implementation or an explicit product-owner exception.
+- Frontend exclusion means exclude upstream user-facing web pages/templates/client assets from the active MoreAI product UI. It does not mean omit backend/server APIs, session handling, streaming, event endpoints or service-layer logic merely because they were originally hosted by an upstream web server. Re-express those server capabilities through FastAPI and the existing MoreAI frontend.
+- Preserve docs, examples, configuration templates, tests and assets in the source snapshot. Promote relevant backend tests/fixtures and configuration into the integrated system as appropriate.
 - Document every excluded file and reason (secrets, generated artifacts, caches, irrelevant UI, binaries, unsafe code or license issue).
-- Do not blindly trust upstream security claims or copy unsafe patterns into production.
+- Do not blindly trust upstream security claims or copy unsafe patterns into production. The source snapshot must still preserve upstream code faithfully; hardening belongs in separate adapted production modules/patches, not silent edits to the pristine vendor copy.
 - Review and replace in-memory-only sessions/plans/logs, process-global CWD/environment mutation and unsafe execution patterns.
 - Python execution requires isolated container/microVM boundaries, non-root identity, resource/time limits, process-tree termination, no host mounts/secrets and network disabled by default.
 - Browser automation requires isolated contexts, domain controls, SSRF/private-IP protections, download controls and approvals for high-impact actions.
-- Keep upstream source references and adapted-file mapping current after every port.
+- Keep upstream source references and adapted-file mapping current after every port. Track backend capability parity by feature/module, not only by file count.
 
 ## 8. Supabase safety and migrations
 - Confirm project ref uunfgimtokhucegqbpce before every schema-affecting operation.
@@ -134,5 +137,5 @@ At the end of each phase, update a repository document under docs/implementation
 - deployment status (or explicitly not deployed); next phase and blockers.
 
 ## 12. Agent operating sequence
-Always follow: READ → UNDERSTAND → INSPECT → RECONCILE REPO + SUPABASE → PLAN → IMPLEMENT → MIGRATE → TEST → SECURITY REVIEW → UI REGRESSION REVIEW → REPORT.
+Always follow: READ → UNDERSTAND → INSPECT UPSTREAM FULL TREE → CLASSIFY FRONTEND VS BACKEND → PIN SOURCE → COPY COMPLETE SOURCE → RECONCILE REPO + SUPABASE → PORT/INTEGRATE ALL BACKEND CAPABILITIES → IMPLEMENT FASTAPI/WORKER/API CONTRACTS → CONNECT EXISTING FRONTEND → MIGRATE → TEST → SECURITY REVIEW → UI REGRESSION REVIEW → REPORT.
 Do not skip inspection, overwrite user work, silently change scope, or begin post-integration features before mandatory Phase 11 passes.
