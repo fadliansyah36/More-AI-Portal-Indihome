@@ -33,7 +33,7 @@ class SupabasePlanStore:
 
     async def get(self, *, run_id: str) -> dict[str, Any]:
         rows = await self.client.select("agent_run_steps", {
-            "run_id": f"eq.{run_id}", "step_key": "like.planning.step.*",
+            "run_id": f"eq.{run_id}", "step_key": "like.planning.step.%",
             "select": "sequence,step_key,status,input,output,error,started_at,finished_at",
             "order": "sequence.asc", "limit": "200",
         })
@@ -46,9 +46,9 @@ class SupabasePlanStore:
         sequence = step_index + 1
         payload: dict[str, Any] = {"status": status}
         if status == "running":
-            payload["started_at"] = "now()"
+            payload["started_at"] = datetime.now(timezone.utc).isoformat()
         if status in {"succeeded", "failed", "skipped", "cancelled"}:
-            payload["finished_at"] = "now()"
+            payload["finished_at"] = datetime.now(timezone.utc).isoformat()
         if notes:
             payload["output" if status == "succeeded" else "error"] = {"summary": notes[:2000]}
         rows = await self.client.update("agent_run_steps", {
