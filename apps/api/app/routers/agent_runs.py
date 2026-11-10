@@ -60,14 +60,14 @@ async def get_events(run_id: UUID, request: Request, after: int = 0, user: dict[
 
 
 @router.get("/{run_id}/stream")
-async def stream_events(run_id: UUID, request: Request, after: int = 0, user: dict[str, Any] = Depends(current_user)):
+async def stream_events(run_id: UUID, request: Request, after: int = 0, wait_seconds: int = 60, user: dict[str, Any] = Depends(current_user)):
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
 
     async def events():
         cursor = max(after, 0)
         idle_rounds = 0
-        while idle_rounds < 120:
+        while idle_rounds < max(1, min(wait_seconds, 120)):
             if await request.is_disconnected():
                 break
             rows = await repo.select("agent_run_events", {
