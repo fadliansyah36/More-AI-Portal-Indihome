@@ -16,7 +16,7 @@ def test_claim_uses_server_only_credentials_and_existing_rpc():
 
     def handler(request):
         calls.append(request)
-        return httpx.Response(200, json=None)
+        return httpx.Response(200, content=b'null', headers={'content-type': 'application/json'})
 
     async def run():
         settings = WorkerSettings("https://project.supabase.co", "service-secret", "worker-test-01")
