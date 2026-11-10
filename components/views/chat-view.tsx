@@ -17,7 +17,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { moreAiApi } from '@/lib/api/client';
+import { moreAiApi, moreAiApiStream } from '@/lib/api/client';
 
 interface ChatMessage {
   id: string;
@@ -58,6 +58,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     setInputText('');
     setIsLoading(true);
 
+    const assistantId = `run-${Date.now()}`;
+    let streamedText = '';
+    let terminalStatus: string | null = null;
+    let finalOutput: Record<string, unknown> | undefined;
+
     try {
       let activeConversationId = conversationId;
       if (!activeConversationId) {
@@ -78,47 +83,83 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         },
       );
 
-      let finalRun: { status: string; output?: Record<string, unknown>; error?: Record<string, unknown> } = queued.run;
-      for (let attempt = 0; attempt < 5 && !['succeeded', 'failed', 'cancelled'].includes(finalRun.status); attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        finalRun = await moreAiApi<typeof finalRun>(`/api/v1/agent-runs/${queued.run.id}`);
+      setMessages((prev) => [...prev, {
+        id: assistantId,
+        sender: 'assistant',
+        text: '',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        source: 'MoreAI Agent Runtime',
+      }]);
+
+      await moreAiApiStream(
+        `/api/v1/agent-runs/${queued.run.id}/stream?wait_seconds=30`,
+        ({ event, data }) => {
+          if (event === 'worker.checkpoint') {
+            const checkpoint = data.checkpoint as Record<string, unknown> | undefined;
+            if (typeof checkpoint?.text === 'string') {
+              streamedText += checkpoint.text;
+              setMessages((prev) => prev.map((message) =>
+                message.id === assistantId ? { ...message, text: streamedText } : message,
+              ));
+            }
+          } else if (event === 'run.completed') {
+            terminalStatus = 'succeeded';
+            finalOutput = data.output as Record<string, unknown> | undefined;
+          } else if (event === 'run.failed') {
+            terminalStatus = 'failed';
+            finalOutput = data.error as Record<string, unknown> | undefined;
+          } else if (event === 'run.cancelled') {
+            terminalStatus = 'cancelled';
+          }
+        },
+      );
+
+      let finalRun: { status: string; output?: Record<string, unknown>; error?: Record<string, unknown> } | null = null;
+      if (!terminalStatus) {
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          finalRun = await moreAiApi<typeof finalRun & {}>(`/api/v1/agent-runs/${queued.run.id}`);
+          if (['succeeded', 'failed', 'cancelled'].includes(finalRun.status)) break;
+        }
+        terminalStatus = finalRun?.status || queued.run.status;
+        finalOutput = finalRun?.output || finalOutput;
       }
 
-      const outputText = typeof finalRun.output?.text === 'string'
-        ? finalRun.output.text
-        : typeof finalRun.output?.content === 'string'
-          ? finalRun.output.content
-          : null;
+      const outputText = typeof finalOutput?.text === 'string'
+        ? finalOutput.text
+        : typeof finalOutput?.content === 'string'
+          ? finalOutput.content
+          : streamedText;
 
-      if (finalRun.status === 'succeeded' && outputText) {
-        setMessages((prev) => [...prev, {
-          id: `run-${queued.run.id}`,
-          sender: 'assistant',
-          text: outputText,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          source: 'MoreAI Agent Runtime',
-        }]);
-      } else if (finalRun.status === 'failed' || finalRun.status === 'cancelled') {
-        throw new Error(`Agent run ${finalRun.status}. Silakan coba kembali atau periksa riwayat tugas.`);
+      if (terminalStatus === 'succeeded') {
+        setMessages((prev) => prev.map((message) =>
+          message.id === assistantId ? { ...message, text: outputText || 'Agent selesai tanpa teks keluaran.' } : message,
+        ));
+      } else if (terminalStatus === 'failed' || terminalStatus === 'cancelled') {
+        throw new Error(`Agent run ${terminalStatus}. Silakan coba kembali atau periksa riwayat tugas.`);
       } else {
-        setMessages((prev) => [...prev, {
-          id: `run-${queued.run.id}`,
-          sender: 'assistant',
-          text: 'Permintaan berhasil masuk ke antrean MoreAI. Status eksekusi dapat dipantau pada riwayat tugas.',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          source: `Agent Runtime · ${finalRun.status}`,
-        }]);
+        setMessages((prev) => prev.map((message) =>
+          message.id === assistantId
+            ? { ...message, text: streamedText || 'Permintaan sudah masuk antrean MoreAI. Status eksekusi dapat dipantau pada riwayat tugas.', source: `Agent Runtime · ${terminalStatus}` }
+            : message,
+        ));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'MoreAI API tidak dapat memproses permintaan.';
       showToast(message, 'error');
-      setMessages((prev) => [...prev, {
-        id: `error-${Date.now()}`,
-        sender: 'assistant',
-        text: message,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        source: 'MoreAI API',
-      }]);
+      setMessages((prev) => {
+        const existing = prev.some((item) => item.id === assistantId);
+        if (!existing) {
+          return [...prev, {
+            id: assistantId,
+            sender: 'assistant',
+            text: message,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            source: 'MoreAI API',
+          }];
+        }
+        return prev.map((item) => item.id === assistantId ? { ...item, text: message, source: 'MoreAI API' } : item);
+      });
     } finally {
       setIsLoading(false);
     }
