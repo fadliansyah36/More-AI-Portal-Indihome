@@ -5,8 +5,10 @@ from engine.agents.protocol import AgentRunContext
 
 
 class FakeGateway:
-    async def complete(self, **kwargs):
-        return {"text": "verified answer", "provider_key": "test", "model_key": "test-model"}
+    async def stream(self, **kwargs):
+        yield {"type": "delta", "text": "verified "}
+        yield {"type": "delta", "text": "answer"}
+        yield {"type": "done", "provider_key": "test", "model_key": "test-model"}
 
 
 def test_gateway_manus_runtime_uses_metered_gateway_and_checkpoints():
