@@ -1,8 +1,8 @@
 # MOREAI --- MASTER PRODUCT REQUIREMENTS DOCUMENT (MASTER PRD)
 
 **Dokumen:** MoreAI Master PRD\
-**Versi:** 1.0 --- Baseline arsitektur dan spesifikasi produk\
-**Tanggal:** 1 November 2026\
+**Versi:** 1.1 --- Baseline arsitektur, UI preservation, dan integration-first delivery\
+**Tanggal:** 11 November 2026\
 **Status:** Draft induk untuk engineering discovery, source migration,
 design completion, implementation, dan acceptance\
 **Bahasa:** Indonesia\
@@ -1987,179 +1987,143 @@ establish final price points.
 
 # 16. MoreAI Design System
 
-## 16.1 Visual direction
+## 16.1 Design authority and visual reference
 
-**Playful Neo-Brutalist + Soft Pastel**: friendly, modern, memorable,
-but credible for a serious AI productivity product.
+**Design authority:** UI/UX reference image stored in the main repository at:
 
-Visual principles: - Warm off-white canvas. - Strong ink outlines. -
-Pastel color blocks as accents. - Offset hard shadows, not blurred glass
-shadows. - Clear hierarchy and readable typography. - Compact,
-deliberate iconography. - No excessive gradients. - No
-glassmorphism-heavy layouts. - Avoid generic AI landing-page clichés. -
-Product UI, not merely marketing hero screens.
+`.aistudio/artifacts/brain/4d52674d-4fe2-4441-a5bf-48030e74c0e3/.tempmediaStorage/media_1794208413882_ecc68f24.jpg`
+
+The reference presents the MoreAI × IndiHome customer experience: white/light surfaces, MoreAI/IndiHome red as the dominant brand/action color, deep navy typography, restrained blue informational accents, green connection/success states, and very light cool-gray page backgrounds. The visual language is clean, high-contrast, mobile-first, approachable, and product-led.
+
+This reference **supersedes the former Playful Neo-Brutalist / Soft Pastel palette** in this PRD. Do not introduce mint/lavender/pink/butter as the primary brand system, ink-heavy outlines, hard offset shadows, or a generic pastel theme. Existing repository UI is the implementation reference and must not be restyled as part of backend integration.
+
+The image is a raster reference. Hex values below are the canonical initial token values sampled/approximated from the visual reference for implementation consistency; if a later approved brand asset or source design file provides exact official values, record the change in an ADR and update all token outputs together.
 
 ## 16.2 Brand color tokens
 
-### Core
+### Brand
 
-  Token              Hex         Usage
-  ------------------ ----------- ------------------------
-  `color.ink`        `#171717`   Primary text, outlines
-  `color.canvas`     `#F7F4EC`   Main background
-  `color.white`      `#FFFFFF`   Cards and surfaces
-  `color.charcoal`   `#35342F`   Secondary dark text
-  `color.muted`      `#66645E`   Secondary copy
-  `color.gray.300`   `#D2CFC6`   Dividers
-  `color.gray.200`   `#E8E5DC`   Soft surface
-  `color.gray.100`   `#F1EFE8`   Subtle surface
+| Token | Hex | Usage |
+|---|---|---|
+| `color.brand.primary` | `#E31E24` | MoreAI primary red; primary actions, key brand emphasis |
+| `color.brand.primaryHover` | `#C9161D` | Hover/pressed emphasis |
+| `color.brand.primarySoft` | `#FDEBEC` | Soft brand background, selected states |
+| `color.brand.indihome` | `#E21D2B` | IndiHome partner brand accent; preserve partner logo lockup |
+| `color.brand.navy` | `#0A1B3A` | Primary headings, navigation, strong text |
+| `color.brand.navySoft` | `#142B50` | Secondary navy surface/text |
 
-### Pastel accents
+### Neutral and surface
 
-  Token              Hex         Usage
-  ------------------ ----------- ---------------------------
-  `color.mint`       `#C9F2D5`   Primary action / positive
-  `color.lavender`   `#D9D5FF`   Secondary accent
-  `color.pink`       `#F9D8E5`   Creative accent
-  `color.butter`     `#FBE7B2`   Highlight
-  `color.sky`        `#D8ECFF`   Informational accent
-  `color.peach`      `#FFDCCB`   Warm accent
+| Token | Hex | Usage |
+|---|---|---|
+| `color.text.primary` | `#101828` | Main body text |
+| `color.text.secondary` | `#475467` | Supporting text |
+| `color.text.muted` | `#667085` | Metadata, helper text |
+| `color.text.inverse` | `#FFFFFF` | Text on strong brand/navy surfaces |
+| `color.canvas` | `#F6F8FC` | Main app/page background |
+| `color.surface.default` | `#FFFFFF` | Cards, dialogs, panels |
+| `color.surface.subtle` | `#F1F4F9` | Secondary panels and input backgrounds |
+| `color.surface.raised` | `#FFFFFF` | Elevated cards/popovers |
+| `color.border.default` | `#E4E9F1` | Standard border/divider |
+| `color.border.strong` | `#CBD5E1` | Stronger field/container border |
+| `color.overlay` | `#0A1B3A` at 48% | Modal/backdrop overlay |
 
-### Semantic colors
+### Functional accents and semantic colors
 
-  Token     Hex         Surface
-  --------- ----------- -----------
-  Success   `#217A50`   `#DDF3E4`
-  Warning   `#946200`   `#FFF0C7`
-  Danger    `#B83232`   `#FCE2E2`
-  Info      `#245E9A`   `#DFEEFF`
+| Token | Hex | Soft surface | Usage |
+|---|---|---|---|
+| `color.accent.blue` | `#2878E5` | `#EAF2FF` | Information, tools, links, selected informational icon |
+| `color.accent.cyan` | `#20A7C9` | `#E7F8FC` | Network/data visualization accent only |
+| `color.accent.magenta` | `#D9469B` | `#FCEAF4` | Creative/AI credit category accent, not primary action |
+| `color.success` | `#16A34A` | `#E8F7ED` | Connected, verified, completed |
+| `color.warning` | `#D97706` | `#FFF4E5` | Expiring, pending attention |
+| `color.danger` | `#DC2626` | `#FEECEC` | Error, destructive, failed |
+| `color.info` | `#2878E5` | `#EAF2FF` | Informational messages |
 
-## 16.3 Dark theme tokens
+Rules:
+- MoreAI red is the primary CTA and brand anchor. Do not use red for every icon, chart, or decorative element.
+- Deep navy is the main text/navigation anchor. Use white text on red/navy only after contrast validation.
+- Green indicates a real verified/connected/success state only; never imply a live network state with static decoration.
+- Blue/cyan/magenta are supporting category colors. Do not let them compete with the primary red.
+- Preserve official MoreAI and IndiHome logo artwork and proportions; never recolor partner logos through CSS filters.
+- Do not use a color alone to communicate state; pair it with text/iconography.
 
-Dark mode is designed separately, not by simple inversion: - Background:
-`#171817` - Surface: `#232522` - Text: `#F7F4EC` - Muted: `#B9B8B0` -
-Border: `#66645E` - Pastel accents remain recognizable but must pass
-contrast review.
+## 16.3 Light and dark themes
+
+Light theme is the default and follows the supplied reference. Use `color.canvas` for the page, white surfaces for cards, navy/near-black text, subtle cool-gray borders, and red for primary actions.
+
+Dark theme is a separately designed semantic mapping, not a raw inversion:
+- Canvas: `#0B1220`
+- Default surface: `#111C2E`
+- Raised surface: `#17243A`
+- Primary text: `#F8FAFC`
+- Secondary text: `#CBD5E1`
+- Muted text: `#94A3B8`
+- Border: `#29384F`
+- Brand primary: `#F0444B`
+- Brand primary hover: `#FF6268`
+- Success: `#4ADE80`
+- Warning: `#FBBF24`
+- Danger: `#F87171`
+- Info: `#60A5FA`
+
+Dark theme must be validated independently for contrast, focus, disabled, selected, and semantic states. Existing dark-mode behavior in the main repository is protected; token adoption must not trigger a broad visual redesign.
 
 ## 16.4 Typography
 
--   Primary: Plus Jakarta Sans.
--   Data/UI fallback: Inter.
--   Code/technical values: JetBrains Mono.
+- Primary UI font: Plus Jakarta Sans when already bundled/available; otherwise preserve the existing repository font stack and use a documented fallback.
+- System/data fallback: Inter, then system sans-serif.
+- Code and technical values: JetBrains Mono, then ui-monospace.
+- Use clear Indonesian-language readability, proper diacritics, and stable line-height.
+- Do not load a new remote font or change global typography solely as part of backend integration.
 
-Recommended type scale: \| Token \| Size \| \|---\|---:\| \| Display XL
-\| 48 px \| \| Display L \| 36 px \| \| Heading 1 \| 28 px \| \| Heading
-2 \| 22 px \| \| Heading 3 \| 18 px \| \| Body \| 16 px \| \| Body Small
-\| 14 px \| \| Caption \| 12 px \| \| Micro \| 11 px \|
+Recommended scale: Display 40/48 px; H1 32/40 px; H2 24/32 px; H3 20/28 px; body 16/24 px; body-small 14/20 px; caption 12/16 px. Compact mobile screens may reduce display sizes while keeping body text readable.
 
-Use clear weights and line heights. Avoid overly tight text blocks and
-excessively small captions.
+## 16.5 Shape, spacing, borders, elevation, and motion
 
-## 16.5 Spacing, radius, border, shadow
+- Spacing base: 4 px; use the existing UI spacing unless a missing component requires a new value.
+- Radius: sm 8 px; md 12 px; lg 16 px; xl 20 px; pill 999 px.
+- Borders: 1 px subtle separators; 1 px standard controls/cards; 2 px only for clear focus/selection emphasis.
+- Elevation: subtle, soft shadow only where hierarchy requires it; avoid heavy hard-offset shadows and excessive glassmorphism.
+- Motion: 120 ms fast, 180 ms standard, 260 ms emphasis; respect prefers-reduced-motion.
+- Mobile touch targets: minimum 44 × 44 px.
+- Responsive reference widths: 360, 390, 768, 1024, 1440 px.
 
-Spacing base: 4 px.
+## 16.6 Component and interaction specifications
 
-  Token           Value
-  ------------- -------
-  `space.2xs`      2 px
-  `space.xs`       4 px
-  `space.sm`       8 px
-  `space.md`      12 px
-  `space.lg`      16 px
-  `space.xl`      20 px
-  `space.2xl`     24 px
-  `space.3xl`     32 px
-  `space.4xl`     40 px
-  `space.5xl`     48 px
-  `space.6xl`     64 px
-
-Radius: - `radius.sm`: 8 px - `radius.md`: 12 px - `radius.lg`: 16 px -
-`radius.xl`: 22 px - `radius.pill`: 999 px
-
-Borders: - 1 px for subtle separators. - 2 px standard component
-outline. - 3 px for selected hero/featured containers.
-
-Hard shadows: - `shadow.sm`: offset 2 px, no blur. - `shadow.md`: offset
-4 px, no blur. - `shadow.lg`: offset 6 px, no blur. - Shadow color is
-brand ink with controlled opacity.
-
-Motion: - Fast: 120 ms. - Standard: 180 ms. - Emphasis: 260 ms. -
-Respect reduced-motion preference. - Motion should communicate state,
-not decorate every element.
-
-## 16.6 Component specifications
-
-### Buttons
-
--   Primary, secondary, tertiary, danger, icon-only.
--   Height: 40 / 48 px desktop; compact 36 px where appropriate.
--   Mobile tap target minimum 44 × 44 px.
--   2 px outline.
--   Radius 12 px.
--   Primary often mint.
--   Clear disabled/loading/focus/pressed states.
-
-### Inputs
-
--   Height target 44--48 px.
--   White surface, 2 px outline.
--   Label, helper, validation, error, disabled, focus states.
--   Accessible input labels; do not rely on placeholder alone.
-
-### Cards
-
--   White surface.
--   2 px outline.
--   Radius 16 px.
--   4 px hard offset shadow.
--   Avoid card overload; use hierarchy.
-
-### Other shared components
-
--   App Shell.
--   Top Bar.
--   Bottom Navigation.
--   Side Navigation.
--   Chat Message.
--   AI Composer.
--   Agent Card.
--   Tool Card.
--   Model Selector.
--   Credit Wallet.
--   Usage Meter.
--   Entitlement Status.
--   Campaign Card.
--   Partner Location Card.
--   Network Session Indicator.
--   Data Table.
--   Filter/Search.
--   Confirmation Dialog.
--   Bottom Sheet.
--   Toast.
--   Empty State.
--   Loading Skeleton.
--   Error State.
--   Map Pin / Geofence Editor.
--   Progress Timeline.
--   File Artifact Preview.
--   Audit Event Row.
+The repository's existing components and screens remain the visual source of truth. New components must match their neighboring screen patterns and these tokens:
+- Primary button: solid brand red, white label, clear hover/pressed/loading/disabled/focus states.
+- Secondary button: white/light surface, navy text, subtle neutral border; use red outline only where the existing design pattern calls for it.
+- Destructive button: semantic danger; require confirmation for irreversible actions.
+- Inputs: white/light neutral surface, subtle border, visible label, helper/error/disabled/focus states; never rely on placeholder alone.
+- Cards: white surface, subtle cool-gray border, restrained shadow, rounded corners; no thick black outline.
+- Status: explicit icon + text + semantic color.
+- Chat, task, file, agent, credit, network, captive portal, partner and admin components must preserve existing layout and interaction patterns.
+- Every interactive element needs keyboard, focus, loading, empty, error, disabled and success behavior as applicable.
 
 ## 16.7 Cross-platform token architecture
 
-Single source of truth: - `packages/design-tokens`: token
-JSON/TypeScript. - Generate CSS variables for Web. - Generate theme
-object for React Native. - Shared semantic token names. - Separate
-component implementations for Web and Native. - Admin may use denser
-data layouts but must remain within the same visual language. - Partner
-Portal should be simpler and operationally clear. - Captive Portal must
-load quickly and focus on one activation action.
+Single source of truth: `packages/design-tokens`.
+- Keep semantic token names stable across Web, Native, Admin, Partner Portal and Captive Portal.
+- Store source tokens in JSON/TypeScript; generate CSS custom properties for Web and a typed theme object for React Native.
+- Token layers: primitive palette → semantic role → component token. Components must consume semantic tokens, not scatter hex values.
+- Include light/dark theme mappings and contrast metadata.
+- Token changes must not be applied wholesale to existing repository screens during the backend integration phase. Adopt tokens only for new UI or a separately approved visual migration.
+- Admin may use denser data layouts while preserving brand colors. Partner Portal and Captive Portal must retain clear, accessible operational states and fast loading.
 
 ## 16.8 Accessibility
 
-Target WCAG 2.2 AA: - Color contrast. - Keyboard navigation. - Visible
-focus. - Screen reader labels. - Semantic headings. - Form error
-association. - Touch target. - Reduced motion. - Text scaling. - Avoid
-color-only status. - Responsive zoom and reflow.
+Target WCAG 2.2 AA: text/non-text contrast, keyboard navigation, visible focus, semantic headings, screen-reader labels, form error association, touch targets, reduced motion, text scaling, zoom/reflow and non-color-only status. Test red-on-white, white-on-red, navy-on-white, muted text and all semantic badges. Do not assume brand colors automatically pass contrast requirements; adjust foreground/background pairings without changing the brand token itself.
+
+## 16.9 Existing UI/UX preservation rule
+
+For the main implementation repository, existing UI/UX is a protected surface:
+1. Do not redesign, restyle, rearrange, rename, remove or replace existing screens, navigation, components, copy, responsive behavior or interactions.
+2. Backend work must connect to existing components through typed API clients, hooks, server actions or minimal adapters appropriate to the current architecture.
+3. Change a UI file only when the smallest necessary change is required to connect real data/actions, handle real loading/error/empty states, or fix a demonstrable integration defect.
+4. Build a new UI only for a required PRD workflow that does not exist in the repository. New UI must follow the supplied reference image and this section's tokens.
+5. Before/after screenshots and a changed-file explanation are required for any UI-file modification. If a visual difference is unrelated to a required integration, revert it.
+6. Do not run a global token/theme migration during the backend foundation work.
 
 ------------------------------------------------------------------------
 
@@ -2599,92 +2563,67 @@ evidence. - deployment verification.
 
 # 22. Development phases and dependency roadmap
 
-Phases may overlap only when dependencies are satisfied. Each phase has
-deliverables, tests and acceptance gate.
+## 22.0 Mandatory integration-first delivery policy
 
-  -----------------------------------------------------------------------
-  Phase                   Name                    Primary deliverable
-  ----------------------- ----------------------- -----------------------
-  00                      Source & Architecture   Full upstream
-                          Audit                   inventory, migration
-                                                  manifest, threat model
+**Priority override:** Before implementing any additional product feature/domain from this PRD, complete the source-copy, backend adaptation, FastAPI, Supabase and existing frontend integration gates below. The repository already contains a functioning Next.js frontend and Supabase schema. The work is to connect and harden the backend reference inside the main monorepo, not replace the frontend.
 
-  01                      Monorepo Foundation     Independent repo,
-                                                  workspaces, CI, shared
-                                                  packages
+The implementation target is `https://github.com/fadliansyah36/More-AI-Portal-Indihome` (default branch `main`). The sole backend source reference is `https://github.com/YunQiAI/OpenManusWeb.git`. Keep upstream provenance, exact commit SHA, license notices and a source-to-target manifest. Do not claim source-copy completion until a file manifest and comparison prove it.
 
-  02                      Source Migration        Full OpenManusWeb
-                                                  source mirror, notices,
-                                                  mapping, tests
+### Mandatory phase order
 
-  03                      Design System & UI      Tokens, components,
-                          Foundations             responsive shell,
-                                                  visual QA
+| Phase | Name | Required deliverables and exit gate |
+|---|---|---|
+| 00 | Repository Baseline & UI Freeze | Inventory main repo, current UI routes/components, package scripts, current API routes, Supabase schema/RLS, environment variable names and current build/test baseline. Save baseline screenshots and commit SHA. Declare UI protected paths. |
+| 01 | Upstream Source Pin & Provenance | Inspect OpenManusWeb license, branch, exact commit SHA, full source tree, dependencies and security risks. Create source manifest, license/NOTICE, file hashes and source mapping. |
+| 02 | Monorepo Backend Workspace Foundation | Create isolated workspaces without moving or renaming existing frontend paths. Add `apps/api` (FastAPI), `apps/worker`, `apps/sandbox` as needed, `engine/`, `packages/api-client`, `packages/types`, `packages/validation`, `packages/design-tokens` only if absent, `vendor/openmanusweb` source snapshot, `infrastructure/`, `supabase/`, `docs/`. Define Python and JS workspace/build boundaries. |
+| 03 | Complete Backend Source Copy | Copy the pinned upstream source snapshot into `vendor/openmanusweb` preserving upstream paths and license. Produce source file count, hashes, excluded-file reasons and source-to-target port map. Do not mix adapted production code into the pristine vendor snapshot. |
+| 04 | Backend Adaptation & Security Hardening | Port/adapt agent, planner, executor, LLM client and tool abstractions into isolated `engine/` modules. Remove unsafe global CWD/environment mutation and in-memory-only task state. Isolate Python/browser execution; enforce resource, network, SSRF and secret boundaries. Preserve upstream attribution. |
+| 05 | Supabase Schema Reconciliation | Inspect existing schema, migrations, indexes, constraints, RLS, triggers, functions and storage policies. Map every backend entity to existing tables first. Add only forward-only, idempotent migrations for proven gaps. No duplicate canonical tables, no destructive reset, no service-role key in frontend. |
+| 06 | FastAPI Core & OpenAPI Contract | Implement versioned FastAPI routes, Pydantic schemas, auth context, tenant authorization, error envelope, pagination, idempotency, request correlation, health/readiness and OpenAPI. API handlers call domain services, not ad hoc business logic. |
+| 07 | Worker, Durable Runs & Event Lifecycle | Integrate queue/outbox worker, durable agent run/step/event/checkpoint lifecycle, cancellation, retry, timeout, recovery and artifact persistence. HTTP request lifecycle must not own long-running agent execution. |
+| 08 | LLM Gateway & Tool Runtime Integration | Connect provider/model registry, routing, streaming/tool-call normalization, usage metering, retries/circuit breakers and tool registry. Browser/Python tools run in isolated environments with explicit policy and approval gates. |
+| 09 | Existing Frontend API Integration | Add typed API client and minimal adapters/hooks to connect current Next.js UI to FastAPI. Replace demo/fallback behavior with real API responses progressively; preserve screen design and interactions. Connect auth/session, chat/agent runs, task progress, files/artifacts, credits/entitlements and partner/network journeys to actual persisted data. |
+| 10 | End-to-End Integration Verification | Prove browser → Next.js client → FastAPI → worker/engine → LLM/tool → Supabase persistence → event/status → UI rendering. Test auth/RLS/tenant isolation, streaming, cancellation, errors, retries, idempotency, artifacts, credit metering and partner-session boundaries. |
+| 11 | Integration Release Gate & Freeze | Require CI green, backend/frontend builds, migration validation, RLS/security tests, API contract tests, end-to-end smoke tests, UI regression screenshots and evidence report. No additional feature/domain phase may start until all mandatory gates pass or an explicitly approved exception is documented. |
 
-  04                      Identity & Access       Supabase Auth,
-                                                  profiles, RBAC, RLS
+### Post-integration product phases
 
-  05                      AI Agent Engine         Agent registry,
-                                                  planner, executor,
-                                                  durable task model
+After Phase 11 is accepted, continue with the remaining PRD product roadmap. Existing completed functionality must be assessed against evidence; do not assume it needs to be rebuilt.
 
-  06                      FastAPI Core            Versioned APIs,
-                                                  OpenAPI, realtime
-                                                  events
+| Phase | Name | Scope |
+|---|---|---|
+| 12 | Identity & Access Completion | Supabase Auth, profiles, workspace membership, RBAC/RLS hardening and access lifecycle gaps |
+| 13 | Workspace & Memory | Conversation persistence, files/artifacts, consented memory and pgvector |
+| 14 | Credit, Wallet & Entitlement | Immutable ledger, reservations, settlement, quotas, subscriptions and access policies |
+| 15 | Partner Core | Partner organizations, members, locations, networks and provider relationships |
+| 16 | Unified Network Verification | Geo-WiFi, Captive Portal, RADIUS/gateway/ISP adapters and normalized evidence |
+| 17 | Campaign & Reward | Partner campaigns, sponsored quota, rewards and claims |
+| 18 | Super Admin Partnership | Governance, policies, audit and network operations |
+| 19 | Partner Portal Completion | Venue management, gateway configuration, staff, vouchers and analytics |
+| 20 | Customer Web PWA Completion | Complete PRD workflows using the existing UI as the baseline |
+| 21 | Native Mobile | Expo app and native permission/session flows |
+| 22 | Shared Captive Portal Completion | Multi-tenant portal and gateway adapters |
+| 23 | Production Hardening | Security, scale, disaster recovery, performance, observability and release readiness |
 
-  07                      LLM Gateway             Provider adapters,
-                                                  model router, cost
-                                                  metering
+Phases 12–23 may overlap only when dependencies are satisfied and no work violates the integration-first gate.
 
-  08                      Tool Runtime            Tool registry, browser
-                                                  worker, Python sandbox
+## 22.1 Phase exit criteria
 
-  09                      Workspace & Memory      Storage, artifact,
-                                                  memory, pgvector
+Every phase must have: scope and acceptance criteria; ADR where relevant; DB migration and rollback if schema changes; OpenAPI/API contract; unit, integration and end-to-end tests; security review for trust-boundary changes; evidence (screenshots, test output, commit links, schema diff and deployment status); known limitations; and rollback strategy.
 
-  10                      Credit & Wallet         Ledger, reservation,
-                                                  settlement, package
+**Mandatory Phase 11 evidence checklist:**
+- Upstream source snapshot is complete and traceable to a pinned commit.
+- Adapted backend modules have explicit source mapping and security review.
+- FastAPI starts, health/readiness checks pass, and OpenAPI is generated and validated.
+- Supabase migrations apply cleanly against the existing project; RLS and tenant-isolation tests pass.
+- Frontend API calls use the typed client and do not expose provider/service-role secrets.
+- Critical existing UI journeys work without unapproved visual or navigation changes.
+- Agent runs persist and can be resumed/cancelled/retried according to policy.
+- Worker, LLM/tool runtime, usage metering and artifacts are verified with non-production test credentials.
+- CI, build, lint/type checks, migration checks and integration tests are green.
+- A final integration report lists tested endpoints, UI routes, DB objects, evidence, failures and accepted limitations.
 
-  11                      Entitlement &           General Free, paid
-                          Subscription            access, subscriptions
-
-  12                      Partner Core            Organizations,
-                                                  locations, networks,
-                                                  members
-
-  13                      Geo-WiFi Verification   Unified verification,
-                                                  code, geofence, session
-
-  14                      Campaign & Reward       Campaign-based rewards
-                                                  and quota
-
-  15                      Super Admin Partnership Governance and network
-                                                  policy builder
-
-  16                      Partner Portal          Venue management and
-                                                  analytics
-
-  17                      Customer Web PWA        Complete customer
-                                                  workflows
-
-  18                      Native Mobile           Expo app and native
-                                                  permission/session
-                                                  flows
-
-  19                      Shared Captive Portal   Multi-tenant portal and
-                                                  gateway adapter
-
-  20                      RADIUS & Gateway        Enterprise network
-                                                  adapters
-
-  21                      Central ISP             Provider adapter
-                          Integrations            framework and first
-                                                  integration
-
-  22                      Production Hardening    Security, scale, DR,
-                                                  performance and release
-                                                  gate
-  -----------------------------------------------------------------------
+------------------------------------------------------------------------
 
 ## 22.1 Phase exit criteria
 
@@ -2903,13 +2842,13 @@ distinct domain concepts.\
 **Reason:** Prevent incorrect charging and entitlement leakage.\
 **Consequence:** Transactional settlement and clear UI disclosures.
 
-## ADR-007 --- Playful Neo-Brutalist design system
+## ADR-007 --- MoreAI × IndiHome brand-aligned design system
 
-**Decision:** Warm canvas, ink outlines, soft pastel accents, hard
-offset shadows, Plus Jakarta Sans / Inter / JetBrains Mono.\
-**Reason:** Distinctive, friendly and readable brand.\
-**Consequence:** Shared tokens and component library across Web and
-Native.
+**Decision:** Adopt the repository's MoreAI × IndiHome UI reference: primary red, deep navy, white/light cool-gray surfaces, restrained blue/cyan/magenta accents, green verified/success states, subtle borders and soft elevation. The old Playful Neo-Brutalist / Soft Pastel palette is superseded.
+
+**Reason:** Match the actual main-repository UI/UX and MoreAI/IndiHome brand presentation.
+
+**Consequence:** Central semantic tokens are maintained in `packages/design-tokens`; existing screens are protected from restyling during backend integration. New screens only follow these tokens.
 
 ## ADR-008 --- Preserve upstream provenance
 
@@ -3075,3 +3014,16 @@ integration, data persistence, policy enforcement, tests and evidence.**
 the MoreAI repository as a traceable source snapshot and/or fully mapped
 port. This PRD is not itself the code archive. Do not claim "all source
 copied" until the Git manifest and source comparison prove it.
+
+
+# 32. Main Repository Binding & UI/UX Preservation (v1.1)
+
+- **Implementation repository:** https://github.com/fadliansyah36/More-AI-Portal-Indihome.git
+- **Backend reference repository:** https://github.com/YunQiAI/OpenManusWeb.git
+- **Supabase project reference:** `uunfgimtokhucegqbpce` (project URL supplied by product owner: https://uunfgimtokhucegqbpce.supabase.co)
+- **Reference image:** `.aistudio/artifacts/brain/4d52674d-4fe2-4441-a5bf-48030e74c0e3/.tempmediaStorage/media_1794208413882_ecc68f24.jpg`
+
+The main repository is the canonical application and deployment target. Existing Next.js frontend routes, components, navigation, styles and user journeys are protected. The OpenManusWeb repository is a backend/agent-runtime source reference only. Do not replace the frontend with upstream UI or create a second application shell. Use a monorepo layout that preserves existing paths and introduces backend workspaces alongside them. Supabase is the canonical business data store; reconcile the current project schema before any migration. Do not assume the reference project contains all required production integrations or that copying source equals a working integration.
+
+**Execution boundary:** The scope of the first delivery is source preservation/copy, backend adaptation, FastAPI, worker/runtime, Supabase reconciliation, API contracts, frontend wiring and end-to-end verification. Feature additions beyond this foundation are blocked until Phase 11 passes.
+
