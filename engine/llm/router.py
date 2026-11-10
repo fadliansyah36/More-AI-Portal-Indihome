@@ -28,6 +28,12 @@ class ResolvedModelRoute:
     capabilities: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class CreditEstimate:
+    estimated_cost: float
+    estimated_credits: float
+
+
 class ModelRouter:
     """Resolve routes from MoreAI's canonical model/provider policy tables."""
 
@@ -70,18 +76,20 @@ class ModelRouter:
 
 
 class CreditEstimator(Protocol):
-    async def estimate_credits(self, *, route: ResolvedModelRoute, messages: list[dict[str, Any]]) -> float: ...
+    async def estimate(self, *, route: ResolvedModelRoute, messages: list[dict[str, Any]]) -> CreditEstimate: ...
     async def actual_credits(self, *, route: ResolvedModelRoute, result: dict[str, Any]) -> float: ...
 
 
 class UsageAccounting(Protocol):
-    async def reserve(self, *, user_id: str, run_id: str, request_key: str, estimated_credits: float) -> str: ...
-    async def settle(self, *, reservation_id: str, actual_credits: float, request_key: str) -> None: ...
-    async def release(self, *, reservation_id: str, request_key: str) -> None: ...
+    async def claim_request(self, *, user_id: str, run_id: str, request_key: str, request_hash: str) -> dict[str, Any]: ...
+    async def reserve(self, *, request_id: str, user_id: str, run_id: str, request_key: str, estimated_credits: float, estimated_cost: float) -> str: ...
+    async def record_provider_result(self, *, request_id: str, result: dict[str, Any], latency_ms: int) -> None: ...
+    async def finalize(self, *, request_id: str, actual_credits: float, request_key: str, provider_response_id: str | None) -> None: ...
+    async def fail(self, *, request_id: str, error_code: str, release_reservation: bool, request_key: str) -> None: ...
 
 
 class MeteredGateway:
-    """No provider call is allowed without an explicit credit estimator and accounting adapter."""
+    """Provider calls require an idempotent request claim and a credit reservation before network I/O."""
 
     def __init__(self, *, router: ModelRouter, estimator: CreditEstimator, accounting: UsageAccounting, adapter: Any):
         self.router = router
@@ -90,16 +98,36 @@ class MeteredGateway:
         self.adapter = adapter
 
     async def complete(self, *, user_id: str, run_id: str, request_key: str, messages: list[dict[str, Any]], task_type: str = "chat") -> dict[str, Any]:
+        import hashlib
+        import json
+        import time
+
         route = await self.router.resolve(task_type)
-        estimated_credits = await self.estimator.estimate_credits(route=route, messages=messages)
-        if estimated_credits <= 0:
-            raise RuntimeError("credit_estimate_must_be_positive")
-        reservation_id = await self.accounting.reserve(user_id=user_id, run_id=run_id, request_key=request_key, estimated_credits=estimated_credits)
+        request_hash = hashlib.sha256(json.dumps(messages, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        claim = await self.accounting.claim_request(user_id=user_id, run_id=run_id, request_key=request_key, request_hash=request_hash)
+        if not claim.get("created"):
+            if claim.get("status") == "succeeded" and isinstance(claim.get("response_text"), str):
+                return {"text": claim["response_text"], "provider_key": claim.get("provider_key"), "model_key": claim.get("model_key"), "cached": True}
+            raise RuntimeError("llm_request_already_in_progress")
+        estimate = await self.estimator.estimate(route=route, messages=messages)
+        reservation_id = await self.accounting.reserve(
+            request_id=str(claim["id"]), user_id=user_id, run_id=run_id, request_key=request_key,
+            estimated_credits=estimate.estimated_credits, estimated_cost=estimate.estimated_cost,
+        )
+        started = time.monotonic()
         try:
             result = await self.adapter.complete(route=route, messages=messages)
+            latency_ms = int((time.monotonic() - started) * 1000)
+            await self.accounting.record_provider_result(request_id=str(claim["id"]), result=result, latency_ms=latency_ms)
             actual_credits = await self.estimator.actual_credits(route=route, result=result)
-            await self.accounting.settle(reservation_id=reservation_id, actual_credits=actual_credits, request_key=f"{request_key}:settle")
+            await self.accounting.finalize(
+                request_id=str(claim["id"]), actual_credits=actual_credits,
+                request_key=f"{request_key}:settle", provider_response_id=result.get("provider_response_id"),
+            )
             return result
         except Exception:
-            await self.accounting.release(reservation_id=reservation_id, request_key=f"{request_key}:release")
+            await self.accounting.fail(
+                request_id=str(claim["id"]), error_code="provider_execution_failed",
+                release_reservation=True, request_key=f"{request_key}:release",
+            )
             raise
