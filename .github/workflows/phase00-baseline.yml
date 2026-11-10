@@ -13,7 +13,7 @@ on:
       - 'next.config.ts'
       - 'tsconfig.json'
       - 'scripts/phase00-browser-smoke.mjs'
-      - 'apps/api/**'
+      - 'engine/**'\n      - 'apps/api/**'
       - 'apps/worker/**'
       - '.github/workflows/phase00-baseline.yml'
   workflow_dispatch:
