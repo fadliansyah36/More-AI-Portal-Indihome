@@ -27,7 +27,7 @@ class SupabasePlanStore:
                 "sequence": index,
                 "step_key": key,
                 "status": "pending",
-                "input": {"description": description[:10_000], "owner_user_id": self.user_id},
+                "input": {"description": description[:10_000]},
             })
         return await self.get(run_id=run_id)
 
