@@ -20,10 +20,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="MoreAI API",
-    version="0.2.0",
-    description="Trusted API boundary for the existing MoreAI web application. All business data and agent execution is mediated here; browser Supabase access is Auth-only.",
+    version="0.3.0",
+    description="Trusted MoreAI business API. Browser Supabase access is Auth-only; application data and agent execution are mediated here.",
     lifespan=lifespan,
 )
+
+app.include_router(conversations.router)
+app.include_router(agent_runs.router)
+app.include_router(catalog.router)
 
 
 @app.middleware("http")
@@ -40,8 +44,13 @@ async def correlation_id(request: Request, call_next):
 async def unhandled_exception(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
-        content={"error": {"code": "internal_error", "message": "An unexpected server error occurred",
-                           "correlation_id": getattr(request.state, "correlation_id", None)}},
+        content={
+            "error": {
+                "code": "internal_error",
+                "message": "An unexpected server error occurred",
+                "correlation_id": getattr(request.state, "correlation_id", None),
+            }
+        },
     )
 
 
@@ -52,12 +61,23 @@ async def health():
 
 @app.get("/ready", tags=["system"])
 async def readiness(request: Request):
-    ready = request.app.state.settings.supabase_auth_ready
-    return {"status": "ready" if ready else "degraded",
-            "dependencies": {"supabase_auth": ready}}
+    settings = request.app.state.settings
+    auth_ready = settings.supabase_auth_ready
+    data_ready = settings.supabase_data_ready
+    runtime_enabled = settings.agent_execution_enabled
+    ready = auth_ready and data_ready
+    return {
+        "status": "ready" if ready else "degraded",
+        "dependencies": {
+            "supabase_auth": auth_ready,
+            "supabase_data": data_ready,
+            "agent_execution_enabled": runtime_enabled,
+        },
+    }
 
 
-@app.get("/v1/me", tags=["identity"], include_in_schema=False)\n@app.get("/api/v1/me", tags=["identity"])
+@app.get("/v1/me", tags=["identity"], include_in_schema=False)
+@app.get("/api/v1/me", tags=["identity"])
 async def get_me(request: Request, user=Depends(current_user)):
     settings = request.app.state.settings
     token = request.headers["authorization"].removeprefix("Bearer ").strip()
