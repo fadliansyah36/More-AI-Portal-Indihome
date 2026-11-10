@@ -19,7 +19,8 @@
       "partner_access_codes"
     ],
     "migration_history_count": 27,
-    "no_schema_mutations_performed": true
+    "no_schema_mutations_performed": true,
+    "policy_count": 48
   },
   "migrations": [
     "20261102073329_revoke_public_rls_event_function_execution",
@@ -215,7 +216,26 @@
       "finding": "Unindexed foreign keys",
       "count": 52,
       "action": "Review query plans and add covering indexes in forward-only migrations after workload validation."
+    },
+    {
+      "finding": "Unindexed foreign keys",
+      "count": 52,
+      "level": "INFO",
+      "remediation": "Review workload and add targeted covering indexes in forward-only migration after EXPLAIN validation."
+    },
+    {
+      "finding": "Unused indexes",
+      "count": 29,
+      "level": "INFO",
+      "remediation": "Do not drop automatically; low/empty production traffic may explain zero scans. Revisit after workload telemetry."
     }
   ],
-  "decision": "Reuse existing schema and RPC lifecycle. No DDL migration or production data change during reconciliation."
+  "decision": "Reuse existing schema and RPC lifecycle. No DDL migration or production data change during reconciliation.",
+  "privileged_function_review": {
+    "security_definer_functions": 15,
+    "anon_execute": false,
+    "authenticated_execute": false,
+    "service_role_execute": true,
+    "review": "All observed SECURITY DEFINER functions are executable by service_role only; no anon/authenticated execute privilege observed. Continue function-by-function body and search_path review before exposing additional RPCs."
+  }
 }
