@@ -34,8 +34,8 @@ class PolicyEnforcedToolRegistry:
                     "type": "function",
                     "function": {
                         "name": tool.key,
-                        "description": f"Authorized MoreAI adapter for upstream tool {tool.key}",
-                        "parameters": {"type": "object", "additionalProperties": True},
+                        "description": tool.description,
+                        "parameters": tool.input_schema,
                     },
                 })
         return definitions
