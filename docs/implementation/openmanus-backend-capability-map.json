@@ -86,7 +86,7 @@
       "module": "flow/planning",
       "target": "engine/orchestration/planning.py",
       "capability": "planning flow",
-      "status": "PARTIAL — durable planning flow and Supabase agent_run_steps store implemented; end-to-end worker parity pending"
+      "status": "PARTIAL — structured durable PlanningAgentRuntime and PlanningFlow backed by Supabase agent_run_steps; complete upstream planner prompt/approval/tool parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/flow/tracking_support.py",
@@ -100,7 +100,7 @@
       "module": "llm/client",
       "target": "engine/llm/providers/openai_compatible.py",
       "capability": "LLM provider client/retries/streaming",
-      "status": "PARTIAL — OpenAI-compatible non-streaming adapter and DB-driven model router contract implemented; provider routes absent in Supabase and streaming/retry/circuit-breaker parity pending"
+      "status": "PARTIAL — OpenAI-compatible completion and SSE streaming, DB-scoped primary/fallback model routing, idempotent request claim, provider usage/cost, atomic entitlement/quota/credit reservation and settlement; retries, circuit breakers, tool-call parity and live provider config pending"
     },
     {
       "source": "vendor/openmanusweb/app/logger.py",
@@ -170,7 +170,7 @@
       "module": "tools/chat-completion",
       "target": "engine/tools/chat_completion.py",
       "capability": "chat completion tool",
-      "status": "PARTIAL — routed through metered gateway contract; no direct provider invocation permitted"
+      "status": "PARTIAL — metered gateway completion and streaming adapter; provider route, entitlement, quota and wallet required; tool-call normalization pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/file_saver.py",
@@ -191,7 +191,7 @@
       "module": "tools/planning",
       "target": "engine/tools/planning.py",
       "capability": "plan tool",
-      "status": "PARTIAL — durable plan store and planning flow implemented; tool-schema adapter pending"
+      "status": "PARTIAL — structured durable planning metadata, status lifecycle and checkpoint integration implemented"
     },
     {
       "source": "vendor/openmanusweb/app/tool/python_execute.py",
@@ -219,35 +219,35 @@
       "module": "tools/terminate",
       "target": "engine/tools/terminate.py",
       "capability": "run termination",
-      "status": "PARTIAL — cancellation API and worker cancel RPC adapter exist; agent-level cancellation parity pending"
+      "status": "PARTIAL — owner-scoped cancellation API and worker cancellation propagation implemented; upstream tool-call handler not yet registered"
     },
     {
       "source": "vendor/openmanusweb/app/tool/tool_collection.py",
       "module": "tools/registry",
       "target": "engine/tools/registry.py",
       "capability": "tool registry/dispatch",
-      "status": "PARTIAL — complete upstream tool inventory plus policy-enforced registry implemented; concrete safe adapters pending"
+      "status": "PARTIAL — full versioned tool schemas and security metadata catalogued; handlers remain default-deny until individually implemented and tested"
     },
     {
       "source": "vendor/openmanusweb/app/utils/log_monitor.py",
       "module": "utils/log-monitor",
       "target": "engine/observability/log_monitor.py",
       "capability": "log stream parsing",
-      "status": "PENDING — durable event/SSE endpoint exists; upstream monitor parser parity pending"
+      "status": "PARTIAL — persisted run events and SSE are available; upstream log monitor parsing/aggregation pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/api.py",
       "module": "server/api",
       "target": "apps/api/app/routers/upstream_compat.py",
       "capability": "upstream API endpoints",
-      "status": "PARTIAL — authenticated conversation/run/catalog APIs implemented; upstream route-by-route compatibility remains pending"
+      "status": "PARTIAL — authenticated identity, conversation, atomic enqueue, agent catalog, tool catalog, run lifecycle, cancellation and SSE routes implemented; full upstream route parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/app.py",
       "module": "server/app",
       "target": "apps/api/app/routers/upstream_compat.py",
       "capability": "FastAPI server/session/task/WebSocket",
-      "status": "PARTIAL — JWT auth boundary, durable conversations/runs and SSE replace part of in-memory session/task server; complete endpoint/WebSocket/session parity pending"
+      "status": "PARTIAL — Supabase JWT auth, durable conversation/run API and SSE replace in-memory session/task lifecycle; WebSocket and complete session compatibility pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/llm_monitor.py",
@@ -261,7 +261,7 @@
       "module": "server/log-handler",
       "target": "apps/api/app/routers/events.py",
       "capability": "log/event stream",
-      "status": "PARTIAL — persisted run event retrieval and SSE route implemented; full handler parity pending"
+      "status": "PARTIAL — persisted checkpoint/event retrieval and authenticated SSE implemented; complete upstream log handler parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/log_parser.py",
@@ -275,7 +275,7 @@
       "module": "server/thinking-tracker",
       "target": "engine/observability/thinking_tracker.py",
       "capability": "per-session reasoning/progress tracker",
-      "status": "REPLACED IN PART — no process-global thinking tracker; durable run checkpoints/events are the target, full progress parity pending"
+      "status": "REPLACED IN PART — no process-global tracker; durable plan/worker checkpoints and streamed response chunks replace a subset; full thinking/progress parity pending"
     }
   ],
   "non_python_backend": {
@@ -292,7 +292,7 @@
     "classification": "upstream templates/static assets archived only",
     "active_product_use": false
   },
-  "parity_status": "PARTIAL — complete upstream inventory is mapped; runtime contracts, safe agent/planning foundations, tool catalog/policy, API/SSE and worker durable adapters are implemented. Full behavioral parity is NOT COMPLETE; sandbox-dependent tools remain intentionally blocked.",
+  "parity_status": "PARTIAL — all upstream Python modules are inventoried and mapped; Manus/Planning, durable run/plan lifecycle, FastAPI identity/conversation/catalog/run/SSE, OpenAI-compatible completion/streaming, scoped route/fallback and atomic entitlement/quota/credit accounting foundations are implemented. Full behavioral parity is NOT COMPLETE. Tool handlers, sandbox/browser isolation, WebSocket/session/log parity and live provider configuration remain outstanding.",
   "implemented_target_files": [
     "engine/agents/types.py",
     "engine/agents/runtime.py",
@@ -317,15 +317,26 @@
     "apps/api/app/routers/catalog.py",
     "apps/api/app/repositories/supabase.py",
     "apps/worker/app/dispatcher.py",
-    "apps/worker/app/plan_store.py"
+    "apps/worker/app/plan_store.py",
+    "apps/worker/app/llm_accounting.py",
+    "apps/worker/app/llm_gateway.py",
+    "apps/worker/app/registry_factory.py",
+    "apps/worker/app/main.py",
+    "supabase/migrations/20261111030000_moreai_enqueue_chat_run.sql",
+    "supabase/migrations/20261111033000_moreai_llm_reserve_with_entitlement_quota.sql",
+    "supabase/migrations/20261111040000_moreai_llm_quota_settlement_reconciliation.sql"
   ],
   "runtime_safety_gates": {
     "agent_execution_default": "disabled",
     "tool_execution_default": "deny",
+    "registered_agent_keys": [
+      "manus",
+      "planning"
+    ],
     "bash": "blocked_until_sandbox",
     "python_execute": "blocked_until_sandbox",
     "browser_use": "blocked_until_ssrf_and_browser_isolation",
     "str_replace_editor": "blocked_until_workspace_isolation",
-    "provider_calls": "blocked_until_route_secret_and_credit_accounting_are_configured"
+    "provider_calls": "blocked_until_provider_route_secret_entitlement_quota_wallet_and_credit_conversion_are_configured"
   }
 }
