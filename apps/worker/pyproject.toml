@@ -1,10 +1,13 @@
 [project]
 name = "moreai-worker"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.12"
-description = "MoreAI durable worker boundary (foundation only)"
-dependencies = []
+description = "MoreAI durable agent-run worker lifecycle adapter"
+dependencies = ["httpx==0.28.1"]
 
-[build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+[project.optional-dependencies]
+test = ["pytest==8.3.5"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
