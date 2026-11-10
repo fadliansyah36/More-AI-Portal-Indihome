@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+
+import httpx
+
+
+@dataclass(frozen=True)
+class WorkerSettings:
+    supabase_url: str
+    service_role_key: str
+    worker_id: str
+    lease_seconds: int = 90
+
+    def __post_init__(self):
+        if not self.supabase_url.startswith("https://"):
+            raise ValueError("SUPABASE_URL must use HTTPS")
+        if not 8 <= len(self.worker_id) <= 128:
+            raise ValueError("WORKER_ID must contain 8 to 128 characters")
+        if not 15 <= self.lease_seconds <= 900:
+            raise ValueError("lease_seconds must be between 15 and 900")
+        if not self.service_role_key:
+            raise ValueError("SUPABASE_SERVICE_ROLE_KEY is required")
+
+
+class WorkerRpcClient:
+    """Server-only client for the existing MoreAI worker SECURITY DEFINER RPCs."""
+
+    def __init__(self, settings: WorkerSettings, client: httpx.AsyncClient):
+        self.settings = settings
+        self.client = client
+
+    async def rpc(self, name: str, payload: dict[str, Any]) -> Any:
+        response = await self.client.post(
+            f"{self.settings.supabase_url.rstrip('/')}/rest/v1/rpc/{name}",
+            json=payload,
+            headers={
+                "apikey": self.settings.service_role_key,
+                "Authorization": f"Bearer {self.settings.service_role_key}",
+                "Content-Type": "application/json",
+            },
+            timeout=15.0,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def claim_run(self) -> dict[str, Any] | None:
+        return await self.rpc("moreai_worker_claim_run", {
+            "p_worker_id": self.settings.worker_id,
+            "p_lease_seconds": self.settings.lease_seconds,
+        })
+
+    async def heartbeat(self, run_id: str) -> dict[str, Any]:
+        return await self.rpc("moreai_worker_heartbeat", {
+            "p_run_id": run_id,
+            "p_worker_id": self.settings.worker_id,
+            "p_lease_seconds": self.settings.lease_seconds,
+        })
+
+    async def checkpoint(self, run_id: str, key: str, state: dict[str, Any]) -> dict[str, Any]:
+        return await self.rpc("moreai_worker_checkpoint", {
+            "p_run_id": run_id,
+            "p_worker_id": self.settings.worker_id,
+            "p_checkpoint_key": key,
+            "p_state": state,
+        })
+
+    async def finish(
+        self,
+        run_id: str,
+        status: str,
+        output: dict[str, Any] | None = None,
+        error: dict[str, Any] | None = None,
+        retry_delay_seconds: int = 30,
+    ) -> dict[str, Any]:
+        if status not in {"succeeded", "failed", "cancelled"}:
+            raise ValueError("Only terminal run statuses can be submitted")
+        return await self.rpc("moreai_worker_finish_run", {
+            "p_run_id": run_id,
+            "p_worker_id": self.settings.worker_id,
+            "p_status": status,
+            "p_output": output,
+            "p_error": error,
+            "p_retry_delay_seconds": retry_delay_seconds,
+        })
