@@ -9,56 +9,56 @@
       "module": "agents/base",
       "target": "engine/agents/base.py",
       "capability": "agent lifecycle/context/tool dispatch",
-      "status": "pending security review"
+      "status": "PARTIAL — typed per-run agent lifecycle implemented in engine/agents/runtime.py; full upstream parity and persistence tests pending"
     },
     {
       "source": "vendor/openmanusweb/app/agent/llm_wrapper.py",
       "module": "agents/llm-wrapper",
       "target": "engine/llm/client-adapter.py",
       "capability": "LLM request/response/stream/tool-call wrapper",
-      "status": "pending gateway adapter"
+      "status": "PARTIAL — request/result/provider contracts and metered gateway boundary exist; streaming/tool-call parity and accounting adapter pending"
     },
     {
       "source": "vendor/openmanusweb/app/agent/manus.py",
       "module": "agents/manus",
       "target": "engine/agents/manus.py",
       "capability": "Manus general agent",
-      "status": "pending port"
+      "status": "PARTIAL — text-only gateway-backed Manus runtime in engine/agents/gateway_runtime.py; complete upstream tool loop pending"
     },
     {
       "source": "vendor/openmanusweb/app/agent/planning.py",
       "module": "agents/planning",
       "target": "engine/agents/planning.py",
       "capability": "planning agent",
-      "status": "pending durable planner state"
+      "status": "PARTIAL — planning runtime and strict JSON plan validation in engine/agents/planning_runtime.py; parity suite pending"
     },
     {
       "source": "vendor/openmanusweb/app/agent/react.py",
       "module": "agents/react",
       "target": "engine/agents/react.py",
       "capability": "ReAct loop",
-      "status": "pending durable state and tool policy"
+      "status": "PARTIAL — ReAct/ToolCall base loop adapted in engine/agents/runtime.py; full upstream state/loop parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/agent/swe.py",
       "module": "agents/swe",
       "target": "engine/agents/swe.py",
       "capability": "software engineering agent",
-      "status": "pending sandbox dependency"
+      "status": "BLOCKED — SWE runtime requires isolated workspace and sandbox adapters"
     },
     {
       "source": "vendor/openmanusweb/app/agent/toolcall.py",
       "module": "agents/toolcall",
       "target": "engine/agents/toolcall.py",
       "capability": "tool-calling agent",
-      "status": "pending port"
+      "status": "PARTIAL — injected tool-call loop implemented; concrete tool adapters and parity tests pending"
     },
     {
       "source": "vendor/openmanusweb/app/config.py",
       "module": "runtime/config",
       "target": "apps/api/app/config.py",
       "capability": "configuration and runtime settings",
-      "status": "partially adapted; production config still incomplete"
+      "status": "PARTIAL — environment settings and fail-closed runtime flag implemented; deployment/secret-store config pending"
     },
     {
       "source": "vendor/openmanusweb/app/exceptions.py",
@@ -72,210 +72,210 @@
       "module": "flow/base",
       "target": "engine/orchestration/base.py",
       "capability": "flow lifecycle",
-      "status": "pending durable workflow state"
+      "status": "PARTIAL — flow context/factory contracts implemented; full upstream base-flow lifecycle pending"
     },
     {
       "source": "vendor/openmanusweb/app/flow/flow_factory.py",
       "module": "flow/factory",
       "target": "engine/orchestration/factory.py",
       "capability": "flow factory/registry",
-      "status": "pending port"
+      "status": "PARTIAL — explicit fail-closed FlowFactory registry implemented in engine/orchestration/flows.py"
     },
     {
       "source": "vendor/openmanusweb/app/flow/planning.py",
       "module": "flow/planning",
       "target": "engine/orchestration/planning.py",
       "capability": "planning flow",
-      "status": "pending durable state"
+      "status": "PARTIAL — durable planning flow and Supabase agent_run_steps store implemented; end-to-end worker parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/flow/tracking_support.py",
       "module": "flow/tracking",
       "target": "engine/orchestration/tracking.py",
       "capability": "run progress/tracking",
-      "status": "pending Supabase events/checkpoints adapter"
+      "status": "PARTIAL — worker checkpoint and agent_run_events API/SSE exist; full tracker event parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/llm.py",
       "module": "llm/client",
       "target": "engine/llm/providers/openai_compatible.py",
       "capability": "LLM provider client/retries/streaming",
-      "status": "pending provider adapter + gateway"
+      "status": "PARTIAL — OpenAI-compatible non-streaming adapter and DB-driven model router contract implemented; provider routes absent in Supabase and streaming/retry/circuit-breaker parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/logger.py",
       "module": "runtime/logging",
       "target": "engine/observability/logging.py",
       "capability": "structured logs",
-      "status": "pending correlation/tenant-safe logging"
+      "status": "PENDING — correlation ID middleware exists; tenant-safe structured engine logging not ported"
     },
     {
       "source": "vendor/openmanusweb/app/prompt/manus.py",
       "module": "prompts/manus",
       "target": "engine/prompts/manus.py",
       "capability": "Manus prompt contract",
-      "status": "pending port"
+      "status": "ADAPTED — MoreAI safety-bounded Manus prompt in engine/prompts/manus.py"
     },
     {
       "source": "vendor/openmanusweb/app/prompt/planning.py",
       "module": "prompts/planning",
       "target": "engine/prompts/planning.py",
       "capability": "planning prompt contract",
-      "status": "pending port"
+      "status": "ADAPTED — durable-plan prompt in engine/prompts/planning.py"
     },
     {
       "source": "vendor/openmanusweb/app/prompt/swe.py",
       "module": "prompts/swe",
       "target": "engine/prompts/swe.py",
       "capability": "SWE prompt contract",
-      "status": "pending port"
+      "status": "ADAPTED — sandbox-constrained SWE prompt in engine/prompts/swe.py"
     },
     {
       "source": "vendor/openmanusweb/app/prompt/toolcall.py",
       "module": "prompts/toolcall",
       "target": "engine/prompts/toolcall.py",
       "capability": "toolcall prompt contract",
-      "status": "pending port"
+      "status": "ADAPTED — allowlisted tool prompt in engine/prompts/toolcall.py"
     },
     {
       "source": "vendor/openmanusweb/app/schema.py",
       "module": "schemas",
       "target": "packages/contracts/openmanus.py",
       "capability": "upstream pydantic schemas",
-      "status": "pending compatibility mapping"
+      "status": "PARTIAL — Message, ToolCall and AgentState typed contracts implemented in engine/agents/types.py; full upstream Pydantic schema compatibility pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/base.py",
       "module": "tools/base",
       "target": "engine/tools/base.py",
       "capability": "tool protocol/base class",
-      "status": "pending permission model"
+      "status": "PARTIAL — tool handler protocol and policy-enforced registry implemented; full upstream BaseTool schema parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/bash.py",
       "module": "tools/bash",
       "target": "apps/sandbox/bash/",
       "capability": "shell execution",
-      "status": "blocked until isolated sandbox and approval gate"
+      "status": "BLOCKED — catalogued, but execution blocked until isolated non-root sandbox, process limits and approval gates exist"
     },
     {
       "source": "vendor/openmanusweb/app/tool/browser_use_tool.py",
       "module": "tools/browser",
       "target": "apps/sandbox/browser/",
       "capability": "browser automation",
-      "status": "blocked until SSRF/network/download isolation"
+      "status": "BLOCKED — catalogued, but execution blocked until SSRF/private-IP controls, browser isolation and download scanning exist"
     },
     {
       "source": "vendor/openmanusweb/app/tool/create_chat_completion.py",
       "module": "tools/chat-completion",
       "target": "engine/tools/chat_completion.py",
       "capability": "chat completion tool",
-      "status": "pending gateway adapter"
+      "status": "PARTIAL — routed through metered gateway contract; no direct provider invocation permitted"
     },
     {
       "source": "vendor/openmanusweb/app/tool/file_saver.py",
       "module": "tools/file-saver",
       "target": "engine/tools/file_saver.py",
       "capability": "artifact/file save",
-      "status": "pending Supabase Storage adapter"
+      "status": "PENDING — artifact metadata/storage adapter and safe workspace boundary pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/google_search.py",
       "module": "tools/search",
       "target": "engine/tools/search.py",
       "capability": "web search",
-      "status": "pending provider and network policy"
+      "status": "PENDING — provider adapter, source attribution and outbound network policy pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/planning.py",
       "module": "tools/planning",
       "target": "engine/tools/planning.py",
       "capability": "plan tool",
-      "status": "pending durable plan state"
+      "status": "PARTIAL — durable plan store and planning flow implemented; tool-schema adapter pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/python_execute.py",
       "module": "tools/python",
       "target": "apps/sandbox/python/",
       "capability": "Python execution",
-      "status": "blocked until isolated sandbox; exec/thread timeout not acceptable"
+      "status": "BLOCKED — catalogued, but execution blocked until isolated disposable sandbox; upstream exec/thread timeout is not acceptable"
     },
     {
       "source": "vendor/openmanusweb/app/tool/run.py",
       "module": "tools/run",
       "target": "engine/tools/run.py",
       "capability": "tool execution lifecycle",
-      "status": "pending audit/idempotency"
+      "status": "PARTIAL — durable worker claim/heartbeat/checkpoint/finish lifecycle exists; complete tool audit/idempotency adapter pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/str_replace_editor.py",
       "module": "tools/editor",
       "target": "engine/tools/editor.py",
       "capability": "workspace file editing",
-      "status": "pending isolated workspace policy"
+      "status": "BLOCKED — catalogued, but safe workspace editor implementation and path isolation pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/terminate.py",
       "module": "tools/terminate",
       "target": "engine/tools/terminate.py",
       "capability": "run termination",
-      "status": "pending cancellation integration"
+      "status": "PARTIAL — cancellation API and worker cancel RPC adapter exist; agent-level cancellation parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/tool_collection.py",
       "module": "tools/registry",
       "target": "engine/tools/registry.py",
       "capability": "tool registry/dispatch",
-      "status": "pending permission and approval integration"
+      "status": "PARTIAL — complete upstream tool inventory plus policy-enforced registry implemented; concrete safe adapters pending"
     },
     {
       "source": "vendor/openmanusweb/app/utils/log_monitor.py",
       "module": "utils/log-monitor",
       "target": "engine/observability/log_monitor.py",
       "capability": "log stream parsing",
-      "status": "pending durable event adapter"
+      "status": "PENDING — durable event/SSE endpoint exists; upstream monitor parser parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/api.py",
       "module": "server/api",
       "target": "apps/api/app/routers/upstream_compat.py",
       "capability": "upstream API endpoints",
-      "status": "pending endpoint-by-endpoint translation"
+      "status": "PARTIAL — authenticated conversation/run/catalog APIs implemented; upstream route-by-route compatibility remains pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/app.py",
       "module": "server/app",
       "target": "apps/api/app/routers/upstream_compat.py",
       "capability": "FastAPI server/session/task/WebSocket",
-      "status": "partially replaced by new API boundary; full endpoint parity pending"
+      "status": "PARTIAL — JWT auth boundary, durable conversations/runs and SSE replace part of in-memory session/task server; complete endpoint/WebSocket/session parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/llm_monitor.py",
       "module": "server/llm-monitor",
       "target": "apps/api/app/routers/llm_admin.py",
       "capability": "LLM monitoring endpoints",
-      "status": "pending authorized admin routes"
+      "status": "PENDING — admin-authorized provider/usage monitoring routes pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/log_handler.py",
       "module": "server/log-handler",
       "target": "apps/api/app/routers/events.py",
       "capability": "log/event stream",
-      "status": "pending persisted events/realtime"
+      "status": "PARTIAL — persisted run event retrieval and SSE route implemented; full handler parity pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/log_parser.py",
       "module": "server/log-parser",
       "target": "engine/observability/log_parser.py",
       "capability": "log parsing",
-      "status": "pending port"
+      "status": "PENDING — parser port pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/thinking_tracker.py",
       "module": "server/thinking-tracker",
       "target": "engine/observability/thinking_tracker.py",
       "capability": "per-session reasoning/progress tracker",
-      "status": "must replace global in-memory store with durable run events"
+      "status": "REPLACED IN PART — no process-global thinking tracker; durable run checkpoints/events are the target, full progress parity pending"
     }
   ],
   "non_python_backend": {
@@ -292,5 +292,40 @@
     "classification": "upstream templates/static assets archived only",
     "active_product_use": false
   },
-  "parity_status": "NOT COMPLETE — module inventory is complete; production port/hardening remains in progress"
+  "parity_status": "PARTIAL — complete upstream inventory is mapped; runtime contracts, safe agent/planning foundations, tool catalog/policy, API/SSE and worker durable adapters are implemented. Full behavioral parity is NOT COMPLETE; sandbox-dependent tools remain intentionally blocked.",
+  "implemented_target_files": [
+    "engine/agents/types.py",
+    "engine/agents/runtime.py",
+    "engine/agents/protocol.py",
+    "engine/agents/gateway_runtime.py",
+    "engine/agents/planning_runtime.py",
+    "engine/prompts/manus.py",
+    "engine/prompts/planning.py",
+    "engine/prompts/swe.py",
+    "engine/prompts/toolcall.py",
+    "engine/orchestration/registry.py",
+    "engine/orchestration/flows.py",
+    "engine/orchestration/planning.py",
+    "engine/tools/catalog.py",
+    "engine/tools/registry.py",
+    "engine/tools/policy.py",
+    "engine/llm/contracts.py",
+    "engine/llm/router.py",
+    "engine/llm/providers/openai_compatible.py",
+    "apps/api/app/routers/conversations.py",
+    "apps/api/app/routers/agent_runs.py",
+    "apps/api/app/routers/catalog.py",
+    "apps/api/app/repositories/supabase.py",
+    "apps/worker/app/dispatcher.py",
+    "apps/worker/app/plan_store.py"
+  ],
+  "runtime_safety_gates": {
+    "agent_execution_default": "disabled",
+    "tool_execution_default": "deny",
+    "bash": "blocked_until_sandbox",
+    "python_execute": "blocked_until_sandbox",
+    "browser_use": "blocked_until_ssrf_and_browser_isolation",
+    "str_replace_editor": "blocked_until_workspace_isolation",
+    "provider_calls": "blocked_until_route_secret_and_credit_accounting_are_configured"
+  }
 }
