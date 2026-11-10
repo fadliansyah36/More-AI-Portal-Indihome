@@ -119,6 +119,7 @@ class MeteredGateway:
             reservation_id = await self.accounting.reserve(
                 request_id=str(claim["id"]), user_id=user_id, run_id=run_id, request_key=request_key,
                 estimated_credits=estimate.estimated_credits, estimated_cost=estimate.estimated_cost,
+                workspace_id=workspace_id, partner_id=partner_id,
             )
             started = time.monotonic()
             result = await self.adapter.complete(route=route, messages=messages)
