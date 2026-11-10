@@ -40,7 +40,7 @@ export const DevicesConnectedView: React.FC<DevicesConnectedViewProps> = ({ onBa
       <div className="p-4 rounded-3xl bg-slate-900 text-white flex items-center justify-between">
         <div>
           <span className="text-[10px] uppercase font-bold text-slate-400">Jaringan Rumah</span>
-          <h3 className="text-sm font-bold mt-0.5">IndiHome_1234</h3>
+          <h3 className="text-sm font-bold mt-0.5">Partner_WiFi_5G</h3>
           <p className="text-xs text-emerald-400 font-semibold mt-0.5">● Semua perangkat dalam kondisi aman</p>
         </div>
         <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-emerald-400">

@@ -59,10 +59,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <button
               onClick={() => onNavigate('wifi')}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium hover:bg-emerald-100 transition"
-              title="Status Koneksi Wi-Fi IndiHome"
+              title="Status Koneksi Wi-Fi Global Partner ISP"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>IndiHome 100M</span>
+              <span>Partner ISP 100M</span>
             </button>
           </div>
         </div>
@@ -160,7 +160,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* Featured Banner: AI Credit Free dari IndiHome (Exact reproduction from reference) */}
+      {/* Featured Banner: AI Credit Free dari Global Partner ISP */}
       <div
         onClick={() => onNavigate('benefits')}
         className="cursor-pointer relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 p-4 text-white shadow-md hover:shadow-lg transition group active:scale-[0.99]"
@@ -169,13 +169,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div className="max-w-[70%]">
             <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-xs text-[10px] font-medium tracking-wide uppercase text-white mb-1.5">
               <Gift className="w-3 h-3 text-amber-300" />
-              <span>Benefit Spesial IndiHome</span>
+              <span>Benefit Global Partner</span>
             </div>
             <h3 className="text-sm sm:text-base font-bold leading-tight">
-              AI Credit Free dari IndiHome
+              AI Credit Free dari Partner ISP
             </h3>
             <p className="mt-1 text-xs text-red-100 leading-snug">
-              Nikmati akses AI lebih luas tanpa batas dengan koneksi Wi-Fi IndiHome.
+              Nikmati akses AI lebih luas tanpa batas dengan koneksi Wi-Fi Global Partner ISP/Network.
             </p>
             <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-red-600 font-bold text-xs group-hover:bg-red-50 transition shadow-xs">
               <span>Cek Benefit</span>
@@ -275,7 +275,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             Wi-Fi Management
           </h4>
           <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">
-            Kelola router IndiHome 100 Mbps & 5 perangkat terhubung.
+            Kelola router Partner ISP 100 Mbps & 5 perangkat terhubung.
           </p>
         </button>
 

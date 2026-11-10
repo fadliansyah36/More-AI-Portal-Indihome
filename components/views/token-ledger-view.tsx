@@ -20,7 +20,7 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({
   const transactions = [
     {
       id: 'tx-101',
-      title: 'Aktivasi Partner Free IndiHome',
+      title: 'Aktivasi Global Partner Free ISP',
       type: 'kredit',
       amount: '+100.000 Poin',
       date: '01 Nov 2026, 08:00 WIB',

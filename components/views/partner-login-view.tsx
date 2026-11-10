@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Building2, Lock, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
-import { MoreAiLogo, IndiHomeLogo } from '@/components/branding/logos';
+import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 
 interface PartnerLoginViewProps {
   onBack: () => void;
@@ -80,7 +80,7 @@ export const PartnerLoginView: React.FC<PartnerLoginViewProps> = ({
         <form onSubmit={handleSubmit} className="space-y-3 text-left pt-2">
           <div>
             <label className="text-[11px] font-bold text-slate-700 block mb-1">
-              Email Bisnis / ID Mitra IndiHome
+              Email Bisnis / ID Mitra Partner ISP
             </label>
             <div className="flex items-center gap-2 p-3 rounded-2xl bg-slate-50 border border-slate-200 focus-within:border-red-500 focus-within:bg-white transition">
               <Mail className="w-4 h-4 text-slate-400" />
@@ -127,7 +127,7 @@ export const PartnerLoginView: React.FC<PartnerLoginViewProps> = ({
         <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
         <div>
           <strong className="text-slate-900 block mb-0.5">Integrasi Jaringan Resmi</strong>
-          Mendukung gateway MikroTik Hotspot, UniFi OS, dan Router Fiber IndiHome secara native.
+          Mendukung gateway MikroTik Hotspot, UniFi OS, dan Router Fiber Partner ISP secara native.
         </div>
       </div>
     </div>

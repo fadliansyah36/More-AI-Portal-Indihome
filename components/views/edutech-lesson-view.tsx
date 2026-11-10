@@ -32,7 +32,7 @@ export const EdutechLessonView: React.FC<EdutechLessonViewProps> = ({
         </button>
         <div className="text-center">
           <h1 className="text-base font-bold text-slate-900 leading-tight">Mengenal AI untuk Pemula</h1>
-          <span className="text-[10px] text-slate-500 font-medium">Modul EduTech IndiHome</span>
+          <span className="text-[10px] text-slate-500 font-medium">Modul EduTech Partner Network</span>
         </div>
         <div className="w-5" />
       </div>

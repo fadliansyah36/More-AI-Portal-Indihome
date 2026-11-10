@@ -58,7 +58,7 @@ export const WifiManagementView: React.FC<WifiManagementViewProps> = ({ onNaviga
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
-      showToast('Pemeriksaan sinyal Wi-Fi IndiHome selesai: Kondisi Sangat Baik (Latency 8ms).', 'success');
+      showToast('Pemeriksaan sinyal Wi-Fi Global Partner ISP selesai: Kondisi Sangat Baik (Latency 8ms).', 'success');
     }, 800);
   };
 
@@ -68,7 +68,7 @@ export const WifiManagementView: React.FC<WifiManagementViewProps> = ({ onNaviga
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Wi-Fi Management</h1>
-          <p className="text-xs text-slate-500">Kelola jaringan Wi-Fi IndiHome rumah & perangkat terhubung</p>
+          <p className="text-xs text-slate-500">Kelola jaringan Wi-Fi Global Partner ISP rumah &amp; perangkat terhubung</p>
         </div>
         <button
           onClick={handleRefresh}
@@ -88,7 +88,7 @@ export const WifiManagementView: React.FC<WifiManagementViewProps> = ({ onNaviga
                 <Wifi className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-black tracking-tight leading-none">IndiHome 100 Mbps</h3>
+                <h3 className="text-sm font-black tracking-tight leading-none">Partner ISP 100 Mbps</h3>
                 <span className="text-[10px] text-red-100 font-medium">Jaringan Fiber Optik Terverifikasi</span>
               </div>
             </div>
@@ -132,7 +132,7 @@ export const WifiManagementView: React.FC<WifiManagementViewProps> = ({ onNaviga
           <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
             <div>
               <span className="text-slate-400 block text-[10px]">Nama Jaringan (SSID)</span>
-              <span className="font-bold text-slate-800">IndiHome_1234</span>
+              <span className="font-bold text-slate-800">Partner_WiFi_5G</span>
             </div>
             <button
               onClick={() => showToast('Pengaturan SSID: Anda dapat mengubah nama Wi-Fi di panel router.', 'info')}
@@ -279,7 +279,7 @@ export const WifiManagementView: React.FC<WifiManagementViewProps> = ({ onNaviga
         </div>
 
         <button
-          onClick={() => showToast('Router gateway IndiHome tersinkronisasi sempurna.', 'success')}
+          onClick={() => showToast('Router gateway Global Partner ISP tersinkronisasi sempurna.', 'success')}
           className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition"
         >
           Kelola Jaringan Seluruhnya

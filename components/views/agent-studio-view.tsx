@@ -152,7 +152,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
               </div>
               <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-slate-400 block text-[9px] uppercase font-bold">Status Lisensi</span>
-                <span className="font-bold text-emerald-600">Aktif via IndiHome</span>
+                <span className="font-bold text-emerald-600">Aktif via Partner ISP</span>
               </div>
             </div>
 

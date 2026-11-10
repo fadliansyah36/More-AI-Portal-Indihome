@@ -461,7 +461,7 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
                 <span className="text-slate-500 text-[11px]">500+ pengguna · Integrasi Kustom</span>
               </div>
               <button
-                onClick={() => showToast('Permintaan Paket Enterprise terkirim! Tim sales IndiHome akan menghubungi Anda.', 'success')}
+                onClick={() => showToast('Permintaan Paket Enterprise terkirim! Tim sales Global Partner ISP akan menghubungi Anda.', 'success')}
                 className="px-3 py-1 rounded-xl bg-slate-900 text-white font-semibold"
               >
                 Kontak
@@ -687,7 +687,7 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
               <div>
                 <h4 className="text-base font-bold text-slate-900">Partner Aktif!</h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                  Selamat! Anda telah resmi menjadi Partner Wi-Fi & AI Access bersama IndiHome.
+                  Selamat! Anda telah resmi menjadi Partner Wi-Fi & AI Access bersama Global Partner ISP/Network.
                 </p>
               </div>
 

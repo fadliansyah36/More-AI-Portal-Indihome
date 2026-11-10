@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MoreAiLogo, IndiHomeLogo } from '@/components/branding/logos';
+import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 
@@ -47,7 +47,7 @@ export const AuthRegisterView: React.FC<AuthRegisterViewProps> = ({
         <div className="text-center mb-4">
           <h2 className="text-lg font-black text-slate-900 tracking-tight">Daftar Akun Baru</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Buat akun untuk mengakses seluruh layanan MoreAI x IndiHome
+            Buat akun untuk mengakses seluruh layanan MoreAI &amp; Global Partner ISP/Network
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export const AuthRegisterView: React.FC<AuthRegisterViewProps> = ({
               className="w-4 h-4 rounded text-red-600 focus:ring-red-500 mt-0.5"
             />
             <span>
-              Saya setuju dengan <strong>Syarat &amp; Ketentuan</strong> dan <strong>Kebijakan Privasi</strong> MoreAI x IndiHome.
+              Saya setuju dengan <strong>Syarat &amp; Ketentuan</strong> dan <strong>Kebijakan Privasi</strong> MoreAI &amp; Global Partner ISP/Network.
             </span>
           </label>
 

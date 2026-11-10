@@ -15,7 +15,7 @@ import {
   Clock,
   RotateCcw,
 } from 'lucide-react';
-import { MoreAiLogo, IndiHomeLogo } from '@/components/branding/logos';
+import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 import { NavigationTab } from '@/types/moreai';
 
 interface CaptivePortalViewProps {
@@ -112,7 +112,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
               <Wifi className="w-8 h-8 animate-pulse" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">
-              Akses Wi-Fi IndiHome & Nikmati AI Terbaik
+              Akses Wi-Fi Global Partner ISP & Nikmati AI Terbaik
             </h3>
             <p className="text-xs text-slate-500 max-w-xs mt-1">
               Dapatkan akses internet kecepatan tinggi dan kuota pemrosesan kecerdasan buatan gratis di venue ini.
@@ -141,7 +141,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
         <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <MoreAiLogo />
-            <IndiHomeLogo showTelkom={false} />
+            <GlobalPartnerLogo />
           </div>
 
           <div className="text-center pt-2">
@@ -161,7 +161,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
               onClick={() => setCurrentStep(3)}
               className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2"
             >
-              <span>Masuk dengan Akun IndiHome</span>
+              <span>Masuk Akun Tamu / Partner</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -193,12 +193,12 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
               Syarat dan Ketentuan
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Dengan melanjutkan, Anda menyetujui syarat dan ketentuan penggunaan layanan MoreAI di jaringan partner IndiHome.
+              Dengan melanjutkan, Anda menyetujui syarat dan ketentuan penggunaan layanan MoreAI di jaringan Global Partner ISP/Network.
             </p>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2 max-h-40 overflow-y-auto">
-            <p>1. Akses Wi-Fi disediakan secara cuma-cuma oleh venue mitra bekerjasama dengan Telkom IndiHome.</p>
+            <p>1. Akses Wi-Fi disediakan secara cuma-cuma oleh venue mitra bekerjasama dengan Global Partner ISP/Network.</p>
             <p>2. Pengguna mendapatkan kuota sponsor AI Credit Free selama berada di jangkauan lokasi Wi-Fi.</p>
             <p>3. Keamanan privasi data dan perlindungan informasi pribadi dipantau oleh MoreAI Guard Protocol.</p>
           </div>
@@ -233,14 +233,14 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
           <div>
             <h3 className="text-lg font-bold text-slate-900">Terhubung!</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-              Selamat! Anda sudah terkoneksi ke jaringan Wi-Fi IndiHome dengan performa optimal.
+              Selamat! Anda sudah terkoneksi ke jaringan Wi-Fi Global Partner ISP/Network dengan performa optimal.
             </p>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-1">
             <div className="flex justify-between">
               <span className="text-slate-400">Info Koneksi:</span>
-              <span className="font-bold text-emerald-600">● IndiHome Wi-Fi Aktif</span>
+              <span className="font-bold text-emerald-600">● Global Partner Wi-Fi Aktif</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Kecepatan:</span>
@@ -271,7 +271,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
               </div>
               <div>
                 <h3 className="text-xs font-bold text-slate-900">Halo, Pengguna!</h3>
-                <p className="text-[11px] text-slate-500">Selamat menikmati layanan MoreAI di jaringan IndiHome</p>
+                <p className="text-[11px] text-slate-500">Selamat menikmati layanan MoreAI di jaringan Global Partner ISP/Network</p>
               </div>
             </div>
           </div>

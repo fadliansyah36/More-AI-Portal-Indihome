@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ArrowLeft, Wifi, Gift, Sparkles, CheckCircle2 } from 'lucide-react';
-import { MoreAiLogo, IndiHomeLogo } from '@/components/branding/logos';
+import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
@@ -27,7 +27,7 @@ export const PartnerAccessBannerView: React.FC<PartnerAccessBannerViewProps> = (
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
-          <span className="font-bold text-xs text-white">IndiHome</span>
+          <span className="font-bold text-xs text-white">Global Partner ISP</span>
           <span className="text-white/60">×</span>
           <span className="font-bold text-xs text-white">MoreAI</span>
         </div>
@@ -42,7 +42,7 @@ export const PartnerAccessBannerView: React.FC<PartnerAccessBannerViewProps> = (
             <Wifi className="w-10 h-10 animate-pulse" />
           </div>
           <span className="text-xs font-black uppercase tracking-wider text-amber-300">
-            Wi-Fi IndiHome Terhubung
+            Wi-Fi Partner ISP Terhubung
           </span>
           <span className="text-sm font-bold text-white mt-1">
             CoffeeHouse Semarang
@@ -54,10 +54,10 @@ export const PartnerAccessBannerView: React.FC<PartnerAccessBannerViewProps> = (
 
         <div className="space-y-2 max-w-xs mx-auto">
           <h2 className="text-xl font-black tracking-tight leading-snug">
-            AI Credit Free untuk Pelanggan IndiHome
+            AI Credit Free via Global Partner ISP
           </h2>
           <p className="text-xs text-red-100 leading-relaxed font-medium">
-            Nikmati akses AI canggih tanpa biaya dengan jaringan IndiHome di seluruh mitra resmi Indonesia.
+            Nikmati akses AI canggih tanpa biaya dengan jaringan Global Partner ISP &amp; Network di seluruh mitra resmi.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export const PartnerAccessBannerView: React.FC<PartnerAccessBannerViewProps> = (
       <div className="pb-2">
         <button
           onClick={() => {
-            showToast('Selamat! AI Credit Free IndiHome Anda telah aktif.', 'success');
+            showToast('Selamat! AI Credit Free Global Partner ISP Anda telah aktif.', 'success');
             onNavigateTab('benefits');
           }}
           className="w-full py-3.5 rounded-2xl bg-white text-red-600 hover:bg-red-50 active:scale-95 text-xs sm:text-sm font-bold transition shadow-lg"

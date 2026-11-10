@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, ShieldCheck, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
-import { MoreAiLogo, IndiHomeLogo } from '@/components/branding/logos';
+import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 
 interface CaptiveTermsViewProps {
   onBack: () => void;
@@ -50,10 +50,10 @@ export const CaptiveTermsView: React.FC<CaptiveTermsViewProps> = ({
       <div className="p-4 rounded-3xl bg-slate-900 text-white flex items-center justify-between shadow-xs">
         <div>
           <span className="text-[10px] uppercase font-bold text-slate-400">Jaringan Tamu Terverifikasi</span>
-          <h2 className="text-sm font-bold text-white mt-0.5">IndiHome Guest &amp; MoreAI</h2>
+          <h2 className="text-sm font-bold text-white mt-0.5">Global Partner Guest &amp; MoreAI</h2>
           <p className="text-[11px] text-slate-300 mt-0.5">Akses internet fiber 100 Mbps + 100.000 Poin AI</p>
         </div>
-        <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-red-400">
+        <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-blue-400">
           <ShieldCheck className="w-5 h-5" />
         </div>
       </div>
@@ -63,7 +63,7 @@ export const CaptiveTermsView: React.FC<CaptiveTermsViewProps> = ({
         <div className="space-y-1">
           <h3 className="font-bold text-slate-900 text-xs">1. Ketentuan Penggunaan Jaringan</h3>
           <p>
-            Akses Wi-Fi IndiHome disediakan secara cuma-cuma di lokasi mitra terdaftar. Pengguna dilarang memanfaatkan koneksi untuk aktivitas ilegal, penyebaran malware, atau pelanggaran hak cipta.
+            Akses Wi-Fi Global Partner ISP disediakan secara cuma-cuma di lokasi mitra terdaftar. Pengguna dilarang memanfaatkan koneksi untuk aktivitas ilegal, penyebaran malware, atau pelanggaran hak cipta.
           </p>
         </div>
 
@@ -99,7 +99,7 @@ export const CaptiveTermsView: React.FC<CaptiveTermsViewProps> = ({
             className="w-4 h-4 rounded text-red-600 focus:ring-red-500 mt-0.5"
           />
           <span className="text-slate-700">
-            Saya menyetujui <strong>Syarat &amp; Ketentuan</strong> penggunaan jaringan Wi-Fi IndiHome.
+            Saya menyetujui <strong>Syarat &amp; Ketentuan</strong> penggunaan jaringan Wi-Fi Global Partner ISP.
           </span>
         </label>
 

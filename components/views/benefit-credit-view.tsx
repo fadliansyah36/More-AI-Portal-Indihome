@@ -31,7 +31,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
   const usageHistory = [
     {
       id: 'h-1',
-      title: 'Akses Wi-Fi IndiHome',
+      title: 'Akses Wi-Fi Global Partner ISP',
       type: 'wifi',
       date: '12 Jul 2027 · 2 jam',
       amount: 'Gratis via Partner',
@@ -63,7 +63,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
     },
     {
       id: 'h-5',
-      title: 'Bonus Login Jaringan IndiHome',
+      title: 'Bonus Login Global Partner Network',
       type: 'wifi',
       date: '10 Apr, 09:00',
       amount: '+1.000 Poin',
@@ -88,7 +88,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
       <div>
         <h1 className="text-xl font-bold text-slate-900 tracking-tight">Benefit & AI Credit Center</h1>
         <p className="text-xs text-slate-500">
-          Kelola kuota, saldo kredit, dan hak istimewa pengguna jaringan IndiHome
+          Kelola kuota, saldo kredit, dan hak istimewa pengguna jaringan Global Partner ISP/Network
         </p>
       </div>
 
@@ -98,7 +98,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
           <div className="flex items-center justify-between">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-xs text-[10px] font-bold">
               <Gift className="w-3.5 h-3.5 text-amber-300" />
-              <span>PARTNER FREE · Telkom IndiHome</span>
+              <span>PARTNER FREE · Global Partner ISP</span>
             </div>
             <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-400/30">
               {isActivated ? 'Aktif hingga 31 Des 2026' : 'Belum Diaktifkan'}
@@ -106,7 +106,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
           </div>
 
           <div>
-            <span className="text-xs text-red-100 font-medium block">AI Credit Free IndiHome</span>
+            <span className="text-xs text-red-100 font-medium block">AI Credit Free Global Partner ISP</span>
             <div className="flex items-baseline gap-2 mt-0.5">
               <span className="text-2xl sm:text-3xl font-black tracking-tight">100.000</span>
               <span className="text-xs font-bold text-red-200">Poin / Bulan</span>
@@ -121,7 +121,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
               onClick={() => {
                 const nextState = !isActivated;
                 setIsActivated(nextState);
-                showToast(nextState ? 'Benefit AI Credit IndiHome berhasil diaktifkan!' : 'Benefit telah dinonaktifkan sementara', 'info');
+                showToast(nextState ? 'Benefit AI Credit Global Partner ISP berhasil diaktifkan!' : 'Benefit telah dinonaktifkan sementara', 'info');
               }}
               className="flex-1 py-2.5 rounded-xl bg-white text-red-600 font-bold text-xs hover:bg-red-50 transition shadow-xs text-center"
             >
@@ -144,7 +144,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
       {/* Detail Benefit List (From Sheet 5) */}
       <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs space-y-3">
         <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-          Detail Benefit Eksklusif IndiHome
+          Detail Benefit Eksklusif Global Partner ISP
         </h2>
 
         <div className="space-y-2">

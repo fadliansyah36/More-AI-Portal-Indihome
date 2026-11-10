@@ -11,8 +11,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'MoreAI x IndiHome - AI Workspace & Network Platform',
-  description: 'Satu Aplikasi untuk Semua Kebutuhan AI Anda. Akses cepat, produktif, dan terintegrasi dalam satu platform dengan koneksi Wi-Fi IndiHome.',
+  title: 'MoreAI - Global Partner ISP/Network Platform',
+  description: 'Satu Aplikasi untuk Semua Kebutuhan AI Anda. Akses cepat, produktif, dan terintegrasi dalam satu platform dengan ekosistem Global Partner ISP & Network.',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -24,14 +24,14 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'MoreAI x IndiHome - AI Workspace Platform',
-    description: 'Satu Aplikasi untuk Semua Kebutuhan AI Anda. Akses internet cepat dan teknologi AI untuk mendukung produktivitas, belajar, bekerja, dan berkreasi.',
+    title: 'MoreAI - Global Partner ISP & Network Workspace',
+    description: 'Satu Aplikasi untuk Semua Kebutuhan AI Anda. Akses internet cepat dan teknologi AI untuk mendukung produktivitas, belajar, bekerja, dan berkreasi bersama Global Partner ISP/Network.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MoreAI x IndiHome - AI Workspace Platform',
-    description: 'Satu Aplikasi untuk Semua Kebutuhan AI Anda dengan ekosistem Wi-Fi IndiHome.',
+    title: 'MoreAI - Global Partner ISP & Network Platform',
+    description: 'Satu Aplikasi untuk Semua Kebutuhan AI Anda dengan ekosistem Global Partner ISP & Network.',
   },
 };
 
@@ -41,11 +41,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className="h-full">
+    <html lang="id">
       <head>
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body className="h-full antialiased font-sans bg-slate-50 text-slate-900 selection:bg-rose-500 selection:text-white" suppressHydrationWarning>
+      <body className="min-h-screen antialiased font-sans bg-slate-50 text-slate-900 selection:bg-rose-500 selection:text-white" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

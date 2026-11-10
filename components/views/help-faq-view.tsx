@@ -16,15 +16,15 @@ export const HelpFaqView: React.FC<HelpFaqViewProps> = ({ onBack }) => {
   const faqs = [
     {
       q: 'Cara mengakses MoreAI?',
-      a: 'Buka browser Anda dan kunjungi portal MoreAI saat terhubung ke jaringan internet IndiHome atau Wi-Fi mitra. Anda dapat langsung menginstal PWA ke home screen smartphone tanpa melalui app store.',
+      a: 'Buka browser Anda dan kunjungi portal MoreAI saat terhubung ke jaringan internet Global Partner ISP atau Wi-Fi mitra. Anda dapat langsung menginstal PWA ke home screen smartphone tanpa melalui app store.',
     },
     {
       q: 'Kenapa Wi-Fi saya tidak bisa terhubung?',
-      a: 'Pastikan sinyal IndiHome terdeteksi, masukkan kata sandi yang valid, dan setujui Syarat & Ketentuan pada captive portal yang muncul di layar perangkat Anda.',
+      a: 'Pastikan sinyal Wi-Fi Partner terdeteksi, masukkan kata sandi yang valid, dan setujui Syarat & Ketentuan pada captive portal yang muncul di layar perangkat Anda.',
     },
     {
       q: 'Cara mendapatkan AI Credit?',
-      a: 'Setiap pelanggan IndiHome dan pengunjung venue partner berhak mendapatkan kuota sponsor 100.000 Poin AI per bulan secara cuma-cuma.',
+      a: 'Setiap pengguna jaringan Global Partner ISP dan pengunjung venue partner berhak mendapatkan kuota sponsor 100.000 Poin AI per bulan secara cuma-cuma.',
     },
     {
       q: 'Bagaimana cara menggunakan AI Tools?',
@@ -100,16 +100,16 @@ export const HelpFaqView: React.FC<HelpFaqViewProps> = ({ onBack }) => {
         <div>
           <h3 className="text-sm font-bold text-slate-900">Masih Butuh Bantuan?</h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Tim dukungan teknis MoreAI x Telkom IndiHome siap melayani Anda 24/7.
+            Tim dukungan teknis MoreAI &amp; Global Partner ISP siap melayani Anda 24/7.
           </p>
         </div>
 
         <button
-          onClick={() => showToast('Menghubungkan ke Call Center IndiHome 147 & Layanan Bantuan MoreAI...', 'info')}
+          onClick={() => showToast('Menghubungkan ke Call Center Global Partner & Layanan Bantuan MoreAI...', 'info')}
           className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2"
         >
           <Phone className="w-4 h-4" />
-          <span>Hubungi Kami (Call Center 147)</span>
+          <span>Hubungi Dukungan Global Partner</span>
         </button>
       </div>
     </div>

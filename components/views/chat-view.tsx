@@ -60,7 +60,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
 ✓ **Promo spesial akhir pekan**
    - Diskon bundling kopi susu + pastry khusus pelanggan yang datang langsung.`,
       time: '09:42',
-      source: 'MoreAI Knowledge Base & IndiHome Network',
+      source: 'MoreAI Knowledge Base & Global Partner Network',
     },
   ]);
 
@@ -117,7 +117,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       const botMsg: ChatMessage = {
         id: `bot-${Date.now()}`,
         sender: 'assistant',
-        text: `Terima kasih! Permintaan Anda mengenai "${text}" telah dicatat. MoreAI terintegrasi dengan jaringan IndiHome untuk memberikan jawaban akurat dan cepat.`,
+        text: `Terima kasih! Permintaan Anda mengenai "${text}" telah dicatat. MoreAI terintegrasi dengan jaringan Global Partner ISP/Network untuk memberikan jawaban akurat dan cepat.`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         source: 'MoreAI Knowledge Base (Offline Mode)',
       };
@@ -174,7 +174,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             </h2>
             <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>Koneksi Wi-Fi IndiHome 100 Mbps</span>
+              <span>Koneksi Wi-Fi Partner ISP 100 Mbps</span>
             </div>
           </div>
         </div>

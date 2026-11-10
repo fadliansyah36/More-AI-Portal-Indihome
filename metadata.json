@@ -1,6 +1,6 @@
 {
   "name": "MoreAI x IndiHome",
-  "description": "Platform AI Workspace & Akses Wi-Fi IndiHome Mobile-First PWA dengan fitur AI Assistant, Agent Studio, Tools, Captive Portal, dan Partner Management.",
+  "description": "Platform AI Workspace & Akses Wi-Fi Global Partner ISP/Network Mobile-First PWA dengan fitur AI Assistant, Agent Studio, Tools, Captive Portal, dan Partner Management.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

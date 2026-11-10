@@ -21,7 +21,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
     {
       id: 'notif-1',
       title: 'Promo AI Credit Spesial',
-      desc: 'Dapatkan 2x poin credit hari ini saat terhubung ke Wi-Fi IndiHome di CoffeeHouse Semarang.',
+      desc: 'Dapatkan 2x poin credit hari ini saat terhubung ke Wi-Fi Partner ISP di CoffeeHouse Semarang.',
       time: '10 menit lalu',
       type: 'promo',
       icon: Gift,

@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
     if (apiKey && apiKey !== 'MY_GEMINI_API_KEY') {
       try {
         const ai = new GoogleGenAI({ apiKey });
-        const systemInstruction = `Kamu adalah MoreAI Assistant, asisten kecerdasan buatan resmi dari ekosistem MoreAI x IndiHome (oleh Telkom Indonesia).
+        const systemInstruction = `Kamu adalah MoreAI Assistant, asisten kecerdasan buatan resmi dari ekosistem MoreAI & Global Partner ISP/Network.
 Bicaralah dalam Bahasa Indonesia yang ramah, profesional, cerdas, dan solutif.
-Fokus pada produktivitas, riset, penulisan konten, analisis dokumen, strategi bisnis, dan pemanfaatan koneksi Wi-Fi IndiHome.
+Fokus pada produktivitas, riset, penulisan konten, analisis dokumen, strategi bisnis, dan pemanfaatan koneksi Wi-Fi Global Partner ISP.
 Gunakan format markdown yang rapi, jelas, dengan bullet points bila perlu.`;
 
         const response = await ai.models.generateContent({
@@ -48,11 +48,11 @@ Gunakan format markdown yang rapi, jelas, dengan bullet points bila perlu.`;
 2. **Cerita di Balik Biji Kopi Lokal (Origin Story)**
    - Sorot petani mitra dari Temanggung / Gayo untuk membangun *emotional connection*.
 3. **Promo Spesial Akhir Pekan (Weekend Perk)**
-   - "Beli 2 Es Kopi Susu Aren Gratis 1 Pastry" khusus pelanggan yang terhubung Wi-Fi IndiHome di kafe Anda.
+   - "Beli 2 Es Kopi Susu Aren Gratis 1 Pastry" khusus pelanggan yang terhubung Wi-Fi Partner ISP di kafe Anda.
 4. **Interactive Quiz & Loyalty**
    - Kumpulkan feedback rasa favorit lewat QR Code MoreAI.`;
-    } else if (lower.includes('wifi') || lower.includes('indihome') || lower.includes('koneksi')) {
-      reply = `Koneksi Wi-Fi IndiHome Anda saat ini terpantau **Sangat Stabil (100 Mbps)**. 
+    } else if (lower.includes('wifi') || lower.includes('isp') || lower.includes('network') || lower.includes('koneksi')) {
+      reply = `Koneksi Wi-Fi Partner ISP Anda saat ini terpantau **Sangat Stabil (100 Mbps)**. 
 Benefit yang aktif:
 - **Akses MoreAI Premium Gratis**
 - **100.000 Poin AI Credit** per bulan
@@ -63,7 +63,7 @@ Benefit yang aktif:
 - **Poin Kunci**: Integrasi modul riset, kalender marketing otomatis, dan analitik real-time.
 - **Rekomendasi Tindakan**: Mulai dari otomatisasi caption media sosial dan reporting mingguan.`;
     } else {
-      reply = `Halo! Saya siap membantu pekerjaan Anda hari ini dengan MoreAI x IndiHome:
+      reply = `Halo! Saya siap membantu pekerjaan Anda hari ini dengan MoreAI - Global Partner ISP/Network Platform:
 - 💡 **Riset Pasar & Analisis**: Menganalisis tren pasar terkini.
 - ✍️ **Pembuatan Konten**: Draft artikel, copy iklan, proposal, dan media sosial.
 - 📊 **Olah Data & Insight**: Membaca file spreadsheet dan dokumen kerja.

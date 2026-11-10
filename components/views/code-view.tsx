@@ -10,10 +10,10 @@ export const CodeView: React.FC = () => {
     return f"Hello, {name}!"
 
 # Eksekusi fungsi dengan nama platform
-print(greet("MoreAI x IndiHome"))`
+print(greet("MoreAI - Global Partner Network"))`
   );
 
-  const [output, setOutput] = useState<string>('Hello, MoreAI x IndiHome!');
+  const [output, setOutput] = useState<string>('Hello, MoreAI - Global Partner Network!');
   const [isRunning, setIsRunning] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -28,7 +28,7 @@ print(greet("MoreAI x IndiHome"))`
           if (match) {
             const inner = match[1].replace(/["']/g, '');
             if (inner.includes('greet')) {
-              setOutput('Hello, MoreAI x IndiHome!\n[Process completed successfully with exit code 0]');
+              setOutput('Hello, MoreAI - Global Partner Network!\n[Process completed successfully with exit code 0]');
             } else {
               setOutput(`${inner}\n[Process completed successfully with exit code 0]`);
             }
@@ -47,7 +47,7 @@ print(greet("MoreAI x IndiHome"))`
   const sampleSnippets = [
     {
       name: 'Greeting Default',
-      code: `def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("MoreAI x IndiHome"))`,
+      code: `def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("MoreAI - Global Partner Network"))`,
     },
     {
       name: 'Kalkulator AI Quota',

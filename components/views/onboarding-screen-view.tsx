@@ -20,8 +20,8 @@ export const OnboardingScreenView: React.FC<OnboardingScreenViewProps> = ({ onNa
     },
     {
       title: 'Koneksi Super Cepat & Kuota AI Free',
-      desc: 'Dapatkan 100.000 Poin kredit otomatis saat terhubung ke Wi-Fi IndiHome.',
-      role: 'Pelanggan IndiHome',
+      desc: 'Dapatkan 100.000 Poin kredit otomatis saat terhubung ke Wi-Fi Global Partner ISP.',
+      role: 'Pengguna Partner Network',
       color: 'from-rose-600 to-amber-600',
     },
     {

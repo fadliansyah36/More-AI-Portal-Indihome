@@ -232,7 +232,7 @@ export const FilesView: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Penyimpanan:</span>
-                <span className="font-semibold text-emerald-600">Cloud Storage IndiHome</span>
+                <span className="font-semibold text-emerald-600">Cloud Storage Partner Network</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Status Integritas:</span>

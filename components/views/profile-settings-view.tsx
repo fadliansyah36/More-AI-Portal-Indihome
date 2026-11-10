@@ -73,7 +73,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
       {/* Settings Navigation Menu */}
       <div className="bg-white rounded-3xl p-3 border border-slate-100 shadow-xs space-y-1">
         <button
-          onClick={() => showToast('Profil Akun: Andi Pratama (Pelanggan IndiHome Aktif)', 'info')}
+          onClick={() => showToast('Profil Akun: Andi Pratama (Pengguna Global Partner ISP Aktif)', 'info')}
           className="w-full p-3 rounded-2xl hover:bg-slate-50 flex items-center justify-between text-left transition group"
         >
           <div className="flex items-center gap-3">
@@ -220,11 +220,11 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
             </div>
             <div className="space-y-2 text-xs text-slate-600">
               <p className="font-bold text-slate-900">1. Bagaimana cara mendapatkan AI Credit Free?</p>
-              <p>Cukup hubungkan perangkat Anda ke jaringan Wi-Fi IndiHome yang terdaftar. Saldo kuota akan otomatis terisi setiap bulan.</p>
+              <p>Cukup hubungkan perangkat Anda ke jaringan Wi-Fi Global Partner ISP yang terdaftar. Saldo kuota akan otomatis terisi setiap bulan.</p>
               <p className="font-bold text-slate-900 pt-1">2. Apakah aplikasi ini bisa digunakan saat offline?</p>
               <p>Ya, MoreAI berbasis PWA yang mendukung caching offline untuk riwayat tugas dan catatan yang telah dibuka.</p>
               <p className="font-bold text-slate-900 pt-1">3. Siapa yang dapat mendaftar sebagai Partner?</p>
-              <p>Pemilik kedai kopi, restoran, coworking space, dan institusi publik yang ingin menyediakan akses internet & AI terpadu bagi pengunjung.</p>
+              <p>Pemilik kedai kopi, restoran, coworking space, dan institusi publik yang ingin menyediakan akses internet &amp; AI terpadu bagi pengunjung.</p>
             </div>
             <button
               onClick={() => setShowFaqModal(false)}
@@ -243,14 +243,14 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
             <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center mx-auto text-xl font-black">
               M
             </div>
-            <h3 className="text-base font-bold text-slate-900">MoreAI x IndiHome</h3>
+            <h3 className="text-base font-bold text-slate-900">MoreAI &bull; Global Partner ISP/Network</h3>
             <p className="text-xs text-slate-500">
-              Platform AI Workspace & Akses Wi-Fi Terintegrasi untuk Masa Depan Digital Indonesia.
+              Platform AI Workspace &amp; Akses Wi-Fi Terintegrasi bersama Ekosistem Global Partner ISP/Network.
             </p>
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-[11px] text-slate-600 space-y-1">
               <div>Versi: 1.0.0 (Progressive Web App)</div>
-              <div>Mitra Resmi: PT Telkom Indonesia Tbk</div>
-              <div>Engine: OpenManus Agent Architecture & Gemini AI</div>
+              <div>Mitra Jaringan: Global Partner ISP &amp; Network Alliance</div>
+              <div>Engine: OpenManus Agent Architecture &amp; Gemini AI</div>
             </div>
             <button
               onClick={() => setShowAboutModal(false)}

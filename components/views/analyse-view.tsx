@@ -41,7 +41,7 @@ export const AnalyseView: React.FC = () => {
         ],
         recommendations: [
           'Terapkan automasi reporting harian untuk mengurangi beban staf hingga 8 jam/minggu.',
-          'Gunakan koneksi Wi-Fi IndiHome dedicated untuk stabilisasi pemrosesan file besar.',
+          'Gunakan koneksi Wi-Fi Global Partner ISP dedicated untuk stabilisasi pemrosesan file besar.',
           'Manfaatkan kuota AI Credit Free untuk pemindaian massal berkala.',
         ],
       });

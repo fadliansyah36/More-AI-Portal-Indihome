@@ -3,7 +3,7 @@
 import React from 'react';
 import { ArrowLeft, CheckCircle2, Wifi, Sparkles, Gift, ArrowRight } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { MoreAiLogo, IndiHomeLogo } from '@/components/branding/logos';
+import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 
 interface CaptiveSuccessViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -36,7 +36,7 @@ export const CaptiveSuccessView: React.FC<CaptiveSuccessViewProps> = ({
             Sukses Terhubung!
           </h1>
           <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-            Perangkat Anda kini telah terhubung ke jaringan internet IndiHome &amp; siap menggunakan platform MoreAI.
+            Perangkat Anda kini telah terhubung ke jaringan internet Global Partner ISP/Network &amp; siap menggunakan platform MoreAI.
           </p>
         </div>
 
@@ -45,8 +45,8 @@ export const CaptiveSuccessView: React.FC<CaptiveSuccessViewProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-slate-400">Nama Wi-Fi (SSID):</span>
             <span className="font-bold text-slate-900 flex items-center gap-1">
-              <Wifi className="w-3.5 h-3.5 text-red-600" />
-              CoffeeHouse_IndiHome
+              <Wifi className="w-3.5 h-3.5 text-blue-600" />
+              CoffeeHouse_PartnerNet
             </span>
           </div>
           <div className="flex items-center justify-between">

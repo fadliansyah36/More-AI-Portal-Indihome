@@ -32,7 +32,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { MoreAiIndiHomeLockup } from '@/components/branding/logos';
+import { MoreAiNetworkLockup } from '@/components/branding/logos';
 import { PWAInstallButton } from '@/components/pwa/pwa-install-button';
 
 export const isPartnerTab = (tab: NavigationTab): boolean => {
@@ -106,7 +106,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     { id: 'chat', label: 'Chat AI', icon: MessageSquare },
     { id: 'agents', label: 'Agen AI', icon: Bot },
     { id: 'create', label: 'Buat Konten', icon: FileText },
-    { id: 'wifi', label: 'Wi-Fi IndiHome', icon: Wifi },
+    { id: 'wifi', label: 'Wi-Fi Partner ISP', icon: Wifi },
     { id: 'speedtest', label: 'Speedtest 104M', icon: Gauge },
     { id: 'benefits', label: 'AI Credit (100K)', icon: Sparkles },
     { id: 'profile', label: 'Profil Saya', icon: User },
@@ -127,7 +127,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
       ],
     },
     {
-      title: 'Koneksi Wi-Fi IndiHome',
+      title: 'Koneksi Wi-Fi Partner ISP / Network',
       items: [
         { id: 'wifi', label: 'Wi-Fi Management', desc: 'SSID, password, & sinyal optik', icon: Wifi },
         { id: 'speedtest', label: 'Uji Kecepatan Internet', desc: 'Speedtest 104.2 Mbps & latensi 9ms', icon: Gauge },
@@ -139,7 +139,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     {
       title: 'Benefit, Poin & Akun',
       items: [
-        { id: 'benefits', label: 'AI Credit & Kuota Free', desc: '100.000 Poin dari IndiHome', icon: Sparkles },
+        { id: 'benefits', label: 'AI Credit & Kuota Free', desc: '100.000 Poin dari Partner ISP', icon: Sparkles },
         { id: 'token_ledger', label: 'Buku Besar Token', desc: 'Riwayat transaksi & audit hash', icon: Receipt },
         { id: 'partner_vouchers', label: 'Dompet Kupon Mitra', desc: 'Diskon Rp 25K-50K di kafe mitra', icon: Ticket },
         { id: 'edutech', label: 'Pusat Edukasi MoreAI', desc: 'Modul belajar & kurikulum AI', icon: Layers },
@@ -205,264 +205,280 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs select-none transition-colors">
-      {/* Row 1: Brand on Left, Desktop Segmented Control in Center, Utility Actions on Right */}
-      <div className="w-full px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-3">
-        {/* Brand Lockup (Clicking brand opens Customer Home) */}
-        <div
-          className="flex items-center gap-1.5 cursor-pointer shrink-0"
-          onClick={() => handleModeSwitch('customer')}
-          title="Ke Beranda Customer"
-        >
-          <MoreAiIndiHomeLockup size="sm" dark={isDarkMode} />
-        </div>
-
-        {/* PROMINENT SEGMENTED NAVBAR (Desktop Only: hidden on mobile, shown on md+) */}
-        <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-2xs shrink-0">
-          {/* Customer Tab */}
-          <button
+    <>
+      <header className="sticky top-0 z-30 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs select-none transition-colors">
+        {/* Row 1: Brand on Left, Desktop Segmented Control in Center, Utility Actions on Right */}
+        <div className="w-full px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-3">
+          {/* Brand Lockup (Clicking brand opens Customer Home) */}
+          <div
+            className="flex items-center gap-1.5 cursor-pointer shrink-0"
             onClick={() => handleModeSwitch('customer')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              navMode === 'customer'
-                ? 'bg-red-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            title="Ke Beranda Customer"
           >
-            <User className="w-3.5 h-3.5" />
-            <span>UI Customer</span>
-            <span
-              className={`text-[9px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-extrabold ${
-                navMode === 'customer'
-                  ? 'bg-white/25 text-white'
-                  : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              Workspace
-            </span>
-          </button>
+            <MoreAiNetworkLockup size="sm" dark={isDarkMode} />
+          </div>
 
-          {/* Mitra Partner Tab */}
-          <button
-            onClick={() => handleModeSwitch('partner')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              navMode === 'partner'
-                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5 text-amber-500" />
-            <span>UI Mitra Partner</span>
-            <span
-              className={`text-[9px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-extrabold ${
-                navMode === 'partner'
-                  ? 'bg-amber-500/20 text-amber-300 dark:text-amber-700'
-                  : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-              }`}
-            >
-              B2B Venue
-            </span>
-          </button>
-        </div>
-
-        {/* Right utility items: Gallery Modal Button, PWA, and Menu */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Direct Screen Gallery Button */}
-          {onOpenGallery && (
+          {/* PROMINENT SEGMENTED NAVBAR (Desktop Only: hidden on mobile, shown on md+) */}
+          <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-2xs shrink-0">
+            {/* Customer Tab */}
             <button
-              onClick={onOpenGallery}
-              className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition shadow-2xs"
-              title="Katalog Lengkap Sheet 1-6"
-            >
-              <Grid className="w-3.5 h-3.5 text-red-600 shrink-0" />
-              <span className="hidden sm:inline">Pilih Halaman UI</span>
-              <span className="sm:hidden text-[11px] font-semibold">Halaman</span>
-            </button>
-          )}
-
-          <PWAInstallButton compact />
-
-          {/* All-screen Drawer Menu Trigger */}
-          {onOpenDrawer && (
-            <button
-              onClick={onOpenDrawer}
-              className="p-1.5 sm:p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-50 hover:text-red-600 transition shrink-0"
-              title="Menu Navigasi Seluruh Fitur"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Row 2 (Mobile Only): Dedicated Full-Width Segmented Tab for Customer vs Mitra Partner */}
-      <div className="block md:hidden px-3 pt-0.5 pb-2 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-        <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-800/90 rounded-xl gap-1 w-full border border-slate-200/70 dark:border-slate-700/70 shadow-2xs">
-          <button
-            onClick={() => handleModeSwitch('customer')}
-            className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-              navMode === 'customer'
-                ? 'bg-red-600 text-white shadow-xs font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <User className="w-3.5 h-3.5 shrink-0" />
-            <span>UI Customer</span>
-          </button>
-          <button
-            onClick={() => handleModeSwitch('partner')}
-            className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-              navMode === 'partner'
-                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span>UI Mitra Partner</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Row 3 Sub-Navbar: Category Dropdowns & Quick Horizontal Scroll Bar with min-w-0 */}
-      <div
-        ref={dropdownRef}
-        className={`border-t px-3 sm:px-6 lg:px-8 py-1.5 sm:py-2 transition-colors w-full overflow-hidden ${
-          navMode === 'customer'
-            ? 'bg-red-50/40 dark:bg-red-950/20 border-red-100 dark:border-red-900/30'
-            : 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30'
-        }`}
-      >
-        <div className="w-full flex items-center justify-between gap-2 sm:gap-3">
-          {/* Mode Indicator & Active Context Badge */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span
-              className={`text-[10px] sm:text-[11px] font-extrabold flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg shrink-0 ${
+              onClick={() => handleModeSwitch('customer')}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 navMode === 'customer'
-                  ? 'bg-red-600 text-white shadow-2xs'
-                  : 'bg-slate-900 text-amber-400 dark:bg-amber-400 dark:text-slate-900 shadow-2xs'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              {navMode === 'customer' ? (
-                <>
-                  <User className="w-3 h-3 shrink-0" />
-                  <span className="hidden sm:inline">Customer Workspace</span>
-                  <span className="sm:hidden">Workspace</span>
-                </>
-              ) : (
-                <>
-                  <Building2 className="w-3 h-3 shrink-0" />
-                  <span className="hidden sm:inline">Mitra Partner B2B</span>
-                  <span className="sm:hidden">Mitra B2B</span>
-                </>
-              )}
-            </span>
-
-            {/* Desktop Category Dropdown Trigger */}
-            <div className="relative hidden md:block">
-              <button
-                onClick={() => setOpenDropdown(openDropdown === 'categories' ? null : 'categories')}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition shadow-2xs"
+              <User className="w-3.5 h-3.5" />
+              <span>UI Customer</span>
+              <span
+                className={`text-[9px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-extrabold ${
+                  navMode === 'customer'
+                    ? 'bg-white/25 text-white'
+                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                }`}
               >
-                <span>Kategori Menu</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === 'categories' ? 'rotate-180' : ''}`} />
-              </button>
+                Workspace
+              </span>
+            </button>
 
-              {/* Categorized Dropdown Popup */}
-              {openDropdown === 'categories' && (
-                <div className="absolute left-0 top-full mt-2 w-[520px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 z-50 grid grid-cols-2 gap-4 animate-in fade-in duration-150">
-                  {(navMode === 'customer' ? customerCategories : partnerCategories).map((cat, idx) => (
-                    <div key={idx} className="space-y-1.5">
-                      <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800 pb-1">
-                        {cat.title}
-                      </h4>
-                      <div className="space-y-0.5">
-                        {cat.items.map((item) => (
-                          <button
-                            key={item.id}
-                            onClick={() => {
-                              onNavigate(item.id as NavigationTab);
-                              setOpenDropdown(null);
-                            }}
-                            className={`w-full text-left p-1.5 rounded-lg flex items-center justify-between transition group ${
-                              currentTab === item.id
-                                ? 'bg-red-50 dark:bg-red-950/40 text-red-600 font-bold'
-                                : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <item.icon className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-red-600" />
-                              <div className="min-w-0">
-                                <span className="text-xs truncate block">{item.label}</span>
-                                <span className="text-[9px] text-slate-400 truncate block">{item.desc}</span>
+            {/* Mitra Partner Tab */}
+            <button
+              onClick={() => handleModeSwitch('partner')}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                navMode === 'partner'
+                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5 text-amber-500" />
+              <span>UI Mitra Partner</span>
+              <span
+                className={`text-[9px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-extrabold ${
+                  navMode === 'partner'
+                    ? 'bg-amber-500/20 text-amber-300 dark:text-amber-700'
+                    : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                }`}
+              >
+                B2B Venue
+              </span>
+            </button>
+          </div>
+
+          {/* Right utility items: Gallery Modal Button, PWA, and Menu */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Direct Screen Gallery Button */}
+            {onOpenGallery && (
+              <button
+                onClick={onOpenGallery}
+                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition shadow-2xs"
+                title="Katalog Lengkap Sheet 1-6"
+              >
+                <Grid className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                <span className="hidden sm:inline">Pilih Halaman UI</span>
+                <span className="sm:hidden text-[11px] font-semibold">Halaman</span>
+              </button>
+            )}
+
+            <PWAInstallButton compact />
+
+            {/* All-screen Drawer Menu Trigger */}
+            {onOpenDrawer && (
+              <button
+                onClick={onOpenDrawer}
+                className="p-1.5 sm:p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-50 hover:text-red-600 transition shrink-0"
+                title="Menu Navigasi Seluruh Fitur"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2 (Mobile Only): Dedicated Compact Full-Width Segmented Tab for Customer vs Mitra Partner */}
+        <div className="block md:hidden px-3 py-1 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+          <div className="grid grid-cols-2 p-0.5 bg-slate-100 dark:bg-slate-800/90 rounded-xl gap-1 w-full border border-slate-200/70 dark:border-slate-700/70">
+            <button
+              onClick={() => handleModeSwitch('customer')}
+              className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-xs font-bold transition-all ${
+                navMode === 'customer'
+                  ? 'bg-red-600 text-white shadow-xs font-extrabold'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <User className="w-3.5 h-3.5 shrink-0" />
+              <span>UI Customer</span>
+            </button>
+            <button
+              onClick={() => handleModeSwitch('partner')}
+              className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-xs font-bold transition-all ${
+                navMode === 'partner'
+                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs font-extrabold'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>UI Mitra Partner</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Row 3 Sub-Navbar: Category Dropdowns & Quick Horizontal Scroll Bar */}
+        <div
+          ref={dropdownRef}
+          className={`border-t px-3 sm:px-6 lg:px-8 py-1.5 sm:py-2 transition-colors w-full ${
+            navMode === 'customer'
+              ? 'bg-red-50/40 dark:bg-red-950/20 border-red-100 dark:border-red-900/30'
+              : 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30'
+          }`}
+        >
+          <div className="w-full flex items-center justify-between gap-2 sm:gap-3">
+            {/* Mode Indicator & Active Context Badge */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span
+                className={`text-[10px] sm:text-[11px] font-extrabold flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg shrink-0 ${
+                  navMode === 'customer'
+                    ? 'bg-red-600 text-white shadow-2xs'
+                    : 'bg-slate-900 text-amber-400 dark:bg-amber-400 dark:text-slate-900 shadow-2xs'
+                }`}
+              >
+                {navMode === 'customer' ? (
+                  <>
+                    <User className="w-3 h-3 shrink-0" />
+                    <span className="hidden sm:inline">Customer Workspace</span>
+                    <span className="sm:hidden">Workspace</span>
+                  </>
+                ) : (
+                  <>
+                    <Building2 className="w-3 h-3 shrink-0" />
+                    <span className="hidden sm:inline">Mitra Partner B2B</span>
+                    <span className="sm:hidden">Mitra B2B</span>
+                  </>
+                )}
+              </span>
+
+              {/* Desktop Category Dropdown Trigger */}
+              <div className="relative hidden md:block">
+                <button
+                  onClick={() => setOpenDropdown(openDropdown === 'categories' ? null : 'categories')}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition shadow-2xs"
+                >
+                  <span>Kategori Menu</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === 'categories' ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Categorized Dropdown Popup */}
+                {openDropdown === 'categories' && (
+                  <div className="absolute left-0 top-full mt-2 w-[520px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 z-50 grid grid-cols-2 gap-4 animate-in fade-in duration-150">
+                    {(navMode === 'customer' ? customerCategories : partnerCategories).map((cat, idx) => (
+                      <div key={idx} className="space-y-1.5">
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800 pb-1">
+                          {cat.title}
+                        </h4>
+                        <div className="space-y-0.5">
+                          {cat.items.map((item) => (
+                            <button
+                              key={item.id}
+                              onClick={() => {
+                                onNavigate(item.id as NavigationTab);
+                                setOpenDropdown(null);
+                              }}
+                              className={`w-full text-left p-1.5 rounded-lg flex items-center justify-between transition group ${
+                                currentTab === item.id
+                                  ? 'bg-red-50 dark:bg-red-950/40 text-red-600 font-bold'
+                                  : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <item.icon className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-red-600" />
+                                <div className="min-w-0">
+                                  <span className="text-xs truncate block">{item.label}</span>
+                                  <span className="text-[9px] text-slate-400 truncate block">{item.desc}</span>
+                                </div>
                               </div>
-                            </div>
-                            <ChevronRight className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 shrink-0" />
-                          </button>
-                        ))}
+                              <ChevronRight className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 shrink-0" />
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Horizontal Quick Links Scrollbar (Desktop & Mobile) with min-w-0 flex-1 */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 min-w-0 flex-1 justify-start md:justify-end">
+              {(navMode === 'customer' ? customerQuickLinks : partnerQuickLinks).map((link) => {
+                const Icon = link.icon;
+                const isActive = currentTab === link.id;
+                return (
+                  <button
+                    key={link.id}
+                    onClick={() => onNavigate(link.id)}
+                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
+                      isActive
+                        ? navMode === 'customer'
+                          ? 'bg-red-600 text-white shadow-2xs font-bold scale-[1.02]'
+                          : 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs font-bold scale-[1.02]'
+                        : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs'
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-white dark:text-slate-900' : 'text-slate-400'}`} />
+                    <span>{link.label}</span>
+                  </button>
+                );
+              })}
+
+              {/* Mobile All Pages sheet trigger */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 shrink-0 shadow-2xs active:bg-slate-100"
+              >
+                <span>Semua</span>
+                <ChevronDown className="w-3 h-3 text-red-600" />
+              </button>
             </div>
           </div>
-
-          {/* Horizontal Quick Links Scrollbar (Desktop & Mobile) with min-w-0 flex-1 */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 min-w-0 flex-1 justify-start md:justify-end">
-            {(navMode === 'customer' ? customerQuickLinks : partnerQuickLinks).map((link) => {
-              const Icon = link.icon;
-              const isActive = currentTab === link.id;
-              return (
-                <button
-                  key={link.id}
-                  onClick={() => onNavigate(link.id)}
-                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
-                    isActive
-                      ? navMode === 'customer'
-                        ? 'bg-red-600 text-white shadow-2xs font-bold scale-[1.02]'
-                        : 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs font-bold scale-[1.02]'
-                      : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-white dark:text-slate-900' : 'text-slate-400'}`} />
-                  <span>{link.label}</span>
-                </button>
-              );
-            })}
-
-            {/* Mobile All Pages sheet trigger */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 shrink-0 shadow-2xs"
-            >
-              <span>Semua</span>
-              <ChevronDown className={`w-3 h-3 ${mobileMenuOpen ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
         </div>
+      </header>
 
+      {/* Mobile All Pages Directory as dedicated Bottom Sheet Modal (Keeps sticky header slim & prevents scroll lock) */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs md:hidden animate-in fade-in duration-150">
+          {/* Clickable backdrop area to dismiss */}
+          <div
+            className="flex-1"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Tutup Menu"
+          />
 
-        {/* Mobile Accordion Dropdown for All Sub-Pages in Current Mode */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-2 pt-2 border-t border-slate-200 dark:border-slate-800 space-y-3 animate-in fade-in duration-150">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Direktori {navMode === 'customer' ? 'Customer' : 'Mitra Partner'}
-              </span>
+          {/* Bottom Sheet Modal Container */}
+          <div className="bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 shadow-2xl max-h-[82vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
+            {/* Sheet Top Bar */}
+            <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/90 dark:bg-slate-800/80">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-600" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+                  Direktori {navMode === 'customer' ? 'Customer' : 'Mitra Partner'}
+                </span>
+              </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-xs text-red-600 font-semibold"
+                className="px-3 py-1 rounded-xl bg-slate-200 dark:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-red-50 hover:text-red-600 transition"
               >
-                Tutup
+                Tutup ✕
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Scrollable Categories List */}
+            <div className="overflow-y-auto p-4 space-y-3 pb-24">
               {(navMode === 'customer' ? customerCategories : partnerCategories).map((cat, idx) => (
-                <div key={idx} className="bg-white dark:bg-slate-800/80 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-1">
+                <div key={idx} className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2">
                   <h5 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     {cat.title}
                   </h5>
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="grid grid-cols-2 gap-1.5">
                     {cat.items.map((item) => (
                       <button
                         key={item.id}
@@ -470,14 +486,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                           onNavigate(item.id as NavigationTab);
                           setMobileMenuOpen(false);
                         }}
-                        className={`text-left p-1.5 rounded-lg text-xs truncate flex items-center gap-1.5 transition ${
+                        className={`text-left p-2 rounded-xl text-xs flex items-center gap-2 transition ${
                           currentTab === item.id
-                            ? 'bg-red-600 text-white font-bold'
-                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                            ? 'bg-red-600 text-white font-bold shadow-xs'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-50 hover:text-red-600 border border-slate-200/60 dark:border-slate-700/60'
                         }`}
                       >
-                        <item.icon className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{item.label}</span>
+                        <item.icon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate font-medium">{item.label}</span>
                       </button>
                     ))}
                   </div>
@@ -485,8 +501,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               ))}
             </div>
           </div>
-        )}
-      </div>
-    </header>
+        </div>
+      )}
+    </>
   );
 };
+

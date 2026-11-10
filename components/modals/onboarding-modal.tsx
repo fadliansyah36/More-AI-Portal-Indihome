@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Bot, Sparkles, Wifi, Shield, X, ArrowRight, Check } from 'lucide-react';
-import { MoreAiLogo, IndiHomeLogo } from '@/components/branding/logos';
+import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -27,9 +27,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       badge: 'Solusi Produktivitas Nasional',
     },
     {
-      title: 'Ekosistem Jaringan IndiHome',
+      title: 'Ekosistem Global Partner ISP & Network',
       subtitle: 'Koneksi Super Cepat & Kuota AI Free',
-      desc: 'Nikmati bonus 100.000 Poin AI Credit setiap bulan saat terhubung ke jaringan Wi-Fi IndiHome di rumah maupun venue publik.',
+      desc: 'Nikmati bonus 100.000 Poin AI Credit setiap bulan saat terhubung ke jaringan Wi-Fi Global Partner ISP di rumah maupun venue publik.',
       badge: 'Koneksi Berkecepatan Tinggi',
     },
     {
@@ -55,7 +55,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         <div className="flex items-center justify-center gap-3 pt-2 pb-4">
           <MoreAiLogo />
           <span className="text-slate-300">|</span>
-          <IndiHomeLogo showTelkom={false} />
+          <GlobalPartnerLogo />
         </div>
 
         {/* Illustration Avatar Circle */}

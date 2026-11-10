@@ -36,10 +36,10 @@ export const WelcomeSuccessView: React.FC<WelcomeSuccessViewProps> = ({ onNaviga
 
         <div className="mt-6 space-y-2 max-w-xs mx-auto">
           <h2 className="text-xl font-black text-slate-900 tracking-tight leading-snug">
-            Selamat Datang di MoreAI x IndiHome
+            Selamat Datang di MoreAI
           </h2>
           <p className="text-xs text-slate-500 font-medium leading-relaxed">
-            Akses WiFi cepat dan AI canggih untuk rumah, belajar, bekerja, dan berkreasi tanpa batas.
+            Akses WiFi cepat dan AI canggih bersama Global Partner ISP/Network untuk bekerja dan berkreasi tanpa batas.
           </p>
         </div>
 
@@ -50,7 +50,7 @@ export const WelcomeSuccessView: React.FC<WelcomeSuccessViewProps> = ({ onNaviga
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Koneksi Wi-Fi IndiHome <strong>100 Mbps</strong> Siap</span>
+            <span>Koneksi Wi-Fi Partner ISP <strong>100 Mbps</strong> Siap</span>
           </div>
         </div>
       </div>

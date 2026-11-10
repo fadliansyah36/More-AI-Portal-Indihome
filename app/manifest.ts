@@ -3,9 +3,9 @@ import type { MetadataRoute } from 'next';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'MoreAI x IndiHome AI Workspace',
+    name: 'MoreAI - Global Partner ISP/Network Platform',
     short_name: 'MoreAI',
-    description: 'Platform AI Workspace & Akses Wi-Fi IndiHome Mobile-First PWA',
+    description: 'Platform AI Workspace & Akses Wi-Fi Global Partner ISP/Network Mobile-First PWA',
     start_url: '/',
     scope: '/',
     display: 'standalone',

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MoreAiIcon, IndiHomeLogo } from '@/components/branding/logos';
+import { MoreAiIcon, GlobalPartnerLogo } from '@/components/branding/logos';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 
@@ -24,9 +24,9 @@ export const SplashScreenView: React.FC<SplashScreenViewProps> = ({ onNavigate }
           AI Workspace Platform
         </span>
 
-        <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100/80 text-red-700 text-[11px] font-bold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Akses AI x IndiHome</span>
+        <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100/80 text-blue-700 text-[11px] font-bold">
+          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+          <span>Global Partner ISP &bull; AI Network</span>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export const SplashScreenView: React.FC<SplashScreenViewProps> = ({ onNavigate }
         </button>
 
         <div className="pt-2 flex items-center justify-center opacity-85">
-          <IndiHomeLogo showTelkom={false} />
+          <GlobalPartnerLogo />
         </div>
       </div>
     </div>

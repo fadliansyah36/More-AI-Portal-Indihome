@@ -39,7 +39,7 @@ export const SpeedtestView: React.FC<SpeedtestViewProps> = ({
         setUploadSpeed(52.8);
         setPing(8);
         setJitter(1.5);
-        showToast('Speedtest selesai! Koneksi IndiHome Anda dalam kondisi Sempurna (104.2 Mbps).', 'success');
+        showToast('Speedtest selesai! Koneksi Partner ISP Anda dalam kondisi Sempurna (104.2 Mbps).', 'success');
       }
     }, 200);
   };
@@ -66,8 +66,8 @@ export const SpeedtestView: React.FC<SpeedtestViewProps> = ({
       <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-md text-center space-y-4 relative overflow-hidden">
         <div className="flex items-center justify-between text-xs text-slate-400">
           <span className="flex items-center gap-1.5">
-            <Wifi className="w-4 h-4 text-red-500" />
-            IndiHome Fiber 100 Mbps
+            <Wifi className="w-4 h-4 text-blue-500" />
+            Partner ISP Fiber 100 Mbps
           </span>
           <span className="text-emerald-400 font-bold flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

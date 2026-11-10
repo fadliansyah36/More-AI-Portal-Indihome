@@ -87,7 +87,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
       desc: 'Rancang storyboard video promosi pendek dan narasi suara natural.',
       icon: Video,
       color: 'bg-indigo-50 text-indigo-600 border-indigo-200',
-      samplePrompt: 'Buat script video TikTok 15 detik tentang kemudahan akses AI di jaringan IndiHome.',
+      samplePrompt: 'Buat script video TikTok 15 detik tentang kemudahan akses AI di jaringan Global Partner ISP.',
     },
   ];
 
@@ -117,7 +117,7 @@ Tanggal: ${new Date().toLocaleDateString('id-ID')}
 
 2. Rencana Eksekusi:
    - Peluncuran program Wi-Fi bersponsor di 5 titik kafe percontohan.
-   - Distribusi AI Credit Free IndiHome untuk pengunjung tetap.
+   - Distribusi AI Credit Free Partner ISP untuk pengunjung tetap.
    - Evaluasi mingguan melalui Dashboard Partner MoreAI.`);
     }, 1000);
   };

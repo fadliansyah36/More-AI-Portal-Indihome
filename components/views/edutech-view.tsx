@@ -43,7 +43,7 @@ export const EdutechView: React.FC = () => {
         <div className="space-y-1.5 max-w-[70%]">
           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold">
             <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
-            <span>EduTech Gratis IndiHome</span>
+            <span>EduTech Global Partner</span>
           </div>
           <h3 className="text-sm sm:text-base font-bold leading-tight">
             Belajar Lebih Mudah dengan AI

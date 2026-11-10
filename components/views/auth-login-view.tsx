@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MoreAiLogo, IndiHomeLogo } from '@/components/branding/logos';
+import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
@@ -18,7 +18,7 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'masuk' | 'daftar'>('masuk');
   const [emailOrPhone, setEmailOrPhone] = useState('andipratama@email.com');
-  const [password, setPassword] = useState('IndiHome2026!');
+  const [password, setPassword] = useState('Password2026!');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -146,7 +146,7 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
           </span>
         </div>
 
-        {/* 3 Social SSO Buttons (Google, Apple, IndiHome SSO) */}
+        {/* 3 Social SSO Buttons (Google, Apple, Global Partner ISP SSO) */}
         <div className="flex items-center justify-center gap-3">
           {/* Google */}
           <button
@@ -166,13 +166,13 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
             <span className="font-black text-base text-slate-900"></span>
           </button>
 
-          {/* IndiHome SSO */}
+          {/* Global Partner ISP SSO */}
           <button
             onClick={() => onLoginSuccess()}
-            className="w-12 h-12 rounded-2xl border border-red-200 bg-red-50/50 hover:bg-red-100/60 flex items-center justify-center shadow-2xs active:scale-95 transition"
-            title="Masuk dengan IndiHome ID"
+            className="w-12 h-12 rounded-2xl border border-blue-200 bg-blue-50/60 hover:bg-blue-100/70 flex items-center justify-center shadow-2xs active:scale-95 transition"
+            title="Masuk dengan Global Partner ISP ID"
           >
-            <span className="font-black text-xs text-red-600">ID</span>
+            <span className="font-black text-xs text-blue-600">ISP</span>
           </button>
         </div>
       </div>

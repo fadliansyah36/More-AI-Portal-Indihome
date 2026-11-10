@@ -7,13 +7,21 @@
   * {
     border-color: var(--border, #e5e7eb);
   }
-  html,
+  html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     background-color: #f8fafc;
     color: #0f172a;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-tap-highlight-color: transparent;
-    overflow-x: clip;
-    max-width: 100vw;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
   }
 }
+

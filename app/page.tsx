@@ -26,9 +26,10 @@ import {
   QrCode,
   Radio,
   Sliders,
+  ChevronDown,
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { MoreAiIndiHomeLockup, MoreAiIcon } from '@/components/branding/logos';
+import { MoreAiNetworkLockup, MoreAiIcon } from '@/components/branding/logos';
 import { PWAInstallButton } from '@/components/pwa/pwa-install-button';
 import { OfflineIndicator } from '@/components/pwa/offline-indicator';
 import { AppNavbar, isPartnerTab } from '@/components/navigation/app-navbar';
@@ -96,6 +97,7 @@ export default function App() {
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [drawerRole, setDrawerRole] = useState<'customer' | 'partner'>('customer');
+  const [isBottomNavCollapsed, setIsBottomNavCollapsed] = useState(false);
 
   // Quick navigation handler
   const handleNavigate = (tab: NavigationTab) => {
@@ -124,8 +126,8 @@ export default function App() {
       />
 
       {/* Main Full-Screen Layout */}
-      <main className="w-full max-w-full px-2 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-28 sm:pb-24">
-        <div className="w-full max-w-full bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-3 sm:p-6 lg:p-8 min-h-[750px]">
+      <main className="w-full max-w-full px-2 sm:px-6 lg:px-8 pt-2.5 sm:pt-4 pb-36 sm:pb-32">
+        <div className="w-full max-w-full bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-3 sm:p-6 lg:p-8 min-h-[650px]">
           {/* Core Views */}
               {currentTab === 'home' && (
                 <HomeView
@@ -399,139 +401,163 @@ export default function App() {
                   onNavigateTab={handleNavigate}
                 />
               )}
+
+              {/* Clearance spacer ensuring content is never covered by bottom nav */}
+              <div className="h-20 sm:h-12 w-full shrink-0" aria-hidden="true" />
         </div>
       </main>
 
-      {/* Permanent Fixed Bottom Navigation Dock ("permanent tempel pada UI") */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 px-2 sm:px-4 pb-2 sm:pb-3 pt-1 pointer-events-none select-none">
-        <div className="max-w-lg mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-slate-200/90 dark:border-slate-800 px-3 sm:px-4 py-2 shadow-2xl pointer-events-auto transition-all">
-          {/* Subtle Mode Switch Indicator Bar */}
-          <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800 text-[10px]">
-            <span className="font-bold flex items-center gap-1.5">
-              {isPartnerTab(currentTab) ? (
-                <>
-                  <Building2 className="w-3 h-3 text-amber-500 shrink-0" />
-                  <span className="text-slate-800 dark:text-slate-200 font-bold">Mode Mitra Partner (B2B)</span>
-                </>
-              ) : (
-                <>
-                  <User className="w-3 h-3 text-red-600 shrink-0" />
-                  <span className="text-slate-800 dark:text-slate-200 font-bold">Mode Customer Workspace</span>
-                </>
-              )}
-            </span>
-            <button
-              onClick={() => handleNavigate(isPartnerTab(currentTab) ? 'home' : 'partner')}
-              className="font-extrabold text-[11px] text-red-600 hover:text-red-700 transition"
-            >
-              {isPartnerTab(currentTab) ? '← UI Customer' : 'UI Mitra Partner →'}
-            </button>
-          </div>
-
-          {/* Dynamic Bottom Tabs based on Role */}
-          {isPartnerTab(currentTab) ? (
-            <div className="grid grid-cols-4 gap-1">
-              <button
-                onClick={() => handleNavigate('partner')}
-                className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
-                  currentTab === 'partner'
-                    ? 'text-slate-900 dark:text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                <Building2 className={`w-5 h-5 ${currentTab === 'partner' ? 'stroke-[2.5]' : ''}`} />
-                <span className="text-[10px] mt-1 font-semibold">Dashboard</span>
-              </button>
-
-              <button
-                onClick={() => handleNavigate('partner_live_sessions')}
-                className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
-                  currentTab === 'partner_live_sessions'
-                    ? 'text-slate-900 dark:text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                <Radio className={`w-5 h-5 ${currentTab === 'partner_live_sessions' ? 'stroke-[2.5]' : ''}`} />
-                <span className="text-[10px] mt-1 font-semibold">Live Tamu</span>
-              </button>
-
-              <button
-                onClick={() => handleNavigate('partner_qr')}
-                className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
-                  currentTab === 'partner_qr'
-                    ? 'text-slate-900 dark:text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                <QrCode className={`w-5 h-5 ${currentTab === 'partner_qr' ? 'stroke-[2.5]' : ''}`} />
-                <span className="text-[10px] mt-1 font-semibold">QR Meja</span>
-              </button>
-
-              <button
-                onClick={() => handleNavigate('partner_gateway_config')}
-                className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
-                  currentTab === 'partner_gateway_config'
-                    ? 'text-slate-900 dark:text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                <Sliders className={`w-5 h-5 ${currentTab === 'partner_gateway_config' ? 'stroke-[2.5]' : ''}`} />
-                <span className="text-[10px] mt-1 font-semibold">Gateway</span>
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-4 gap-1">
-              <button
-                onClick={() => handleNavigate('home')}
-                className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
-                  currentTab === 'home'
-                    ? 'text-red-600 font-bold'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                <Home className={`w-5 h-5 ${currentTab === 'home' ? 'stroke-[2.5]' : ''}`} />
-                <span className="text-[10px] mt-1 font-semibold">Home</span>
-              </button>
-
-              <button
-                onClick={() => handleNavigate('tasks')}
-                className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
-                  currentTab === 'tasks' || currentTab === 'workflow_progress' || currentTab === 'artifacts_result'
-                    ? 'text-red-600 font-bold'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                <CheckSquare className={`w-5 h-5 ${currentTab === 'tasks' ? 'stroke-[2.5]' : ''}`} />
-                <span className="text-[10px] mt-1 font-semibold">Tasks</span>
-              </button>
-
-              <button
-                onClick={() => handleNavigate('files')}
-                className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
-                  currentTab === 'files'
-                    ? 'text-red-600 font-bold'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                <FolderClosed className={`w-5 h-5 ${currentTab === 'files' ? 'stroke-[2.5]' : ''}`} />
-                <span className="text-[10px] mt-1 font-semibold">Files</span>
-              </button>
-
-              <button
-                onClick={() => handleNavigate('profile')}
-                className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
-                  currentTab === 'profile'
-                    ? 'text-red-600 font-bold'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                <User className={`w-5 h-5 ${currentTab === 'profile' ? 'stroke-[2.5]' : ''}`} />
-                <span className="text-[10px] mt-1 font-semibold">Profile</span>
-              </button>
-            </div>
-          )}
+      {/* Permanent Fixed Bottom Navigation Dock with collapse toggle */}
+      {isBottomNavCollapsed ? (
+        <div className="fixed bottom-3 left-0 right-0 z-40 flex justify-center pointer-events-none select-none animate-in fade-in duration-150">
+          <button
+            onClick={() => setIsBottomNavCollapsed(false)}
+            className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/95 dark:bg-white/95 text-white dark:text-slate-900 text-xs font-bold shadow-2xl backdrop-blur-md border border-slate-700/80 dark:border-slate-300 hover:scale-105 active:scale-95 transition"
+          >
+            <Menu className="w-3.5 h-3.5 text-red-500" />
+            <span>▲ Navigasi Bawah</span>
+          </button>
         </div>
-      </nav>
+      ) : (
+        <nav className="fixed bottom-0 left-0 right-0 z-40 px-2 sm:px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-1 pointer-events-none select-none transition-all duration-200">
+          <div className="max-w-lg mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-slate-200/90 dark:border-slate-800 px-3 sm:px-4 py-2 shadow-2xl pointer-events-auto transition-all">
+            {/* Subtle Mode Switch Indicator Bar with collapse button */}
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800 text-[10px]">
+              <span className="font-bold flex items-center gap-1.5">
+                {isPartnerTab(currentTab) ? (
+                  <>
+                    <Building2 className="w-3 h-3 text-amber-500 shrink-0" />
+                    <span className="text-slate-800 dark:text-slate-200 font-bold">Mode Mitra Partner (B2B)</span>
+                  </>
+                ) : (
+                  <>
+                    <User className="w-3 h-3 text-red-600 shrink-0" />
+                    <span className="text-slate-800 dark:text-slate-200 font-bold">Mode Customer Workspace</span>
+                  </>
+                )}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleNavigate(isPartnerTab(currentTab) ? 'home' : 'partner')}
+                  className="font-extrabold text-[11px] text-red-600 hover:text-red-700 transition"
+                >
+                  {isPartnerTab(currentTab) ? '← UI Customer' : 'UI Mitra Partner →'}
+                </button>
+                <button
+                  onClick={() => setIsBottomNavCollapsed(true)}
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  title="Sembunyikan Menu Bawah"
+                >
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Dynamic Bottom Tabs based on Role */}
+            {isPartnerTab(currentTab) ? (
+              <div className="grid grid-cols-4 gap-1">
+                <button
+                  onClick={() => handleNavigate('partner')}
+                  className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
+                    currentTab === 'partner'
+                      ? 'text-slate-900 dark:text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Building2 className={`w-5 h-5 ${currentTab === 'partner' ? 'stroke-[2.5]' : ''}`} />
+                  <span className="text-[10px] mt-1 font-semibold">Dashboard</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavigate('partner_live_sessions')}
+                  className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
+                    currentTab === 'partner_live_sessions'
+                      ? 'text-slate-900 dark:text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Radio className={`w-5 h-5 ${currentTab === 'partner_live_sessions' ? 'stroke-[2.5]' : ''}`} />
+                  <span className="text-[10px] mt-1 font-semibold">Live Tamu</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavigate('partner_qr')}
+                  className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
+                    currentTab === 'partner_qr'
+                      ? 'text-slate-900 dark:text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <QrCode className={`w-5 h-5 ${currentTab === 'partner_qr' ? 'stroke-[2.5]' : ''}`} />
+                  <span className="text-[10px] mt-1 font-semibold">QR Meja</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavigate('partner_gateway_config')}
+                  className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
+                    currentTab === 'partner_gateway_config'
+                      ? 'text-slate-900 dark:text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Sliders className={`w-5 h-5 ${currentTab === 'partner_gateway_config' ? 'stroke-[2.5]' : ''}`} />
+                  <span className="text-[10px] mt-1 font-semibold">Gateway</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-1">
+                <button
+                  onClick={() => handleNavigate('home')}
+                  className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
+                    currentTab === 'home'
+                      ? 'text-red-600 font-bold'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Home className={`w-5 h-5 ${currentTab === 'home' ? 'stroke-[2.5]' : ''}`} />
+                  <span className="text-[10px] mt-1 font-semibold">Home</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavigate('tasks')}
+                  className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
+                    currentTab === 'tasks' || currentTab === 'workflow_progress' || currentTab === 'artifacts_result'
+                      ? 'text-red-600 font-bold'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <CheckSquare className={`w-5 h-5 ${currentTab === 'tasks' ? 'stroke-[2.5]' : ''}`} />
+                  <span className="text-[10px] mt-1 font-semibold">Tasks</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavigate('files')}
+                  className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
+                    currentTab === 'files'
+                      ? 'text-red-600 font-bold'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <FolderClosed className={`w-5 h-5 ${currentTab === 'files' ? 'stroke-[2.5]' : ''}`} />
+                  <span className="text-[10px] mt-1 font-semibold">Files</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavigate('profile')}
+                  className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
+                    currentTab === 'profile'
+                      ? 'text-red-600 font-bold'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <User className={`w-5 h-5 ${currentTab === 'profile' ? 'stroke-[2.5]' : ''}`} />
+                  <span className="text-[10px] mt-1 font-semibold">Profile</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </nav>
+      )}
 
       {/* Interactive Screen Gallery Modal (Sheet 1-6 Master Directory) */}
       <ScreenGalleryModal
@@ -547,7 +573,7 @@ export default function App() {
           <div className="w-full max-w-sm bg-white dark:bg-slate-900 h-full p-5 shadow-2xl flex flex-col justify-between overflow-y-auto">
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <MoreAiIndiHomeLockup size="sm" dark={isDarkMode} />
+                <MoreAiNetworkLockup size="sm" dark={isDarkMode} />
                 <button
                   onClick={() => setShowDrawerMenu(false)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white"
@@ -640,7 +666,7 @@ export default function App() {
 
                   <div>
                     <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block mb-1">
-                      Koneksi Wi-Fi IndiHome &amp; Utilitas
+                      Koneksi Wi-Fi Partner ISP &amp; Utilitas
                     </span>
                     <div className="space-y-0.5 text-xs">
                       <button onClick={() => handleNavigate('wifi')} className="w-full p-2 rounded-xl text-left hover:bg-slate-100 dark:hover:bg-slate-800 flex justify-between">
@@ -776,7 +802,7 @@ export default function App() {
 
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
               <span className="text-[10px] text-slate-400 block">
-                MoreAI x IndiHome (Telkom Indonesia)
+                MoreAI &bull; Global Partner ISP &amp; Network
               </span>
               <span className="text-[9px] text-slate-400">PWA v1.0.0 · Mobile First Responsive</span>
             </div>

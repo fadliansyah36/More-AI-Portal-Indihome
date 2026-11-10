@@ -274,14 +274,14 @@ export const EDUTECH_MODULES: EduTechModule[] = [
   },
   {
     id: 'edu-5',
-    title: 'Tips Sukses Bisnis Digital dengan IndiHome',
+    title: 'Tips Sukses Bisnis Digital dengan Global Partner ISP',
     duration: '6 menit',
     level: 'Pemula',
     rating: 4.8,
     reviewsCount: '620',
     lessons: [
-      '1. Koneksi Stabil IndiHome untuk Operasional Bisnis',
-      '2. Memanfaatkan AI Credit Free IndiHome',
+      '1. Koneksi Stabil Global Partner ISP untuk Operasional Bisnis',
+      '2. Memanfaatkan AI Credit Free Partner Network',
       '3. Integrasi Captive Portal untuk Kafe & Retail',
     ],
   },

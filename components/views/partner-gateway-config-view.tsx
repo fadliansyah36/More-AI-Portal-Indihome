@@ -15,11 +15,11 @@ export const PartnerGatewayConfigView: React.FC<PartnerGatewayConfigViewProps> =
   onNavigateTab,
 }) => {
   const { showToast } = useToast();
-  const [gatewayType, setGatewayType] = useState<'mikrotik' | 'unifi' | 'indihome_router'>('mikrotik');
-  const [ssidName, setSsidName] = useState('CoffeeHouse_IndiHome');
+  const [gatewayType, setGatewayType] = useState<'mikrotik' | 'unifi' | 'isp_fiber_ont'>('mikrotik');
+  const [ssidName, setSsidName] = useState('CoffeeHouse_PartnerWiFi');
   const [radiusServer, setRadiusServer] = useState('10.200.1.1');
   const [hotspotPort, setHotspotPort] = useState('3990');
-  const [walledGarden, setWalledGarden] = useState('*.moreai.id, *.telkom.co.id, *.indihome.co.id');
+  const [walledGarden, setWalledGarden] = useState('*.moreai.id, *.partner-isp.net, *.partner-network.com');
   const [isTesting, setIsTesting] = useState(false);
 
   const handleTestConnection = () => {
@@ -85,15 +85,15 @@ export const PartnerGatewayConfigView: React.FC<PartnerGatewayConfigViewProps> =
           </button>
 
           <button
-            onClick={() => setGatewayType('indihome_router')}
+            onClick={() => setGatewayType('isp_fiber_ont')}
             className={`p-3 rounded-2xl border text-center transition ${
-              gatewayType === 'indihome_router'
+              gatewayType === 'isp_fiber_ont'
                 ? 'border-red-500 bg-red-50/60 text-red-700 font-bold'
                 : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
             }`}
           >
             <Shield className="w-5 h-5 mx-auto mb-1" />
-            <span className="text-[11px] block">IndiHome Fiber ONT</span>
+            <span className="text-[11px] block">Global ISP Fiber ONT</span>
           </button>
         </div>
       </div>
