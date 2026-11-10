@@ -1,0 +1,89 @@
+name: Phase 00 Baseline Verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'hooks/**'
+      - 'lib/**'
+      - 'types/**'
+      - 'package.json'
+      - 'next.config.ts'
+      - 'tsconfig.json'
+      - 'scripts/phase00-browser-smoke.mjs'
+      - '.github/workflows/phase00-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase00-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies and create lockfile
+        run: npm install --no-audit --no-fund
+      - name: Lint baseline
+        id: lint
+        continue-on-error: true
+        run: npm run lint
+      - name: Build baseline
+        id: build
+        continue-on-error: true
+        run: npm run build
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Start application
+        id: server
+        continue-on-error: true
+        run: |
+          if [ -d .next ]; then npm run start > /tmp/moreai-web.log 2>&1 &
+          else npm run dev > /tmp/moreai-web.log 2>&1 & fi
+          echo $! > /tmp/moreai-web.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/moreai-web.log
+          exit 1
+      - name: Browser smoke and responsive screenshots
+        id: browser
+        if: always() && steps.server.outcome == 'success'
+        continue-on-error: true
+        run: node scripts/phase00-browser-smoke.mjs
+      - name: Upload baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moreai-phase00-baseline-${{ github.sha }}
+          path: |
+            artifacts/phase00/
+            package-lock.json
+            /tmp/moreai-web.log
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Enforce baseline result
+        if: always()
+        run: |
+          echo "lint=${{ steps.lint.outcome }}"
+          echo "build=${{ steps.build.outcome }}"
+          echo "server=${{ steps.server.outcome }}"
+          echo "browser=${{ steps.browser.outcome }}"
+          test "${{ steps.lint.outcome }}" = success
+          test "${{ steps.build.outcome }}" = success
+          test "${{ steps.server.outcome }}" = success
+          test "${{ steps.browser.outcome }}" = success
