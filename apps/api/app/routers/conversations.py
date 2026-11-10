@@ -18,7 +18,7 @@ class ConversationCreate(BaseModel):
 
 class MessageCreate(BaseModel):
     content: str = Field(min_length=1, max_length=100_000)
-    agent_key: str = Field(default="manus", min_length=1, max_length=80)
+    agent_key: Literal["manus", "planning"] = "manus"
 
 
 def repository(request: Request) -> SupabaseRepository:
@@ -47,17 +47,25 @@ async def get_conversation(conversation_id: UUID, request: Request, user: dict[s
 
 
 @router.post("/{conversation_id}/messages", status_code=202)
-async def send_message(conversation_id: UUID, body: MessageCreate, request: Request, idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"), user: dict[str, Any] = Depends(current_user)):
-    if not idempotency_key or len(idempotency_key) < 12 or len(idempotency_key) > 128:
-        raise HTTPException(400, "A 12–128 character Idempotency-Key header is required")
+async def send_message(
+    conversation_id: UUID,
+    body: MessageCreate,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    user: dict[str, Any] = Depends(current_user),
+):
     if not request.app.state.settings.agent_execution_enabled:
         raise HTTPException(503, "Agent execution is disabled until a provider route, credit policy and worker runtime are configured")
+    if not idempotency_key or len(idempotency_key) < 12 or len(idempotency_key) > 128:
+        raise HTTPException(400, "A 12–128 character Idempotency-Key header is required")
+
     repo = repository(request)
-    await repo.owned_record("conversations", conversation_id, user["id"])
-    existing = await repo.select("agent_runs", {"user_id": f"eq.{user['id']}", "idempotency_key": f"eq.{idempotency_key}", "select": "id,status,input,created_at", "limit": "1"})
-    if existing:
-        return {"run": existing[0], "replayed": True}
-    message = await repo.insert("conversation_messages", {"conversation_id": str(conversation_id), "user_id": user["id"], "role": "user", "content": body.content, "metadata": {}})
-    run = await repo.insert("agent_runs", {"user_id": user["id"], "conversation_id": str(conversation_id), "status": "queued", "idempotency_key": idempotency_key, "input": {"prompt": body.content, "agent_key": body.agent_key, "conversation_id": str(conversation_id), "message_id": message["id"]}, "max_attempts": 3})
-    await repo.update("conversation_messages", {"id": f"eq.{message['id']}", "user_id": f"eq.{user['id']}"}, {"run_id": run["id"]})
-    return {"run": run, "message": message, "replayed": False}
+    # The SECURITY DEFINER RPC performs ownership validation and atomically inserts
+    # the user message, queued run, and message.run_id relationship in one transaction.
+    return await repo.rpc("moreai_enqueue_chat_run", {
+        "p_user_id": user["id"],
+        "p_conversation_id": str(conversation_id),
+        "p_content": body.content,
+        "p_agent_key": body.agent_key,
+        "p_idempotency_key": idempotency_key,
+    })
