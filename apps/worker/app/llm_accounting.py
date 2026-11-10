@@ -46,7 +46,7 @@ class ConfiguredCreditEstimator:
 
 
 class SupabaseUsageAccounting:
-    """Implements the existing idempotent MoreAI LLM and credit RPC lifecycle."""
+    """Implements MoreAI's idempotent LLM request, entitlement, quota and credit lifecycle."""
 
     def __init__(self, client: WorkerRpcClient):
         self.client = client
@@ -101,3 +101,31 @@ class SupabaseUsageAccounting:
             raise RuntimeError("atomic_llm_quota_credit_reservation_failed")
         return str(reservation["reservation_id"])
 
+    async def record_provider_result(self, *, request_id: str, result: dict[str, Any], latency_ms: int) -> None:
+        await self.client.rpc("moreai_llm_mark_provider_result", {
+            "p_request_id": request_id,
+            "p_provider_key": result["provider_key"],
+            "p_model_key": result["model_key"],
+            "p_response_text": result["text"],
+            "p_input_tokens": int(result["input_tokens"]),
+            "p_output_tokens": int(result["output_tokens"]),
+            "p_actual_cost": float(result["actual_cost"]),
+            "p_latency_ms": max(0, latency_ms),
+            "p_provider_response_id": result.get("provider_response_id"),
+        })
+
+    async def finalize(self, *, request_id: str, actual_credits: float, request_key: str, provider_response_id: str | None) -> None:
+        await self.client.rpc("moreai_llm_finalize_request", {
+            "p_request_id": request_id,
+            "p_actual_credits": actual_credits,
+            "p_settlement_key": request_key,
+            "p_provider_response_id": provider_response_id,
+        })
+
+    async def fail(self, *, request_id: str, error_code: str, release_reservation: bool, request_key: str) -> None:
+        await self.client.rpc("moreai_llm_fail_request", {
+            "p_request_id": request_id,
+            "p_error_code": error_code[:120],
+            "p_release": release_reservation,
+            "p_release_key": request_key,
+        })
