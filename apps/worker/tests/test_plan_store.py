@@ -29,7 +29,7 @@ class FakeClient:
 def test_plan_store_persists_steps_and_valid_statuses():
     async def run():
         client = FakeClient()
-        store = SupabasePlanStore(client, user_id="user-1")
+        store = SupabasePlanStore(client)
         created = await store.create(run_id="run-1", title="A plan", steps=["one", "two"])
         assert len(created["steps"]) == 2
         assert [x["status"] for x in client.rows] == ["pending", "pending"]
