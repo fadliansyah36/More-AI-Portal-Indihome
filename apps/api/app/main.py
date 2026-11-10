@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import Settings
 from app.dependencies import current_user
+from app.routers import agent_runs, conversations
 
 
 @asynccontextmanager
@@ -20,7 +21,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="MoreAI API",
     version="0.2.0",
-    description="Trusted API boundary for the existing MoreAI web application.",
+    description="Trusted API boundary for the existing MoreAI web application. All business data and agent execution is mediated here; browser Supabase access is Auth-only.",
     lifespan=lifespan,
 )
 
