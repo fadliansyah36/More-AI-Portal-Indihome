@@ -132,3 +132,59 @@ class MeteredGateway:
                 release_reservation=reservation_id is not None, request_key=f"{request_key}:release",
             )
             raise
+
+    async def stream(self, *, user_id: str, run_id: str, request_key: str, messages: list[dict[str, Any]], task_type: str = "chat", workspace_id: str | None = None, partner_id: str | None = None):
+        import hashlib
+        import json
+
+        route = await self.router.resolve(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)
+        request_hash = hashlib.sha256(json.dumps(messages, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        claim = await self.accounting.claim_request(user_id=user_id, run_id=run_id, request_key=request_key, request_hash=request_hash)
+        if not claim.get("created"):
+            if claim.get("status") == "succeeded" and isinstance(claim.get("response_text"), str):
+                yield {"type": "delta", "text": claim["response_text"]}
+                yield {"type": "done", "cached": True}
+                return
+            raise RuntimeError("llm_request_already_in_progress")
+
+        reservation_id: str | None = None
+        text_parts: list[str] = []
+        usage: dict[str, Any] | None = None
+        try:
+            estimate = await self.estimator.estimate(route=route, messages=messages)
+            reservation_id = await self.accounting.reserve(
+                request_id=str(claim["id"]), user_id=user_id, run_id=run_id, request_key=request_key,
+                estimated_credits=estimate.estimated_credits, estimated_cost=estimate.estimated_cost,
+            )
+            async for item in self.adapter.stream(route=route, messages=messages):
+                if item.get("type") == "delta":
+                    chunk = item.get("text")
+                    if isinstance(chunk, str) and chunk:
+                        text_parts.append(chunk)
+                        yield {"type": "delta", "text": chunk}
+                elif item.get("type") == "usage":
+                    usage = item
+            if usage is None:
+                raise RuntimeError("provider_stream_usage_missing")
+            result = {
+                "text": "".join(text_parts),
+                "provider_key": usage["provider_key"],
+                "model_key": usage["model_key"],
+                "input_tokens": int(usage["input_tokens"]),
+                "output_tokens": int(usage["output_tokens"]),
+                "actual_cost": float(usage["actual_cost"]),
+                "provider_response_id": usage.get("provider_response_id"),
+            }
+            await self.accounting.record_provider_result(request_id=str(claim["id"]), result=result, latency_ms=0)
+            actual_credits = await self.estimator.actual_credits(route=route, result=result)
+            await self.accounting.finalize(
+                request_id=str(claim["id"]), actual_credits=actual_credits,
+                request_key=f"{request_key}:settle", provider_response_id=result.get("provider_response_id"),
+            )
+            yield {"type": "done", "provider_key": route.provider_key, "model_key": route.model_key}
+        except Exception:
+            await self.accounting.fail(
+                request_id=str(claim["id"]), error_code="provider_stream_failed",
+                release_reservation=reservation_id is not None, request_key=f"{request_key}:release",
+            )
+            raise
