@@ -1,0 +1,221 @@
+{
+  "project": {
+    "ref": "uunfgimtokhucegqbpce",
+    "name": "MoreAIdb",
+    "postgres": "17.11.0.011",
+    "region": "ap-southeast-2",
+    "status": "ACTIVE_HEALTHY"
+  },
+  "observed_at": "2026-11-11",
+  "inventory": {
+    "public_base_tables": 52,
+    "rls_enabled": 52,
+    "force_rls": 0,
+    "policies": 48,
+    "tables_with_rls_but_no_policy": [
+      "network_gateway_nonces",
+      "network_verification_method_catalog",
+      "partner_access_code_redemptions",
+      "partner_access_codes"
+    ],
+    "migration_history_count": 27,
+    "no_schema_mutations_performed": true
+  },
+  "migrations": [
+    "20261102073329_revoke_public_rls_event_function_execution",
+    "20261102073850_moreai_phase02_identity_partner_network_foundation",
+    "20261102073934_moreai_phase02_permission_matrix_seed",
+    "20261102074028_fix_workspace_membership_rls_qualification",
+    "20261102074504_moreai_phase02_tenant_read_rls_policies",
+    "20261102075051_explicit_server_only_deny_policies",
+    "20261102075825_moreai_phase02_agent_billing_campaign_domains",
+    "20261102080148_moreai_atomic_credit_reservation_settlement",
+    "20261102081613_moreai_durable_worker_run_lifecycle",
+    "20261102082317_moreai_worker_leases_recovery_cancellation_deadletter",
+    "20261102082504_moreai_worker_lease_lifecycle_hardening",
+    "20261102083716_moreai_worker_cancel_and_legacy_rpc_hardening",
+    "20261102084310_moreai_llm_durable_idempotent_settlement",
+    "20261102084950_moreai_llm_request_record_server_only_policy",
+    "20261103100442_single_active_network_verification_method",
+    "20261103101050_grant_super_admin_partner_org_permissions",
+    "20261103101208_partner_onboarding_and_review_atomic_rpcs",
+    "20261103101333_serialize_partner_application_submission",
+    "20261103101453_atomic_admin_llm_provider_model_routing_management",
+    "20261103102141_atomic_platform_role_assignment_and_revocation",
+    "20261103102304_serialize_super_admin_role_revocation",
+    "20261103102756_preserve_partner_invites_on_approval",
+    "20261103122523_workspace_chat_idempotency",
+    "20261103122556_extend_completed_chat_idempotency_retention",
+    "20261103122824_atomic_admin_role_permission_matrix",
+    "20261103123820_use_invoker_security_for_admin_rpcs",
+    "20261105095527_partner_access_codes_atomic_redemption"
+  ],
+  "domains": [
+    {
+      "domain": "identity/auth",
+      "tables": [
+        "profiles",
+        "user_devices"
+      ],
+      "policy": "profiles_read_own; server-only deny on devices",
+      "status": "existing schema; API /v1/me implemented against user JWT"
+    },
+    {
+      "domain": "tenant/RBAC",
+      "tables": [
+        "workspaces",
+        "roles",
+        "permissions",
+        "role_permissions",
+        "workspace_members",
+        "user_role_assignments",
+        "admin_audit_logs",
+        "security_events"
+      ],
+      "policy": "workspace/member scoped read + server-only administration",
+      "status": "existing; backend authorization adapter pending"
+    },
+    {
+      "domain": "partner/network",
+      "tables": [
+        "partner_organizations",
+        "partner_members",
+        "partner_locations",
+        "network_providers",
+        "provider_partnerships",
+        "partner_networks",
+        "network_verification_configs",
+        "network_verification_attempts",
+        "network_verification_evidence",
+        "network_verification_sessions",
+        "network_sessions",
+        "network_session_events",
+        "network_verification_method_catalog",
+        "network_gateway_nonces",
+        "partner_access_codes",
+        "partner_access_code_redemptions"
+      ],
+      "policy": "partner membership/own-session reads; server-only verification mutations",
+      "status": "existing; no new tables required from upstream"
+    },
+    {
+      "domain": "entitlements",
+      "tables": [
+        "entitlement_policies",
+        "user_entitlements"
+      ],
+      "policy": "user reads own entitlement; policy mutation server-only",
+      "status": "existing"
+    },
+    {
+      "domain": "conversation",
+      "tables": [
+        "conversations",
+        "conversation_messages"
+      ],
+      "policy": "server-only deny; API must enforce owner/workspace scope before privileged reads",
+      "status": "existing; chat persistence adapter pending"
+    },
+    {
+      "domain": "agent/runtime",
+      "tables": [
+        "agent_definitions",
+        "agent_runs",
+        "agent_run_steps",
+        "agent_run_events",
+        "agent_run_checkpoints",
+        "tool_executions"
+      ],
+      "policy": "server-only deny; worker RPC lifecycle",
+      "status": "existing durable primitives; worker runtime integration pending"
+    },
+    {
+      "domain": "LLM gateway",
+      "tables": [
+        "llm_providers",
+        "llm_models",
+        "llm_routing_policies",
+        "llm_usage",
+        "llm_request_records"
+      ],
+      "policy": "server-only deny; atomic admin/request RPCs",
+      "status": "existing; provider adapters and router integration pending"
+    },
+    {
+      "domain": "credits/quota",
+      "tables": [
+        "wallet_accounts",
+        "credit_ledger",
+        "credit_reservations",
+        "quota_policies",
+        "quota_usage"
+      ],
+      "policy": "server-only; atomic reserve/settle/release; immutable ledger trigger",
+      "status": "existing; billing adapter integration pending"
+    },
+    {
+      "domain": "partner rewards",
+      "tables": [
+        "partner_campaigns",
+        "campaign_rewards",
+        "reward_claims"
+      ],
+      "policy": "server-only mutations",
+      "status": "existing"
+    },
+    {
+      "domain": "reliability/artifacts",
+      "tables": [
+        "idempotency_keys",
+        "outbox_events",
+        "artifacts"
+      ],
+      "policy": "server-only",
+      "status": "existing; worker/outbox/storage adapters pending"
+    }
+  ],
+  "worker_rpc": [
+    "moreai_worker_claim_run",
+    "moreai_worker_heartbeat",
+    "moreai_worker_checkpoint",
+    "moreai_worker_finish_run",
+    "moreai_worker_request_cancel",
+    "moreai_worker_resume_run"
+  ],
+  "llm_rpc": [
+    "moreai_llm_claim_request",
+    "moreai_llm_set_reservation",
+    "moreai_llm_mark_provider_result",
+    "moreai_llm_finalize_request",
+    "moreai_llm_fail_request"
+  ],
+  "credit_rpc": [
+    "moreai_credit_reserve",
+    "moreai_credit_settle",
+    "moreai_credit_release"
+  ],
+  "security_advisors": [
+    {
+      "finding": "RLS enabled without policies",
+      "count": 4,
+      "objects": [
+        "network_gateway_nonces",
+        "network_verification_method_catalog",
+        "partner_access_code_redemptions",
+        "partner_access_codes"
+      ],
+      "interpretation": "RLS with no policy denies client access by default; intentional server-only access must be confirmed and documented, or explicit deny policies added in a reviewed migration."
+    },
+    {
+      "finding": "Leaked password protection disabled",
+      "severity": "WARN",
+      "action": "Enable through Supabase Auth configuration after product/security approval."
+    },
+    {
+      "finding": "Unindexed foreign keys",
+      "count": 52,
+      "action": "Review query plans and add covering indexes in forward-only migrations after workload validation."
+    }
+  ],
+  "decision": "Reuse existing schema and RPC lifecycle. No DDL migration or production data change during reconciliation."
+}
