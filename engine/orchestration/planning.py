@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from typing import Any, Protocol
+import asyncio
 
-from engine.agents.runtime import AgentContext
-from engine.agents.protocol import AgentRuntime
+from engine.agents.protocol import AgentRunContext, AgentRuntime
 
 
 class DurablePlanningStore(Protocol):
@@ -22,20 +22,23 @@ class PlanningFlow:
         self.executors = executors
         self.default_executor = default_executor
 
-    async def execute(self, *, context: AgentContext, title: str, steps: list[str]) -> list[dict[str, Any]]:
+    async def execute(self, *, context: AgentRunContext, title: str, steps: list[str], checkpoint: Any, cancelled: asyncio.Event) -> list[dict[str, Any]]:
         if not steps or len(steps) > 100:
             raise ValueError("Planning flow requires between 1 and 100 steps")
-        plan = await self.planning_store.create(run_id=context.run_id, title=title, steps=steps)
+        await self.planning_store.create(run_id=context.run_id, title=title, steps=steps)
         results: list[dict[str, Any]] = []
         for index, step in enumerate(steps):
-            if context.cancelled.is_set():
+            if cancelled.is_set():
                 break
             await self.planning_store.mark_step(run_id=context.run_id, step_index=index, status="in_progress")
             try:
-                executor = self.executors.get(self.default_executor)
-                if executor is None:
-                    raise LookupError("Planning executor is not available")
-                result = await executor.execute(context, {"prompt": step}, lambda key, state: self.planning_store.mark_step(run_id=context.run_id, step_index=index, status="in_progress", notes=str(state)[:2000]), context.cancelled)
+                executor = self.executors[self.default_executor]
+                result = await executor.execute(
+                    context,
+                    {"prompt": step, "step_index": index},
+                    checkpoint,
+                    cancelled,
+                )
                 results.append({"step": index, "status": "completed", "output": result.output})
                 await self.planning_store.mark_step(run_id=context.run_id, step_index=index, status="completed")
             except Exception as exc:
