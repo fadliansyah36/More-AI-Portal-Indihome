@@ -81,11 +81,14 @@ class PlanningAgentRuntime(AgentRuntime):
             if cancelled.is_set():
                 await self.store.mark_step(run_id=context.run_id, step_index=index, status="cancelled")
                 break
+            if step["risk"] in {"high", "critical"} or step["tool_requirement"] not in {"none", "llm", "planning"}:
+                await self.store.mark_step(run_id=context.run_id, step_index=index, status="failed", notes="approval_or_sandbox_required")
+                raise PermissionError("planning_step_requires_unavailable_approval_or_sandbox")
             await self.store.mark_step(run_id=context.run_id, step_index=index, status="running")
             await checkpoint("planning.step.started", {"step_index": index, "objective": step["objective"][:500], "risk": step["risk"]})
             try:
                 result = await self.step_executor.execute(
-                    context, {"prompt": step["objective"], "planning_step": index}, checkpoint, cancelled,
+                    context, {"prompt": step["objective"] + "\\nExpected output: " + step["expected_output"], "planning_step": index}, checkpoint, cancelled,
                 )
                 await self.store.mark_step(run_id=context.run_id, step_index=index, status="succeeded", notes="Step execution confirmed")
                 results.append({"step": index, "status": "succeeded", "output": result.output})
