@@ -1,7 +1,7 @@
 # MOREAI --- MASTER PRODUCT REQUIREMENTS DOCUMENT (MASTER PRD)
 
 **Dokumen:** MoreAI Master PRD\
-**Versi:** 1.1 --- Baseline arsitektur, UI preservation, dan integration-first delivery\
+**Versi:** 1.2 --- Full backend source integration, UI preservation, dan integration-first delivery\
 **Tanggal:** 11 November 2026\
 **Status:** Draft induk untuk engineering discovery, source migration,
 design completion, implementation, dan acceptance\
@@ -2574,14 +2574,14 @@ The implementation target is `https://github.com/fadliansyah36/More-AI-Portal-In
 | Phase | Name | Required deliverables and exit gate |
 |---|---|---|
 | 00 | Repository Baseline & UI Freeze | Inventory main repo, current UI routes/components, package scripts, current API routes, Supabase schema/RLS, environment variable names and current build/test baseline. Save baseline screenshots and commit SHA. Declare UI protected paths. |
-| 01 | Upstream Source Pin & Provenance | Inspect OpenManusWeb license, branch, exact commit SHA, full source tree, dependencies and security risks. Create source manifest, license/NOTICE, file hashes and source mapping. |
+| 01 | Upstream Source Pin & Provenance | Inspect OpenManusWeb license, branch, exact commit SHA, full source tree, dependencies and security risks. Create source manifest, license/NOTICE, file hashes and file-by-file classification (backend/runtime, frontend/UI, docs/examples/assets, build/config). The inspected main tree was SHA `8d6dda9c27043ab0d3d5c7ae18062eae56763fe5` with 63 tracked files; reconfirm and pin the execution SHA before copy. |
 | 02 | Monorepo Backend Workspace Foundation | Create isolated workspaces without moving or renaming existing frontend paths. Add `apps/api` (FastAPI), `apps/worker`, `apps/sandbox` as needed, `engine/`, `packages/api-client`, `packages/types`, `packages/validation`, `packages/design-tokens` only if absent, `vendor/openmanusweb` source snapshot, `infrastructure/`, `supabase/`, `docs/`. Define Python and JS workspace/build boundaries. |
-| 03 | Complete Backend Source Copy | Copy the pinned upstream source snapshot into `vendor/openmanusweb` preserving upstream paths and license. Produce source file count, hashes, excluded-file reasons and source-to-target port map. Do not mix adapted production code into the pristine vendor snapshot. |
-| 04 | Backend Adaptation & Security Hardening | Port/adapt agent, planner, executor, LLM client and tool abstractions into isolated `engine/` modules. Remove unsafe global CWD/environment mutation and in-memory-only task state. Isolate Python/browser execution; enforce resource, network, SSRF and secret boundaries. Preserve upstream attribution. |
+| 03 | Complete Upstream Source Copy | Copy the **entire pinned upstream repository** into `vendor/openmanusweb`, preserving paths, all backend/system code, architecture, domains, agent/engine modules, tools, workflows, orchestration, prompts, schemas, LLM/provider clients, API/server code, configuration, dependency/build files, tests, docs, examples, assets and license notices. This is a complete source copy, not a selective port. Keep upstream UI source in the archival snapshot for provenance if present, but exclude it from active MoreAI product frontend/deployment. Prove completeness with path, size and blob-hash comparison. Any exclusion (e.g. secrets, VCS internals, generated caches or prohibited files) requires an exact path and reason. Keep adapted production code separate from the pristine snapshot. |
+| 04 | Full Backend Integration & Security Hardening | Integrate the full upstream backend capability set into MoreAI backend workspaces, preserving domain and workflow coverage. Adapt interfaces only as required for FastAPI, Supabase, multi-tenant authorization, durable workers and MoreAI policies. No backend module, domain, agent, engine, tool or workflow may be silently omitted. Remove unsafe global CWD/environment mutation and in-memory-only task state. Isolate Python/browser execution; enforce resource, network, SSRF and secret boundaries. Preserve upstream attribution. |
 | 05 | Supabase Schema Reconciliation | Inspect existing schema, migrations, indexes, constraints, RLS, triggers, functions and storage policies. Map every backend entity to existing tables first. Add only forward-only, idempotent migrations for proven gaps. No duplicate canonical tables, no destructive reset, no service-role key in frontend. |
 | 06 | FastAPI Core & OpenAPI Contract | Implement versioned FastAPI routes, Pydantic schemas, auth context, tenant authorization, error envelope, pagination, idempotency, request correlation, health/readiness and OpenAPI. API handlers call domain services, not ad hoc business logic. |
-| 07 | Worker, Durable Runs & Event Lifecycle | Integrate queue/outbox worker, durable agent run/step/event/checkpoint lifecycle, cancellation, retry, timeout, recovery and artifact persistence. HTTP request lifecycle must not own long-running agent execution. |
-| 08 | LLM Gateway & Tool Runtime Integration | Connect provider/model registry, routing, streaming/tool-call normalization, usage metering, retries/circuit breakers and tool registry. Browser/Python tools run in isolated environments with explicit policy and approval gates. |
+| 07 | Worker, Durable Runs & Event Lifecycle | Integrate upstream workflow/agent execution lifecycle end-to-end: queue/outbox worker, durable run/step/event/checkpoint lifecycle, cancellation, retry, timeout, recovery and artifact persistence. HTTP request lifecycle must not own long-running agent execution. |
+| 08 | Complete LLM, Tool, Workflow & Orchestration Integration | Connect the upstream LLM stack, model/provider clients, prompts/schemas, agent types, planner, flow/orchestration, tool registry and every supported tool. Add MoreAI gateway/routing/metering/entitlement controls without deleting upstream capability. Browser/Python tools run in isolated environments with explicit policy and approval gates. |
 | 09 | Existing Frontend API Integration | Add typed API client and minimal adapters/hooks to connect current Next.js UI to FastAPI. Replace demo/fallback behavior with real API responses progressively; preserve screen design and interactions. Connect auth/session, chat/agent runs, task progress, files/artifacts, credits/entitlements and partner/network journeys to actual persisted data. |
 | 10 | End-to-End Integration Verification | Prove browser → Next.js client → FastAPI → worker/engine → LLM/tool → Supabase persistence → event/status → UI rendering. Test auth/RLS/tenant isolation, streaming, cancellation, errors, retries, idempotency, artifacts, credit metering and partner-session boundaries. |
 | 11 | Integration Release Gate & Freeze | Require CI green, backend/frontend builds, migration validation, RLS/security tests, API contract tests, end-to-end smoke tests, UI regression screenshots and evidence report. No additional feature/domain phase may start until all mandatory gates pass or an explicitly approved exception is documented. |
@@ -3023,7 +3023,52 @@ copied" until the Git manifest and source comparison prove it.
 - **Supabase project reference:** `uunfgimtokhucegqbpce` (project URL supplied by product owner: https://uunfgimtokhucegqbpce.supabase.co)
 - **Reference image:** `.aistudio/artifacts/brain/4d52674d-4fe2-4441-a5bf-48030e74c0e3/.tempmediaStorage/media_1794208413882_ecc68f24.jpg`
 
-The main repository is the canonical application and deployment target. Existing Next.js frontend routes, components, navigation, styles and user journeys are protected. The OpenManusWeb repository is a backend/agent-runtime source reference only. Do not replace the frontend with upstream UI or create a second application shell. Use a monorepo layout that preserves existing paths and introduces backend workspaces alongside them. Supabase is the canonical business data store; reconcile the current project schema before any migration. Do not assume the reference project contains all required production integrations or that copying source equals a working integration.
+The main repository is the canonical application and deployment target. Existing Next.js frontend routes, components, navigation, styles and user journeys are protected. OpenManusWeb is the authoritative source codebase for the complete backend/system capabilities to be copied and integrated; it is not a selective inspiration-only reference. Copy the full upstream repository snapshot to `vendor/openmanusweb` for provenance, then integrate all backend-capable modules and behavior into MoreAI. Exclude upstream user-facing frontend/UI from the active product runtime only; do not omit API/server/session/streaming/event logic that supports backend capabilities just because it was originally exposed through an upstream web server. Re-express those capabilities as FastAPI contracts for the existing MoreAI frontend. Do not create a second application shell. Use a monorepo layout that preserves existing paths and introduces backend workspaces alongside them. Supabase is the canonical business data store; reconcile the current project schema before any migration. Do not assume the reference project contains all required production integrations or that copying source equals a working integration.
 
 **Execution boundary:** The scope of the first delivery is source preservation/copy, backend adaptation, FastAPI, worker/runtime, Supabase reconciliation, API contracts, frontend wiring and end-to-end verification. Feature additions beyond this foundation are blocked until Phase 11 passes.
 
+
+
+# 33. OpenManusWeb Full Backend Source Integration Contract (v1.2)
+
+## 33.1 Source authority
+
+- Upstream: https://github.com/YunQiAI/OpenManusWeb.git
+- Main target: https://github.com/fadliansyah36/More-AI-Portal-Indihome.git (branch main)
+- Inspected upstream main tree SHA at PRD update: `8d6dda9c27043ab0d3d5c7ae18062eae56763fe5`. Reconfirm and pin the actual source SHA at execution time.
+- The inspected tree contained 63 tracked files. This is a snapshot observation, not a permanent file-count target.
+
+## 33.2 What must be copied and integrated
+
+Copy the entire pinned upstream repository into `vendor/openmanusweb`, preserving original paths and provenance. The source snapshot includes (not limited to):
+- all agent types, base abstractions, planning/react/tool-call/SWE/Manus implementations;
+- flow/workflow classes, flow factories, planning and orchestration logic;
+- tool abstractions, tool registry/collections, bash, browser, Python, search, file, editor, planning, termination and chat-completion tools;
+- LLM client, provider integrations, request/response and streaming/tool-call handling;
+- prompts, schemas, configuration, exceptions, logging and runtime entry points;
+- dependency manifests, build scripts, tests, examples, documentation, assets, CI and license notices.
+
+The archival snapshot is complete even where a file is not deployed at runtime. In parallel, integrate all backend-capable modules and behavior into the MoreAI production architecture. Preserve capability coverage; adapt transport, persistence, security, tenant context, policy and provider integration to MoreAI rather than dropping features.
+
+## 33.3 What is excluded from the active product
+
+- Do not use or deploy the upstream user-facing frontend, pages, templates, styling or frontend assets as the MoreAI application UI.
+- Do not omit backend API/server/session/streaming/event/service logic solely because upstream exposed it through a web server. Extract/re-express those capabilities as FastAPI endpoints and services consumed by the existing Next.js frontend.
+- Keep original upstream frontend files in the source archive for provenance unless they contain secrets or another documented prohibited artifact.
+
+## 33.4 Required proof of completeness and parity
+
+Maintain two linked inventories:
+1. **Source-copy manifest:** every upstream tracked file, source commit, path, blob SHA/hash, size, destination path and copy/exclusion status.
+2. **Backend capability parity matrix:** every backend-capable source module/domain/feature mapped to the integrated MoreAI module, API/service contract, persistence dependency and test evidence. Statuses: copied-only, integrated, adapted, blocked-with-reason, or explicitly excluded-approved.
+
+A file count alone is insufficient. A successful import/build alone is insufficient. Backend integration is complete only when every backend capability is accounted for and all required user journeys pass end-to-end from existing frontend → FastAPI → engine/worker → LLM/tools → Supabase → frontend state/events.
+
+## 33.5 Separation and safety
+
+- Keep `vendor/openmanusweb` pristine and traceable. Place adapted production code in `apps/api`, `apps/worker` and `engine/`.
+- Preserve license/copyright notices and comply with upstream license terms.
+- Harden unsafe upstream implementation patterns in adapted production code; do not silently mutate the pristine source archive.
+- Keep source-copy completion, backend integration completion and product feature completion as three distinct statuses.
+
+------------------------------------------------------------------------
