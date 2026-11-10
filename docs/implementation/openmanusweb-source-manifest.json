@@ -24,7 +24,7 @@
       "destination_blob_sha": "462e4734730f33cded16922f4a4a7be6f1d81def",
       "size_bytes": 901,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": ".github/ISSUE_TEMPLATE/config.yaml",
@@ -33,7 +33,7 @@
       "destination_blob_sha": "892abfb46b6658b762d9d68fec44f1af83d0536b",
       "size_bytes": 158,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": ".github/ISSUE_TEMPLATE/request_new_features.md",
@@ -42,7 +42,7 @@
       "destination_blob_sha": "c191adb2353f6fff6a45e94abd18fe35afa993b2",
       "size_bytes": 451,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": ".github/ISSUE_TEMPLATE/show_me_the_bug.md",
@@ -51,7 +51,7 @@
       "destination_blob_sha": "a3d8700e1ff5f3016ffc975765bb271b12729525",
       "size_bytes": 763,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": ".github/PULL_REQUEST_TEMPLATE.md",
@@ -60,7 +60,7 @@
       "destination_blob_sha": "1859f27dffa807454dc349132e92803d34760796",
       "size_bytes": 464,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": ".github/workflows/build-package.yaml",
@@ -69,7 +69,7 @@
       "destination_blob_sha": "754c3007dbfa850aafba2df2a3a633ec9538f484",
       "size_bytes": 909,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": ".github/workflows/pre-commit.yaml",
@@ -78,7 +78,7 @@
       "destination_blob_sha": "c9b3b22e6bac1ebf9556c6c8a1296850a1c6d1b0",
       "size_bytes": 616,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": ".github/workflows/stale.yaml",
@@ -87,7 +87,7 @@
       "destination_blob_sha": "70d845819261cbc283d1166de51c988e6e4f0a2f",
       "size_bytes": 697,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": ".gitignore",
@@ -96,7 +96,7 @@
       "destination_blob_sha": "ad3280673933a86bf398ac97ce2734dd4e54ad5e",
       "size_bytes": 3504,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": ".pre-commit-config.yaml",
@@ -105,7 +105,7 @@
       "destination_blob_sha": "09ba5c1a5a0eaab436d1a0b8a407e352714312e4",
       "size_bytes": 911,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "CODE_OF_CONDUCT.md",
@@ -114,7 +114,7 @@
       "destination_blob_sha": "42eb10ccf82316a81e5c2b19aad6600d3a9cdc97",
       "size_bytes": 7491,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "DEVELOPMENT_LOG.md",
@@ -123,7 +123,7 @@
       "destination_blob_sha": "a477c1b57e817dad22a94f479f3128bf74d0f00c",
       "size_bytes": 4863,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "LICENSE",
@@ -132,7 +132,7 @@
       "destination_blob_sha": "db2216e1a5bfd392213f57a257930e9b2dcca684",
       "size_bytes": 1071,
       "classification": "runtime-entrypoint-or-tooling",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "README.md",
@@ -141,7 +141,7 @@
       "destination_blob_sha": "67ad4f9b746e8f8ba5d988c6c78b36bcc1a93e5e",
       "size_bytes": 7828,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "README_zh.md",
@@ -150,7 +150,7 @@
       "destination_blob_sha": "1c13aa9b5cdae8c31ea4889f4f6beac86a4d5a19",
       "size_bytes": 7062,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/__init__.py",
@@ -159,7 +159,7 @@
       "destination_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
       "size_bytes": 0,
       "classification": "runtime-entrypoint-or-tooling",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/agent/__init__.py",
@@ -168,7 +168,7 @@
       "destination_blob_sha": "a7b69c71e994019e6ae4a326a2f961e188d85ab2",
       "size_bytes": 310,
       "classification": "agent-runtime",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/agent/base.py",
@@ -177,7 +177,7 @@
       "destination_blob_sha": "44152323a6f608e4392a191c5c4674f3e1e51060",
       "size_bytes": 7007,
       "classification": "agent-runtime",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/agent/llm_wrapper.py",
@@ -186,7 +186,7 @@
       "destination_blob_sha": "6fabe4bec88113567b8b65ba61da63c805dd2118",
       "size_bytes": 7144,
       "classification": "agent-runtime",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/agent/manus.py",
@@ -195,7 +195,7 @@
       "destination_blob_sha": "7fa4b698a3739facc0e69c7f3d147a61a581f009",
       "size_bytes": 1197,
       "classification": "agent-runtime",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/agent/planning.py",
@@ -204,7 +204,7 @@
       "destination_blob_sha": "0965a8818fae67b65d90f1984c73bd64890c1d53",
       "size_bytes": 9732,
       "classification": "agent-runtime",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/agent/react.py",
@@ -213,7 +213,7 @@
       "destination_blob_sha": "7f9482082052a95977c9ddf4e14757df0de77dc4",
       "size_bytes": 1012,
       "classification": "agent-runtime",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/agent/swe.py",
@@ -222,7 +222,7 @@
       "destination_blob_sha": "8db61cae455ff5f9d116aae8e1ae3e7338a620e7",
       "size_bytes": 1219,
       "classification": "agent-runtime",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/agent/toolcall.py",
@@ -231,7 +231,7 @@
       "destination_blob_sha": "b3b6439f7761b41726551fafc26f7c776727e648",
       "size_bytes": 6982,
       "classification": "agent-runtime",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/config.py",
@@ -240,7 +240,7 @@
       "destination_blob_sha": "540a8ace05b4e21d14e8eab7c844e36d6e45a7d9",
       "size_bytes": 3150,
       "classification": "core-runtime-llm-config",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/exceptions.py",
@@ -249,7 +249,7 @@
       "destination_blob_sha": "57a01487bafb2367886e4865812fa8452c93fb6d",
       "size_bytes": 143,
       "classification": "core-runtime-llm-config",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/flow/__init__.py",
@@ -258,7 +258,7 @@
       "destination_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
       "size_bytes": 0,
       "classification": "workflow-orchestration",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/flow/base.py",
@@ -267,7 +267,7 @@
       "destination_blob_sha": "fc0bff1de92d4a9314749d2dd41b191e3b8dcee1",
       "size_bytes": 2070,
       "classification": "workflow-orchestration",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/flow/flow_factory.py",
@@ -276,7 +276,7 @@
       "destination_blob_sha": "9fa55a47c3c46de7345926874ca03691c1d932ff",
       "size_bytes": 796,
       "classification": "workflow-orchestration",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/flow/planning.py",
@@ -285,7 +285,7 @@
       "destination_blob_sha": "006c4cbb78c8b6b24157070616d76d7f5adb3bc9",
       "size_bytes": 17444,
       "classification": "workflow-orchestration",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/flow/tracking_support.py",
@@ -294,7 +294,7 @@
       "destination_blob_sha": "3ff8f0f6c0ef49ebbcbf7984199e411b8fa41eb6",
       "size_bytes": 2077,
       "classification": "workflow-orchestration",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/llm.py",
@@ -303,7 +303,7 @@
       "destination_blob_sha": "8f627820947f12ebc7ff0299de898db570c23c83",
       "size_bytes": 9961,
       "classification": "core-runtime-llm-config",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/logger.py",
@@ -312,7 +312,7 @@
       "destination_blob_sha": "1086b69909b6cb5c04fc2a6f16869972b5649819",
       "size_bytes": 1869,
       "classification": "core-runtime-llm-config",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/prompt/__init__.py",
@@ -321,7 +321,7 @@
       "destination_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
       "size_bytes": 0,
       "classification": "prompts",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/prompt/manus.py",
@@ -330,7 +330,7 @@
       "destination_blob_sha": "7c5b686931bd5277d146fa61fbe80d6b5e16ff38",
       "size_bytes": 1188,
       "classification": "prompts",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/prompt/planning.py",
@@ -339,7 +339,7 @@
       "destination_blob_sha": "bd5f4ce7c429d6060bf9566a2c900900605fb149",
       "size_bytes": 1199,
       "classification": "prompts",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/prompt/swe.py",
@@ -348,7 +348,7 @@
       "destination_blob_sha": "a496988ee4b757a68778bf48bd37c5757fb3dd5d",
       "size_bytes": 1707,
       "classification": "prompts",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/prompt/toolcall.py",
@@ -357,7 +357,7 @@
       "destination_blob_sha": "e1a3be93936b0f81f97369209bd6d0d3b71c0f95",
       "size_bytes": 162,
       "classification": "prompts",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/schema.py",
@@ -366,7 +366,7 @@
       "destination_blob_sha": "0b09d45bc3aff442f1fdfdd5459d460de6f91fb6",
       "size_bytes": 4383,
       "classification": "core-runtime-llm-config",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/__init__.py",
@@ -375,7 +375,7 @@
       "destination_blob_sha": "9ab569ab301e2b91d65ccb1ad45f83a3e555eebe",
       "size_bytes": 479,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/base.py",
@@ -384,7 +384,7 @@
       "destination_blob_sha": "ae3c9f5ed3e3cf0a35f69967429a95120123a248",
       "size_bytes": 2367,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/bash.py",
@@ -393,7 +393,7 @@
       "destination_blob_sha": "0e5c2ffccea139707ea22ba74ee8b8f9e2e23254",
       "size_bytes": 5768,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/browser_use_tool.py",
@@ -402,7 +402,7 @@
       "destination_blob_sha": "bcaa90446fcfd6817e60d33d59d91c4166179785",
       "size_bytes": 12295,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/create_chat_completion.py",
@@ -411,7 +411,7 @@
       "destination_blob_sha": "882a5bebff0b80d803b7713a3107f7655ec6e3eb",
       "size_bytes": 5621,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/file_saver.py",
@@ -420,7 +420,7 @@
       "destination_blob_sha": "d6a3766429a18aa1351ba045bfad71c5bd90195f",
       "size_bytes": 2137,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/google_search.py",
@@ -429,7 +429,7 @@
       "destination_blob_sha": "ed5d7d5e46cb2f9bf5794de2fc370407b22a7a3b",
       "size_bytes": 1589,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/planning.py",
@@ -438,7 +438,7 @@
       "destination_blob_sha": "47e334d6632cd18373a48fced78bb21662952217",
       "size_bytes": 13623,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/python_execute.py",
@@ -447,7 +447,7 @@
       "destination_blob_sha": "88e1aab157a3d8166b6bbc4952cffbb10ce962f1",
       "size_bytes": 1957,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/run.py",
@@ -456,7 +456,7 @@
       "destination_blob_sha": "8896c5872c5b39949a620bfcd54b01f81618139b",
       "size_bytes": 1596,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/str_replace_editor.py",
@@ -465,7 +465,7 @@
       "destination_blob_sha": "40945651a4ac43c67cf96fc270990a3b26c700e6",
       "size_bytes": 14729,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/terminate.py",
@@ -474,7 +474,7 @@
       "destination_blob_sha": "2c8e7837b7d81cd57501d47d99ad4ad8ee67eb34",
       "size_bytes": 763,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/tool/tool_collection.py",
@@ -483,7 +483,7 @@
       "destination_blob_sha": "c41ae91fb9d8db4417d3eca00f607b4d2e231e07",
       "size_bytes": 1665,
       "classification": "tool-runtime-security-review-required",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/utils/log_monitor.py",
@@ -492,7 +492,7 @@
       "destination_blob_sha": "06564ec994ab277d9de3bd583ec0a2ca793e4e08",
       "size_bytes": 4116,
       "classification": "core-runtime-llm-config",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/README.md",
@@ -501,7 +501,7 @@
       "destination_blob_sha": "d2c6601e0142dbea8fea3f7113802f69d0c20516",
       "size_bytes": 3400,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/__init__.py",
@@ -510,7 +510,7 @@
       "destination_blob_sha": "fdb91d59ff15347161ef62abf9ca43ca76d71dea",
       "size_bytes": 78,
       "classification": "backend-server-api-session-streaming-logs",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/api.py",
@@ -519,7 +519,7 @@
       "destination_blob_sha": "23b4853306b6a8901c73163a4ca4368254792f05",
       "size_bytes": 840,
       "classification": "backend-server-api-session-streaming-logs",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/app.py",
@@ -528,7 +528,7 @@
       "destination_blob_sha": "7bbf6a8d4b212236ff05b49845c047097e6b57f1",
       "size_bytes": 32859,
       "classification": "backend-server-api-session-streaming-logs",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/llm_monitor.py",
@@ -537,7 +537,7 @@
       "destination_blob_sha": "f23f42f011a526b6bbd906959e87cf208c9dd65e",
       "size_bytes": 3640,
       "classification": "backend-server-api-session-streaming-logs",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/log_handler.py",
@@ -546,7 +546,7 @@
       "destination_blob_sha": "f43a1911049e576df2495c2acc7bf800f35418fa",
       "size_bytes": 3512,
       "classification": "backend-server-api-session-streaming-logs",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/log_parser.py",
@@ -555,7 +555,7 @@
       "destination_blob_sha": "8d5d3c948c1c7132b54f452054a86724f5b40dd0",
       "size_bytes": 12783,
       "classification": "backend-server-api-session-streaming-logs",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/apiManager.js",
@@ -564,7 +564,7 @@
       "destination_blob_sha": "7ad495c4e38529c26c1df24093ef342c01a6ae5d",
       "size_bytes": 8973,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/chatManager.js",
@@ -573,7 +573,7 @@
       "destination_blob_sha": "6ed807cb1e0792338edd7c75fd21973b432ef20d",
       "size_bytes": 1325,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/fileViewerManager.js",
@@ -582,7 +582,7 @@
       "destination_blob_sha": "9503cbb162ff38ebd65b92679bef274e932162d2",
       "size_bytes": 6010,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/final_interface.html",
@@ -591,7 +591,7 @@
       "destination_blob_sha": "afc4ceacba1f91d98ba78b68a7e57313a1630c12",
       "size_bytes": 28115,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/index.html",
@@ -600,7 +600,7 @@
       "destination_blob_sha": "a6bcaaa8a919cd196e5fc7295bb2e10e60df0ac2",
       "size_bytes": 176,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/logManager.js",
@@ -609,7 +609,7 @@
       "destination_blob_sha": "a24f141a865cb77cfb9e536d2c02f359fa1e51d3",
       "size_bytes": 279,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/main.js",
@@ -618,7 +618,7 @@
       "destination_blob_sha": "5e8ce9da048c4b1e8396fcd6f497b17ef38bd61f",
       "size_bytes": 5270,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/new_chatManager.js",
@@ -627,7 +627,7 @@
       "destination_blob_sha": "415830738538bdbc282d9b3cee07346c57b07f8e",
       "size_bytes": 3829,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/new_fileViewerManager.js",
@@ -636,7 +636,7 @@
       "destination_blob_sha": "0d7aff86fb5f762631eab69564dbb766ee6ea392",
       "size_bytes": 4184,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/new_index.html",
@@ -645,7 +645,7 @@
       "destination_blob_sha": "63473b22740df151d77cca344266615144efe0cc",
       "size_bytes": 10439,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/new_interface_demo.html",
@@ -654,7 +654,7 @@
       "destination_blob_sha": "a8c04e04b7019d5bd68509951d24f3e36df8bcfc",
       "size_bytes": 20990,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/new_main.js",
@@ -663,7 +663,7 @@
       "destination_blob_sha": "3b6e071537f70efb5bba1429ae4f762f416c9cf4",
       "size_bytes": 6671,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/new_style.css",
@@ -672,7 +672,7 @@
       "destination_blob_sha": "86b1eb969d45e8e1c8f8a0db882042393be8105f",
       "size_bytes": 7550,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/new_thinkingManager.js",
@@ -681,7 +681,7 @@
       "destination_blob_sha": "b47f49178532e27f2d3ef7774c3a596632e3ffc8",
       "size_bytes": 5379,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/new_websocketManager.js",
@@ -690,7 +690,7 @@
       "destination_blob_sha": "7b53e8f7a7fadde7da1e85c5b75f74e57f2eb423",
       "size_bytes": 3018,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/new_workspaceManager.js",
@@ -699,7 +699,7 @@
       "destination_blob_sha": "f5aa06f16dd1b1d4b108e35b89c215fce3875cce",
       "size_bytes": 6571,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/simple_test.html",
@@ -708,7 +708,7 @@
       "destination_blob_sha": "1609ec2f56cbaa1122402767112e8407b853835d",
       "size_bytes": 1902,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/standalone.html",
@@ -717,7 +717,7 @@
       "destination_blob_sha": "96f6ba01e730938b49e9f1ab4878c790829dfce2",
       "size_bytes": 20974,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/style.css",
@@ -726,7 +726,7 @@
       "destination_blob_sha": "512f77e2b8b59186c38b6008c19036f731df7605",
       "size_bytes": 20415,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/terminalManager.js",
@@ -735,7 +735,7 @@
       "destination_blob_sha": "a9da0dc2921050cc422ffe01544ae27449a813df",
       "size_bytes": 1571,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/archive/websocketManager.js",
@@ -744,7 +744,7 @@
       "destination_blob_sha": "809ebd0b85d5f21030a0a46696a2d299c01ea8b2",
       "size_bytes": 2721,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/connected_chatManager.js",
@@ -753,7 +753,7 @@
       "destination_blob_sha": "05f43ef482faaef588eea07dfa873a7c3d69c5d9",
       "size_bytes": 3836,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/connected_fileViewerManager.js",
@@ -762,7 +762,7 @@
       "destination_blob_sha": "a31832b15c8ad6db73f87c57cdcd1285654e45d4",
       "size_bytes": 4423,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/connected_interface.html",
@@ -771,7 +771,7 @@
       "destination_blob_sha": "5f79295544ed5d273af60a4c253c1b84016fb227",
       "size_bytes": 17101,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/connected_interface.js",
@@ -780,7 +780,7 @@
       "destination_blob_sha": "c257346d4116311ec698ae29c174d7f68d7519ff",
       "size_bytes": 9863,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/connected_thinkingManager.js",
@@ -789,7 +789,7 @@
       "destination_blob_sha": "75e90697e147f9ed2237fe6f9e54a40763205cb7",
       "size_bytes": 6940,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/connected_websocketManager.js",
@@ -798,7 +798,7 @@
       "destination_blob_sha": "629c8619ad87c0796bb82ac0124cc561793f8de0",
       "size_bytes": 3691,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/connected_workspaceManager.js",
@@ -807,7 +807,7 @@
       "destination_blob_sha": "7106e738e5079e572ce30aa59f852ca1b1482abc",
       "size_bytes": 7014,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/static/i18n.js",
@@ -816,7 +816,7 @@
       "destination_blob_sha": "656bdee418c9b15b573962bb2b39207dbf4551ef",
       "size_bytes": 6017,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/templates/archive/index.html",
@@ -825,7 +825,7 @@
       "destination_blob_sha": "5848e4898e4a595a22571952aac4abc0111fcabf",
       "size_bytes": 23637,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/templates/archive/new_index.html",
@@ -834,7 +834,7 @@
       "destination_blob_sha": "691ee23fba82bc4827304c01718658e195d8ed06",
       "size_bytes": 14571,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/templates/index.html",
@@ -843,7 +843,7 @@
       "destination_blob_sha": "5848e4898e4a595a22571952aac4abc0111fcabf",
       "size_bytes": 23637,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/templates/job_detail.html",
@@ -852,7 +852,7 @@
       "destination_blob_sha": "a0b459b7a1670f395a229c7743c00d3f41aca9d9",
       "size_bytes": 5011,
       "classification": "upstream-frontend-ui-archival-only",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "app/web/thinking_tracker.py",
@@ -861,7 +861,7 @@
       "destination_blob_sha": "6b930794b5e01d3bd3cf40b10bfd1559f1208e00",
       "size_bytes": 15178,
       "classification": "backend-server-api-session-streaming-logs",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "assets/community_group.jpg",
@@ -870,7 +870,7 @@
       "destination_blob_sha": "49db97a8dac7be8c563977197f597d4d3eb36291",
       "size_bytes": 222392,
       "classification": "upstream-assets-archival",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "assets/interface.png",
@@ -879,7 +879,7 @@
       "destination_blob_sha": "74bba29d697b5c8118a66ec444e204f8fb2bf5cf",
       "size_bytes": 186543,
       "classification": "upstream-assets-archival",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "config/config.example.toml",
@@ -888,7 +888,7 @@
       "destination_blob_sha": "c1d51f008a3a3f9e4837743f5e888debc73dee35",
       "size_bytes": 605,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "examples/japan-travel-plan/japan_travel_guide_instructions.txt",
@@ -897,7 +897,7 @@
       "destination_blob_sha": "a45128fb6166109c4bb7cdc4a5544a9e28137fa4",
       "size_bytes": 1871,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "examples/japan-travel-plan/japan_travel_handbook.html",
@@ -906,7 +906,7 @@
       "destination_blob_sha": "5b5965ec910942431c7ffdf30dc543084ed3f110",
       "size_bytes": 5951,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "examples/japan-travel-plan/japan_travel_handbook_mobile.html",
@@ -915,7 +915,7 @@
       "destination_blob_sha": "00e1a92c0134d743890631f400a51631e68ccd18",
       "size_bytes": 8218,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "examples/japan-travel-plan/japan_travel_handbook_print.html",
@@ -924,7 +924,7 @@
       "destination_blob_sha": "b924628cc2f4555f50f03a8c27a529b2e1f31b8c",
       "size_bytes": 5863,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "examples/pictures/japan-travel-plan-1.png",
@@ -933,7 +933,7 @@
       "destination_blob_sha": "e9e344e81c5a1d9110424d9207edbd5630f770b3",
       "size_bytes": 168010,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "examples/pictures/japan-travel-plan-2.png",
@@ -942,7 +942,7 @@
       "destination_blob_sha": "88958ae36c72d6babe29e562ea7f82112940d5a2",
       "size_bytes": 36336,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "examples/readme.md",
@@ -951,7 +951,7 @@
       "destination_blob_sha": "e18592ee92b3316ba2e78bdf93c3396f9fb27145",
       "size_bytes": 877,
       "classification": "documentation-examples",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "main.py",
@@ -960,7 +960,7 @@
       "destination_blob_sha": "de38ee00386240a749b630a7a3dc3851d6fa64f1",
       "size_bytes": 2283,
       "classification": "runtime-entrypoint-or-tooling",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "pytest.ini",
@@ -969,7 +969,7 @@
       "destination_blob_sha": "4bbeada02bead4f9c0a2682f2f9d4c102f570232",
       "size_bytes": 333,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "requirements.txt",
@@ -978,7 +978,7 @@
       "destination_blob_sha": "b84f15abdeb57c58a1f2ef8c65d142a674199fb3",
       "size_bytes": 421,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "run_flow.py",
@@ -987,7 +987,7 @@
       "destination_blob_sha": "3a5c8ba63c1c226bd6939b3a39a936bf112c5286",
       "size_bytes": 1657,
       "classification": "runtime-entrypoint-or-tooling",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "setup.py",
@@ -996,7 +996,7 @@
       "destination_blob_sha": "dd46f9cfae9edcc768f740c1ccc75963fb4a718c",
       "size_bytes": 1414,
       "classification": "build-config-governance",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "tools/debug_log_monitor.py",
@@ -1005,7 +1005,7 @@
       "destination_blob_sha": "9c82c6fcad70433d40b65f8679cab5e7602db1f5",
       "size_bytes": 5835,
       "classification": "runtime-entrypoint-or-tooling",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     },
     {
       "source_path": "web_run.py",
@@ -1014,7 +1014,7 @@
       "destination_blob_sha": "09921266ff97426b3c429e43cf0d4ecf2e54232b",
       "size_bytes": 1540,
       "classification": "runtime-entrypoint-or-tooling",
-      "status": "copied-sha256-equivalent-git-blob-sha-verified"
+      "status": "copied-git-blob-sha-verified"
     }
   ]
 }
