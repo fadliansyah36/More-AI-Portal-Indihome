@@ -57,9 +57,11 @@ jobs:
           else npm run dev > /tmp/moreai-web.log 2>&1 & fi
           echo $! > /tmp/moreai-web.pid
           for i in $(seq 1 60); do
-            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then exit 0; fi
+            if curl --connect-timeout 2 --max-time 5 -fsS http://127.0.0.1:3000/ >/dev/null; then exit 0; fi
             sleep 2
           done
+          ps aux | grep -E 'next|node' || true
+          ss -ltnp | grep ':3000' || true
           cat /tmp/moreai-web.log
           exit 1
       - name: Browser smoke and responsive screenshots
