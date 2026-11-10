@@ -1,27 +1,30 @@
-# MoreAI FastAPI Boundary
+# MoreAI FastAPI
 
-Run locally:
+FastAPI is the only business-data and AI execution boundary. The browser may use Supabase directly for Auth only; all application data, conversations, runs, events, tools, model calls, credits and partner workflows go through this API.
 
+## Environment
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY` (or legacy `SUPABASE_ANON_KEY`) for validating user access tokens
+- `SUPABASE_SERVICE_ROLE_KEY` server-only for the privileged repository adapter. It must never be exposed to the web app, logs, CI artifacts or source.
+
+## Run
 ```bash
 cd apps/api
-python -m venv .venv
-. .venv/bin/activate
+python -m venv .venv && . .venv/bin/activate
 pip install -e '.[test]'
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-pytest
+uvicorn app.main:app --reload --port 8000
 ```
 
-Configuration:
-- `SUPABASE_URL`: canonical MoreAI Supabase project URL.
-- `SUPABASE_ANON_KEY`: publishable/anon key used server-side for Auth and user-scoped PostgREST requests. It is not a service-role secret.
+OpenAPI: `/openapi.json`.
 
-Implemented:
-- `GET /health`, `GET /ready`.
-- `GET /v1/me`: validates the bearer token through Supabase Auth, then reads the caller's profile with the same user JWT so existing RLS applies.
-- Correlation IDs and generic unhandled-error responses.
+Current implemented domain endpoints:
+- `POST/GET /api/v1/conversations`
+- `GET /api/v1/conversations/{conversation_id}`
+- `POST /api/v1/conversations/{conversation_id}/messages` (idempotent durable run enqueue)
+- `GET /api/v1/agent-runs`
+- `GET /api/v1/agent-runs/{run_id}`
+- `POST /api/v1/agent-runs/{run_id}/cancel`
+- `GET /api/v1/agent-runs/{run_id}/events`
+- `GET /api/v1/agent-runs/{run_id}/stream`
 
-Security boundary:
-- No service-role key or LLM provider key is used.
-- No browser-supplied role/workspace claim is trusted.
-- The schema denies direct client access to agent runs, messages, tools, billing and LLM configuration. Those server-only domains remain unavailable through this API until explicit server-side authorization and audited privileged data access are implemented.
-- This increment does not claim OpenManusWeb runtime parity or production readiness.
+Privileged REST operations are explicitly scoped to authenticated `user_id` / ownership. The existing database policies deny client access to conversations and agent-runs; therefore no browser database CRUD is used. Production access requires the server-only service role and explicit backend authorization checks.
