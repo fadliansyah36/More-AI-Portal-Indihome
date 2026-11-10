@@ -139,3 +139,16 @@ At the end of each phase, update a repository document under docs/implementation
 ## 12. Agent operating sequence
 Always follow: READ → UNDERSTAND → INSPECT UPSTREAM FULL TREE → CLASSIFY FRONTEND VS BACKEND → PIN SOURCE → COPY COMPLETE SOURCE → RECONCILE REPO + SUPABASE → PORT/INTEGRATE ALL BACKEND CAPABILITIES → IMPLEMENT FASTAPI/WORKER/API CONTRACTS → CONNECT EXISTING FRONTEND → MIGRATE → TEST → SECURITY REVIEW → UI REGRESSION REVIEW → REPORT.
 Do not skip inspection, overwrite user work, silently change scope, or begin post-integration features before mandatory Phase 11 passes.
+
+
+## Frontend ↔ FastAPI ↔ Supabase Access Boundary (Mandatory)
+
+- The browser may connect directly to Supabase **Auth only**: sign-in, sign-up, OAuth, session retrieval/refresh, sign-out, password recovery and MFA flows.
+- The browser must not call Supabase PostgREST/table CRUD, Storage, RPC, Realtime, Edge Functions or database subscriptions directly.
+- All business/application data and actions must use the existing frontend API client and the FastAPI service: conversations, agent definitions/runs/events, tools, artifacts, wallet/ledger, credits, quota, entitlements, partners, network verification, admin operations and analytics.
+- FastAPI validates the Supabase access token, resolves the authenticated principal and performs tenant/ownership/RBAC/ABAC checks before repository access. Privileged server operations must use the existing server-only repository boundary and explicit user/workspace/partner filters.
+- The Supabase service-role key and all LLM/provider credentials are server-only. Never expose them through `NEXT_PUBLIC_*`, browser bundles, client components, source maps, logs or build artifacts.
+- Use `NEXT_PUBLIC_SUPABASE_URL` and a publishable/anon key only for Supabase Auth. Use `NEXT_PUBLIC_MOREAI_API_URL` for FastAPI.
+- Do not add a new direct Supabase data client to a UI component. Reuse `lib/api/client.ts`; add or extend typed FastAPI contracts instead.
+- API and worker execution remain fail-closed until provider routing, entitlements, quota policies, credit wallets, secret references and worker health are verified. Do not enqueue jobs that cannot be processed.
+- Any exception to this boundary requires an explicit PRD/ADR update and security review before implementation.
