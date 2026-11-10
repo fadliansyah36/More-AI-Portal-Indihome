@@ -20,8 +20,15 @@ async def run_worker() -> None:
         worker_id=os.getenv("WORKER_ID", "moreai-worker-main-01"),
         lease_seconds=int(os.getenv("WORKER_LEASE_SECONDS", "90")),
     )
-    if not os.getenv("MOREAI_CREDITS_PER_USD") or not os.getenv("MOREAI_CREDIT_WALLET_CURRENCY"):
-        raise RuntimeError("credit_estimator_and_wallet_currency_must_be_configured")
+    required_billing = (
+        "MOREAI_CREDITS_PER_USD",
+        "MOREAI_CREDIT_WALLET_CURRENCY",
+        "MOREAI_LLM_ENTITLEMENT_KEY",
+        "MOREAI_LLM_QUOTA_METRIC_KEY",
+    )
+    missing_billing = [key for key in required_billing if not os.getenv(key)]
+    if missing_billing:
+        raise RuntimeError("llm_entitlement_quota_and_credit_configuration_missing")
 
     async with httpx.AsyncClient() as http:
         rpc = WorkerRpcClient(settings, http)
@@ -31,6 +38,14 @@ async def run_worker() -> None:
         })
         if not routes:
             raise RuntimeError("no_enabled_llm_routing_policy")
+        quota_policies = await rpc.select("quota_policies", {
+            "enabled": "eq.true",
+            "metric_key": f"eq.{os.environ['MOREAI_LLM_QUOTA_METRIC_KEY']}",
+            "select": "id",
+            "limit": "1",
+        })
+        if not quota_policies:
+            raise RuntimeError("no_enabled_llm_quota_policy")
         registry = build_agent_registry(rpc, http)
         runtime = WorkerRuntime(rpc, RegisteredAgentDispatcher(registry))
         poll_seconds = max(1, min(30, int(os.getenv("WORKER_POLL_SECONDS", "3"))))
