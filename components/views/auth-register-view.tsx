@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
+import { useToast } from '@/components/ui/toast-context';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface AuthRegisterViewProps {
   onNavigate: (tab: NavigationTab) => void;
@@ -20,12 +22,32 @@ export const AuthRegisterView: React.FC<AuthRegisterViewProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(true);
+  const { showToast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) return;
-    onRegisterSuccess();
-    onNavigate('welcome_success');
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { full_name: fullName.trim(), phone: phone.trim() },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      if (data.session) {
+        onRegisterSuccess();
+        onNavigate('welcome_success');
+      } else {
+        showToast('Pendaftaran diterima. Silakan verifikasi email untuk mengaktifkan akun.', 'success');
+        onNavigate('login');
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Pendaftaran gagal. Periksa kembali data Anda.', 'error');
+    }
   };
 
   return (
