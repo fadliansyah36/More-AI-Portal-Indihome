@@ -22,7 +22,8 @@ begin
        or p_content is null
        or length(btrim(p_content)) = 0
        or length(p_content) > 100000
-       or p_agent_key is null\n       or p_idempotency_key is null
+       or p_agent_key is null
+       or p_idempotency_key is null
        or length(p_idempotency_key) < 12
        or length(p_idempotency_key) > 128
        or p_agent_key not in ('manus', 'planning') then
