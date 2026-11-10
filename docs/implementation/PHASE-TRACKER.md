@@ -2,19 +2,19 @@
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
-| 00 | Repository baseline & UI freeze | COMPLETE — SIGNED OFF | CI run 42883484475; lint/build/browser smoke; screenshots 360/390/768/1024/1440; artifact 13794897661 |
+| 00 | Repository baseline & UI freeze | PREVIOUS SIGN-OFF; current revalidation lint/build PASS, browser smoke pending | [Latest baseline run](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42891046534); previous five-viewport screenshot run 42883484475 |
 | 01 | Upstream source pin & provenance | COMPLETE | `dev_web_app` @ `3ceaa9182b39bbb9898ddda0a4b1c50c2758ab5f` |
 | 02 | Monorepo backend workspace foundation | COMPLETE — foundation | `apps/api`, `apps/worker`, `engine`, `packages` |
 | 03 | Complete upstream source copy | COMPLETE — hash verified | 111/111 matching Git blob SHA in `vendor/openmanusweb/` |
-| 04 | Full backend integration & security hardening | IN PROGRESS — foundation only | Capability map, agent protocols, fail-closed tool policy; full upstream parity/port pending |
-| 05 | Supabase schema reconciliation | COMPLETE — read-only reconciliation | 52 tables, 52 RLS-enabled, 48 policies, 27 migrations; no DDL change needed in this pass |
-| 06 | FastAPI core & OpenAPI contract | IN PROGRESS — identity/system only | `/health`, `/ready`, `/v1/me`; full domain endpoints pending |
-| 07 | Worker & durable run lifecycle | IN PROGRESS — RPC adapter only | Server-only claim/heartbeat/checkpoint/finish client; dispatcher not registered |
-| 08 | Complete LLM/tool/workflow/orchestration integration | NOT COMPLETE | LLM/provider contracts and tool policy scaffolds only; concrete provider and upstream parity pending |
-| 09 | Existing frontend API integration | NOT STARTED | Wait for phases 04–08 |
-| 10 | End-to-end integration verification | NOT STARTED | Wait for complete API/worker/LLM and auth test environment |
-| 11 | Integration release gate | NOT STARTED | No deployment before all required checks |
+| 04 | Full backend integration & security hardening | IN PROGRESS — substantial foundations; parity incomplete | Agent/Planning runtimes, full tool catalog/policy, gateway, sandbox-dependent tools blocked |
+| 05 | Supabase schema reconciliation | COMPLETE — three additive migrations | 52 tables, 52 RLS-enabled, 48 policies, 30 migrations; no reset/destructive DDL |
+| 06 | FastAPI core & OpenAPI contract | IN PROGRESS — core domain API | Auth, identity, conversations, atomic enqueue, catalog, run, cancel, events and SSE; other domain endpoints pending |
+| 07 | Worker & durable run lifecycle | IN PROGRESS — Manus/Planning runtime | Durable claim/heartbeat/checkpoint/finish, plan store and SSE checkpoint stream; worker remains disabled |
+| 08 | LLM/tool/workflow/orchestration integration | IN PROGRESS — metering foundation | Scoped route/fallback, OpenAI-compatible streaming, idempotency, entitlement/quota/credit reservation and settlement; no provider data configured |
+| 09 | Existing frontend API integration | IN PROGRESS — chat only | Auth-only Supabase browser boundary, typed FastAPI client and authenticated SSE Chat UI |
+| 10 | End-to-end integration verification | BLOCKED | No provider/model/route, wallet, quota or entitlement rows; no real user token/worker run |
+| 11 | Integration release gate | NOT STARTED | No deployment before full parity, sandbox, config and E2E checks |
 
-## Next phase
+## Current next work
 
-Continue **Phase 04 — Complete OpenManusWeb Backend Capability Port & Security Hardening**. Port the source-mapped agent, flow, tool, prompt, LLM and upstream server/API modules one capability at a time. Do not claim or deploy real worker runs until the safe dispatcher and sandbox/browser execution boundaries are complete.
+Continue **Phase 04 — Sandbox and Remaining Tool/Runtime Parity**. Complete Bash/Python/browser/editor isolation, remaining tool adapters, WebSocket/session/log parity or accepted ADRs, then run full end-to-end tests. Keep API/worker execution flags disabled until provider, secret, entitlement, quota, wallet and credit configuration are validated.
