@@ -18,9 +18,23 @@
       "partner_access_code_redemptions",
       "partner_access_codes"
     ],
-    "migration_history_count": 27,
-    "no_schema_mutations_performed": true,
-    "policy_count": 48
+    "migration_history_count": 30,
+    "no_schema_mutations_performed": false,
+    "policy_count": 48,
+    "schema_changes": [
+      {
+        "migration": "20261111030000_moreai_enqueue_chat_run",
+        "change": "Add SECURITY DEFINER RPC for atomic user message + agent run enqueue; service_role EXECUTE only"
+      },
+      {
+        "migration": "20261111033000_moreai_llm_reserve_with_entitlement_quota",
+        "change": "Add atomic entitlement, applicable quota-window consumption, credit reservation and LLM reservation link; service_role EXECUTE only"
+      },
+      {
+        "migration": "20261111040000_moreai_llm_quota_settlement_reconciliation",
+        "change": "Add llm_request_records.quota_reservation and reconcile quota to actual credits on settle; release quota on failed request"
+      }
+    ]
   },
   "migrations": [
     "20261102073329_revoke_public_rls_event_function_execution",
@@ -49,7 +63,10 @@
     "20261103122556_extend_completed_chat_idempotency_retention",
     "20261103122824_atomic_admin_role_permission_matrix",
     "20261103123820_use_invoker_security_for_admin_rpcs",
-    "20261105095527_partner_access_codes_atomic_redemption"
+    "20261105095527_partner_access_codes_atomic_redemption",
+    "20261111030000_moreai_enqueue_chat_run",
+    "20261111033000_moreai_llm_reserve_with_entitlement_quota",
+    "20261111040000_moreai_llm_quota_settlement_reconciliation"
   ],
   "domains": [
     {
@@ -59,7 +76,7 @@
         "user_devices"
       ],
       "policy": "profiles_read_own; server-only deny on devices",
-      "status": "existing schema; API /v1/me implemented against user JWT"
+      "status": "existing; Supabase Auth direct from browser, authenticated FastAPI /api/v1/me"
     },
     {
       "domain": "tenant/RBAC",
@@ -115,7 +132,7 @@
         "conversation_messages"
       ],
       "policy": "server-only deny; API must enforce owner/workspace scope before privileged reads",
-      "status": "existing; chat persistence adapter pending"
+      "status": "existing; atomic moreai_enqueue_chat_run RPC plus owner-scoped FastAPI conversation/message APIs"
     },
     {
       "domain": "agent/runtime",
@@ -128,7 +145,7 @@
         "tool_executions"
       ],
       "policy": "server-only deny; worker RPC lifecycle",
-      "status": "existing durable primitives; worker runtime integration pending"
+      "status": "existing durable primitives; worker claim/heartbeat/checkpoint/finish, Manus/Planning registry, durable plan steps and SSE event reads implemented; execution remains disabled"
     },
     {
       "domain": "LLM gateway",
@@ -140,7 +157,7 @@
         "llm_request_records"
       ],
       "policy": "server-only deny; atomic admin/request RPCs",
-      "status": "existing; provider adapters and router integration pending"
+      "status": "existing; DB-scoped model router, fallback model resolution, OpenAI-compatible streaming adapter, idempotent request/usage accounting implemented; no provider/model/routing rows are configured"
     },
     {
       "domain": "credits/quota",
@@ -152,7 +169,7 @@
         "quota_usage"
       ],
       "policy": "server-only; atomic reserve/settle/release; immutable ledger trigger",
-      "status": "existing; billing adapter integration pending"
+      "status": "existing; atomic entitlement + quota + wallet reservation and actual-usage reconciliation RPCs implemented; no entitlement/quota/wallet seed rows exist"
     },
     {
       "domain": "partner rewards",
@@ -172,7 +189,7 @@
         "artifacts"
       ],
       "policy": "server-only",
-      "status": "existing; worker/outbox/storage adapters pending"
+      "status": "existing; worker checkpoints exposed through authenticated SSE; artifact storage adapter and outbox consumer pending"
     }
   ],
   "worker_rpc": [
@@ -230,12 +247,12 @@
       "remediation": "Do not drop automatically; low/empty production traffic may explain zero scans. Revisit after workload telemetry."
     }
   ],
-  "decision": "Reuse existing schema and RPC lifecycle. No DDL migration or production data change during reconciliation.",
+  "decision": "Reuse existing 52-table schema and durable RPC primitives. Three additive forward-only migrations were applied; no table reset, destructive DDL, RLS relaxation, or production data seeding. Runtime remains fail-closed because provider/model/routing, agent definitions, wallet, quota and user entitlement configuration is empty.",
   "privileged_function_review": {
-    "security_definer_functions": 15,
+    "security_definer_functions": 17,
     "anon_execute": false,
     "authenticated_execute": false,
     "service_role_execute": true,
-    "review": "All observed SECURITY DEFINER functions are executable by service_role only; no anon/authenticated execute privilege observed. Continue function-by-function body and search_path review before exposing additional RPCs."
+    "review": "All 17 observed SECURITY DEFINER functions are executable by service_role only; no anon/authenticated EXECUTE grants observed after the three additive migrations. New RPCs use SET search_path = '' and are service_role-only."
   }
 }
