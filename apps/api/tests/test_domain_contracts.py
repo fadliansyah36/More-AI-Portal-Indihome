@@ -20,3 +20,22 @@ def test_cancel_and_event_stream_require_authentication():
     with TestClient(app) as client:
         assert client.post(f"/api/v1/agent-runs/{run_id}/cancel").status_code == 401
         assert client.get(f"/api/v1/agent-runs/{run_id}/events").status_code == 401
+
+from app.dependencies import current_user
+
+
+def test_agent_run_enqueue_fails_closed_until_runtime_is_enabled(monkeypatch):
+    user_id = "00000000-0000-0000-0000-000000000010"
+    app.dependency_overrides[current_user] = lambda: {"id": user_id, "email": "test@example.invalid"}
+    monkeypatch.setenv("MOREAI_AGENT_EXECUTION_ENABLED", "false")
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                "/api/v1/conversations/00000000-0000-0000-0000-000000000001/messages",
+                headers={"Idempotency-Key": "integration-test-key-001"},
+                json={"content": "do not enqueue without a worker"},
+            )
+        assert response.status_code == 503
+        assert "Agent execution is disabled" in response.json()["detail"]
+    finally:
+        app.dependency_overrides.clear()
