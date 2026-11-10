@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import Settings
 from app.dependencies import current_user
-from app.routers import agent_runs, conversations
+from app.routers import agent_runs, catalog, conversations
 
 
 @asynccontextmanager
@@ -57,7 +57,7 @@ async def readiness(request: Request):
             "dependencies": {"supabase_auth": ready}}
 
 
-@app.get("/v1/me", tags=["identity"])
+@app.get("/v1/me", tags=["identity"], include_in_schema=False)\n@app.get("/api/v1/me", tags=["identity"])
 async def get_me(request: Request, user=Depends(current_user)):
     settings = request.app.state.settings
     token = request.headers["authorization"].removeprefix("Bearer ").strip()
