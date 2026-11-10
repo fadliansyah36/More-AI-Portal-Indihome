@@ -84,7 +84,7 @@ begin
          for update
     loop
         v_window_start := pg_catalog.to_timestamp(
-            pg_catalog.floor(pg_catalog.extract(epoch from now()) / v_policy.window_seconds)
+            pg_catalog.floor(extract(epoch from now()) / v_policy.window_seconds)
             * v_policy.window_seconds
         );
 
