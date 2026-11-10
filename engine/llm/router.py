@@ -109,13 +109,14 @@ class MeteredGateway:
             if claim.get("status") == "succeeded" and isinstance(claim.get("response_text"), str):
                 return {"text": claim["response_text"], "provider_key": claim.get("provider_key"), "model_key": claim.get("model_key"), "cached": True}
             raise RuntimeError("llm_request_already_in_progress")
-        estimate = await self.estimator.estimate(route=route, messages=messages)
-        reservation_id = await self.accounting.reserve(
-            request_id=str(claim["id"]), user_id=user_id, run_id=run_id, request_key=request_key,
-            estimated_credits=estimate.estimated_credits, estimated_cost=estimate.estimated_cost,
-        )
-        started = time.monotonic()
+        reservation_id: str | None = None
         try:
+            estimate = await self.estimator.estimate(route=route, messages=messages)
+            reservation_id = await self.accounting.reserve(
+                request_id=str(claim["id"]), user_id=user_id, run_id=run_id, request_key=request_key,
+                estimated_credits=estimate.estimated_credits, estimated_cost=estimate.estimated_cost,
+            )
+            started = time.monotonic()
             result = await self.adapter.complete(route=route, messages=messages)
             latency_ms = int((time.monotonic() - started) * 1000)
             await self.accounting.record_provider_result(request_id=str(claim["id"]), result=result, latency_ms=latency_ms)
@@ -128,6 +129,6 @@ class MeteredGateway:
         except Exception:
             await self.accounting.fail(
                 request_id=str(claim["id"]), error_code="provider_execution_failed",
-                release_reservation=True, request_key=f"{request_key}:release",
+                release_reservation=reservation_id is not None, request_key=f"{request_key}:release",
             )
             raise
