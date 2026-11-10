@@ -69,27 +69,36 @@ class ModelRouter:
         raise NoEligibleModelRoute(f"No enabled model route for task type: {task_type}")
 
 
+class CreditEstimator(Protocol):
+    async def estimate_credits(self, *, route: ResolvedModelRoute, messages: list[dict[str, Any]]) -> float: ...
+    async def actual_credits(self, *, route: ResolvedModelRoute, result: dict[str, Any]) -> float: ...
+
+
 class UsageAccounting(Protocol):
-    async def reserve(self, *, user_id: str, run_id: str, request_key: str, estimated_cost: float) -> str: ...
-    async def settle(self, *, reservation_id: str, actual_cost: float, request_key: str) -> None: ...
+    async def reserve(self, *, user_id: str, run_id: str, request_key: str, estimated_credits: float) -> str: ...
+    async def settle(self, *, reservation_id: str, actual_credits: float, request_key: str) -> None: ...
     async def release(self, *, reservation_id: str, request_key: str) -> None: ...
 
 
 class MeteredGateway:
-    """No provider call is allowed without an explicit credit/usage accounting adapter."""
+    """No provider call is allowed without an explicit credit estimator and accounting adapter."""
 
-    def __init__(self, *, router: ModelRouter, accounting: UsageAccounting, adapter: Any):
+    def __init__(self, *, router: ModelRouter, estimator: CreditEstimator, accounting: UsageAccounting, adapter: Any):
         self.router = router
+        self.estimator = estimator
         self.accounting = accounting
         self.adapter = adapter
 
     async def complete(self, *, user_id: str, run_id: str, request_key: str, messages: list[dict[str, Any]], task_type: str = "chat") -> dict[str, Any]:
         route = await self.router.resolve(task_type)
-        # Accounting must reserve before the external provider is called.
-        reservation_id = await self.accounting.reserve(user_id=user_id, run_id=run_id, request_key=request_key, estimated_cost=0.0)
+        estimated_credits = await self.estimator.estimate_credits(route=route, messages=messages)
+        if estimated_credits <= 0:
+            raise RuntimeError("credit_estimate_must_be_positive")
+        reservation_id = await self.accounting.reserve(user_id=user_id, run_id=run_id, request_key=request_key, estimated_credits=estimated_credits)
         try:
             result = await self.adapter.complete(route=route, messages=messages)
-            await self.accounting.settle(reservation_id=reservation_id, actual_cost=result["actual_cost"], request_key=f"{request_key}:settle")
+            actual_credits = await self.estimator.actual_credits(route=route, result=result)
+            await self.accounting.settle(reservation_id=reservation_id, actual_credits=actual_credits, request_key=f"{request_key}:settle")
             return result
         except Exception:
             await self.accounting.release(reservation_id=reservation_id, request_key=f"{request_key}:release")
