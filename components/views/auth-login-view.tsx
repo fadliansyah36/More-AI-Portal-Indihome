@@ -5,6 +5,7 @@ import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface AuthLoginViewProps {
   onNavigate: (tab: NavigationTab) => void;
@@ -17,15 +18,41 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
 }) => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'masuk' | 'daftar'>('masuk');
-  const [emailOrPhone, setEmailOrPhone] = useState('andipratama@email.com');
-  const [password, setPassword] = useState('Password2026!');
+  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLoginSuccess();
-    onNavigate('home');
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const identifier = emailOrPhone.trim();
+      const credentials = identifier.includes('@') ? { email: identifier, password } : { phone: identifier, password };
+      const { data, error } = await supabase.auth.signInWithPassword(credentials);
+      if (error) throw error;
+      if (!data.session) {
+        showToast('Login belum selesai. Periksa email Anda untuk konfirmasi akun.', 'info');
+        return;
+      }
+      onLoginSuccess();
+      onNavigate('home');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Login gagal. Periksa kembali data akun.', 'error');
+    }
+  };
+
+  const handleOAuth = async (provider: 'google' | 'apple') => {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) throw error;
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Login sosial belum tersedia.', 'error');
+    }
   };
 
   return (
@@ -150,7 +177,7 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
         <div className="flex items-center justify-center gap-3">
           {/* Google */}
           <button
-            onClick={() => onLoginSuccess()}
+            onClick={() => void handleOAuth('google')}
             className="w-12 h-12 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center shadow-2xs active:scale-95 transition"
             title="Masuk dengan Google"
           >
@@ -159,7 +186,7 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
 
           {/* Apple */}
           <button
-            onClick={() => onLoginSuccess()}
+            onClick={() => void handleOAuth('apple')}
             className="w-12 h-12 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center shadow-2xs active:scale-95 transition"
             title="Masuk dengan Apple"
           >
@@ -168,7 +195,7 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
 
           {/* Global Partner ISP SSO */}
           <button
-            onClick={() => onLoginSuccess()}
+            onClick={() => showToast('Single Sign-On Global Partner ISP belum dikonfigurasi pada Supabase Auth.', 'info')}
             className="w-12 h-12 rounded-2xl border border-blue-200 bg-blue-50/60 hover:bg-blue-100/70 flex items-center justify-center shadow-2xs active:scale-95 transition"
             title="Masuk dengan Global Partner ISP ID"
           >
