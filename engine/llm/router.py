@@ -5,7 +5,7 @@ from typing import Any, Protocol
 
 
 class RouteRepository(Protocol):
-    async def list_enabled_routes(self, task_type: str) -> list[dict[str, Any]]: ...
+    async def list_enabled_routes(self, task_type: str, *, user_id: str | None, workspace_id: str | None, partner_id: str | None) -> list[dict[str, Any]]: ...
     async def get_enabled_model(self, model_id: str) -> dict[str, Any] | None: ...
     async def get_enabled_provider(self, provider_id: str) -> dict[str, Any] | None: ...
 
@@ -40,9 +40,9 @@ class ModelRouter:
     def __init__(self, repository: RouteRepository):
         self.repository = repository
 
-    async def resolve(self, task_type: str, required_capabilities: set[str] | None = None) -> ResolvedModelRoute:
+    async def resolve(self, task_type: str, required_capabilities: set[str] | None = None, *, user_id: str | None = None, workspace_id: str | None = None, partner_id: str | None = None) -> ResolvedModelRoute:
         required = required_capabilities or set()
-        routes = await self.repository.list_enabled_routes(task_type)
+        routes = await self.repository.list_enabled_routes(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)
         for route in routes:
             model = await self.repository.get_enabled_model(str(route["model_id"]))
             if not model:
@@ -97,12 +97,12 @@ class MeteredGateway:
         self.accounting = accounting
         self.adapter = adapter
 
-    async def complete(self, *, user_id: str, run_id: str, request_key: str, messages: list[dict[str, Any]], task_type: str = "chat") -> dict[str, Any]:
+    async def complete(self, *, user_id: str, run_id: str, request_key: str, messages: list[dict[str, Any]], task_type: str = "chat", workspace_id: str | None = None, partner_id: str | None = None) -> dict[str, Any]:
         import hashlib
         import json
         import time
 
-        route = await self.router.resolve(task_type)
+        route = await self.router.resolve(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)
         request_hash = hashlib.sha256(json.dumps(messages, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         claim = await self.accounting.claim_request(user_id=user_id, run_id=run_id, request_key=request_key, request_hash=request_hash)
         if not claim.get("created"):
