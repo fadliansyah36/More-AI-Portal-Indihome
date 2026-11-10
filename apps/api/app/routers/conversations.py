@@ -50,6 +50,8 @@ async def get_conversation(conversation_id: UUID, request: Request, user: dict[s
 async def send_message(conversation_id: UUID, body: MessageCreate, request: Request, idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"), user: dict[str, Any] = Depends(current_user)):
     if not idempotency_key or len(idempotency_key) < 12 or len(idempotency_key) > 128:
         raise HTTPException(400, "A 12–128 character Idempotency-Key header is required")
+    if not request.app.state.settings.agent_execution_enabled:
+        raise HTTPException(503, "Agent execution is disabled until a provider route, credit policy and worker runtime are configured")
     repo = repository(request)
     await repo.owned_record("conversations", conversation_id, user["id"])
     existing = await repo.select("agent_runs", {"user_id": f"eq.{user['id']}", "idempotency_key": f"eq.{idempotency_key}", "select": "id,status,input,created_at", "limit": "1"})
