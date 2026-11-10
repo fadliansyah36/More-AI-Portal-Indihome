@@ -85,6 +85,7 @@ begin
        set run_id = v_run.id
      where id = v_message.id
        and user_id = p_user_id;
+    v_message.run_id := v_run.id;
 
     return pg_catalog.jsonb_build_object(
         'run', pg_catalog.to_jsonb(v_run),
