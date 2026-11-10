@@ -3072,3 +3072,36 @@ A file count alone is insufficient. A successful import/build alone is insuffici
 - Keep source-copy completion, backend integration completion and product feature completion as three distinct statuses.
 
 ------------------------------------------------------------------------
+
+
+## 34. Frontend-to-Backend Data Access Boundary
+
+### 34.1 Browser access rule
+
+The MoreAI browser client may connect directly to Supabase Auth only for authentication lifecycle operations: sign-in, sign-up, OAuth, session retrieval/refresh, sign-out, password recovery and MFA. The browser must not directly access PostgREST tables, database RPCs, Supabase Storage, Realtime, Edge Functions or business-data subscriptions.
+
+### 34.2 Canonical business-data workflow
+
+```text
+Browser UI
+  ├── Supabase Auth (authentication lifecycle only)
+  └── FastAPI API (Bearer Supabase access token)
+        ├── JWT verification and principal resolution
+        ├── Tenant / ownership / RBAC / ABAC authorization
+        ├── Domain services and agent orchestration
+        ├── Durable worker / outbox / checkpoint lifecycle
+        └── Supabase PostgreSQL / Storage / RPC (server-side only)
+```
+
+All business data and mutations must pass through FastAPI, including conversations, agent definitions/runs/events, tools, artifacts, wallet and ledger, credits, quota, entitlements, partner/network domains, administration and analytics. The API must enforce the authenticated user and tenant scope before using privileged server-side database access.
+
+### 34.3 Secret boundary
+
+- Browser: Supabase URL + publishable/anon key for Auth only, and the public FastAPI base URL.
+- FastAPI: Supabase server-side credentials only where required; provider credentials never returned to the browser.
+- Worker: service-role credential and provider credentials in server-side secret storage only.
+- Never place service-role keys, provider keys or internal credentials in `NEXT_PUBLIC_*`, client components, browser bundles, logs, source maps or downloadable artifacts.
+
+### 34.4 Release gate
+
+Agent execution must remain disabled until an enabled provider/model/routing policy, provider secret reference, active user entitlement, applicable quota policy, funded wallet/credit conversion and healthy durable worker are all verified. The API must fail closed rather than creating a queued run that cannot execute. Any exception to this boundary requires a reviewed ADR and security sign-off.
