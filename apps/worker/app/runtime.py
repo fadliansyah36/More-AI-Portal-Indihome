@@ -49,11 +49,14 @@ class WorkerRuntime:
             await self.rpc.finish(run_id, "failed", error={"code": "worker_interrupted"})
             raise
         except Exception:
-            await self.rpc.finish(
-                run_id, "failed",
-                error={"code": "agent_execution_failed"},
-                retry_delay_seconds=30,
-            )
+            if cancelled.is_set():
+                await self.rpc.finish(run_id, "cancelled")
+            else:
+                await self.rpc.finish(
+                    run_id, "failed",
+                    error={"code": "agent_execution_failed"},
+                    retry_delay_seconds=30,
+                )
         finally:
             cancelled.set()
             heartbeat_task.cancel()
