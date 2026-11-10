@@ -30,7 +30,7 @@ class PlanningFlow:
         for index, step in enumerate(steps):
             if cancelled.is_set():
                 break
-            await self.planning_store.mark_step(run_id=context.run_id, step_index=index, status="in_progress")
+            await self.planning_store.mark_step(run_id=context.run_id, step_index=index, status="running")
             try:
                 executor = self.executors[self.default_executor]
                 result = await executor.execute(
@@ -40,8 +40,8 @@ class PlanningFlow:
                     cancelled,
                 )
                 results.append({"step": index, "status": "completed", "output": result.output})
-                await self.planning_store.mark_step(run_id=context.run_id, step_index=index, status="completed")
+                await self.planning_store.mark_step(run_id=context.run_id, step_index=index, status="succeeded")
             except Exception as exc:
-                await self.planning_store.mark_step(run_id=context.run_id, step_index=index, status="blocked", notes=type(exc).__name__)
+                await self.planning_store.mark_step(run_id=context.run_id, step_index=index, status="failed", notes=type(exc).__name__)
                 raise
         return results
