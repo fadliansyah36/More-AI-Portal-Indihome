@@ -81,3 +81,43 @@ def test_metered_stream_reserves_and_settles_before_completion():
         assert chunks[-1]["type"] == "done"
         assert accounting.calls == ["claim", "reserve", "provider_result", "finalize"]
     asyncio.run(run())
+
+def test_metered_completion_passes_workspace_scope_to_credit_reservation():
+    class Router:
+        async def resolve(self, task_type, **kwargs):
+            self.scope = kwargs
+            return ResolvedModelRoute("provider", "model", "Model", "https://provider.example/v1", "MOREAI_PROVIDER_TEST_API_KEY", 1, 2, 10000, 1000, ("chat",))
+    class Estimator:
+        async def estimate(self, **kwargs):
+            return CreditEstimate(0.01, 10)
+        async def actual_credits(self, **kwargs):
+            return 8
+    class Accounting:
+        def __init__(self):
+            self.reservation_args = None
+        async def claim_request(self, **kwargs):
+            return {"created": True, "id": "request-1"}
+        async def reserve(self, **kwargs):
+            self.reservation_args = kwargs
+            return "reservation-1"
+        async def record_provider_result(self, **kwargs):
+            return None
+        async def finalize(self, **kwargs):
+            return None
+        async def fail(self, **kwargs):
+            raise AssertionError("successful completion must not fail")
+    class Adapter:
+        async def complete(self, **kwargs):
+            return {"text": "answer", "provider_key": "provider", "model_key": "model", "input_tokens": 5, "output_tokens": 2, "actual_cost": 0.001}
+    async def run():
+        router = Router()
+        accounting = Accounting()
+        gateway = MeteredGateway(router=router, estimator=Estimator(), accounting=accounting, adapter=Adapter())
+        result = await gateway.complete(
+            user_id="user-1", run_id="run-1", request_key="request-key-001",
+            messages=[{"role": "user", "content": "hello"}], workspace_id="workspace-1",
+        )
+        assert result["text"] == "answer"
+        assert router.scope["workspace_id"] == "workspace-1"
+        assert accounting.reservation_args["workspace_id"] == "workspace-1"
+    asyncio.run(run())
