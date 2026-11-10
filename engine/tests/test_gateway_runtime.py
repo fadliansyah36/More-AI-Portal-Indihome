@@ -14,9 +14,11 @@ class FakeGateway:
 def test_gateway_manus_runtime_uses_metered_gateway_and_checkpoints():
     async def run():
         checkpoints = []
+
         async def checkpoint(key, state):
             checkpoints.append((key, state))
             return {"ok": True}
+
         runtime = GatewayManusRuntime(FakeGateway())
         result = await runtime.execute(
             AgentRunContext("run-1", "user-1", None, None, None, 0, 3),
@@ -25,5 +27,7 @@ def test_gateway_manus_runtime_uses_metered_gateway_and_checkpoints():
             asyncio.Event(),
         )
         assert result.output["text"] == "verified answer"
-        assert checkpoints[-1][0] == "manus.response"\n        assert checkpoints[0][0] == "stream.chunk.000001"
+        assert checkpoints[-1][0] == "manus.response"
+        assert checkpoints[0][0] == "stream.chunk.000001"
+
     asyncio.run(run())
