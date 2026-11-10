@@ -44,34 +44,38 @@ class ModelRouter:
         required = required_capabilities or set()
         routes = await self.repository.list_enabled_routes(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)
         for route in routes:
-            model = await self.repository.get_enabled_model(str(route["model_id"]))
-            if not model:
-                continue
-            capabilities = set(model.get("capabilities") or [])
-            if not required.issubset(capabilities):
-                continue
-            provider = await self.repository.get_enabled_provider(str(model["provider_id"]))
-            if not provider:
-                continue
-            config = provider.get("config") or {}
-            base_url = config.get("base_url")
-            secret_env_name = config.get("secret_env_name")
-            if not isinstance(base_url, str) or not base_url.startswith("https://"):
-                continue
-            if not isinstance(secret_env_name, str) or not secret_env_name.startswith("MOREAI_PROVIDER_"):
-                continue
-            return ResolvedModelRoute(
-                provider_key=provider["key"],
-                model_key=model["key"],
-                display_name=model["display_name"],
-                base_url=base_url.rstrip("/"),
-                secret_env_name=secret_env_name,
-                input_cost_per_million=float(model["input_cost_per_million"]),
-                output_cost_per_million=float(model["output_cost_per_million"]),
-                max_input_tokens=model.get("max_input_tokens"),
-                max_output_tokens=model.get("max_output_tokens"),
-                capabilities=tuple(sorted(capabilities)),
-            )
+            model_ids = [route.get("model_id"), route.get("fallback_model_id")]
+            for model_id in model_ids:
+                if not model_id:
+                    continue
+                model = await self.repository.get_enabled_model(str(model_id))
+                if not model:
+                    continue
+                capabilities = set(model.get("capabilities") or [])
+                if not required.issubset(capabilities):
+                    continue
+                provider = await self.repository.get_enabled_provider(str(model["provider_id"]))
+                if not provider:
+                    continue
+                config = provider.get("config") or {}
+                base_url = config.get("base_url")
+                secret_env_name = config.get("secret_env_name")
+                if not isinstance(base_url, str) or not base_url.startswith("https://"):
+                    continue
+                if not isinstance(secret_env_name, str) or not secret_env_name.startswith("MOREAI_PROVIDER_"):
+                    continue
+                return ResolvedModelRoute(
+                    provider_key=provider["key"],
+                    model_key=model["key"],
+                    display_name=model["display_name"],
+                    base_url=base_url.rstrip("/"),
+                    secret_env_name=secret_env_name,
+                    input_cost_per_million=float(model["input_cost_per_million"]),
+                    output_cost_per_million=float(model["output_cost_per_million"]),
+                    max_input_tokens=model.get("max_input_tokens"),
+                    max_output_tokens=model.get("max_output_tokens"),
+                    capabilities=tuple(sorted(capabilities)),
+                )
         raise NoEligibleModelRoute(f"No enabled model route for task type: {task_type}")
 
 
