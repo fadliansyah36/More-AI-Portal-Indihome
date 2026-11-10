@@ -88,11 +88,18 @@ class SupabaseUsageAccounting:
         if not isinstance(reservation, dict) or not reservation.get("reservation_id"):
             raise RuntimeError("credit_reservation_failed")
         reservation_id = str(reservation["reservation_id"])
-        await self.client.rpc("moreai_llm_set_reservation", {
-            "p_request_id": request_id,
-            "p_reservation_id": reservation_id,
-            "p_estimated_cost": estimated_cost,
-        })
+        try:
+            await self.client.rpc("moreai_llm_set_reservation", {
+                "p_request_id": request_id,
+                "p_reservation_id": reservation_id,
+                "p_estimated_cost": estimated_cost,
+            })
+        except Exception:
+            await self.client.rpc("moreai_credit_release", {
+                "p_reservation_id": reservation_id,
+                "p_idempotency_key": f"{request_key}:reserve-rollback",
+            })
+            raise
         return reservation_id
 
     async def record_provider_result(self, *, request_id: str, result: dict[str, Any], latency_ms: int) -> None:
