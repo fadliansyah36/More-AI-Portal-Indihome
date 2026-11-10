@@ -12,7 +12,7 @@ class SupabasePlanStore:
         self.client = client
         self.user_id = user_id
 
-    async def create(self, *, run_id: str, title: str, steps: list[str]) -> dict[str, Any]:
+    async def create(self, *, run_id: str, title: str, steps: list[dict[str, Any]]) -> dict[str, Any]:
         await self.client.checkpoint(run_id, "planning.manifest", {"title": title[:500], "step_count": len(steps)})
         existing = await self.client.select("agent_run_steps", {
             "run_id": f"eq.{run_id}", "select": "sequence,step_key,status", "order": "sequence.asc", "limit": "200",
@@ -27,7 +27,7 @@ class SupabasePlanStore:
                 "sequence": index,
                 "step_key": key,
                 "status": "pending",
-                "input": {"description": description[:10_000]},
+                "input": {"objective": description["objective"],\n                "dependencies": description["dependencies"],\n                "expected_output": description["expected_output"],\n                "tool_requirement": description["tool_requirement"],\n                "risk": description["risk"],\n                "estimated_usage": description["estimated_usage"]},
             })
         return await self.get(run_id=run_id)
 
