@@ -48,3 +48,62 @@ class OpenAICompatibleAdapter:
             "actual_cost": actual_cost,
             "provider_response_id": payload.get("id"),
         }
+
+    async def stream(self, *, route: ResolvedModelRoute, messages: list[dict[str, Any]]):
+        import json
+
+        api_key = os.getenv(route.secret_env_name)
+        if not api_key:
+            raise RuntimeError("provider_secret_not_configured")
+        usage = None
+        response_id = None
+        async with self.http.stream(
+            "POST",
+            f"{route.base_url}/chat/completions",
+            json={
+                "model": route.model_key,
+                "messages": messages,
+                "stream": True,
+                "stream_options": {"include_usage": True},
+            },
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            timeout=90.0,
+        ) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if not line.startswith("data:"):
+                    continue
+                raw = line[5:].strip()
+                if raw == "[DONE]":
+                    break
+                try:
+                    payload = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                response_id = payload.get("id") or response_id
+                if payload.get("error"):
+                    raise RuntimeError("provider_stream_error")
+                choices = payload.get("choices") or []
+                if choices:
+                    delta = (choices[0].get("delta") or {}).get("content")
+                    if isinstance(delta, str) and delta:
+                        yield {"type": "delta", "text": delta}
+                if payload.get("usage"):
+                    usage = payload["usage"]
+        if usage is None:
+            raise RuntimeError("provider_stream_usage_missing")
+        input_tokens = int(usage.get("prompt_tokens") or 0)
+        output_tokens = int(usage.get("completion_tokens") or 0)
+        actual_cost = (
+            input_tokens * route.input_cost_per_million
+            + output_tokens * route.output_cost_per_million
+        ) / 1_000_000
+        yield {
+            "type": "usage",
+            "provider_key": route.provider_key,
+            "model_key": route.model_key,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "actual_cost": actual_cost,
+            "provider_response_id": response_id,
+        }
