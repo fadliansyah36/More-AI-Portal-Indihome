@@ -64,7 +64,7 @@ class PartnerCampaignCreate(BaseModel):
 
 class PartnerCampaignUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=180)
-    status: str | None = Field(default=None, pattern="^(draft|scheduled|active|paused|completed|cancelled)$")
+    status: str | None = Field(default=None, pattern="^(draft|pending|active|paused|completed|cancelled)$")
     starts_at: datetime | None = None
     ends_at: datetime | None = None
     budget: float | None = Field(default=None, ge=0)
@@ -452,6 +452,8 @@ async def create_partner_access_code(body: PartnerAccessCodeCreate, request: Req
     if body.location_id:
         await _assert_partner_location(request, principal["partner_id"], body.location_id)
     repo = repository(request)
+    if body.network_id and not body.location_id:
+        raise HTTPException(422, "A location is required when an access code is bound to a network")
     if body.network_id:
         network = await repo.select("partner_networks", {
             "id": f"eq.{body.network_id}", "partner_id": f"eq.{principal['partner_id']}",
