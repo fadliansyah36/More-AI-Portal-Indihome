@@ -133,5 +133,7 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
             "role": message.role,
             "content": message.content or "",
             "run_id": run_id,
+            "token_input": 0,
+            "token_output": 0,
             "metadata": metadata,
         })
