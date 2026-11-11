@@ -188,3 +188,27 @@ No real Supabase Auth user token was supplied to CI, so live authenticated API E
 8. Complete UI regression for every existing route before frontend rollout.
 
 **Next phase:** continue Phase 04 — sandbox and remaining tool/runtime parity. Do not enable execution or deploy until the release gates above pass.
+
+
+## 11. Phase 04 continuation — isolated execution security primitives (11 November 2026)
+
+Added a separate apps/sandbox workspace:
+- app/runner.py: Docker-backed disposable Python/Bash execution; requires a digest-pinned image; no network; read-only root; read-only source mount; non-root UID; dropped Linux capabilities; no-new-privileges; PID, memory, CPU and wall-clock limits; bounded output; process-group kill on timeout.
+- app/browser_security.py: HTTPS-only URL policy, exact/subdomain allowlist matching, DNS result inspection rejecting non-global addresses, download size/type checks, and fail-closed scanner availability/verdict checks.
+- tests/test_security.py: policy tests for non-allowlisted host, private IP, scanner unavailable/negative verdict, download size, and missing digest-pinned sandbox image.
+- .github/workflows/phase04-sandbox.yml: isolated Python 3.12 CI test job.
+
+These are security primitives, not a production-ready execution service. The worker registry does not yet route tool calls through this sandbox, and no Docker daemon/image digest or hardened runner deployment is configured. Browser DNS inspection alone does not prevent DNS rebinding between validation and navigation; a production supervisor must enforce address policy at the browser network boundary for every request and redirect. Download scanning requires a deployed scanner implementation; the current interface rejects downloads unless an external clean verdict is supplied.
+
+Commits:
+- Sandbox workspace and tests: 98fd7c8f133ec95c3bb5bedee7f1643f499eddce
+- Sandbox security CI: ffab048bbe0bba44ab01bf46f949d1659428e844
+
+## 12. Updated verification and blockers
+
+- Latest run 42891526705: API tests PASS; worker tests PASS; frontend baseline FAILED. The log identifies a syntax parse error in components/views/chat-view.tsx at EOF (ESLint line 167), followed by Next.js build failure; the workflow then attempted next start without a valid production build and skipped browser smoke. The earlier report's statement that the latest lint/build passed is superseded by this result.
+- The new sandbox workflow has been added but has not yet run against the new commit at the time of this report.
+- No live browser → FastAPI → Worker → provider → Supabase → SSE request was possible because provider configuration and a real authenticated test principal remain unavailable.
+- No production deployment or execution enablement was performed.
+
+**Phase 04 remains IN PROGRESS.** Do not mark the sandbox/browser supervisor, remaining tool handlers, session/WebSocket/log parity, full UI integration or end-to-end execution complete until the missing runtime integration and tests exist.
