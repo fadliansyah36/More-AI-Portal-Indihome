@@ -226,6 +226,9 @@ export const customerApi = {
     }),
   agentRuns: () => moreAiCustomerApi<CustomerAgentRun[]>('/api/v1/customer/agent-runs'),
   getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/customer/agent-runs/${runId}`),
+  cancelRun: (runId: string) => moreAiCustomerApi<{ run_id: string; status: string }>(`/api/v1/agent-runs/${runId}/cancel`, {
+    method: 'POST',
+  }),
   getRunSteps: (runId: string) => moreAiCustomerApi<CustomerWorkflowStep[]>(`/api/v1/customer/agent-runs/${runId}/steps`),
   streamRun: (runId: string) => `/api/v1/customer/agent-runs/${runId}/stream?wait_seconds=30`,
   wallets: () => moreAiCustomerApi<{ wallets: CustomerWallet[] }>('/api/v1/customer/wallet'),
