@@ -102,6 +102,8 @@ export type CustomerAgentRun = {
   id: string;
   conversation_id: string | null;
   status: string;
+  created_at?: string;
+  input?: Record<string, unknown>;
   output?: Record<string, unknown>;
   error?: Record<string, unknown>;
 };
