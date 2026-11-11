@@ -36,7 +36,7 @@ async def partner_locations(
     principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
     filters = {
         "partner_id": f"eq.{principal['partner_id']}",
-        "select": "id,partner_id,name,address,created_at",
+        "select": "id,partner_id,name,address,status,created_at",
         "order": "name.asc", "limit": "200",
     }
     if principal["principal_role"] in {"location_manager", "partner_staff"}:
