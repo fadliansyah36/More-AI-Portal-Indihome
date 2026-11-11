@@ -23,7 +23,19 @@ async def _event_with_checkpoint_state(repo, run_id: UUID, row: dict[str, Any]) 
             "select": "checkpoint_key,state,created_at", "limit": "1",
         })
         if checkpoints:
-            row = {**row, "checkpoint": checkpoints[0].get("state")}
+            state = checkpoints[0].get("state") or {}
+            # Checkpoints also contain private tool arguments and tool observations.
+            # Expose only UI-safe progress/text fields to the run owner.
+            public_state = {
+                key: state[key]
+                for key in ("text", "rounds", "tool_count", "next_round", "progress", "phase", "status")
+                if isinstance(state, dict) and key in state
+                and isinstance(state[key], (str, int, float, bool, type(None)))
+            }
+            output = state.get("output") if isinstance(state, dict) else None
+            if isinstance(output, dict) and isinstance(output.get("text"), str):
+                public_state["output"] = {"text": output["text"]}
+            row = {**row, "checkpoint": public_state}
     return row
 
 
