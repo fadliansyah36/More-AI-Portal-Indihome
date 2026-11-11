@@ -108,6 +108,23 @@ async def customer_agent_run(
 
 
 
+@router.get("/agent-runs/{run_id}/steps")
+async def customer_agent_run_steps(
+    run_id: UUID, request: Request,
+    user: dict[str, Any] = Depends(current_user),
+):
+    """Return persisted workflow steps only after verifying run ownership."""
+    principal = await require_customer_context(request, user)
+    repo = repository(request)
+    await repo.owned_record("agent_runs", run_id, principal["id"])
+    return await repo.select("agent_run_steps", {
+        "run_id": f"eq.{run_id}",
+        "select": "id,sequence,step_key,status,input,output,error,started_at,finished_at,created_at,updated_at",
+        "order": "sequence.asc",
+        "limit": "200",
+    })
+
+
 @router.get("/agent-runs/{run_id}/stream")
 async def customer_agent_run_stream(
     run_id: UUID, request: Request, after: int = 0, wait_seconds: int = 60,
