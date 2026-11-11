@@ -308,3 +308,12 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Migration: 20261111140000_moreai_run_level_approval_pause_resume.sql.
 - Report: PHASE-04-RUN-LEVEL-APPROVAL-PAUSE-RESUME-20261111.md.
 - Migration applied successfully to canonical Supabase project uunfgimtokhucegqbpce. Read-only verification confirmed the column, table, RPC signatures, RLS and deny policy. No staging/runtime/tests/build/lint/typecheck/provider calls/deployment; runtime acceptance remains pending.
+
+
+## 2026-11-11 — Phase 04 durable workspace CAS and FlowFactory wiring
+- Added immutable versioned workspace object paths with expected-version CAS, lease-fenced reservation/commit/abort RPCs, owner/member authorization and private server-only metadata.
+- SWE editor now reads file version metadata, rejects stale expected_version, reserves a fenced write, uploads immutable content, and commits metadata only while the worker lease is valid.
+- FlowFactory is now wired into worker registry construction; planning flow is adapted to the durable MoreAI plan/checkpoint runtime rather than importing upstream process-global log/plan state.
+- Migration: 20261111150000_moreai_workspace_file_cas_versioning.sql.
+- Browser supervisor remains isolated behind a pinned-DNS CONNECT proxy and internal-only supervisor network; no browser deployment/runtime proof was performed.
+- Flow lifecycle parity, full upstream server/session behavior, browser redirect/subresource live proof, and runtime acceptance remain open. No tests/build/lint/typecheck/staging/deployment.
