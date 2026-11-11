@@ -212,3 +212,22 @@ Commits:
 - No production deployment or execution enablement was performed.
 
 **Phase 04 remains IN PROGRESS.** Do not mark the sandbox/browser supervisor, remaining tool handlers, session/WebSocket/log parity, full UI integration or end-to-end execution complete until the missing runtime integration and tests exist.
+
+
+## 13. Frontend recovery and first real-data module integration (11 November 2026)
+
+- Rebuilt `components/views/chat-view.tsx` as a complete component after confirming the tracked file ended at line 167 inside the callback, with no state declarations for input/loading and no returned JSX. The repaired UI retains the existing MoreAI red/slate visual language and uses the authenticated FastAPI conversation, enqueue, run status and SSE endpoints. Commit: `cbf97601d0b9f38a1cb621b9ee44e4c7c4017bfa`.
+- Added `GET /api/v1/artifacts`, authenticated and filtered by the current `user_id`, returning only artifact metadata from `public.artifacts`. Registered the router in FastAPI. Commits: `aaae63c304a3c791405c7ea398eb414c435a6952`, `332ed07167c88de832ba814729a82c3067f7acdd`.
+- Replaced the Files UI mock artifact array and simulated upload/download/share success with real metadata retrieval from the API. Empty/error/loading states now reflect the actual server response. Download/upload/share remain unavailable and are described honestly until signed Storage URLs, upload validation, and ownership-aware mutation endpoints are implemented. Commit: `969d997d4a2cf1dec3848d26495d50593c6c3570`.
+- Added ADR-004 accepting durable SSE as the current browser event transport, with explicit replay cursor, terminal status, security and parity requirements. This is a transport decision only, not a claim of complete upstream session parity. Commit: `edb739a06981a80badd84b2c9a3b8a5ec7071d0c`.
+
+## 14. Current verification state and strict limitations
+
+- The chat syntax defect is repaired in source, but a post-fix GitHub Actions lint/build/browser-smoke result has not yet been retrieved. Do not mark Phase 00 baseline green.
+- The artifact endpoint/UI changes have not yet been exercised with an authenticated user that owns artifact records. Storage upload/download/share operations are not implemented.
+- The agent registry still registers only Manus text runtime and Planning runtime. Tool catalog entries are not equivalent to working handlers; sandbox and browser policy helpers are not wired into Worker dispatch. No browser automation supervisor, DNS-pinned network proxy, malware scanner, artifact upload pipeline, or process-execution deployment is configured.
+- The existing dashboard, tasks/workflow, agent studio, research, code, wallet/credits, partner/network, admin, analytics, and learning screens still contain local/static or simulated values/actions. They have not been represented as live integrations. Replace only after their exact database schemas, access policies, and real endpoint contracts are verified.
+- Supabase schema inspection confirms artifact metadata table exists, but wallet, quota and entitlement tables remain without operational user/provider configuration. Provider credentials, secret references, selected provider/model and real test-user authorization are not available in the connected project context. Therefore provider billing setup and authenticated LLM E2E cannot safely be completed in this pass.
+- No fake provider records, user entitlements, wallet balances, task rows, artifact rows, partner records or usage activity were seeded. No secrets were committed. Worker and agent execution remain disabled. No production deployment occurred.
+
+**Phase 04 status: IN PROGRESS.** Next: verify the new frontend CI, finish real artifact Storage endpoints, replace static task/agent modules using verified domain contracts, then wire secure tool adapters and perform authenticated end-to-end tests after approved provider credentials and billing policy are configured.
