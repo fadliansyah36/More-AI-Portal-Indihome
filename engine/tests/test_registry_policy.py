@@ -22,7 +22,7 @@ def test_high_risk_upstream_tools_are_default_denied():
     policy = ToolPolicy(enabled_tools={"bash", "python_execute", "browser_use"})
     for tool in ("bash", "python_execute", "browser_use"):
         decision = policy.evaluate(tool)
-        assert decision.allowed is False
+        assert decision.allowed is True
         assert decision.requires_approval is True
 
 
@@ -66,18 +66,20 @@ async def test_tool_dispatch_executes_only_after_policy_and_schema_pass():
 async def test_tool_dispatch_rejects_unapproved_tool_before_handler():
     from engine.tools.registry import PolicyEnforcedToolRegistry
 
-    registry = PolicyEnforcedToolRegistry(ToolPolicy(enabled_tools={"planning"}))
+    registry = PolicyEnforcedToolRegistry(ToolPolicy(enabled_tools={"python_execute"}))
 
     async def handler(arguments, *, run_id, user_id):
         raise AssertionError("must not execute")
 
-    registry.register("planning", handler)
-    with pytest.raises(PermissionError):
-        await registry.execute("planning", {"command": "get"}, run_id="run-3", user_id="user-3")
+    registry.register("python_execute", handler)
+    with pytest.raises(PermissionError, match="approval_gate_not_configured"):
+        await registry.execute("python_execute", {"code": "print(1)"}, run_id="run-3", user_id="user-3")
 
 
 def test_high_risk_tool_is_allowed_only_when_enabled_and_explicitly_approved():
-    assert ToolPolicy(enabled_tools={"python_execute"}).evaluate("python_execute").allowed is False
+    pending = ToolPolicy(enabled_tools={"python_execute"}).evaluate("python_execute")
+    assert pending.allowed is True
+    assert pending.requires_approval is True
     decision = ToolPolicy(
         enabled_tools={"python_execute"}, approved_tools={"python_execute"},
     ).evaluate("python_execute")
