@@ -159,7 +159,7 @@ export default function App() {
 
   const handleStartPrompt = (promptText: string) => {
     setChatInitialPrompt(promptText);
-    setCurrentTab('chat');
+    handleNavigate('chat');
   };
 
   return (
