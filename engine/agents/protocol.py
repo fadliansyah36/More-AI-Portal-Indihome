@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 
@@ -17,6 +17,7 @@ class AgentRunContext:
     agent_definition_id: str | None
     attempt: int
     max_attempts: int
+    recovery_checkpoints: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
