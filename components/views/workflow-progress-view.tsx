@@ -98,7 +98,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         <div className="w-5" />
       </div>
 
-      {approvals.some((item) => item.status === 'pending') && (
+      {(approvals.some((item) => item.status === 'pending') || approvalError) && (
         <section className="p-4 rounded-3xl bg-amber-50/70 border border-amber-200 space-y-3">
           <div>
             <h2 className="text-sm font-bold text-slate-900">Persetujuan Tool Agent</h2>
