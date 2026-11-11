@@ -121,3 +121,101 @@ def test_metered_completion_passes_workspace_scope_to_credit_reservation():
         assert router.scope["workspace_id"] == "workspace-1"
         assert accounting.reservation_args["workspace_id"] == "workspace-1"
     asyncio.run(run())
+
+
+def test_metered_completion_fails_over_and_settles_against_the_selected_provider():
+    from engine.llm.errors import RetryableProviderError
+
+    primary = ResolvedModelRoute("provider-a", "model-a", "A", "https://a.example/v1", "MOREAI_PROVIDER_A", 1, 2, 10000, 1000, ("chat",))
+    fallback = ResolvedModelRoute("provider-b", "model-b", "B", "https://b.example/v1", "MOREAI_PROVIDER_B", 2, 3, 10000, 1000, ("chat",))
+
+    class Router:
+        async def resolve_candidates(self, task_type, **kwargs):
+            return [primary, fallback]
+
+    class Estimator:
+        async def estimate(self, *, route, messages):
+            return CreditEstimate(route.input_cost_per_million / 100, route.input_cost_per_million * 10)
+        async def actual_credits(self, *, route, result):
+            assert route.provider_key == "provider-b"
+            return 3
+
+    class Accounting:
+        def __init__(self):
+            self.calls = []
+        async def claim_request(self, **kwargs):
+            return {"created": True, "id": "request-1"}
+        async def reserve(self, **kwargs):
+            self.calls.append(("reserve", kwargs))
+            return "reservation-1"
+        async def record_provider_result(self, **kwargs):
+            self.calls.append(("result", kwargs["result"]["provider_key"]))
+        async def finalize(self, **kwargs):
+            self.calls.append(("finalize", kwargs))
+        async def fail(self, **kwargs):
+            raise AssertionError("fallback success must not release the reservation")
+
+    class Adapter:
+        async def complete(self, *, route, **kwargs):
+            if route.provider_key == "provider-a":
+                raise RetryableProviderError("provider_timeout")
+            return {"text": "fallback answer", "provider_key": route.provider_key, "model_key": route.model_key, "input_tokens": 5, "output_tokens": 2, "actual_cost": 0.001}
+
+    async def run():
+        accounting = Accounting()
+        gateway = MeteredGateway(router=Router(), estimator=Estimator(), accounting=accounting, adapter=Adapter())
+        result = await gateway.complete(
+            user_id="u1", run_id="r1", request_key="fallback-request-001",
+            messages=[{"role": "user", "content": "hello"}],
+        )
+        assert result["provider_key"] == "provider-b"
+        assert accounting.calls[0][0] == "reserve"
+        assert accounting.calls[0][1]["estimated_credits"] == 20
+        assert ("result", "provider-b") in accounting.calls
+    asyncio.run(run())
+
+
+def test_stream_fails_over_only_before_first_emitted_delta():
+    from engine.llm.errors import RetryableProviderError
+
+    primary = ResolvedModelRoute("provider-a", "model-a", "A", "https://a.example/v1", "MOREAI_PROVIDER_A", 1, 2, 10000, 1000, ("chat",))
+    fallback = ResolvedModelRoute("provider-b", "model-b", "B", "https://b.example/v1", "MOREAI_PROVIDER_B", 2, 3, 10000, 1000, ("chat",))
+
+    class Router:
+        async def resolve_candidates(self, task_type, **kwargs):
+            return [primary, fallback]
+
+    class Estimator:
+        async def estimate(self, **kwargs):
+            return CreditEstimate(0.01, 10)
+        async def actual_credits(self, **kwargs):
+            return 4
+
+    class Accounting:
+        async def claim_request(self, **kwargs):
+            return {"created": True, "id": "request-1"}
+        async def reserve(self, **kwargs):
+            return "reservation-1"
+        async def record_provider_result(self, **kwargs):
+            return None
+        async def finalize(self, **kwargs):
+            return None
+        async def fail(self, **kwargs):
+            raise AssertionError("fallback stream should settle")
+
+    class Adapter:
+        async def stream(self, *, route, **kwargs):
+            if route.provider_key == "provider-a":
+                raise RetryableProviderError("provider_unavailable")
+            yield {"type": "delta", "text": "fallback"}
+            yield {"type": "usage", "provider_key": "provider-b", "model_key": "model-b", "input_tokens": 2, "output_tokens": 1, "actual_cost": 0.001}
+
+    async def run():
+        gateway = MeteredGateway(router=Router(), estimator=Estimator(), accounting=Accounting(), adapter=Adapter())
+        events = [item async for item in gateway.stream(
+            user_id="u1", run_id="r1", request_key="fallback-stream-001",
+            messages=[{"role": "user", "content": "hello"}],
+        )]
+        assert events[0] == {"type": "delta", "text": "fallback"}
+        assert events[-1]["provider_key"] == "provider-b"
+    asyncio.run(run())
