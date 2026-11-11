@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   User,
   Gift,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
+import { moreAiApi, notificationApi } from '@/lib/api/client';
 
 interface ProfileSettingsViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -35,6 +36,36 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
 }) => {
   const { showToast } = useToast();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [savingPreference, setSavingPreference] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([moreAiApi<{ user: { email?: string }; profile: { display_name?: string | null } | null }>('/api/v1/me'), notificationApi.preferences()])
+      .then(([identity, preferences]) => {
+        if (!active) return;
+        setProfileName(identity.profile?.display_name || 'Pengguna MoreAI');
+        setProfileEmail(identity.user?.email || '');
+        setNotificationsEnabled(preferences.in_app_enabled);
+      })
+      .catch((error) => { if (active) showToast(error instanceof Error ? error.message : 'Profil gagal dimuat.', 'error'); })
+      .finally(() => { if (active) setProfileLoading(false); });
+    return () => { active = false; };
+  }, [showToast]);
+
+  const toggleNotifications = async () => {
+    const next = !notificationsEnabled;
+    setSavingPreference(true);
+    try {
+      const saved = await notificationApi.updatePreferences({ in_app_enabled: next });
+      setNotificationsEnabled(saved.in_app_enabled);
+      showToast('Preferensi notifikasi tersimpan.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Preferensi gagal disimpan.', 'error');
+    } finally { setSavingPreference(false); }
+  };
   const [language, setLanguage] = useState<'id' | 'en'>('id');
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
@@ -46,7 +77,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
         <div className="relative w-20 h-20 mx-auto">
           <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-red-600 via-rose-500 to-amber-500 p-0.5 shadow-md">
             <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-              <span className="text-2xl font-black text-red-600">AP</span>
+              <span className="text-2xl font-black text-red-600">{profileName ? profileName.trim().split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() : "M"}</span>
             </div>
           </div>
           <span className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white text-[9px] font-bold">
@@ -55,8 +86,8 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
         </div>
 
         <div>
-          <h2 className="text-base font-bold text-slate-900 leading-tight">Andi Pratama</h2>
-          <p className="text-xs text-slate-500 font-medium">andipratama@email.com</p>
+          <h2 className="text-base font-bold text-slate-900 leading-tight">{profileLoading ? "Memuat profil…" : profileName}</h2>
+          <p className="text-xs text-slate-500 font-medium">{profileEmail || "Email tidak tersedia"}</p>
         </div>
 
         {/* Small Benefit Pill */}
@@ -127,7 +158,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
             <span className="text-xs font-semibold text-slate-800">Notifikasi</span>
           </div>
           <button
-            onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+            onClick={() => void toggleNotifications()} disabled={savingPreference}
             className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
               notificationsEnabled ? 'bg-red-600' : 'bg-slate-200'
             }`}
