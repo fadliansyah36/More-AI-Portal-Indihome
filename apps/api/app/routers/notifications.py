@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -62,7 +63,7 @@ async def update_notification_preferences(
     if not changes:
         return await get_notification_preferences(request, user)
     changes["user_id"] = user["id"]
-    changes["updated_at"] = "now()"
+    changes["updated_at"] = datetime.now(timezone.utc).isoformat()
     settings = request.app.state.settings
     response = await request.app.state.http.post(
         f"{settings.supabase_url.rstrip('/')}/rest/v1/notification_preferences",
@@ -93,7 +94,7 @@ async def mark_notification_read(
     rows = await repository(request).update(
         "notifications",
         {"id": f"eq.{notification_id}", "user_id": f"eq.{user['id']}", "select": "id,read_at"},
-        {"read_at": "now()"},
+        {"read_at": datetime.now(timezone.utc).isoformat()},
     )
     if not rows:
         raise HTTPException(404, "Notification not found")
@@ -107,6 +108,6 @@ async def mark_all_notifications_read(
     rows = await repository(request).update(
         "notifications",
         {"user_id": f"eq.{user['id']}", "read_at": "is.null", "select": "id"},
-        {"read_at": "now()"},
+        {"read_at": datetime.now(timezone.utc).isoformat()},
     )
     return {"updated": len(rows)}
