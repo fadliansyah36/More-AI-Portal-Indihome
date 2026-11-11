@@ -406,3 +406,10 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Commits: `ac571bd3589ef09393ee7f94043986f2bdc573c6`, `1735c5700db427b822648fdfad13b9655959a4fd`.
 - Report: [PHASE-04-BROWSER-SWE-HARDENING-CONTINUATION-20261111.md](./PHASE-04-BROWSER-SWE-HARDENING-CONTINUATION-20261111.md).
 - Phase 04 remains IN PROGRESS. Direct browser egress denial has not been provisioned/verified; SWE list/read/delete/version history/restore and Git workflows remain incomplete; full upstream Flow/session/server/WebSocket and backend capability parity remain open. Browser stays disabled. No tests, lint, typecheck, build, runtime/network verification, staging, provider calls or deployment were run.
+
+
+## 2026-11-11 — Browser network isolation topology
+- Added a two-network Compose topology: browser supervisor only on an internal network; CONNECT egress proxy on internal + external network. Added proxy entrypoint, dedicated browser/proxy Dockerfiles, and pinned Playwright dependency.
+- Commits: `16db80a9d9d7a5d1488de9cb2aece9afade0993a`, `57f7428ca87445b0fab985952e21c2db19a2e1b6`, `ea26636acbc0d599db52873890c0e8f1ead77eb3`, `5dc2f8753b32741458f6417472114703cd757045`, `13ca010e0fc08f17aaffd520003e9ef636126081`.
+- Acceptance report: [PHASE-04-BROWSER-NETWORK-ISOLATION-ACCEPTANCE-20261111.md](./PHASE-04-BROWSER-NETWORK-ISOLATION-ACCEPTANCE-20261111.md).
+- This is deployable source topology, not runtime proof. Do not activate browser until direct IPv4/IPv6 egress and bypass tests fail as expected. SWE CRUD/history/restore/Git and complete Flow/session/server/WebSocket/backend parity remain open. Phase 04 NOT ACCEPTED; Phase 07 not started.
