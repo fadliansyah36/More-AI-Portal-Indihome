@@ -371,13 +371,20 @@ class DurableOpenManusRuntime:
                             context.run_id, f"{event_prefix}:started", "tool.started",
                             {"tool": function.name, "round": round_no, "index": index},
                         )
+                    tool_definition = self.tools.catalog.get(function.name)
+                    if tool_definition is None:
+                        raise LookupError("tool_catalog_entry_missing")
+                    effective_timeout_seconds = min(
+                        self.tool_timeout_seconds,
+                        float(tool_definition.timeout_seconds),
+                    )
                     try:
                         observation = await _run_tool_until_cancelled(
                             self.tools.execute(
                                 function.name, arguments, run_id=context.run_id, user_id=context.user_id, workspace_id=context.workspace_id,
                             ),
                             cancelled,
-                            timeout_seconds=self.tool_timeout_seconds,
+                            timeout_seconds=effective_timeout_seconds,
                         )
                         outcome = "succeeded"
                     except asyncio.CancelledError:
@@ -390,7 +397,7 @@ class DurableOpenManusRuntime:
                     except TimeoutError:
                         observation = json.dumps({
                             "error": "tool_execution_timed_out",
-                            "timeout_seconds": self.tool_timeout_seconds,
+                            "timeout_seconds": effective_timeout_seconds,
                             "tool": function.name,
                         }, separators=(",", ":"))
                         outcome = "timed_out"
