@@ -212,8 +212,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           {/* Brand Lockup (Clicking brand opens Customer Home) */}
           <div
             className="flex items-center gap-1.5 cursor-pointer shrink-0"
-            onClick={() => handleModeSwitch('customer')}
-            title="Ke Beranda Customer"
+            onClick={() => onNavigate(activeIsPartner ? 'partner' : 'home')}
+            title={activeIsPartner ? 'Ke Dashboard Mitra' : 'Ke Beranda Customer'}
           >
             <MoreAiNetworkLockup size="sm" dark={isDarkMode} />
           </div>
