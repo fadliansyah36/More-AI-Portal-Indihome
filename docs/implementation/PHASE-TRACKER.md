@@ -372,3 +372,5 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Aligned workflow-step type with the metadata-only response of `GET /api/v1/agent-runs/{run_id}/steps`; private step input/output/error are not represented in the public client type.
 - No UI files changed and no tests/build/lint/typecheck/staging/deployment were run. This is API contract alignment, not Phase 09 acceptance.
 - Report: [API-CLIENT-CONTRACT-ALIGNMENT-20261111.md](./API-CLIENT-CONTRACT-ALIGNMENT-20261111.md).
+
+- SSE client follow-up commit: `6b10c622b1716cf4422a99d4e2f653c5ad9642ca`; stream event IDs are preserved and caller-supplied replay cursors are passed to FastAPI. Automatic reconnect and live runtime delivery remain unverified.
