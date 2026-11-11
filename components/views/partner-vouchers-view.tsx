@@ -1,9 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ArrowLeft, Ticket, Coffee, Gift, Tag, Check, QrCode } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ArrowLeft, Ticket, Gift, QrCode, RefreshCw, Copy, Ban, Plus, X } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
+import { partnerApi } from '@/lib/api/client';
+
+type AccessCode = {
+  id: string;
+  location_id: string | null;
+  network_id: string | null;
+  campaign_id: string | null;
+  reward_id: string | null;
+  status: 'active' | 'revoked' | 'exhausted' | 'expired' | string;
+  expires_at: string;
+  max_redemptions: number;
+  redemption_count: number;
+  created_at: string;
+  revoked_at: string | null;
+};
 
 interface PartnerVouchersViewProps {
   onBack: () => void;
@@ -12,157 +27,161 @@ interface PartnerVouchersViewProps {
 
 export const PartnerVouchersView: React.FC<PartnerVouchersViewProps> = ({
   onBack,
-  onNavigateTab,
 }) => {
   const { showToast } = useToast();
-  const [selectedVoucher, setSelectedVoucher] = useState<{ id: string; title: string; code: string } | null>(null);
+  const [codes, setCodes] = useState<AccessCode[]>([]);
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [newCode, setNewCode] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState(() => new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16));
+  const [maxRedemptions, setMaxRedemptions] = useState('1');
+  const [showCreate, setShowCreate] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [vouchers, setVouchers] = useState([
-    {
-      id: 'v-1',
-      title: 'Diskon Rp 50.000 Kafe Mitra',
-      venue: 'CoffeeHouse Semarang & Resto Nusantara',
-      desc: 'Berlaku untuk seluruh menu makanan & minuman dengan minimum transaksi Rp 100.000.',
-      expiry: '31 Des 2026',
-      code: 'MOREAI-KAFE50K',
-      claimed: false,
-    },
-    {
-      id: 'v-2',
-      title: 'Diskon 20% Minuman Spesial Kopi',
-      venue: 'Seluruh Gerai Kopi Mitra MoreAI',
-      desc: 'Nikmati diskon 20% kopi artisan saat bekerja dengan AI Workspace di venue.',
-      expiry: '15 Jan 2027',
-      code: 'KOPI-AI20',
-      claimed: true,
-    },
-    {
-      id: 'v-3',
-      title: 'Voucher Extra 25.000 Poin AI',
-      venue: 'Ekosistem MoreAI',
-      desc: 'Kredit AI tambahan untuk eksekusi deep research agent & visual marketing.',
-      expiry: '28 Feb 2027',
-      code: 'BONUS-AI25K',
-      claimed: false,
-    },
-  ]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const rows = await partnerApi.accessCodes();
+      setCodes(rows as AccessCode[]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Data kode akses tidak dapat dimuat.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleClaim = (v: typeof vouchers[0]) => {
-    setVouchers((prev) =>
-      prev.map((item) => (item.id === v.id ? { ...item, claimed: true } : item))
-    );
-    setSelectedVoucher({ id: v.id, title: v.title, code: v.code });
-    showToast(`Voucher "${v.title}" berhasil diklaim! Tunjukkan kode ke kasir.`, 'success');
+  useEffect(() => { void load(); }, [load]);
+
+  const createCode = async () => {
+    const expiry = new Date(expiresAt);
+    const count = Number(maxRedemptions);
+    if (!Number.isFinite(expiry.getTime()) || expiry.getTime() <= Date.now()) {
+      showToast('Masa berlaku harus berada di waktu mendatang.', 'error');
+      return;
+    }
+    if (!Number.isInteger(count) || count < 1 || count > 100000) {
+      showToast('Batas penukaran harus berupa angka 1–100.000.', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const result = await partnerApi.createAccessCode({
+        expires_at: expiry.toISOString(),
+        max_redemptions: count,
+      });
+      setNewCode(result.access_code);
+      setShowCreate(false);
+      await load();
+      showToast('Kode akses berhasil dibuat. Salin sekarang; kode hanya ditampilkan satu kali.', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Kode akses gagal dibuat.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const revokeCode = async (code: AccessCode) => {
+    if (code.status !== 'active') return;
+    try {
+      await partnerApi.revokeAccessCode(code.id);
+      await load();
+      showToast('Kode akses telah dicabut.', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Kode akses gagal dicabut.', 'error');
+    }
+  };
+
+  const copyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      showToast('Kode akses disalin.', 'success');
+    } catch {
+      showToast('Tidak dapat menyalin otomatis. Silakan salin kode secara manual.', 'error');
+    }
   };
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
-      {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-        <button onClick={onBack} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">
+        <button onClick={onBack} className="p-1 rounded-lg text-slate-400 hover:text-slate-700" aria-label="Kembali">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="text-center">
-          <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">
-            Sheet 5 Screen 12
-          </span>
-          <h1 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
-            Voucher &amp; Diskon Mitra
-          </h1>
+          <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">Partner Operations</span>
+          <h1 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">Voucher &amp; Kode Akses</h1>
         </div>
-        <div className="w-5" />
+        <button onClick={() => void load()} disabled={loading} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 disabled:opacity-50" aria-label="Segarkan">
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
-      {/* Top Banner */}
-      <div className="p-5 rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white shadow-xs space-y-1">
-        <div className="flex items-center gap-1.5 text-xs text-amber-200 font-bold uppercase">
-          <Gift className="w-4 h-4" />
-          <span>Keuntungan Pengguna Wi-Fi</span>
+      <div className="p-5 rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white shadow-xs space-y-2">
+        <div className="flex items-center gap-1.5 text-xs text-amber-100 font-bold uppercase">
+          <Gift className="w-4 h-4" /><span>Partner Network Access</span>
         </div>
-        <h2 className="text-base font-black">Spesial Mitra Tempat Nongkrong</h2>
-        <p className="text-xs text-white/90">
-          Klaim voucher potongan makan, minum, dan kredit token tambahan di ribuan kafe mitra.
-        </p>
+        <h2 className="text-base font-black">Kelola kode akses jaringan</h2>
+        <p className="text-xs text-white/90">Kode dibuat dan diverifikasi oleh backend. Kode asli hanya ditampilkan saat penerbitan; database menyimpan hash-nya.</p>
+        <button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-red-700 hover:bg-red-50">
+          <Plus className="w-4 h-4" /> Buat kode akses
+        </button>
       </div>
 
-      {/* Voucher Cards */}
+      {error && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">{error}</div>}
+      {loading && <p className="py-8 text-center text-xs text-slate-500">Memuat kode akses dari FastAPI…</p>}
+      {!loading && !error && codes.length === 0 && (
+        <div className="rounded-3xl border border-slate-100 bg-white p-6 text-center">
+          <Ticket className="mx-auto h-8 w-8 text-slate-300" />
+          <p className="mt-2 text-sm font-semibold text-slate-700">Belum ada kode akses</p>
+          <p className="mt-1 text-xs text-slate-500">Kode yang diterbitkan untuk tenant aktif akan tampil di sini.</p>
+        </div>
+      )}
+
       <div className="space-y-3">
-        {vouchers.map((v) => (
-          <div
-            key={v.id}
-            className="p-4 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-3 text-xs"
-          >
+        {codes.map((code) => (
+          <article key={code.id} className="space-y-3 rounded-3xl border border-slate-100 bg-white p-4 text-xs shadow-xs">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5">
-                  <Coffee className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-xs sm:text-sm">{v.title}</h3>
-                  <p className="text-[11px] font-medium text-red-600 mt-0.5">{v.venue}</p>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{v.desc}</p>
-                </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-slate-900">Kode akses jaringan</h3>
+                <p className="mt-1 break-all font-mono text-[10px] text-slate-400">{code.id}</p>
               </div>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${code.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{code.status}</span>
             </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] text-slate-400">
-                Berlaku hingga: <strong>{v.expiry}</strong>
-              </span>
-
-              {v.claimed ? (
-                <button
-                  onClick={() => setSelectedVoucher({ id: v.id, title: v.title, code: v.code })}
-                  className="px-3 py-1.5 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs"
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>Tampilkan Kode</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleClaim(v)}
-                  className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs active:scale-95 transition"
-                >
-                  Klaim Voucher
-                </button>
-              )}
+            <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+              <div><span className="block text-[10px] text-slate-400">Penukaran</span><strong className="text-slate-800">{code.redemption_count} / {code.max_redemptions}</strong></div>
+              <div><span className="block text-[10px] text-slate-400">Berlaku sampai</span><strong className="text-slate-800">{new Date(code.expires_at).toLocaleString('id-ID')}</strong></div>
             </div>
-          </div>
+            <div className="flex items-center justify-between border-t border-slate-100 pt-2">
+              <button onClick={() => setSelectedCode(code.id)} className="text-[11px] font-semibold text-slate-600 hover:text-slate-900">Detail</button>
+              {code.status === 'active' && <button onClick={() => void revokeCode(code)} className="inline-flex items-center gap-1 rounded-lg border border-red-100 px-2.5 py-1.5 text-[11px] font-semibold text-red-600 hover:bg-red-50"><Ban className="h-3.5 w-3.5" /> Cabut kode</button>}
+            </div>
+            {selectedCode === code.id && <div className="rounded-xl bg-slate-50 p-3 text-[10px] text-slate-600">Lokasi: {code.location_id || 'Semua lokasi tenant'}<br/>Jaringan: {code.network_id || 'Tidak dibatasi'}<br/>Campaign: {code.campaign_id || 'Tidak terhubung'}<br/>Reward: {code.reward_id || 'Tidak terhubung'}</div>}
+          </article>
         ))}
       </div>
 
-      {/* Voucher Code QR Modal */}
-      {selectedVoucher && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 text-center space-y-3">
-            <h3 className="text-sm font-bold text-slate-900">{selectedVoucher.title}</h3>
-            <p className="text-xs text-slate-500">Tunjukkan barcode atau kode ini kepada kasir:</p>
+      {newCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm space-y-4 rounded-3xl border border-slate-100 bg-white p-6 text-center shadow-2xl">
+            <QrCode className="mx-auto h-8 w-8 text-red-600" />
+            <h3 className="text-sm font-bold text-slate-900">Kode akses berhasil diterbitkan</h3>
+            <p className="text-xs text-slate-500">Simpan kode ini sekarang. Demi keamanan, backend tidak menyediakan plaintext lagi setelah pembuatan.</p>
+            <div className="break-all rounded-2xl border border-slate-200 bg-slate-50 p-4 font-mono text-sm font-bold text-slate-900">{newCode}</div>
+            <button onClick={() => void copyCode(newCode)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white"><Copy className="h-4 w-4" /> Salin kode</button>
+            <button onClick={() => setNewCode(null)} className="w-full rounded-xl bg-slate-100 py-2.5 text-xs font-semibold text-slate-700">Tutup</button>
+          </div>
+        </div>
+      )}
 
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-              <span className="font-mono text-lg font-black tracking-widest text-slate-900 block mb-2">
-                {selectedVoucher.code}
-              </span>
-              <div className="w-32 h-32 bg-white rounded-xl mx-auto border border-slate-200 flex items-center justify-center p-2 shadow-2xs">
-                {/* Visual Barcode / QR pattern */}
-                <div className="grid grid-cols-4 gap-1 w-full h-full p-2 bg-slate-900 rounded-lg">
-                  <div className="bg-white rounded-xs" />
-                  <div className="bg-red-600 rounded-xs" />
-                  <div className="bg-white rounded-xs" />
-                  <div className="bg-white rounded-xs" />
-                  <div className="bg-white rounded-xs" />
-                  <div className="bg-white rounded-xs" />
-                  <div className="bg-red-600 rounded-xs" />
-                  <div className="bg-white rounded-xs" />
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setSelectedVoucher(null)}
-              className="w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs"
-            >
-              Tutup Voucher
-            </button>
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm space-y-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-2xl">
+            <div className="flex items-center justify-between"><h3 className="text-sm font-bold text-slate-900">Buat kode akses</h3><button onClick={() => setShowCreate(false)} aria-label="Tutup"><X className="h-4 w-4 text-slate-400" /></button></div>
+            <label className="block space-y-1 text-xs"><span className="font-semibold text-slate-700">Berlaku sampai</span><input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5" /></label>
+            <label className="block space-y-1 text-xs"><span className="font-semibold text-slate-700">Maksimum penukaran</span><input type="number" min="1" max="100000" value={maxRedemptions} onChange={(e) => setMaxRedemptions(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5" /></label>
+            <p className="text-[10px] text-slate-500">Penerbitan kode membutuhkan role Partner Owner atau Partner Admin.</p>
+            <div className="flex gap-2"><button onClick={() => setShowCreate(false)} className="flex-1 rounded-xl bg-slate-100 py-2.5 text-xs font-semibold text-slate-600">Batal</button><button onClick={() => void createCode()} disabled={saving} className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white disabled:opacity-50">{saving ? 'Menerbitkan…' : 'Terbitkan kode'}</button></div>
           </div>
         </div>
       )}
