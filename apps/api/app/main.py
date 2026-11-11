@@ -119,6 +119,8 @@ async def readiness(request: Request):
     return {
         "status": "ready" if ready else "degraded",
         "dependencies": {
+            "supabase_auth": auth_configured,
+            "supabase_data": data_configured,
             "supabase_auth_configured": auth_configured,
             "supabase_auth_reachable": auth_reachable,
             "supabase_data_configured": data_configured,
