@@ -31,7 +31,7 @@ async def require_customer_context(request: Request, user: dict[str, Any]) -> di
     assignments = await repo.select("user_role_assignments", {
         "user_id": f"eq.{user['id']}", "scope_type": "eq.platform",
         "scope_id": "is.null",
-        "expires_at": f"gt.{datetime.now(timezone.utc).isoformat()}",
+        "or": f"(expires_at.is.null,expires_at.gt.{datetime.now(timezone.utc).isoformat()})",
         "select": "role_id", "limit": "100",
     })
     role_ids = [row.get("role_id") for row in assignments if row.get("role_id")]
