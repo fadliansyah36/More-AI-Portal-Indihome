@@ -134,8 +134,11 @@ export default function App() {
           const path = window.location.pathname;
           const publicRoute = ['/', '/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path);
           if (!publicRoute) {
-            setCurrentTab('login');
-            window.history.replaceState({ moreaiTab: 'login' }, '', '/login');
+            const partnerEntry = path.startsWith('/partner') || path.startsWith('/mitra');
+            const authTab: NavigationTab = partnerEntry ? 'partner_login' : 'login';
+            const authPath = partnerEntry ? '/partner/login' : '/customer/login';
+            setCurrentTab(authTab);
+            window.history.replaceState({ moreaiTab: authTab }, '', authPath);
           }
         }
       });
@@ -152,8 +155,11 @@ export default function App() {
           const publicRoute = ['/', '/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path)
             || ['login', 'register', 'splash', 'onboarding'].includes(requested || '');
           if (!publicRoute) {
-            setCurrentTab('login');
-            window.history.replaceState({ moreaiTab: 'login' }, '', '/login');
+            const partnerEntry = path.startsWith('/partner') || path.startsWith('/mitra');
+            const authTab: NavigationTab = partnerEntry ? 'partner_login' : 'login';
+            const authPath = partnerEntry ? '/partner/login' : '/customer/login';
+            setCurrentTab(authTab);
+            window.history.replaceState({ moreaiTab: authTab }, '', authPath);
           }
         }
       } catch {
