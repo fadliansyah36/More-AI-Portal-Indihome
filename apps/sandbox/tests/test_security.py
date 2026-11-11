@@ -52,6 +52,9 @@ async def test_docker_runner_uses_disposable_networkless_restricted_container(mo
             self.stdout.feed_eof()
             self.stderr.feed_eof()
 
+        async def wait(self):
+            return 0
+
     async def fake_exec(*command, **kwargs):
         captured.extend(command)
         assert kwargs["start_new_session"] is True
