@@ -132,9 +132,11 @@ export default function App() {
       const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
         if (!session) {
           const path = window.location.pathname;
-          const publicRoute = ['/', '/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path);
+          const requested = new URLSearchParams(window.location.search).get('view');
+          const publicRoute = (path === '/' && (!requested || ['splash', 'onboarding', 'login', 'register', 'welcome_success'].includes(requested)))
+            || ['/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path);
           if (!publicRoute) {
-            const partnerEntry = path.startsWith('/partner') || path.startsWith('/mitra');
+            const partnerEntry = path.startsWith('/partner') || path.startsWith('/mitra') || requested === 'partner' || Boolean(requested?.startsWith('partner_'));
             const authTab: NavigationTab = partnerEntry ? 'partner_login' : 'login';
             const authPath = partnerEntry ? '/partner/login' : '/customer/login';
             setCurrentTab(authTab);
@@ -152,10 +154,10 @@ export default function App() {
         if (error || !data.session) {
           const path = window.location.pathname.replace(/\/+$/, '') || '/';
           const requested = new URLSearchParams(window.location.search).get('view');
-          const publicRoute = ['/', '/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path)
-            || ['login', 'register', 'splash', 'onboarding'].includes(requested || '');
+          const publicRoute = (path === '/' && (!requested || ['login', 'register', 'splash', 'onboarding', 'welcome_success'].includes(requested)))
+            || ['/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path);
           if (!publicRoute) {
-            const partnerEntry = path.startsWith('/partner') || path.startsWith('/mitra');
+            const partnerEntry = path.startsWith('/partner') || path.startsWith('/mitra') || requested === 'partner' || Boolean(requested?.startsWith('partner_'));
             const authTab: NavigationTab = partnerEntry ? 'partner_login' : 'login';
             const authPath = partnerEntry ? '/partner/login' : '/customer/login';
             setCurrentTab(authTab);
