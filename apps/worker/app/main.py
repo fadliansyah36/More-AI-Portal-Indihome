@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 
 import httpx
@@ -10,6 +11,27 @@ from app.dispatcher import RegisteredAgentDispatcher
 from app.registry_factory import build_agent_registry
 from app.runtime import WorkerRuntime
 
+
+async def _health_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+    try:
+        request_line = await asyncio.wait_for(reader.readline(), timeout=2.0)
+        parts = request_line.decode('ascii', 'ignore').split(' ')
+        path = parts[1] if len(parts) > 1 else '/'
+        while True:
+            line = await asyncio.wait_for(reader.readline(), timeout=2.0)
+            if line in (b'\r\n', b'\n', b''):
+                break
+        ok = path in {'/health', '/ready'}
+        body = json.dumps({'status': 'ok' if ok else 'not_found', 'service': 'moreai-worker'}).encode()
+        status = '200 OK' if ok else '404 Not Found'
+        headers = (f'HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n').encode()
+        writer.write(headers + body)
+        await writer.drain()
+    except Exception:
+        pass
+    finally:
+        writer.close()
+        await writer.wait_closed()
 
 async def run_worker() -> None:
     if os.getenv("MOREAI_AGENT_RUNTIME_ENABLED", "false").lower() != "true":
@@ -48,11 +70,17 @@ async def run_worker() -> None:
             raise RuntimeError("no_enabled_llm_quota_policy")
         registry = build_agent_registry(rpc, http)
         runtime = WorkerRuntime(rpc, RegisteredAgentDispatcher(registry, checkpoint_loader=rpc.list_checkpoints))
-        poll_seconds = max(1, min(30, int(os.getenv("WORKER_POLL_SECONDS", "3"))))
-        while True:
-            processed = await runtime.run_once()
-            if not processed:
-                await asyncio.sleep(poll_seconds)
+        health_server = await asyncio.start_server(
+            _health_handler,
+            host=os.getenv("WORKER_HEALTH_HOST", "0.0.0.0"),
+            port=int(os.getenv("WORKER_HEALTH_PORT", "8081")),
+        )
+        async with health_server:
+            poll_seconds = max(1, min(30, int(os.getenv("WORKER_POLL_SECONDS", "3"))))
+            while True:
+                processed = await runtime.run_once()
+                if not processed:
+                    await asyncio.sleep(poll_seconds)
 
 
 if __name__ == "__main__":
