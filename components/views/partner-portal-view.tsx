@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Building2,
   MapPin,
@@ -22,14 +22,25 @@ import {
   ShieldCheck,
   Megaphone,
 } from 'lucide-react';
-import { PARTNER_LOCATIONS } from '@/lib/data';
-import { PartnerLocation, NavigationTab } from '@/types/moreai';
+import { partnerApi, PartnerContext, PartnerLocationRecord } from '@/lib/api/client';
+import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
 export interface PartnerPortalViewProps {
   initialMode?: 'dashboard' | 'onboarding' | 'qr' | 'locations' | 'analytics' | 'packages' | 'promo';
   onNavigateTab?: (tab: NavigationTab) => void;
 }
+
+const addressLabel = (value: unknown): string => {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return 'Alamat belum tersedia';
+  const address = value as Record<string, unknown>;
+  return [
+    address.formatted_address, address.label, address.street,
+    address.city, address.province, address.postal_code,
+  ].filter((part): part is string => typeof part === 'string' && part.trim().length > 0).join(', ')
+    || 'Alamat belum tersedia';
+};
 
 export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
   initialMode = 'dashboard',
@@ -38,15 +49,38 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
   const { showToast } = useToast();
   const [partnerMode, setPartnerMode] = useState<'dashboard' | 'onboarding' | 'qr' | 'locations' | 'analytics' | 'packages' | 'promo'>(initialMode);
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1);
-  const [locations, setLocations] = useState<PartnerLocation[]>(PARTNER_LOCATIONS);
-  const [selectedPlan, setSelectedPlan] = useState<'Basic' | 'Business' | 'Enterprise'>('Business');
+  const [locations, setLocations] = useState<PartnerLocationRecord[]>([]);
+  const [partnerContext, setPartnerContext] = useState<PartnerContext | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [partnerError, setPartnerError] = useState<string | null>(null);
 
-  // Form states for partner registration
-  const [partnerName, setPartnerName] = useState('Farhan Fadliansyah');
-  const [businessEmail, setBusinessEmail] = useState('farhan@coffeehouse.id');
-  const [venueName, setVenueName] = useState('CoffeeHouse Semarang');
+  // Registration fields remain blank until a persisted onboarding API is available.
+  const [partnerName, setPartnerName] = useState('');
+  const [businessEmail, setBusinessEmail] = useState('');
+  const [venueName, setVenueName] = useState('');
   const [venueType, setVenueType] = useState('Coffee Shop / Restoran');
-  const [venueAddress, setVenueAddress] = useState('Jl. Pemuda No. 123, Semarang');
+  const [venueAddress, setVenueAddress] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([partnerApi.context(), partnerApi.locations()])
+      .then(([context, rows]) => {
+        if (!active) return;
+        setPartnerContext(context);
+        setVenueName(context.tenant.display_name || context.tenant.legal_name || '');
+        setLocations(rows);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        const message = error instanceof Error ? error.message : 'Data Partner tidak dapat dimuat.';
+        setPartnerError(message);
+        showToast(message, 'error');
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => { active = false; };
+  }, [showToast]);
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -74,6 +108,12 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
         </div>
       </div>
 
+      {partnerError && (
+        <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {partnerError}
+        </div>
+      )}
+
       {/* DASHBOARD MODE */}
       {partnerMode === 'dashboard' && (
         <div className="space-y-4">
@@ -90,7 +130,7 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
                 <p className="text-xs text-slate-500 font-medium">{venueName}</p>
                 <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-semibold mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Status Layanan: Aktif · Paket Business</span>
+                  <span>Status Tenant: {partnerContext?.tenant.status === 'active' ? 'Aktif' : 'Perlu verifikasi'}</span>
                 </div>
               </div>
             </div>
@@ -104,28 +144,23 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
             </button>
           </div>
 
-          {/* Key Stat Counters (From Sheet 4: Pengguna Hari Ini 126, Total Akses AI 342) */}
+          {/* Live tenant inventory; analytics stay unreported until their API exists. */}
           <div className="grid grid-cols-2 gap-2.5">
             <div className="p-4 rounded-3xl bg-white border border-slate-100 shadow-xs">
               <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-xs font-semibold">Pengguna Hari Ini</span>
-                <Users className="w-4 h-4 text-blue-500" />
+                <span className="text-xs font-semibold">Lokasi Terdaftar</span>
+                <Building2 className="w-4 h-4 text-blue-500" />
               </div>
-              <span className="text-2xl font-black text-slate-900 tracking-tight">126</span>
-              <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
-                +14% vs kemarin
-              </span>
+              <span className="text-2xl font-black text-slate-900 tracking-tight">{isLoading ? '—' : locations.length}</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Dari tenant yang terautentikasi</span>
             </div>
-
             <div className="p-4 rounded-3xl bg-white border border-slate-100 shadow-xs">
               <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-xs font-semibold">Total Akses AI</span>
+                <span className="text-xs font-semibold">Akses AI</span>
                 <Sparkles className="w-4 h-4 text-red-500" />
               </div>
-              <span className="text-2xl font-black text-slate-900 tracking-tight">342</span>
-              <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
-                Kredit Sponsor Aktif
-              </span>
+              <span className="text-sm font-bold text-slate-700">Belum tersedia</span>
+              <span className="text-[10px] text-slate-500 block mt-1">Menunggu endpoint analytics partner</span>
             </div>
           </div>
 
@@ -172,302 +207,120 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
             </button>
           </div>
 
-          {/* Locations Preview */}
+          {/* Locations Preview: real locations only. */}
           <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Titik Wi-Fi Partner Terdaftar
-              </h3>
-              <button
-                onClick={() => setPartnerMode('locations')}
-                className="text-xs text-red-600 font-semibold"
-              >
-                Lihat Semua
-              </button>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Titik Wi-Fi Partner Terdaftar</h3>
+              <button onClick={() => setPartnerMode('locations')} className="text-xs text-red-600 font-semibold">Lihat Semua</button>
             </div>
-
-            <div className="space-y-2">
-              {locations.map((loc) => (
-                <div
-                  key={loc.id}
-                  className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between"
-                >
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">{loc.name}</h4>
-                    <span className="text-[10px] text-slate-500">{loc.address}</span>
+            {isLoading ? (
+              <p className="py-4 text-center text-xs text-slate-500">Memuat lokasi tenant…</p>
+            ) : locations.length === 0 ? (
+              <p className="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-500">Belum ada lokasi yang terdaftar.</p>
+            ) : (
+              <div className="space-y-2">
+                {locations.slice(0, 3).map((loc) => (
+                  <div key={loc.id} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">{loc.name}</h4>
+                      <span className="text-[10px] text-slate-500">{addressLabel(loc.address)}</span>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${loc.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-200 text-slate-600'}`}>
+                      {loc.status === 'active' ? 'Aktif' : 'Nonaktif'}
+                    </span>
                   </div>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      loc.status === 'active'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-slate-200 text-slate-600'
-                    }`}
-                  >
-                    {loc.status === 'active' ? `Aktif · ${loc.plan}` : 'Nonaktif'}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* QR AKSES VIEW (Sheet 4) */}
+      {/* QR access is not simulated before the backend issues a tenant artifact. */}
       {partnerMode === 'qr' && (
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs text-center space-y-4">
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <button
-              onClick={() => setPartnerMode('dashboard')}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
-            >
+            <button onClick={() => setPartnerMode('dashboard')} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h3 className="text-sm font-bold text-slate-900">QR Akses Wi-Fi & MoreAI</h3>
             <div className="w-5" />
           </div>
-
-          {/* Realistic QR Code Graphic Mockup */}
-          <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200 inline-block shadow-inner mx-auto">
-            <div className="w-48 h-48 bg-white p-3 rounded-2xl border border-slate-300 shadow-sm flex flex-col items-center justify-between">
-              {/* Top simulated QR patterns */}
-              <div className="w-full flex justify-between">
-                <div className="w-12 h-12 bg-slate-900 rounded-md p-1.5 flex items-center justify-center">
-                  <div className="w-6 h-6 border-4 border-white bg-slate-900" />
-                </div>
-                <div className="w-12 h-12 bg-slate-900 rounded-md p-1.5 flex items-center justify-center">
-                  <div className="w-6 h-6 border-4 border-white bg-slate-900" />
-                </div>
-              </div>
-
-              {/* Center Logo badge */}
-              <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-black text-sm shadow-md">
-                M
-              </div>
-
-              {/* Bottom simulated QR patterns */}
-              <div className="w-full flex justify-between">
-                <div className="w-12 h-12 bg-slate-900 rounded-md p-1.5 flex items-center justify-center">
-                  <div className="w-6 h-6 border-4 border-white bg-slate-900" />
-                </div>
-                <div className="w-12 h-12 border-2 border-slate-900 grid grid-cols-2 gap-1 p-1">
-                  <div className="bg-slate-900" />
-                  <div className="bg-slate-400" />
-                  <div className="bg-slate-700" />
-                  <div className="bg-slate-900" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-base font-bold text-slate-900">{venueName}</h4>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Wi-Fi: <strong>{locations[0].ssid}</strong> · Akses MoreAI Otomatis
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            <button
-              onClick={() => showToast(`QR Code untuk ${venueName} berhasil diunduh dalam format PDF/PNG resolusi tinggi!`, 'success')}
-              className="py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
-            >
-              <Download className="w-4 h-4" />
-              <span>Unduh QR</span>
-            </button>
-            <button
-              onClick={() => showToast('Tautan portal tamu berhasil disalin ke clipboard.', 'success')}
-              className="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center justify-center gap-1.5"
-            >
-              <Share2 className="w-4 h-4" />
-              <span>Bagikan</span>
-            </button>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+            <QrCode className="mx-auto h-10 w-10 text-slate-400" />
+            <p className="mt-3 text-sm font-semibold text-slate-800">QR belum diterbitkan</p>
+            <p className="mt-1 text-xs text-slate-500">QR akan tersedia setelah provisioning gateway dan artifact API diaktifkan.</p>
+            {locations[0] && <p className="mt-3 text-xs font-medium text-slate-700">{locations[0].name}</p>}
           </div>
         </div>
       )}
 
-      {/* LOCATIONS MANAGEMENT (Sheet 4) */}
+      {/* Tenant-scoped locations loaded from FastAPI. */}
       {partnerMode === 'locations' && (
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <button
-              onClick={() => setPartnerMode('dashboard')}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
-            >
+            <button onClick={() => setPartnerMode('dashboard')} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h3 className="text-sm font-bold text-slate-900">Kelola Lokasi & Cabang</h3>
-            <button
-              onClick={() => showToast('Form pendaftaran cabang baru dibuka.', 'info')}
-              className="text-xs font-bold text-red-600 flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Tambah</span>
+            <button type="button" disabled title="Endpoint pendaftaran lokasi belum tersedia" className="text-xs font-bold text-slate-400 flex items-center gap-1 cursor-not-allowed">
+              <Plus className="w-3.5 h-3.5" /><span>Tambah</span>
             </button>
           </div>
-
-          <div className="space-y-3">
-            {locations.map((loc) => (
-              <div
-                key={loc.id}
-                className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-900">{loc.name}</h4>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      loc.status === 'active'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-slate-200 text-slate-600'
-                    }`}
-                  >
-                    {loc.status === 'active' ? `Aktif · ${loc.plan}` : 'Nonaktif'}
-                  </span>
+          {isLoading ? (
+            <p className="py-8 text-center text-xs text-slate-500">Memuat lokasi tenant…</p>
+          ) : locations.length === 0 ? (
+            <p className="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-500">Belum ada lokasi yang terdaftar pada tenant ini.</p>
+          ) : (
+            <div className="space-y-3">
+              {locations.map((loc) => (
+                <div key={loc.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-xs font-bold text-slate-900">{loc.name}</h4>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${loc.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-200 text-slate-600'}`}>
+                      {loc.status === 'active' ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">{addressLabel(loc.address)}</p>
+                  <p className="text-[10px] text-slate-400">Akses data dibatasi oleh membership dan tenant server-side.</p>
                 </div>
-                <p className="text-[11px] text-slate-500">{loc.address}</p>
-
-                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400">Pengunjung: <strong>{loc.dailyUsers}/hari</strong></span>
-                  <button
-                    onClick={() => {
-                      setVenueName(loc.name);
-                      setPartnerMode('qr');
-                    }}
-                    className="text-red-600 font-bold hover:underline"
-                  >
-                    Lihat QR Akses &gt;
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ANALYTICS & REPORTING (Sheet 4) */}
+      {/* No fabricated analytics: waiting for partner reporting API and RLS contract. */}
       {partnerMode === 'analytics' && (
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <button
-              onClick={() => setPartnerMode('dashboard')}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
-            >
+            <button onClick={() => setPartnerMode('dashboard')} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h3 className="text-sm font-bold text-slate-900">Laporan & Analitik Partner</h3>
             <div className="w-5" />
           </div>
-
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-[10px] text-slate-400 block font-medium">Total Pengguna</span>
-              <span className="text-lg font-black text-slate-900 block mt-0.5">1.248</span>
-              <span className="text-[9px] text-emerald-600 font-semibold">+12%</span>
-            </div>
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-[10px] text-slate-400 block font-medium">Pengguna Unik</span>
-              <span className="text-lg font-black text-slate-900 block mt-0.5">856</span>
-              <span className="text-[9px] text-emerald-600 font-semibold">+8%</span>
-            </div>
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-[10px] text-slate-400 block font-medium">Akses AI</span>
-              <span className="text-lg font-black text-slate-900 block mt-0.5">2.976</span>
-              <span className="text-[9px] text-emerald-600 font-semibold">+18%</span>
-            </div>
-          </div>
-
-          <div className="space-y-2 pt-2">
-            <span className="text-xs font-bold text-slate-800">Distribusi Fitur AI Pengunjung:</span>
-            <div className="space-y-2">
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span>Chat AI</span>
-                  <span className="font-bold">38%</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div className="bg-red-600 h-2 rounded-full" style={{ width: '38%' }} />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span>Create Studio</span>
-                  <span className="font-bold">24%</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div className="bg-amber-500 h-2 rounded-full" style={{ width: '24%' }} />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span>Research</span>
-                  <span className="font-bold">16%</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '16%' }} />
-                </div>
-              </div>
-            </div>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+            <BarChart3 className="mx-auto h-9 w-9 text-slate-400" />
+            <p className="mt-3 text-sm font-semibold text-slate-800">Data analitik belum tersedia</p>
+            <p className="mt-1 text-xs text-slate-500">Pengguna, akses AI, dan distribusi fitur hanya akan ditampilkan setelah endpoint reporting partner tersedia.</p>
           </div>
         </div>
       )}
 
-      {/* PACKAGES MANAGEMENT (Sheet 4) */}
+      {/* Package catalogue and pricing are not yet backed by an approved API contract. */}
       {partnerMode === 'packages' && (
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <button
-              onClick={() => setPartnerMode('dashboard')}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
-            >
+            <button onClick={() => setPartnerMode('dashboard')} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h3 className="text-sm font-bold text-slate-900">Kelola Paket Partner</h3>
+            <h3 className="text-sm font-bold text-slate-900">Paket Partner</h3>
             <div className="w-5" />
           </div>
-
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white space-y-1">
-            <span className="text-[10px] uppercase font-bold text-red-200">Paket Aktif Saat Ini</span>
-            <h4 className="text-base font-bold">Paket Business</h4>
-            <p className="text-xs text-red-100">Kapasitas hingga 200 pengguna serentak · Aktif hingga 12 Jul 2026</p>
-          </div>
-
-          <div className="space-y-2">
-            <div className="p-3 rounded-2xl border border-slate-200 flex justify-between items-center text-xs">
-              <div>
-                <span className="font-bold text-slate-900 block">Paket Basic</span>
-                <span className="text-slate-500 text-[11px]">Hingga 50 pengguna · Gratis</span>
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedPlan('Basic');
-                  showToast('Beralih ke Paket Basic.', 'info');
-                }}
-                className="px-3 py-1 rounded-xl bg-slate-100 text-slate-700 font-semibold"
-              >
-                Pilih
-              </button>
-            </div>
-
-            <div className="p-3 rounded-2xl border-2 border-red-500 bg-red-50/50 flex justify-between items-center text-xs">
-              <div>
-                <span className="font-bold text-slate-900 block">Paket Business (Aktif)</span>
-                <span className="text-slate-500 text-[11px]">Hingga 200 pengguna · Rp 149.000/bln</span>
-              </div>
-              <span className="text-red-600 font-bold">Terpasang</span>
-            </div>
-
-            <div className="p-3 rounded-2xl border border-slate-200 flex justify-between items-center text-xs">
-              <div>
-                <span className="font-bold text-slate-900 block">Paket Enterprise</span>
-                <span className="text-slate-500 text-[11px]">500+ pengguna · Integrasi Kustom</span>
-              </div>
-              <button
-                onClick={() => showToast('Permintaan Paket Enterprise terkirim! Tim sales Global Partner ISP akan menghubungi Anda.', 'success')}
-                className="px-3 py-1 rounded-xl bg-slate-900 text-white font-semibold"
-              >
-                Kontak
-              </button>
-            </div>
-          </div>
+          <p className="rounded-2xl bg-slate-50 p-4 text-xs text-slate-600">
+            Paket, harga, kuota, dan masa aktif belum tersedia dari FastAPI. Tidak ada perubahan paket yang dikirim atau disimulasikan dari layar ini.
+          </p>
         </div>
       )}
 
@@ -540,7 +393,7 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
                 <label className="text-[11px] font-semibold text-slate-700 block mb-1">Nomor WhatsApp / HP *</label>
                 <input
                   type="text"
-                  defaultValue="0812 3456 7890"
+                  placeholder="Masukkan nomor WhatsApp bisnis"
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200"
                 />
               </div>
@@ -597,7 +450,7 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
               {/* Pin Map placeholder */}
               <div className="h-20 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-xs text-slate-500 gap-1.5">
                 <MapPin className="w-4 h-4 text-red-600" />
-                <span>Titik Koordinat Geofence: Terverifikasi (Semarang)</span>
+                <span>Verifikasi geofence akan dilakukan melalui layanan server</span>
               </div>
 
               <div className="flex gap-2">
@@ -617,62 +470,15 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
             </div>
           )}
 
-          {/* STEP 3: Pilih Paket Partner */}
+          {/* Package selection remains disabled until package and onboarding APIs are approved. */}
           {onboardingStep === 3 && (
             <div className="space-y-3 pt-2">
-              <h4 className="text-sm font-bold text-slate-900">3. Pilih Paket Partner</h4>
-              <p className="text-xs text-slate-500">Sesuaikan dengan kapasitas pengunjung</p>
-
-              <div
-                onClick={() => setSelectedPlan('Basic')}
-                className={`p-3 rounded-2xl border cursor-pointer transition ${
-                  selectedPlan === 'Basic'
-                    ? 'border-red-600 bg-red-50/50'
-                    : 'border-slate-200'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs text-slate-900">Basic</span>
-                  <span className="text-[10px] font-bold text-emerald-600">Gratis Aktivasi</span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">Wi-Fi & Akses MoreAI hingga 50 pengguna</p>
-              </div>
-
-              <div
-                onClick={() => setSelectedPlan('Business')}
-                className={`p-3 rounded-2xl border cursor-pointer transition ${
-                  selectedPlan === 'Business'
-                    ? 'border-red-600 bg-red-50/50 ring-2 ring-red-500/10'
-                    : 'border-slate-200'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs text-slate-900">Business (Rekomendasi)</span>
-                  <span className="text-[10px] font-bold text-red-600">Rp 149.000 /bln</span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">Wi-Fi & Akses MoreAI hingga 200 pengguna</p>
-              </div>
-
-              <div
-                onClick={() => setSelectedPlan('Enterprise')}
-                className={`p-3 rounded-2xl border cursor-pointer transition ${
-                  selectedPlan === 'Enterprise'
-                    ? 'border-red-600 bg-red-50/50'
-                    : 'border-slate-200'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs text-slate-900">Enterprise</span>
-                  <span className="text-[10px] font-bold text-slate-700">Hubungi Kami</span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">Kapasitas 500+ pengguna & dashboard kustom</p>
-              </div>
-
-              <button
-                onClick={() => setOnboardingStep(4)}
-                className="w-full py-2.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition shadow-xs mt-2"
-              >
-                Aktifkan Partner
+              <h4 className="text-sm font-bold text-slate-900">3. Paket Partner</h4>
+              <p className="rounded-2xl bg-slate-50 p-4 text-xs text-slate-600">
+                Katalog paket dan proses aktivasi belum terhubung ke backend. Data registrasi belum disimpan dan tenant tidak akan diaktifkan dari form simulasi.
+              </p>
+              <button onClick={() => setPartnerMode('dashboard')} className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">
+                Kembali ke Dashboard
               </button>
             </div>
           )}
@@ -685,24 +491,24 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
               </div>
 
               <div>
-                <h4 className="text-base font-bold text-slate-900">Partner Aktif!</h4>
+                <h4 className="text-base font-bold text-slate-900">Status Pendaftaran Belum Tersimpan</h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                  Selamat! Anda telah resmi menjadi Partner Wi-Fi & AI Access bersama Global Partner ISP/Network.
+                  Layar ini belum terhubung ke endpoint pendaftaran Partner. Tidak ada aktivasi tenant yang dilakukan.
                 </p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2">
                 <div className="flex items-center gap-2 text-slate-700">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Wi-Fi aktif untuk pelanggan venue</span>
+                  <span>Status Wi-Fi belum diverifikasi oleh backend</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-700">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Akses MoreAI siap digunakan via QR scan</span>
+                  <span>QR belum diterbitkan oleh backend</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-700">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Kelola lokasi, pengguna, dan laporan analitik</span>
+                  <span>Fitur tenant aktif mengikuti role dan izin server</span>
                 </div>
               </div>
 
