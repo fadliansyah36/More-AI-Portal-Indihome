@@ -196,7 +196,10 @@ export default function App() {
               )}
 
               {currentTab === 'tasks' && (
-                <TasksView onOpenWorkspaceFiles={() => handleNavigate('files')} />
+                <TasksView
+                  onOpenWorkspaceFiles={() => handleNavigate('files')}
+                  onOpenWorkflow={() => handleNavigate('workflow_progress')}
+                />
               )}
 
               {currentTab === 'files' && <FilesView />}
