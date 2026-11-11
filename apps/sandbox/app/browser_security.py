@@ -60,3 +60,57 @@ def validate_download(*, size_bytes: int, content_type: str, policy: BrowserPoli
         raise BrowserPolicyError("browser_download_scan_failed")
     if not content_type or content_type in {"application/x-msdownload", "application/x-executable"}:
         raise BrowserPolicyError("browser_download_content_type_denied")
+
+
+class BrowserRequestGuard:
+    """Per-browser-session SSRF guard with conservative DNS pinning.
+
+    Call validate_request for the initial URL and for EVERY redirected or
+    intercepted subresource request. Browser automation must route all network
+    requests through this guard; a navigation-only call is insufficient.
+    """
+
+    def __init__(self, policy: BrowserPolicy):
+        self.policy = policy
+        self._pinned: dict[str, frozenset[str]] = {}
+
+    async def validate_request(self, url: str) -> str:
+        parsed = urlsplit(url)
+        if parsed.scheme.lower() not in self.policy.allowed_schemes:
+            raise BrowserPolicyError("browser_scheme_denied")
+        if parsed.port not in (None, 443):
+            raise BrowserPolicyError("browser_port_denied")
+        if not parsed.hostname or parsed.username or parsed.password:
+            raise BrowserPolicyError("browser_url_invalid")
+        host = parsed.hostname.rstrip(".").encode("idna").decode("ascii").lower()
+        if not _domain_allowed(host, self.policy.allowed_domains):
+            raise BrowserPolicyError("browser_domain_not_allowlisted")
+        try:
+            literal = ipaddress.ip_address(host)
+            addresses = frozenset({str(literal)})
+        except ValueError:
+            try:
+                records = await asyncio.get_running_loop().getaddrinfo(
+                    host, 443, type=socket.SOCK_STREAM
+                )
+            except OSError as exc:
+                raise BrowserPolicyError("browser_dns_resolution_failed") from exc
+            addresses = frozenset(str(ipaddress.ip_address(record[4][0])) for record in records)
+        if not addresses:
+            raise BrowserPolicyError("browser_dns_resolution_empty")
+        for address in addresses:
+            ip = ipaddress.ip_address(address)
+            if not ip.is_global or ip.is_multicast or ip.is_unspecified:
+                raise BrowserPolicyError("browser_private_or_reserved_address_denied")
+        pinned = self._pinned.get(host)
+        if pinned is not None and pinned != addresses:
+            raise BrowserPolicyError("browser_dns_rebinding_detected")
+        self._pinned.setdefault(host, addresses)
+        return url
+
+    async def validate_redirect_chain(self, urls: list[str]) -> str:
+        if not urls:
+            raise BrowserPolicyError("browser_redirect_chain_empty")
+        for url in urls:
+            await self.validate_request(url)
+        return urls[-1]
