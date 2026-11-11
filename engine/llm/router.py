@@ -169,6 +169,7 @@ class MeteredGateway:
             raise RuntimeError("llm_request_already_in_progress")
 
         reservation_id: str | None = None
+        provider_succeeded = False
         try:
             reservation_id = await self._reserve_maximum(
                 candidates, messages=messages, request_id=str(claim["id"]),
@@ -182,6 +183,7 @@ class MeteredGateway:
             for candidate in candidates:
                 try:
                     result = await self.adapter.complete(route=candidate, messages=messages, tools=tools)
+                    provider_succeeded = True
                     selected = candidate
                     break
                 except RetryableProviderError as exc:
@@ -200,7 +202,8 @@ class MeteredGateway:
         except Exception:
             await self.accounting.fail(
                 request_id=str(claim["id"]), error_code="provider_execution_failed",
-                release_reservation=reservation_id is not None, request_key=f"{request_key}:release",
+                release_reservation=reservation_id is not None and not provider_succeeded,
+                request_key=f"{request_key}:release",
             )
             raise
 
@@ -228,6 +231,7 @@ class MeteredGateway:
         text_parts: list[str] = []
         usage: dict[str, Any] | None = None
         selected: ResolvedModelRoute | None = None
+        provider_activity = False
         try:
             reservation_id = await self._reserve_maximum(
                 candidates, messages=messages, request_id=str(claim["id"]),
@@ -244,6 +248,7 @@ class MeteredGateway:
                             chunk = item.get("text")
                             if isinstance(chunk, str) and chunk:
                                 candidate_parts.append(chunk)
+                                provider_activity = True
                                 yield {"type": "delta", "text": chunk}
                         elif item.get("type") == "usage":
                             candidate_usage = item
@@ -276,6 +281,7 @@ class MeteredGateway:
         except Exception:
             await self.accounting.fail(
                 request_id=str(claim["id"]), error_code="provider_stream_failed",
-                release_reservation=reservation_id is not None, request_key=f"{request_key}:release",
+                release_reservation=reservation_id is not None and not provider_activity,
+                request_key=f"{request_key}:release",
             )
             raise
