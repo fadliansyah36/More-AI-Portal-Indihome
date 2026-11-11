@@ -20,7 +20,8 @@ Date: 2026-11-11
 3. `b207f30eb987e802135fe7b7720a86fe1da48a32` — provider tool-call parsing now fails closed for malformed shapes, invalid/duplicate IDs, invalid tool names, oversized/non-JSON arguments and non-object argument payloads; malformed calls are no longer silently dropped.
 4. `19d14df45cced74d8ed36b64fb94be082f71ea86` — added `GET /api/v1/customer/agent-runs/{run_id}/steps`; parent run ownership is verified before reading persisted step records.
 5. `32fd349cc8952a469d09586cec45064cb0080fdf` — added typed `CustomerWorkflowStep` and `customerApi.getRunSteps` to the existing API client.
-6. `92e4373b0fcd74008fbc0b77178079d764c621d4` — updated source-to-target OpenManus capability map with the implemented planning tool and strict parser state.
+6. `9c39762e268d0a3b7314c90cba9fc821412f2255` — exposed the existing owner-scoped durable run cancellation endpoint as `customerApi.cancelRun` in the typed client.
+7. `92e4373b0fcd74008fbc0b77178079d764c621d4` — updated source-to-target OpenManus capability map with the implemented planning tool and strict parser state.
 7. `ab0daa44c7e6a3337caa00a14b0c1c7a744dc76f` — updated Phase Tracker to record the durable planning tool and workflow step API while retaining phases as IN PROGRESS.
 
 ## Data flow added
