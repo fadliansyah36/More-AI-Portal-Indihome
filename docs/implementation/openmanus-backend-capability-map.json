@@ -292,7 +292,7 @@
     "classification": "upstream templates/static assets archived only",
     "active_product_use": false
   },
-  "parity_status": "PARTIAL — all upstream Python modules are inventoried and mapped; Manus/Planning, durable run/plan lifecycle, FastAPI identity/conversation/catalog/run/SSE, OpenAI-compatible completion/streaming, scoped route/fallback and atomic entitlement/quota/credit accounting foundations are implemented. Full behavioral parity is NOT COMPLETE. Tool handlers, sandbox/browser isolation, WebSocket/session/log parity and live provider configuration remain outstanding.",
+  "parity_status": "PARTIAL — prior agent/flow/provider/API foundations remain. A durable tool-approval table, restricted server-side RPC lifecycle and typed Customer API client have now been authored. No behavioral parity sign-off: worker approval pause/resume, sandbox supervisor integration, browser SSRF/DNS-rebinding enforcement, file workspace isolation, remaining OpenManus adapters and concurrent-worker recovery proof remain outstanding. No tests were run in this continuation by product-owner instruction.",
   "implemented_target_files": [
     "engine/agents/types.py",
     "engine/agents/runtime.py",
@@ -324,7 +324,10 @@
     "apps/worker/app/main.py",
     "supabase/migrations/20261111030000_moreai_enqueue_chat_run.sql",
     "supabase/migrations/20261111033000_moreai_llm_reserve_with_entitlement_quota.sql",
-    "supabase/migrations/20261111040000_moreai_llm_quota_settlement_reconciliation.sql"
+    "supabase/migrations/20261111040000_moreai_llm_quota_settlement_reconciliation.sql",
+    "apps/api/app/routers/tool_approvals.py",
+    "supabase/migrations/20261111050000_moreai_tool_approval_lifecycle.sql",
+    "lib/api/client.ts"
   ],
   "runtime_safety_gates": {
     "agent_execution_default": "disabled",
@@ -338,5 +341,12 @@
     "browser_use": "blocked_until_ssrf_and_browser_isolation",
     "str_replace_editor": "blocked_until_workspace_isolation",
     "provider_calls": "blocked_until_provider_route_secret_entitlement_quota_wallet_and_credit_conversion_are_configured"
+  },
+  "approval_lifecycle": {
+    "persistence": "Migration authored: supabase/migrations/20261111050000_moreai_tool_approval_lifecycle.sql",
+    "api": "apps/api/app/routers/tool_approvals.py; registered in apps/api/app/main.py; customer-scoped list/request/decision contracts",
+    "frontend_client": "lib/api/client.ts exports customerToolApprovalApi",
+    "worker_dispatch": "NOT_INTEGRATED — durable tool dispatcher still needs pause/resume semantics and atomic consume callback before sandbox tools can be exposed",
+    "status": "PARTIAL — persistence and server API contracts authored; not activated; no test evidence per product-owner instruction"
   }
 }
