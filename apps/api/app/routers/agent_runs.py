@@ -83,18 +83,28 @@ async def cancel_run(run_id: UUID, request: Request, user: dict[str, Any] = Depe
 
 
 @router.get("/{run_id}/events")
-async def get_events(run_id: UUID, request: Request, after: int = 0, user: dict[str, Any] = Depends(customer_principal)):
+async def get_events(
+    run_id: UUID, request: Request,
+    after: int = Query(default=0, ge=0),
+    limit: int = Query(default=200, ge=1, le=500),
+    user: dict[str, Any] = Depends(customer_principal),
+):
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
     rows = await repo.select("agent_run_events", {
         "run_id": f"eq.{run_id}", "sequence": f"gt.{max(after, 0)}",
-        "select": "id,event_type,sequence,payload,created_at", "order": "sequence.asc", "limit": "500",
+        "select": "id,event_type,sequence,payload,created_at", "order": "sequence.asc", "limit": str(limit),
     })
     return [await _event_with_checkpoint_state(repo, run_id, row) for row in rows]
 
 
 @router.get("/{run_id}/stream")
-async def stream_events(run_id: UUID, request: Request, after: int = 0, wait_seconds: int = 60, user: dict[str, Any] = Depends(customer_principal)):
+async def stream_events(
+    run_id: UUID, request: Request,
+    after: int = Query(default=0, ge=0),
+    wait_seconds: int = Query(default=60, ge=1, le=120),
+    user: dict[str, Any] = Depends(customer_principal),
+):
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
 
