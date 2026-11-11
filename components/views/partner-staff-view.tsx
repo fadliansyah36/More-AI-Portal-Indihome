@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Users, UserPlus, Shield, Trash2, RefreshCw, X } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, Shield, RefreshCw, X } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 import { partnerApi, PartnerMember } from '@/lib/api/client';
