@@ -74,3 +74,12 @@ async def test_tool_dispatch_rejects_unapproved_tool_before_handler():
     registry.register("planning", handler)
     with pytest.raises(PermissionError):
         await registry.execute("planning", {"command": "get"}, run_id="run-3", user_id="user-3")
+
+
+def test_high_risk_tool_is_allowed_only_when_enabled_and_explicitly_approved():
+    assert ToolPolicy(enabled_tools={"python_execute"}).evaluate("python_execute").allowed is False
+    decision = ToolPolicy(
+        enabled_tools={"python_execute"}, approved_tools={"python_execute"},
+    ).evaluate("python_execute")
+    assert decision.allowed is True
+    assert decision.requires_approval is False
