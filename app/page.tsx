@@ -124,6 +124,19 @@ export default function App() {
       const next = path === '/' ? (queryTab || 'splash') : (pathTab[path] || queryTab);
       if (next) setCurrentTab(next);
     };
+    const redirectProtectedRouteToRoleLogin = () => {
+      const path = window.location.pathname.replace(/\\/+$/, '') || '/';
+      const requested = new URLSearchParams(window.location.search).get('view');
+      const publicRoute = (path === '/' && (!requested || ['splash', 'onboarding', 'login', 'register', 'welcome_success'].includes(requested)))
+        || ['/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path);
+      if (publicRoute) return;
+      const partnerEntry = path.startsWith('/partner') || path.startsWith('/mitra') || requested === 'partner' || Boolean(requested?.startsWith('partner_'));
+      const authTab: NavigationTab = partnerEntry ? 'partner_login' : 'login';
+      const authPath = partnerEntry ? '/partner/login' : '/customer/login';
+      setCurrentTab(authTab);
+      window.history.replaceState({ moreaiTab: authTab }, '', authPath);
+    };
+
     resolveTab();
     window.addEventListener('popstate', resolveTab);
     let unsubscribeAuth = () => {};
@@ -146,7 +159,9 @@ export default function App() {
       });
       unsubscribeAuth = () => authListener.subscription.unsubscribe();
     } catch {
-      setCurrentTab('login');
+      // Keep public Splash/Onboarding routes usable even before Auth is configured;
+      // protected Customer/Partner routes still fail closed to their role-specific login.
+      redirectProtectedRouteToRoleLogin();
     }
     const restoreSession = async () => {
       try {
@@ -165,7 +180,7 @@ export default function App() {
           }
         }
       } catch {
-        setCurrentTab('login');
+        redirectProtectedRouteToRoleLogin();
       }
     };
     void restoreSession();
