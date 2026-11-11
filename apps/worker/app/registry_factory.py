@@ -51,6 +51,7 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
         event_publisher=client.append_run_event,
         sandbox_tools=sandbox_tools,
         # Browser and sandbox capabilities are independently high-risk. Any enabled high-risk tool\n        # must have the durable owner-approval gate, regardless of which adapter is enabled.\n        approval_gate=client.wait_for_tool_approval,
+        tool_timeout_seconds=float(os.getenv("MOREAI_TOOL_TIMEOUT_SECONDS", "120")),
     )
     flow_factory = FlowFactory()
     # OpenManus PlanningFlow is adapted to the durable MoreAI plan store and
