@@ -13,7 +13,7 @@
 | 06 | FastAPI core & OpenAPI contract | IN PROGRESS — Customer/Partner route groups plus Customer tool-approval list/request/decision routes; full domain contracts and OpenAPI parity remain | Customer context/conversation/run/SSE; Partner tenants/context/locations/members; legacy customer routes protected; API contract tests PASS |
 | 07 | Worker & durable run lifecycle | IN PROGRESS — checkpoint restoration, run-scoped transcript persistence and restart replay implemented | `WorkerRpcClient.list_checkpoints`, `SupabaseConversationMemoryStore.load_run`, durable per-tool settled observation and restart recovery tests PASS |
 | 08 | LLM/tool/workflow/orchestration integration | IN PROGRESS — configured provider fallback and metered reservation/settlement implemented; only approved existing chat-completion tool active | Ordered primary/fallback candidates; stream fallback only before first delta; engine tests PASS |
-| 09 | Existing Frontend API Integration | IN PROGRESS — Customer Chat and Partner Portal have typed API wiring; typed tool-approval client added; remaining UI screens still require domain endpoints and hardcoded/demo-data removal | Typed `customerApi`/`partnerApi`; demo partner data and fabricated analytics/QR/package claims removed; frontend baseline rerun pending |
+| 09 | Existing Frontend API Integration | IN PROGRESS — workflow deep routes, live agent-run views, FastAPI agent catalog, Supabase Auth session lifecycle, Partner membership login, profile identity and artifact metadata are now connected; many non-AI domain screens still need real domain endpoints | Direct `/workflow`, `/login`, `/register`, `/partner/login`; Customer/Partner server-side API separation; no visual redesign intended |
 | 10 | End-to-end integration verification | BLOCKED | No real-provider authenticated browser → worker → provider E2E; real keys intentionally deferred |
 | 11 | Integration release gate | NOT STARTED | No production worker/sandbox activation or release until full parity and acceptance evidence |
 
@@ -23,11 +23,25 @@ Implementation is being performed directly on `main` as explicitly requested by 
 
 ## Current Phase 04 next work
 
-1. Wire the existing durable worker dispatcher to a policy-enforced OpenManus tool-call runtime (currently the worker factory still uses text-only `GatewayManusRuntime`).
-2. Implement real adapters for catalog tools only where the required provider, storage, sandbox, approval and audit dependencies exist. Keep unavailable tools hidden and default-denied.
-3. Implement short-term conversation/run memory persistence with owner/workspace isolation and restart recovery using verified existing Supabase schema; add long-term retrieval only after its consent, retention and deletion model is implemented.
-4. Complete upstream agent/flow parity and connect isolated Bash/Python/browser/editor tools to actual sandbox supervisors with resource/network/secret boundaries.
-5. Add integration, recovery, tenant-isolation and security tests, then update the capability map from test evidence.
+1. Implement worker approval pause/resume and atomic single-use consumption; the approval migration/API is only a persisted request/decision contract and is not yet connected to the worker.
+2. Integrate the sandbox supervisor with the OpenManus dispatcher. Keep Bash/Python/browser/file tools unavailable until the approval and supervisor gates are actually wired.
+3. Implement browser isolation, DNS pinning/rebinding defenses, redirect revalidation, private/reserved IP rejection, controlled downloads and isolated file workspace.
+4. Close the source-to-target behavioral parity gaps in `openmanus-backend-capability-map.json`, including agent/flow lifecycle, tool schemas/handlers and upstream server/session/stream functions.
+5. Maintain durable recovery, idempotency and tenant boundaries. The current user instruction for this continuation is to skip tests; therefore no new pass evidence is claimed.
+
+## 2026-11-11 frontend route, auth and workflow integration continuation
+
+- Root cause of the Workflow route issue: the product used a single client-side tab state with no direct Next.js route aliases for Workflow/Login/Register/Partner Login. Direct route entry had no durable mapping to the corresponding screen.
+- Added route entry points `/workflow`, `/workflow-progress`, `/login`, `/register`, and `/partner/login`, all forwarding into the existing main UI (no second frontend).
+- Main navigation now updates browser history and restores the active screen from direct links/history. Supabase Auth session restoration and auth-state changes protect the workspace; unauthenticated visits to protected screens return to Login.
+- Customer Login/Register continue to use Supabase Auth. Password recovery now invokes `resetPasswordForEmail` instead of displaying a fabricated success toast.
+- Partner Login no longer accepts hardcoded demo credentials or shows fake success. It signs in through Supabase Auth and calls the server-side Partner tenant discovery endpoint. Access is granted in the UI only when an active Partner membership is returned. Partner applicant metadata does not grant authorization; tenant membership remains server-controlled.
+- WorkflowProgressView now reads persisted Customer Agent Runs from `GET /api/v1/customer/agent-runs`. The Tasks view now uses actual agent-run history instead of seeded tasks and no longer locally toggles completion. Artifact-result view now reads real artifact metadata from `GET /api/v1/artifacts`; file download is not claimed because a signed-download endpoint is not yet implemented.
+- Agent Studio now reads `GET /api/v1/agents`, hides disabled agents, and passes the selected supported agent key (Manus/Planning) into the Customer Chat request. The home greeting reads `GET /api/v1/me` and the fabricated “Partner ISP 100M” badge was removed.
+- API boundary remains: browser Supabase access is Auth-only; business data/actions are routed through the typed FastAPI client; Customer and Partner data APIs remain server-side role/tenant checked.
+- No tests, lint, build, screenshots, SQL apply, or runtime checks were run in this continuation, per explicit instruction. UI changes therefore have no new regression evidence. Do not treat this increment as phase acceptance.
+
+Remaining Phase 09 work includes real APIs for all Wi-Fi, captive portal, voucher, credit/ledger, analytics, education, notification, account/profile mutation and Partner operations screens. These must not be populated with fabricated fallback data. Phase 04, 06–08, 10 and 11 remain open.
 
 Latest direct-main commits:
 - `13f7353d1ed6252f1313f3d47a6ede159b7ed0b3` — hardened tool-call runtime and agent lifecycle.
