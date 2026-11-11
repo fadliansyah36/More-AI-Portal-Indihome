@@ -1,13 +1,20 @@
 from __future__ import annotations
 
-from typing import Any
-from fastapi import APIRouter, Depends, Query, Request
+from typing import Any, Literal
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from pydantic import BaseModel
 
 from app.authorization import require_platform_context, require_platform_permission
 from app.dependencies import current_user
 from app.routers.conversations import repository
 
 router = APIRouter(prefix="/api/v1/admin", tags=["platform-admin"])
+
+
+class PartnerStatusUpdate(BaseModel):
+    status: Literal["pending", "active", "suspended", "rejected", "closed"]
 
 
 async def platform_admin(request: Request, user: dict[str, Any] = Depends(current_user)):
@@ -22,6 +29,10 @@ async def partner_reader(request: Request, user: dict[str, Any] = Depends(curren
     return await require_platform_permission(request, user, "partner.organization.read")
 
 
+async def partner_manager(request: Request, user: dict[str, Any] = Depends(current_user)):
+    return await require_platform_permission(request, user, "partner.organization.manage")
+
+
 async def audit_reader(request: Request, user: dict[str, Any] = Depends(current_user)):
     return await require_platform_permission(request, user, "platform.audit.read")
 
@@ -34,8 +45,6 @@ async def admin_context(principal=Depends(platform_admin)):
 @router.get("/overview")
 async def admin_overview(request: Request, principal=Depends(overview_reader)):
     repo = repository(request)
-    # Counts are derived from bounded live records; this endpoint intentionally
-    # avoids exposing PII or relying on client-supplied role/tenant filters.
     specs = {
         "users": ("profiles", "id"),
         "partners": ("partner_organizations", "id"),
@@ -85,6 +94,25 @@ async def admin_partners(
     return {"items": rows, "limit": limit, "offset": offset}
 
 
+@router.patch("/partners/{partner_id}/status")
+async def update_partner_status(
+    partner_id: UUID,
+    body: PartnerStatusUpdate,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    principal=Depends(partner_manager),
+):
+    if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
+        raise HTTPException(400, "A 12–128 character Idempotency-Key header is required")
+    return await repository(request).rpc("moreai_admin_update_partner_status", {
+        "p_actor_user_id": principal["id"],
+        "p_partner_id": str(partner_id),
+        "p_status": body.status,
+        "p_idempotency_key": idempotency_key,
+        "p_correlation_id": getattr(request.state, "correlation_id", None),
+    })
+
+
 @router.get("/agent-runs")
 async def admin_agent_runs(
     request: Request,
@@ -100,7 +128,6 @@ async def admin_agent_runs(
     if status:
         filters["status"] = f"eq.{status}"
     rows = await repository(request).select("agent_runs", filters)
-    # Avoid leaking raw prompts, outputs, message content or provider secrets to the admin table.
     return {"items": rows, "limit": limit, "offset": offset}
 
 
