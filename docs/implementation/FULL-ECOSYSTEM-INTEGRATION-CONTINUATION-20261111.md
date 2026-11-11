@@ -56,3 +56,7 @@
 - GitHub Actions Phase 04 run 42981030933 completed SUCCESS after Super Admin authorization/API and readiness changes. Worker-contract, engine-policy, API-contract (including new Super Admin auth tests), and sandbox-policy jobs all passed.
 - Phase 00 baseline run 42981030866 was still pending at the time of this report; no frontend build/browser regression pass is claimed for the new /admin route yet.
 - API readiness now probes Supabase Auth settings endpoint and PostgREST roles endpoint using server-side credentials; readiness distinguishes configured vs reachable dependencies and preserves prior dependency keys for compatibility. Live readiness cannot be verified until runtime secrets are supplied and API is deployed.
+
+- Worker now exposes internal /health and /ready HTTP endpoints on port 8081 after startup checks; the container image and Compose profile include an internal healthcheck. Added a unit test for the worker readiness endpoint.
+- Follow-up Phase 04 CI run 42981289103 completed SUCCESS, including the new worker health test; API, worker, engine and sandbox jobs all passed.
+- Latest Phase 00 run 42981289142 was still IN PROGRESS at report time. API and worker test jobs passed; frontend lint/build/browser smoke was still running and is not yet claimed.
