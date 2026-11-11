@@ -292,3 +292,11 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - No production rows were written and no runtime/staging tests were run.
 - Implementation report: [SECURITY-EXPLICIT-SERVER-ONLY-RLS-20261111.md](./SECURITY-EXPLICIT-SERVER-ONLY-RLS-20261111.md).
 - Commit: `2b1a728d424a93dc943d8ab9650957ee6782401a`.
+
+
+## 2026-11-11 — Security and performance advisor reconciliation
+- Read-only Supabase Security Advisor: only remaining finding is `auth_leaked_password_protection` (WARN). It requires Supabase Auth dashboard configuration; no supported Auth settings write action is exposed by the connected integration. Do not mark resolved until the setting is enabled and the advisor is refreshed.
+- Read-only Performance Advisor: 53 unindexed-FK findings and 34 unused-index findings. No index DDL was applied. FK findings require full leftmost-prefix/index-catalog reconciliation; unused-index findings require representative workload observation before any drop. Blind mass index creation/removal is explicitly avoided.
+- No staging, runtime tests, provider calls, production data writes, migration, lint, typecheck, build or deployment were run.
+- Detailed report: [SECURITY-PERFORMANCE-ADVISOR-20261111.md](./SECURITY-PERFORMANCE-ADVISOR-20261111.md).
+- Phases 04, 06, 07, 08 and 09 remain IN PROGRESS; Phase 10 is skipped per product-owner instruction and Phase 11 remains NOT STARTED.
