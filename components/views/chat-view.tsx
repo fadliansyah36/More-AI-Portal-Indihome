@@ -138,7 +138,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, isLoading, conversationId, showToast]);
+  }, [inputText, isLoading, conversationId, showToast, initialAgentKey]);
 
   useEffect(() => {
     if (initialPrompt.trim() && !sentInitialPrompt.current) {
