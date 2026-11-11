@@ -363,3 +363,12 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Implemented the previously missing authenticated `GET /api/v1/agent-runs/{run_id}/steps` route, scoped to run ownership and exposing safe metadata only.
 - Existing typed frontend client already calls this path; no UI changes required.
 - Report: PHASE-04-09-RUN-STEPS-API-20261111.md.
+
+
+## 2026-11-11 — API client contract alignment
+
+- Commit: `c2e1c5a437485207a09712d3e118f095b5e579eb`.
+- Added typed Customer conversation detail and durable run-event replay methods to `lib/api/client.ts`.
+- Aligned workflow-step type with the metadata-only response of `GET /api/v1/agent-runs/{run_id}/steps`; private step input/output/error are not represented in the public client type.
+- No UI files changed and no tests/build/lint/typecheck/staging/deployment were run. This is API contract alignment, not Phase 09 acceptance.
+- Report: [API-CLIENT-CONTRACT-ALIGNMENT-20261111.md](./API-CLIENT-CONTRACT-ALIGNMENT-20261111.md).
