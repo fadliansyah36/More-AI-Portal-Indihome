@@ -228,6 +228,25 @@ export type CustomerQuota = {
 };
 
 
+export type CustomerNetworkSession = {
+  id: string;
+  network_id: string;
+  status: string;
+  started_at: string;
+  last_heartbeat_at: string | null;
+  expires_at: string;
+  ended_at: string | null;
+  end_reason: string | null;
+  network: {
+    id: string;
+    name: string;
+    ssid_label: string | null;
+    gateway_type: string;
+    status: string;
+    location: { id: string; name: string; address: unknown } | null;
+  } | null;
+};
+
 export type CustomerArtifact = {
   id: string;
   storage_path: string;
@@ -279,6 +298,9 @@ export const customerApi = {
     id: string; event_type: string; sequence: number; payload: Record<string, unknown>; created_at: string;
   }>>(`/api/v1/agent-runs/${runId}/events?after=${Math.max(0, after)}`),
   streamRun: (runId: string, after = 0) => `/api/v1/agent-runs/${runId}/stream?after=${Math.max(0, after)}&wait_seconds=30`,
+  networkSessions: (limit = 50) => moreAiCustomerApi<CustomerNetworkSession[]>(
+    `/api/v1/customer/network-sessions?limit=${Math.min(100, Math.max(1, limit))}`,
+  ),
   wallets: () => moreAiCustomerApi<{ wallets: CustomerWallet[] }>('/api/v1/customer/wallet'),
   ledger: (limit = 50, before?: string) => moreAiCustomerApi<CustomerLedgerEntry[]>(`/api/v1/customer/wallet/ledger?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
   usage: (limit = 50, before?: string) => moreAiCustomerApi<CustomerUsageRecord[]>(`/api/v1/customer/usage?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
