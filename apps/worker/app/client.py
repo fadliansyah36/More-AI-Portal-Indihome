@@ -92,6 +92,20 @@ class WorkerRpcClient:
                 restored[key] = state
         return restored
 
+    async def append_run_event(
+        self, run_id: str, event_key: str, event_type: str,
+        payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        result = await self.rpc("moreai_worker_append_run_event", {
+            "p_run_id": run_id,
+            "p_event_key": event_key,
+            "p_event_type": event_type,
+            "p_payload": payload or {},
+        })
+        if not isinstance(result, dict) or not isinstance(result.get("sequence"), int):
+            raise RuntimeError("durable_run_event_append_failed")
+        return result
+
     async def claim_run(self) -> dict[str, Any] | None:
         return await self.rpc("moreai_worker_claim_run", {
             "p_worker_id": self.settings.worker_id,
