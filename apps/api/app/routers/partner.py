@@ -474,18 +474,30 @@ async def create_partner_access_code(body: PartnerAccessCodeCreate, request: Req
             raise HTTPException(422, "Campaign does not belong to the active partner tenant")
         if body.location_id and campaign[0].get("location_id") not in {None, str(body.location_id)}:
             raise HTTPException(422, "Campaign and location scopes do not match")
+    resolved_campaign_id = str(body.campaign_id) if body.campaign_id else None
     if body.reward_id:
         reward = await repo.select("campaign_rewards", {
             "id": f"eq.{body.reward_id}", "select": "id,campaign_id", "limit": "1"})
-        if not reward or (body.campaign_id and reward[0].get("campaign_id") != str(body.campaign_id)):
+        if not reward:
+            raise HTTPException(422, "Reward does not exist")
+        reward_campaign_id = str(reward[0]["campaign_id"])
+        if resolved_campaign_id and reward_campaign_id != resolved_campaign_id:
             raise HTTPException(422, "Reward does not match the selected campaign")
+        campaign = await repo.select("partner_campaigns", {
+            "id": f"eq.{reward_campaign_id}", "partner_id": f"eq.{principal['partner_id']}",
+            "select": "id,location_id", "limit": "1"})
+        if not campaign:
+            raise HTTPException(422, "Reward campaign does not belong to the active partner tenant")
+        if body.location_id and campaign[0].get("location_id") not in {None, str(body.location_id)}:
+            raise HTTPException(422, "Reward campaign and location scopes do not match")
+        resolved_campaign_id = reward_campaign_id
     raw_code = secrets.token_urlsafe(24)
     digest = hashlib.sha256(raw_code.encode("utf-8")).hexdigest()
     row = await repo.insert("partner_access_codes", {
         "partner_id": principal["partner_id"],
         "location_id": str(body.location_id) if body.location_id else None,
         "network_id": str(body.network_id) if body.network_id else None,
-        "campaign_id": str(body.campaign_id) if body.campaign_id else None,
+        "campaign_id": resolved_campaign_id,
         "reward_id": str(body.reward_id) if body.reward_id else None,
         "code_hash": digest, "status": "active",
         "expires_at": body.expires_at.isoformat(),
