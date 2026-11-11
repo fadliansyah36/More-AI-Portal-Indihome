@@ -56,17 +56,23 @@ def _restore_tool_calls(raw_calls: Any) -> list[ToolCall]:
 
 
 async def _run_tool_until_cancelled(
-    awaitable: Awaitable[str], cancelled: asyncio.Event,
+    awaitable: Awaitable[str], cancelled: asyncio.Event, *, timeout_seconds: float,
 ) -> str:
-    """Race each tool boundary against run cancellation and propagate cancellation inward."""
+    """Race tool execution against cancellation and a hard per-invocation deadline."""
     if cancelled.is_set():
         raise asyncio.CancelledError()
-    tool_task = asyncio.create_task(awaitable)
-    cancel_task = asyncio.create_task(cancelled.wait())
+    tool_task = asyncio.create_task(awaitable, name="moreai-tool-invocation")
+    cancel_task = asyncio.create_task(cancelled.wait(), name="moreai-tool-cancel-watch")
     try:
         done, _ = await asyncio.wait(
-            {tool_task, cancel_task}, return_when=asyncio.FIRST_COMPLETED,
+            {tool_task, cancel_task},
+            timeout=timeout_seconds,
+            return_when=asyncio.FIRST_COMPLETED,
         )
+        if not done:
+            tool_task.cancel()
+            await asyncio.gather(tool_task, return_exceptions=True)
+            raise TimeoutError("tool_execution_deadline_exceeded")
         if cancel_task in done and cancelled.is_set():
             tool_task.cancel()
             await asyncio.gather(tool_task, return_exceptions=True)
@@ -96,7 +102,11 @@ class DurableOpenManusRuntime:
         storage_tools: Any | None = None, workspace_tools: Any | None = None, browser_tools: Any | None = None,
         event_publisher: Callable[[str, str, str, dict[str, Any]], Awaitable[Any]] | None = None,
         max_rounds: int = 12,
+        tool_timeout_seconds: float = 120.0,
     ):
+        if isinstance(tool_timeout_seconds, bool) or not 1 <= tool_timeout_seconds <= 1800:
+            raise ValueError("tool_timeout_seconds_must_be_between_1_and_1800")
+        self.tool_timeout_seconds = float(tool_timeout_seconds)
         self.gateway = gateway
         self.memory_store = memory_store
         self.plan_store = plan_store
@@ -367,6 +377,7 @@ class DurableOpenManusRuntime:
                                 function.name, arguments, run_id=context.run_id, user_id=context.user_id, workspace_id=context.workspace_id,
                             ),
                             cancelled,
+                            timeout_seconds=self.tool_timeout_seconds,
                         )
                         outcome = "succeeded"
                     except asyncio.CancelledError:
