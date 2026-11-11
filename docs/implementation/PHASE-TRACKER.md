@@ -317,3 +317,9 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Migration: 20261111150000_moreai_workspace_file_cas_versioning.sql.
 - Browser supervisor remains isolated behind a pinned-DNS CONNECT proxy and internal-only supervisor network; no browser deployment/runtime proof was performed.
 - Flow lifecycle parity, full upstream server/session behavior, browser redirect/subresource live proof, and runtime acceptance remain open. No tests/build/lint/typecheck/staging/deployment.
+
+
+## 2026-11-11 — Phase 07 cancellation/approval recovery
+- Approval-paused and queued runs now cancel terminally; pending approvals are denied, pause checkpoints marked cancelled, leases cleared, and a deduplicated cancellation event is written to the durable outbox.
+- Running tasks retain cooperative cancellation through heartbeat and tool boundaries.
+- Migration: 20261111160000_moreai_cancel_waiting_approval_and_outbox.sql.
