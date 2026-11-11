@@ -52,7 +52,8 @@ begin
      and status in ('pending','approved') and expires_at <= now();
   select id into v_id from public.agent_tool_approvals
    where run_id=p_run_id and tool_key=p_tool_key and arguments_hash=p_arguments_hash
-     and status='pending' and expires_at > now()
+     and status in ('pending','approved') and expires_at > now()
+   order by requested_at desc
    limit 1;
   if v_id is not null then return v_id; end if;
   insert into public.agent_tool_approvals(run_id,user_id,tool_key,arguments_hash,summary,expires_at)
