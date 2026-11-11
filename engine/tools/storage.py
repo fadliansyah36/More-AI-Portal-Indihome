@@ -44,6 +44,13 @@ class SupabaseArtifactTool:
             "Content-Type": mime_type.lower(),
             "x-upsert": "false",
         }
+        bucket_response = await self.client.client.get(
+            f"{self.client.settings.supabase_url.rstrip('/')}/storage/v1/bucket/{quote(self.bucket, safe='')}",
+            headers=headers,
+            timeout=8.0,
+        )
+        if bucket_response.status_code >= 400 or bucket_response.json().get("public") is not False:
+            raise RuntimeError("artifact_bucket_must_exist_and_be_private")
         response = await self.client.client.post(url, content=raw, headers=headers, timeout=30.0)
         response.raise_for_status()
         checksum = hashlib.sha256(raw).hexdigest()
@@ -51,6 +58,7 @@ class SupabaseArtifactTool:
             row = await self.client.insert("artifacts", {
                 "id": artifact_id,
                 "user_id": user_id,
+                "run_id": run_id,
                 "storage_path": storage_path,
                 "mime_type": mime_type.lower(),
                 "size_bytes": len(raw),
