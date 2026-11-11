@@ -142,9 +142,18 @@ All four jobs passed.
 
 ### Frontend baseline
 
-[Phase 00 Baseline Verification — run 42965739011](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42965739011) tested the updated frontend before the final Partner tenant selector lint correction. Build, server startup, and browser smoke at 360/390/768/1024/1440 widths passed; lint failed on synchronous state resets in the Partner tenant loading effect. That lint issue was corrected in commit `b550329d9c9d1705b68cb2a7943c344e132d59d7`.
+[Phase 00 Baseline Verification — run 42965739011](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42965739011) passed after the Partner tenant loading lint correction.
 
-A fresh Phase 00 baseline run is in progress for the corrected frontend and current API changes. Do not mark Phase 00 revalidation complete until that run is green.
+| Baseline gate | Result |
+|---|---|
+| ESLint | PASS — 0 errors, 3 existing `<img>` warnings |
+| Frontend build | PASS |
+| Server startup | PASS |
+| Browser smoke | PASS at 360, 390, 768, 1024 and 1440 px; no page errors |
+| API tests | PASS |
+| Worker tests | PASS |
+
+The previous lint defect was corrected in commit `b550329d9c9d1705b68cb2a7943c344e132d59d7`. Phase 00 UI/build revalidation for this increment is complete.
 
 ### Explicitly not tested
 
