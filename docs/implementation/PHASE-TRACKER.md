@@ -162,3 +162,15 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - Extended typed API client and connected Benefit Credit + Partner Live Sessions views to live API data; removed seeded wallet/history/guest data and simulated balance/disconnect actions.
 - Latest Phase 00 build/lint/browser regression for commit `db423d6` is pending run [42975495322](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42975495322). No pass claim until completed.
 - Phase 04/06/07/08/09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED. Production deploy/worker activation remain prohibited until release gates pass. FastAPI public origin remains unconfigured in Vercel.
+
+
+## 2026-11-11 Super Admin and durable runtime packaging continuation
+
+- Added platform role authorization derived from active platform-scoped user_role_assignments and roles table. No user_metadata/client role is trusted.
+- Added read-only Super Admin API: context, overview, partner organizations, agent runs and audit logs. All endpoints require Supabase bearer authentication plus an allowed platform role; response fields avoid prompts, outputs and network PII.
+- Added dedicated /admin route and Super Admin Control Center. It reads live FastAPI/Supabase data and exposes read-only views; Customer and Partner product routes remain unchanged.
+- Added authorization and unauthenticated route tests.
+- Added separate FastAPI and durable worker Dockerfiles plus docker-compose.runtime.yml. Worker is an opt-in long-running container profile; worker execution and sandbox remain fail-closed. This is packaging only, not cloud deployment or runtime proof.
+- Deployment quota is intentionally deferred by product owner. No Vercel deployment was attempted.
+- Service-role secret has not been supplied to the runtime. API /ready remains degraded until SUPABASE_SERVICE_ROLE_KEY is configured. No LLM provider key or paid provider call used.
+- Phase 04, 06–09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED. See FULL-ECOSYSTEM-INTEGRATION-CONTINUATION-20261111.md for exact implementation and remaining blockers.
