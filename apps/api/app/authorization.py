@@ -98,3 +98,29 @@ async def customer_principal(
     request: Request, user: dict[str, Any] = Depends(current_user),
 ) -> dict[str, Any]:
     return await require_customer_context(request, user)
+
+
+async def require_platform_context(request: Request, user: dict[str, Any]) -> dict[str, Any]:
+    """Resolve platform authority only from active, server-managed role assignments."""
+    repo = _repository(request)
+    assignments = await repo.select("user_role_assignments", {
+        "user_id": f"eq.{user['id']}",
+        "scope_type": "eq.platform",
+        "scope_id": "is.null",
+        "or": f"(expires_at.is.null,expires_at.gt.{datetime.now(timezone.utc).isoformat()})",
+        "select": "id,role_id,expires_at",
+        "limit": "100",
+    })
+    role_ids = [str(row["role_id"]) for row in assignments if row.get("role_id")]
+    if not role_ids:
+        raise HTTPException(403, "An active platform role assignment is required")
+    roles = await repo.select("roles", {
+        "id": f"in.({','.join(role_ids)})",
+        "scope": "eq.platform",
+        "select": "id,key,scope",
+        "limit": "100",
+    })
+    allowed = {row["key"] for row in roles if row.get("key") in PLATFORM_PRIVILEGED_ROLES}
+    if not allowed:
+        raise HTTPException(403, "Platform administrative permission is required")
+    return {**user, "principal_role": sorted(allowed)[0], "platform_roles": sorted(allowed)}
