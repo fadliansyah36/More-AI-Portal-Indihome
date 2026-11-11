@@ -169,7 +169,8 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - Added platform role authorization derived from active platform-scoped user_role_assignments and roles table. No user_metadata/client role is trusted.
 - Added read-only Super Admin API: context, overview, partner organizations, agent runs and audit logs. All endpoints require Supabase bearer authentication plus an allowed platform role; response fields avoid prompts, outputs and network PII.
 - Added dedicated /admin route and Super Admin Control Center. It reads live FastAPI/Supabase data and exposes read-only views; Customer and Partner product routes remain unchanged.
-- Added authorization and unauthenticated route tests.
+- Added authorization and unauthenticated route tests; Phase 04 CI run 42981030933 SUCCESS (worker-contract, engine-policy, API-contract, sandbox-policy).
+- FastAPI /ready now performs live Supabase Auth/PostgREST reachability probes when configured. Phase 00 run 42981030866 was pending; no new frontend build/browser regression evidence is claimed yet.
 - Added separate FastAPI and durable worker Dockerfiles plus docker-compose.runtime.yml. Worker is an opt-in long-running container profile; worker execution and sandbox remain fail-closed. This is packaging only, not cloud deployment or runtime proof.
 - Deployment quota is intentionally deferred by product owner. No Vercel deployment was attempted.
 - Service-role secret has not been supplied to the runtime. API /ready remains degraded until SUPABASE_SERVICE_ROLE_KEY is configured. No LLM provider key or paid provider call used.
