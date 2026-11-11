@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 import re
+import base64
 import socket
-import ssl
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -56,7 +56,8 @@ class PinnedConnectProxy:
                 if not sep:
                     raise BrowserPolicyError("browser_proxy_header_invalid")
                 headers[key.strip().lower()] = value.strip()
-            if headers.get("proxy-authorization") != f"Bearer {self.token}":
+            expected_auth = "Basic " + base64.b64encode(("moreai:" + self.token).encode()).decode("ascii")
+            if headers.get("proxy-authorization") != expected_auth:
                 writer.write(b"HTTP/1.1 407 Proxy Authentication Required\r\nConnection: close\r\n\r\n")
                 await writer.drain()
                 return
