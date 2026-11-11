@@ -83,15 +83,46 @@ async def health():
 @app.get("/ready", tags=["system"])
 async def readiness(request: Request):
     settings = request.app.state.settings
-    auth_ready = settings.supabase_auth_ready
-    data_ready = settings.supabase_data_ready
+    auth_configured = settings.supabase_auth_ready
+    data_configured = settings.supabase_data_ready
+    auth_reachable = False
+    data_reachable = False
+
+    if auth_configured:
+        try:
+            response = await request.app.state.http.get(
+                f"{settings.supabase_url}/auth/v1/settings",
+                headers={"apikey": settings.supabase_anon_key},
+                timeout=3.0,
+            )
+            auth_reachable = response.status_code < 500
+        except Exception:
+            auth_reachable = False
+
+    if data_configured:
+        try:
+            response = await request.app.state.http.get(
+                f"{settings.supabase_url}/rest/v1/roles",
+                params={"select": "id", "limit": "1"},
+                headers={
+                    "apikey": settings.supabase_service_role_key,
+                    "Authorization": f"Bearer {settings.supabase_service_role_key}",
+                },
+                timeout=3.0,
+            )
+            data_reachable = response.status_code == 200
+        except Exception:
+            data_reachable = False
+
     runtime_enabled = settings.agent_execution_enabled
-    ready = auth_ready and data_ready
+    ready = auth_configured and data_configured and auth_reachable and data_reachable
     return {
         "status": "ready" if ready else "degraded",
         "dependencies": {
-            "supabase_auth": auth_ready,
-            "supabase_data": data_ready,
+            "supabase_auth_configured": auth_configured,
+            "supabase_auth_reachable": auth_reachable,
+            "supabase_data_configured": data_configured,
+            "supabase_data_reachable": data_reachable,
             "agent_execution_enabled": runtime_enabled,
         },
     }
