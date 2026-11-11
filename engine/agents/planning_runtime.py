@@ -19,8 +19,9 @@ class PlanningStore(Protocol):
 class PlanningAgentRuntime(AgentRuntime):
     """OpenManus PlanningFlow semantics on durable, replayable MoreAI run state."""
 
-    def __init__(self, *, gateway: PlanningGateway, store: PlanningStore, step_executor: AgentRuntime):
+    def __init__(self, *, gateway: PlanningGateway, store: PlanningStore, step_executor: AgentRuntime, approval_gate: Any | None = None):
         self.gateway, self.store, self.step_executor = gateway, store, step_executor
+        self.approval_gate = approval_gate
 
     @staticmethod
     def _validate_steps(raw_steps: Any) -> list[dict[str, Any]]:
@@ -112,9 +113,18 @@ class PlanningAgentRuntime(AgentRuntime):
             if any(dep not in completed for dep in step["dependencies"]):
                 raise RuntimeError("planning_dependency_not_satisfied")
             if step["risk"] in {"high","critical"} or step["tool_requirement"] not in {"none","llm","planning"}:
-                await self.store.mark_step(run_id=context.run_id,step_index=index,status="waiting_approval",notes="approval_or_sandbox_required")
+                await self.store.mark_step(run_id=context.run_id,step_index=index,status="waiting_approval",notes="approval_required")
                 await checkpoint("planning.step.waiting_approval",{"step_index":index,"risk":step["risk"]})
-                raise PermissionError("planning_step_requires_approval_or_sandbox")
+                if self.approval_gate is None:
+                    raise PermissionError("planning_step_requires_approval_gate")
+                approved = await self.approval_gate(
+                    context.run_id, context.user_id, "planning_step",
+                    {"step_index":index,"objective":step["objective"],
+                     "tool_requirement":step["tool_requirement"],"risk":step["risk"]},
+                )
+                if not approved:
+                    raise PermissionError("planning_step_approval_denied_or_expired")
+
             await self.store.mark_step(run_id=context.run_id,step_index=index,status="running")
             await checkpoint(f"planning.step.{index}.started",{"step_index":index,"objective":step["objective"][:500]})
             try:

@@ -342,3 +342,8 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - PlanningAgentRuntime restores the persisted manifest and steps on worker recovery; it does not regenerate the plan after a pause/restart.
 - Succeeded step outputs are rehydrated, dependency gates are enforced, and step outputs/checkpoints are persisted.
 - Report: PHASE-04-PLANNINGFLOW-REPLAY-20261111.md.
+
+
+## 2026-11-11 — Phase 04 planning approval integration
+- Planning steps with elevated risk or non-basic tool requirements now use the durable run-level approval gate and resume from the persisted plan after owner approval.
+- Tool registry policy remains independently enforced after the planning approval.

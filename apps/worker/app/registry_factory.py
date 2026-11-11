@@ -62,6 +62,7 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     )
     planning = flow_factory.create(
         "planning", gateway=gateway, store=plan_store, step_executor=manus,
+        approval_gate=client.wait_for_tool_approval,
     )
 
     registry = AgentRegistry()
