@@ -1,5 +1,7 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import MoreAiApp from '../page';
 
 export default function WorkflowRoute() {
-  redirect('/?view=workflow_progress');
+  return <MoreAiApp />;
 }
