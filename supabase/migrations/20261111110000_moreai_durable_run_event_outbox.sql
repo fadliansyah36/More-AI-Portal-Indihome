@@ -62,7 +62,7 @@ begin
   select * into v_existing from public.outbox_events
     where aggregate_type='agent_run' and aggregate_id=p_run_id and event_key=p_event_key;
   if found then
-    if v_existing.event_type <> p_event_type
+    if v_existing.payload->>'event_type' <> p_event_type
        or v_existing.payload->'event_payload' <> v_payload then
       raise exception 'run_event_idempotency_conflict' using errcode='22023';
     end if;
