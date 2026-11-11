@@ -9,6 +9,7 @@ from engine.tools.policy import ToolPolicy
 
 
 ToolHandler = Callable[..., Awaitable[str]]
+ApprovalGate = Callable[[str, str, str, dict[str, Any]], Awaitable[bool]]
 
 
 def _validate_arguments(schema: dict[str, Any], value: Any, *, path: str = "arguments") -> None:
@@ -67,8 +68,9 @@ def _validate_arguments(schema: dict[str, Any], value: Any, *, path: str = "argu
 class PolicyEnforcedToolRegistry:
     """Default-deny dispatcher with catalog validation and per-tool execution deadlines."""
 
-    def __init__(self, policy: ToolPolicy):
+    def __init__(self, policy: ToolPolicy, approval_gate: ApprovalGate | None = None):
         self.policy = policy
+        self.approval_gate = approval_gate
         self.handlers: dict[str, ToolHandler] = {}
         self.catalog: dict[str, ToolDefinition] = {tool.key: tool for tool in OPENMANUS_TOOL_CATALOG}
 
@@ -109,6 +111,11 @@ class PolicyEnforcedToolRegistry:
         if handler is None:
             raise LookupError(f"No production adapter registered for {normalized}")
         _validate_arguments(tool.input_schema, arguments)
+        if decision.requires_approval:
+            if self.approval_gate is None:
+                raise PermissionError("tool_approval_gate_not_configured")
+            if not await self.approval_gate(run_id, user_id, normalized, arguments):
+                raise PermissionError("tool_approval_denied_expired_or_already_consumed")
         try:
             output = await asyncio.wait_for(
                 handler(arguments, run_id=run_id, user_id=user_id),
