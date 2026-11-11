@@ -44,6 +44,7 @@ export function moreAiPartnerApi<T>(path: string, init: RequestInit = {}): Promi
 }
 
 export type MoreAiStreamEvent = {
+  id?: string;
   event: string;
   data: Record<string, unknown>;
 };
@@ -75,15 +76,17 @@ export async function moreAiApiStream(
   const dispatch = (block: string) => {
     const lines = block.split(/\r?\n/);
     let event = 'message';
+    let id: string | undefined;
     const dataLines: string[] = [];
     for (const line of lines) {
       if (line.startsWith('event:')) event = line.slice(6).trim();
-      if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+      else if (line.startsWith('id:')) id = line.slice(3).trim();
+      else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
     }
     if (!dataLines.length) return;
     try {
       const parsed = JSON.parse(dataLines.join('\n'));
-      if (parsed && typeof parsed === 'object') onEvent({ event, data: parsed as Record<string, unknown> });
+      if (parsed && typeof parsed === 'object') onEvent({ id, event, data: parsed as Record<string, unknown> });
     } catch {
       // Ignore malformed or partial provider events; the durable run endpoint remains authoritative.
     }
@@ -275,7 +278,7 @@ export const customerApi = {
   getRunEvents: (runId: string, after = 0) => moreAiApi<Array<{
     id: string; event_type: string; sequence: number; payload: Record<string, unknown>; created_at: string;
   }>>(`/api/v1/agent-runs/${runId}/events?after=${Math.max(0, after)}`),
-  streamRun: (runId: string) => `/api/v1/agent-runs/${runId}/stream?wait_seconds=30`,
+  streamRun: (runId: string, after = 0) => `/api/v1/agent-runs/${runId}/stream?after=${Math.max(0, after)}&wait_seconds=30`,
   wallets: () => moreAiCustomerApi<{ wallets: CustomerWallet[] }>('/api/v1/customer/wallet'),
   ledger: (limit = 50, before?: string) => moreAiCustomerApi<CustomerLedgerEntry[]>(`/api/v1/customer/wallet/ledger?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
   usage: (limit = 50, before?: string) => moreAiCustomerApi<CustomerUsageRecord[]>(`/api/v1/customer/usage?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
