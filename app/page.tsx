@@ -121,7 +121,7 @@ export default function App() {
         '/register': 'register',
         '/partner/login': 'partner_login',
       };
-      const next = pathTab[path] || queryTab;
+      const next = path === '/' ? (queryTab || 'splash') : (pathTab[path] || queryTab);
       if (next) setCurrentTab(next);
     };
     resolveTab();
