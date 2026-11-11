@@ -54,7 +54,7 @@ async def require_partner_context(
     request: Request, user: dict[str, Any], partner_id: str | None = None,
 ) -> dict[str, Any]:
     """Resolve partner tenant exclusively from active server-side membership."""
-    repo = repository(request)
+    repo = _repository(request)
     rows = await repo.select("partner_members", {
         "user_id": f"eq.{user['id']}", "status": "eq.active",
         "select": "partner_id,role_key,location_id", "limit": "100",
