@@ -39,22 +39,20 @@ Latest direct-main commits:
 These commits are implementation increments, not Phase 04 acceptance. CI must pass and remaining integration gaps must be closed before this phase can be signed off.
 
 
-## 2026-11-11 continuation notes
+## 2026-11-11 earlier baseline and schema notes (historical snapshot)
 
-- Confirmed live Supabase columns for `conversations` and `conversation_messages`; both have RLS enabled. `conversation_messages.token_input` and `token_output` are NOT NULL. The worker memory insert was corrected to supply zero usage values for non-metered conversation-memory rows.
-- Latest commits: `8bcec7a799ed1dac4587dc1d8fc9d933136820f2` removes the redundant Files loading state update that caused the baseline lint gate to fail; `713109f28705ab3dc28af25dabdf2eed79a87e8f` and `734be31ddd43636ea09d3ed16feac1f511154ac6` reconcile and test the required memory usage columns.
-- Previous Phase 00 baseline run `42959465066`: build/server/browser smoke passed; lint failed only on the redundant setState-in-effect in `components/views/files-view.tsx`. The lint defect is fixed on main; a fresh baseline run is in progress.
-- Current Phase 04 sandbox CI is re-running after the memory schema correction. Phase 04 and Phase 08 are still not accepted; Phase 09 UI separation has not started because backend foundations and authenticated E2E gates are not yet complete.
+- The earlier memory-schema reconciliation confirmed `conversation_messages.token_input` and `token_output` are NOT NULL; the worker memory insert supplies zero usage values for non-metered memory rows.
+- The earlier Files-view lint issue was fixed in the preceding baseline work. The current baseline is now green on run 42965739011; see the latest direct-main continuation below.
+- The original note that Customer/Partner separation had not started was true only at that earlier checkpoint. It has since been implemented and verified by the later Phase 04/API CI runs.
 
 
-## 2026-11-11 durable OpenManus tool-call integration increment
+## 2026-11-11 initial durable OpenManus tool-call increment (historical snapshot)
 
-- Added `engine/agents/durable_tool_runtime.py`: bounded OpenManus tool-call loop, structured function arguments, deterministic per-round request keys, durable round/tool intent/settlement checkpoints.
-- Worker registry now registers this durable runtime as the Manus implementation; existing worker lease/heartbeat/cancel/checkpoint/finish lifecycle remains the execution owner.
-- OpenAI-compatible provider adapter now accepts tool definitions and returns structured tool calls; metered gateway includes tool definitions in request hashing and passes them to the provider. Each model round uses the existing metered `complete` accounting path.
-- Only `create_chat_completion` is currently registered in the tool registry. High-risk Bash/Python/browser/editor/process tools remain unavailable and default-denied pending sandbox supervisor + approval/audit wiring.
-- Added continuation report `PHASE-04-08-09-INTEGRATION-CONTINUATION-20261111.md`.
-- Not complete: provider candidate retry/failover, durable restoration of the full tool-call transcript across process restart, sandbox tool adapters, Customer/Mitra server-side route isolation, and authenticated E2E. Real provider/API-key E2E remains deferred by instruction.
+- Added `engine/agents/durable_tool_runtime.py`: bounded OpenManus tool-call loop, structured function arguments, deterministic per-round request keys, and durable round/tool intent/settlement checkpoints.
+- Worker registry registered this runtime as the Manus implementation; existing worker lease/heartbeat/cancel/checkpoint/finish lifecycle remains the execution owner.
+- OpenAI-compatible provider adapter accepts tool definitions and returns structured tool calls; metered gateway includes tool definitions in request hashing and sends them to the provider.
+- At that checkpoint only `create_chat_completion` was registered. High-risk Bash/Python/browser/editor/process tools remained default-denied.
+- The subsequent direct-main continuation below has since added checkpoint/transcript recovery, provider fallback, server-side Customer/Partner isolation, and the approval-gated isolated sandbox adapter. Real provider/API-key E2E and production sandbox activation remain deferred behind their respective gates.
 
 
 ## 2026-11-11 direct-main continuation — durable recovery, tenant isolation and provider failover
