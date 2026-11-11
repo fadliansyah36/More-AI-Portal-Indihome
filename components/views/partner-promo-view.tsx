@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Megaphone, Plus, RefreshCw, X, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Megaphone, Plus, RefreshCw, X } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 import { partnerApi, PartnerCampaign } from '@/lib/api/client';
 
