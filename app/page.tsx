@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import {
   Home,
   MessageSquare,
@@ -99,8 +100,52 @@ export default function App() {
   const [drawerRole, setDrawerRole] = useState<'customer' | 'partner'>('customer');
   const [isBottomNavCollapsed, setIsBottomNavCollapsed] = useState(false);
 
+  // Restore deep links and authentication on direct visits / browser history.
+  useEffect(() => {
+    const resolveTab = () => {
+      const path = window.location.pathname.replace(/\\/+$/, '') || '/';
+      const queryTab = new URLSearchParams(window.location.search).get('view') as NavigationTab | null;
+      const pathTab: Record<string, NavigationTab> = {
+        '/workflow': 'workflow_progress',
+        '/workflow-progress': 'workflow_progress',
+        '/login': 'login',
+        '/register': 'register',
+        '/partner/login': 'partner_login',
+      };
+      const next = pathTab[path] || queryTab;
+      if (next) setCurrentTab(next);
+    };
+    resolveTab();
+    window.addEventListener('popstate', resolveTab);
+    const restoreSession = async () => {
+      try {
+        const { data, error } = await createSupabaseBrowserClient().auth.getSession();
+        if (error || !data.session) {
+          const publicTabs: NavigationTab[] = ['splash', 'onboarding', 'login', 'register'];
+          if (!publicTabs.includes(currentTab)) setCurrentTab('login');
+        }
+      } catch {
+        setCurrentTab('login');
+      }
+    };
+    void restoreSession();
+    return () => window.removeEventListener('popstate', resolveTab);
+  // Auth is restored once on app entry; navigation state is managed below.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Quick navigation handler
   const handleNavigate = (tab: NavigationTab) => {
+    const routeByTab: Partial<Record<NavigationTab, string>> = {
+      workflow_progress: '/workflow',
+      login: '/login',
+      register: '/register',
+      partner_login: '/partner/login',
+    };
+    const nextUrl = routeByTab[tab] || ('/?view=' + encodeURIComponent(tab));
+    if (window.location.pathname + window.location.search !== nextUrl) {
+      window.history.pushState({ moreaiTab: tab }, '', nextUrl);
+    }
     setCurrentTab(tab);
     setShowDrawerMenu(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
