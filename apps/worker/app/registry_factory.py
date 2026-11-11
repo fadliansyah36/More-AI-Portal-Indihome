@@ -1,4 +1,8 @@
+import os
+
 from app.client import WorkerRpcClient
+from app.sandbox_tools import IsolatedSandboxToolAdapter
+from apps.sandbox.app.runner import DockerSandbox
 from app.llm_gateway import create_metered_gateway
 from app.memory_store import SupabaseConversationMemoryStore
 from app.plan_store import SupabasePlanStore
@@ -11,7 +15,17 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     gateway = create_metered_gateway(client, http_client)
     plan_store = SupabasePlanStore(client)
     memory_store = SupabaseConversationMemoryStore(client)
-    manus = DurableOpenManusRuntime(gateway, memory_store=memory_store)
+    sandbox_tools = None
+    if os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true":
+        image = os.getenv("MOREAI_SANDBOX_IMAGE", "")
+        if "@sha256:" not in image:
+            raise RuntimeError("sandbox_enabled_requires_digest_pinned_MOREAI_SANDBOX_IMAGE")
+        sandbox_tools = IsolatedSandboxToolAdapter(
+            DockerSandbox(image=image), approval_check=client.wait_for_tool_approval,
+        )
+    manus = DurableOpenManusRuntime(
+        gateway, memory_store=memory_store, sandbox_tools=sandbox_tools,
+    )
     planning = PlanningAgentRuntime(gateway=gateway, store=plan_store, step_executor=manus)
 
     registry = AgentRegistry()
