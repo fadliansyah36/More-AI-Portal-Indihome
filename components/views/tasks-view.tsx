@@ -54,12 +54,6 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const toggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
-  };
-
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
@@ -162,8 +156,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
             filteredTasks.map((task) => (
               <div
                 key={task.id}
-                onClick={() => toggleTask(task.id)}
-                className={`cursor-pointer p-3.5 rounded-2xl border transition-all flex items-center gap-3 group ${
+                className={`p-3.5 rounded-2xl border transition-all flex items-center gap-3 group ${
                   task.completed
                     ? 'bg-slate-50/70 border-slate-200/60 opacity-80'
                     : 'bg-white border-slate-200/90 hover:border-red-200 shadow-xs'
