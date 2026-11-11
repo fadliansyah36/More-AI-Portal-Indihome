@@ -53,3 +53,37 @@ jobs:
         env:
           PYTHONPATH: ..
         run: python -m pytest -q
+
+  worker-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install worker and engine test dependencies
+        working-directory: apps/worker
+        run: python -m pip install --disable-pip-version-check -e '.[test]' -e '../../engine[test]'
+      - name: Run durable worker, memory, and sandbox adapter tests
+        working-directory: apps/worker
+        env:
+          PYTHONPATH: .:../..
+        run: python -m pytest -q tests
+
+  api-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API test dependencies
+        working-directory: apps/api
+        run: python -m pip install --disable-pip-version-check -e '.[test]'
+      - name: Run FastAPI auth and tenant contract tests
+        working-directory: apps/api
+        env:
+          PYTHONPATH: .
+        run: python -m pytest -q tests
