@@ -34,6 +34,6 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     registry = AgentRegistry()
     registry.register("manus", manus)
     registry.register("planning", planning)
-    # Sandbox adapters are implemented separately, but are deliberately not
-    # registered in production until approval, supervisor, and threat-model gates pass.
+    # Bash/Python are registered only when both explicit sandbox activation and the
+    # independent release-gate flag are true; the dispatcher then requires a consumed approval.
     return registry
