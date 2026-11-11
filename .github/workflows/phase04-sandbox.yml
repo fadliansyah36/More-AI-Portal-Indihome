@@ -5,10 +5,14 @@ on:
     branches: [main]
     paths:
       - 'apps/sandbox/**'
+      - 'engine/**'
+      - 'apps/worker/**'
       - '.github/workflows/phase04-sandbox.yml'
   pull_request:
     paths:
       - 'apps/sandbox/**'
+      - 'engine/**'
+      - 'apps/worker/**'
       - '.github/workflows/phase04-sandbox.yml'
   workflow_dispatch:
 
