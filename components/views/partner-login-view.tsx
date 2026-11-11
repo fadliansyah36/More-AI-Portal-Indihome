@@ -5,6 +5,8 @@ import { ArrowLeft, Building2, Lock, Mail, ShieldCheck, ArrowRight } from 'lucid
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { partnerApi } from '@/lib/api/client';
 
 interface PartnerLoginViewProps {
   onBack: () => void;
@@ -16,14 +18,55 @@ export const PartnerLoginView: React.FC<PartnerLoginViewProps> = ({
   onNavigateTab,
 }) => {
   const { showToast } = useToast();
-  const [email, setEmail] = useState('farhan@coffeehouse.id');
-  const [password, setPassword] = useState('Partner2026!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [partnerMode, setPartnerMode] = useState<'login' | 'register'>('login');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    showToast('Login mitra B2B berhasil! Membuka Dashboard Partner...', 'success');
-    onNavigateTab('partner');
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      if (partnerMode === 'register') {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: { account_type: 'partner_applicant' },
+            emailRedirectTo: window.location.origin + '/?view=partner_login',
+          },
+        });
+        if (error) throw error;
+        showToast(
+          data.session
+            ? 'Akun autentikasi dibuat. Akses Mitra tetap menunggu undangan atau persetujuan membership dari administrator.'
+            : 'Pendaftaran diterima. Verifikasi email, lalu masuk kembali. Akses Mitra memerlukan membership aktif.',
+          'success',
+        );
+        setPartnerMode('login');
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) throw error;
+      if (!data.session) throw new Error('Sesi autentikasi tidak terbentuk. Periksa verifikasi email.');
+      const tenants = await partnerApi.tenants();
+      if (!tenants.length) {
+        await supabase.auth.signOut();
+        throw new Error('Akun terautentikasi, tetapi belum memiliki membership Mitra aktif. Hubungi administrator organisasi.');
+      }
+      showToast('Autentikasi berhasil dan membership Mitra terverifikasi.', 'success');
+      onNavigateTab('partner');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Autentikasi Mitra gagal.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -114,7 +157,8 @@ export const PartnerLoginView: React.FC<PartnerLoginViewProps> = ({
 
           <button
             type="submit"
-            className="w-full py-3.5 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs transition shadow-xs mt-3 flex items-center justify-center gap-2"
+            disabled={isSubmitting}
+            className="w-full py-3.5 disabled:opacity-60 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs transition shadow-xs mt-3 flex items-center justify-center gap-2"
           >
             <span>{partnerMode === 'login' ? 'Masuk ke Dashboard Partner' : 'Daftarkan Venue'}</span>
             <ArrowRight className="w-4 h-4" />
