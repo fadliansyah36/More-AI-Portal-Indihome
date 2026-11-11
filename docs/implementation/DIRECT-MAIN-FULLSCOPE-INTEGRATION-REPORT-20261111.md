@@ -72,3 +72,20 @@ Per product-owner instruction, no tests, lint, typecheck, build, browser automat
 ## Relevant commits
 - Runtime planning and workflow commits are recorded in `docs/implementation/PHASE-TRACKER.md`.
 - This increment's commits include: `536aa98105cf4b89329a368c3d105a32bbdc3619`, `662d24195c6c0b3c933feb4292fd1bb72a0cc6d9`, `cda97d516aded560a83fe96f586b2eae1840c3e9`, `9d5d27828429709c4f8082991d4cb72946d80844`, `ce21ce5a19f57fc1defbe8823b5cc2dc2df97e6b`, `475af4c101c646b29e4fba369d06cea957858d01`, `a6c87ea84ef8b7ef54feac01112ad175e5d0bf15`, `5dedef1f65aeda4be90203a0f75854d38be7299c`, `208d20e94e8187e3f21a2c4d3a35f7eb21734dd0`, `eb21c925341b4da7821acfa3b5b53ae98858eb8a`, `e6790a7bcb85a4fd96b9e75e208f6f9de324a5e4`, `578852194bd4a89537dcd0c252ce05d191962237`, `11069b1e455984968ade08f6c224ca48597e5b56`, `3033aa7dfc21380cdd72a4bc6e0fdcd1fe3a4c20`, `ad27e80255673f6417264d9c92f16d2aaef4dd1c`, `35a62f3ef00354cdb659084a5e174fa6832fed0d`, `7d97ed8c9bbfe47f97e2cb779887168e4e24d985`, `556da5e8d82d6d0c2a9e5eec8229da159d2a284f`, `1d57df3089f2b640e7c4f80435b6c44369fb8874`, `4015422d5a8acb52a4ba014797cfcf878e1a7736`, `5808c3fc8ad976d9e905c98eef64f91031ea2de0`.
+
+
+## 2026-11-11 incremental continuation — active dispatcher cancellation
+
+### Change delivered
+- Commit: `46a988587b0353256fa403b232e9c483f2a135a6`.
+- Updated `apps/worker/app/runtime.py` so each claimed run executes its dispatcher in a managed task while a separate task waits for the durable cancellation event.
+- If the heartbeat observes `cancel_requested`, the active dispatcher task is cancelled and reaped before the run is finalized as `cancelled` and its durable cancellation event is appended.
+- If the worker process itself is cancelled/shut down, child tasks are reaped and the lease remains available for normal recovery semantics; the shutdown path does not misclassify process shutdown as a user cancellation.
+
+### Boundaries and remaining work
+- This change improves cancellation propagation at the worker coordinator boundary. Provider and tool adapters still require authorized runtime verification to prove that cancellation interrupts their individual I/O and subprocess boundaries.
+- No new database schema or migration was needed. No Supabase data or configuration was mutated.
+- No UI files changed. No frontend visual changes.
+- No tests, lint, typecheck, build, browser, provider, worker runtime, staging or deployment checks were run under the standing owner instruction. Do not treat this commit as a passing test or phase acceptance.
+- Phase 07 remains IN PROGRESS. Phase 04, 06, 08 and 09 remain IN PROGRESS; Phase 10 remains BLOCKED; Phase 11 remains NOT STARTED.
+- Next implementation: complete upstream Flow base/PlanningFlow/FlowFactory and server/session parity, verify cancellation/timeout at each provider/tool adapter, and continue the explicitly requested Captive Portal, Customer Network/EduTech, Partner and Super Admin contracts only after their schema and authorization prerequisites are reconciled.
