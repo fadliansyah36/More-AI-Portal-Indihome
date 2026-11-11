@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import Settings
 from app.dependencies import current_user
-from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, partner, tool_approvals
+from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, notifications, partner, tool_approvals
 
 
 @asynccontextmanager
@@ -28,8 +28,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Separate Customer/Partner API origins are optional. Explicitly allow only configured
-# browser origins; same-origin deployments need no CORS entries.
 _cors_origins = [origin.strip().rstrip('/') for origin in os.getenv('MOREAI_CORS_ALLOWED_ORIGINS', '').split(',') if origin.strip()]
 if _cors_origins:
     app.add_middleware(
@@ -50,7 +48,7 @@ app.include_router(tool_approvals.router)
 app.include_router(agent_runs.router)
 app.include_router(catalog.router)
 app.include_router(artifacts.router)
-
+app.include_router(notifications.router)
 
 
 class ProfileUpdate(BaseModel):
@@ -171,7 +169,6 @@ async def update_my_profile(body: ProfileUpdate, request: Request, user=Depends(
         if not changes["display_name"]:
             return JSONResponse(status_code=422, content={"detail": "Display name cannot be empty"})
     if "avatar_path" in changes and changes["avatar_path"] is not None:
-        # Avatar references are opaque owner-scoped paths, never arbitrary URLs.
         path = changes["avatar_path"]
         if path.startswith(("http://", "https://", "/")) or ".." in path.split("/") or not path.startswith(f"{user['id']}/"):
             return JSONResponse(status_code=422, content={"detail": "Avatar path must be owner-scoped"})
