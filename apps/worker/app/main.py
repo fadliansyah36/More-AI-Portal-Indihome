@@ -10,6 +10,7 @@ from app.client import WorkerRpcClient, WorkerSettings
 from app.dispatcher import RegisteredAgentDispatcher
 from app.registry_factory import build_agent_registry
 from app.runtime import WorkerRuntime
+from app.outbox import DurableEventOutboxPublisher
 
 
 async def _health_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
@@ -76,11 +77,24 @@ async def run_worker() -> None:
             port=int(os.getenv("WORKER_HEALTH_PORT", "8081")),
         )
         async with health_server:
+            stop_outbox = asyncio.Event()
+            publisher = DurableEventOutboxPublisher(
+                rpc, poll_seconds=float(os.getenv("WORKER_OUTBOX_POLL_SECONDS", "1")),
+            )
+            outbox_task = asyncio.create_task(publisher.run(stop_outbox), name="moreai-event-outbox")
             poll_seconds = max(1, min(30, int(os.getenv("WORKER_POLL_SECONDS", "3"))))
-            while True:
-                processed = await runtime.run_once()
-                if not processed:
-                    await asyncio.sleep(poll_seconds)
+            try:
+                while True:
+                    processed = await runtime.run_once()
+                    if not processed:
+                        await asyncio.sleep(poll_seconds)
+            finally:
+                stop_outbox.set()
+                outbox_task.cancel()
+                try:
+                    await outbox_task
+                except asyncio.CancelledError:
+                    pass
 
 
 if __name__ == "__main__":
