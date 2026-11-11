@@ -22,13 +22,24 @@ create table if not exists public.agent_run_event_outbox (
   payload jsonb not null default '{}'::jsonb,
   delivery_state text not null default 'pending' check (delivery_state in ('pending','published','dead_letter')),
   attempts integer not null default 0 check (attempts >= 0),
+  next_attempt_at timestamptz not null default now(),
+  locked_by text,
+  locked_until timestamptz,
+  last_error_code text,
   created_at timestamptz not null default now(),
   published_at timestamptz,
   unique(run_id,event_key),
   unique(run_id,sequence)
 );
 create index if not exists agent_run_event_outbox_pending_idx
-  on public.agent_run_event_outbox(created_at) where delivery_state='pending';
+  on public.agent_run_event_outbox(next_attempt_at,created_at)
+  where delivery_state='pending';
+
+alter table public.agent_run_event_outbox
+  add column if not exists next_attempt_at timestamptz not null default now(),
+  add column if not exists locked_by text,
+  add column if not exists locked_until timestamptz,
+  add column if not exists last_error_code text;
 alter table public.agent_run_event_outbox enable row level security;
 drop policy if exists agent_run_event_outbox_server_only on public.agent_run_event_outbox;
 create policy agent_run_event_outbox_server_only on public.agent_run_event_outbox
@@ -95,3 +106,70 @@ $$;
 
 revoke all on function public.moreai_worker_append_run_event(uuid,text,text,jsonb) from public,anon,authenticated;
 grant execute on function public.moreai_worker_append_run_event(uuid,text,text,jsonb) to service_role;
+
+-- Lease a batch for exactly one publisher. SKIP LOCKED supports horizontal workers.
+create or replace function public.moreai_worker_claim_event_outbox(
+  p_worker_id text, p_limit integer default 20, p_lease_seconds integer default 30
+) returns setof public.agent_run_event_outbox
+language plpgsql security definer set search_path=public,pg_temp as $$
+begin
+  if p_worker_id is null or char_length(p_worker_id) not between 8 and 128
+     or p_limit not between 1 and 100 or p_lease_seconds not between 10 and 300 then
+    raise exception 'invalid_outbox_claim' using errcode='22023';
+  end if;
+  return query
+  with candidates as (
+    select id from public.agent_run_event_outbox
+    where delivery_state='pending' and next_attempt_at <= now()
+      and (locked_until is null or locked_until < now())
+    order by created_at,id
+    for update skip locked
+    limit p_limit
+  )
+  update public.agent_run_event_outbox o
+    set locked_by=p_worker_id,locked_until=now()+make_interval(secs=>p_lease_seconds)
+    from candidates c where o.id=c.id
+    returning o.*;
+end;
+$$;
+
+create or replace function public.moreai_worker_ack_event_outbox(
+  p_event_id uuid, p_worker_id text
+) returns boolean
+language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_count integer;
+begin
+  update public.agent_run_event_outbox
+    set delivery_state='published',published_at=now(),locked_by=null,locked_until=null,last_error_code=null
+    where id=p_event_id and delivery_state='pending' and locked_by=p_worker_id
+      and locked_until > now();
+  get diagnostics v_count=row_count;
+  return v_count=1;
+end;
+$$;
+
+create or replace function public.moreai_worker_retry_event_outbox(
+  p_event_id uuid, p_worker_id text, p_error_code text
+) returns text
+language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_attempts integer; v_state text;
+begin
+  update public.agent_run_event_outbox
+    set attempts=attempts+1,
+        delivery_state=case when attempts+1 >= 12 then 'dead_letter' else 'pending' end,
+        next_attempt_at=now()+make_interval(secs=>least(3600,power(2,least(attempts,10))::integer)),
+        locked_by=null,locked_until=null,
+        last_error_code=left(coalesce(p_error_code,'publish_failed'),80)
+    where id=p_event_id and delivery_state='pending' and locked_by=p_worker_id
+    returning attempts,delivery_state into v_attempts,v_state;
+  if not found then raise exception 'outbox_lease_lost' using errcode='40001'; end if;
+  return v_state;
+end;
+$$;
+
+revoke all on function public.moreai_worker_claim_event_outbox(text,integer,integer) from public,anon,authenticated;
+revoke all on function public.moreai_worker_ack_event_outbox(uuid,text) from public,anon,authenticated;
+revoke all on function public.moreai_worker_retry_event_outbox(uuid,text,text) from public,anon,authenticated;
+grant execute on function public.moreai_worker_claim_event_outbox(text,integer,integer) to service_role;
+grant execute on function public.moreai_worker_ack_event_outbox(uuid,text) to service_role;
+grant execute on function public.moreai_worker_retry_event_outbox(uuid,text,text) to service_role;
