@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import Settings
 from app.dependencies import current_user
-from app.routers import agent_runs, artifacts, catalog, conversations
+from app.routers import agent_runs, artifacts, catalog, conversations, customer, partner
 
 
 @asynccontextmanager
@@ -26,6 +26,8 @@ app = FastAPI(
 )
 
 app.include_router(conversations.router)
+app.include_router(customer.router)
+app.include_router(partner.router)
 app.include_router(agent_runs.router)
 app.include_router(catalog.router)
 app.include_router(artifacts.router)
