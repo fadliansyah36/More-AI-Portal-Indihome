@@ -121,6 +121,12 @@ export type PartnerLocationRecord = {
   created_at: string;
 };
 
+export type PartnerTenantOption = {
+  tenant: PartnerContext['tenant'];
+  principal_role: string;
+  location_scope: string | null;
+};
+
 export const customerApi = {
   context: () => moreAiApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
   conversations: () => moreAiApi<CustomerConversation[]>('/api/v1/customer/conversations'),
@@ -138,6 +144,7 @@ export const customerApi = {
 };
 
 export const partnerApi = {
+  tenants: () => moreAiApi<PartnerTenantOption[]>('/api/v1/partner/tenants'),
   context: (partnerId?: string) => moreAiApi<PartnerContext>(
     '/api/v1/partner/context' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
   ),
