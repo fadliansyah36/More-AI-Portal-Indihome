@@ -18,7 +18,6 @@ import {
   Layers,
   ArrowLeft,
 } from 'lucide-react';
-import { ARTIFACT_FILES } from '@/lib/data';
 import { customerApi, type CustomerAgentRun } from '@/lib/api/client';
 import { TaskItem } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
@@ -130,7 +129,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
           <span>Workflow AI</span>
         </button>
         <button
-          onClick={() => setActiveTab('artifacts')}
+          onClick={() => onOpenWorkspaceFiles?.()}
           className={`flex-1 min-w-[95px] py-1.5 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1 ${
             activeTab === 'artifacts'
               ? 'bg-red-600 text-white shadow-xs'
