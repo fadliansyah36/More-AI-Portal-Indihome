@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   MessageSquare,
   Search,
@@ -19,6 +19,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
+import { moreAiApi } from '@/lib/api/client';
 
 interface HomeViewProps {
   onNavigate: (tab: NavigationTab) => void;
@@ -30,9 +31,20 @@ interface HomeViewProps {
 export const HomeView: React.FC<HomeViewProps> = ({
   onNavigate,
   onStartPrompt,
-  userName = 'Andi Pratama',
+  userName = 'Pengguna MoreAI',
 }) => {
   const [promptInput, setPromptInput] = useState('');
+  const [displayName, setDisplayName] = useState(userName);
+  useEffect(() => {
+    let active = true;
+    moreAiApi<{ user: { email?: string }; profile: { display_name?: string | null } | null }>('/api/v1/me')
+      .then((identity) => {
+        if (!active) return;
+        setDisplayName(identity.profile?.display_name?.trim() || identity.user.email || 'Pengguna MoreAI');
+      })
+      .catch(() => { if (active) setDisplayName('Pengguna MoreAI'); });
+    return () => { active = false; };
+  }, [userName]);
 
   const handleSendPrompt = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -51,20 +63,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <span>Selamat Pagi,</span>
             </div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
-              <span>{userName}</span>
+              <span>{displayName}</span>
               <span className="text-xl">👋</span>
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onNavigate('wifi')}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium hover:bg-emerald-100 transition"
-              title="Status Koneksi Wi-Fi Global Partner ISP"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Partner ISP 100M</span>
-            </button>
-          </div>
+
         </div>
 
         <p className="mt-1 text-xs text-slate-600 font-medium">
