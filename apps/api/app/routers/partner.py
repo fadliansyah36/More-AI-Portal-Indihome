@@ -13,6 +13,46 @@ from app.routers.conversations import repository
 router = APIRouter(prefix="/api/v1/partner", tags=["partner"])
 
 
+
+@router.get("/tenants")
+async def partner_tenants(
+    request: Request, user: dict[str, Any] = Depends(current_user),
+):
+    """Return only active tenants for which the caller has an active partner membership."""
+    repo = repository(request)
+    rows = await repo.select("partner_members", {
+        "user_id": f"eq.{user['id']}", "status": "eq.active",
+        "select": "partner_id,role_key,location_id", "limit": "200",
+    })
+    role_rank = {
+        "partner_owner": 0, "partner_admin": 1, "partner_analyst": 2,
+        "location_manager": 3, "partner_staff": 4,
+    }
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        if row.get("role_key") in role_rank and row.get("partner_id"):
+            grouped.setdefault(str(row["partner_id"]), []).append(row)
+    if not grouped:
+        raise HTTPException(403, "An active Partner membership is required")
+    orgs = await repo.select("partner_organizations", {
+        "id": f"in.({','.join(grouped)})", "status": "eq.active",
+        "select": "id,display_name,legal_name,status", "limit": "100",
+    })
+    result = []
+    for org in orgs:
+        memberships = grouped.get(str(org["id"]), [])
+        if not memberships:
+            continue
+        memberships.sort(key=lambda row: role_rank.get(row.get("role_key"), 99))
+        selected = memberships[0]
+        result.append({
+            "tenant": org,
+            "principal_role": selected["role_key"],
+            "location_scope": selected.get("location_id"),
+        })
+    return result
+
+
 @router.get("/context")
 async def partner_context(
     request: Request,
