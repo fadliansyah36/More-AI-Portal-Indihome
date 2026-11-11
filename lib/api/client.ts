@@ -145,6 +145,59 @@ export type PartnerTenantOption = {
   location_scope: string | null;
 };
 
+export type CustomerWallet = {
+  id: string;
+  currency: string;
+  balance: string | number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CustomerLedgerEntry = {
+  id: string;
+  wallet_id: string;
+  entry_type: string;
+  amount: string | number;
+  balance_after: string | number;
+  reference_type: string | null;
+  reference_id: string | null;
+  description: string | null;
+  created_at: string;
+};
+
+export type CustomerUsageRecord = {
+  id: string;
+  run_id: string | null;
+  provider_key: string;
+  model_key: string;
+  input_tokens: number;
+  output_tokens: number;
+  estimated_cost: string | number;
+  actual_cost: string | number | null;
+  status: string;
+  latency_ms: number | null;
+  created_at: string;
+};
+
+export type CustomerEntitlement = {
+  id: string;
+  entitlement_key: string;
+  source_type: string;
+  status: string;
+  starts_at: string;
+  expires_at: string | null;
+  metadata: Record<string, unknown>;
+};
+
+export type CustomerQuota = {
+  id: string;
+  metric_key: string;
+  limit_value: string | number;
+  window_seconds: number;
+  usage: { used_value: string | number; window_start: string; updated_at: string } | null;
+};
+
 export const customerApi = {
   context: () => moreAiCustomerApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
   conversations: () => moreAiCustomerApi<CustomerConversation[]>('/api/v1/customer/conversations'),
@@ -160,6 +213,11 @@ export const customerApi = {
   agentRuns: () => moreAiCustomerApi<CustomerAgentRun[]>('/api/v1/customer/agent-runs'),
   getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/customer/agent-runs/${runId}`),
   streamRun: (runId: string) => `/api/v1/customer/agent-runs/${runId}/stream?wait_seconds=30`,
+  wallets: () => moreAiCustomerApi<{ wallets: CustomerWallet[] }>('/api/v1/customer/wallet'),
+  ledger: (limit = 50, before?: string) => moreAiCustomerApi<CustomerLedgerEntry[]>(`/api/v1/customer/wallet/ledger?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
+  usage: (limit = 50, before?: string) => moreAiCustomerApi<CustomerUsageRecord[]>(`/api/v1/customer/usage?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
+  entitlements: () => moreAiCustomerApi<CustomerEntitlement[]>('/api/v1/customer/entitlements'),
+  quotas: () => moreAiCustomerApi<CustomerQuota[]>('/api/v1/customer/quotas'),
 };
 
 export const partnerApi = {
@@ -172,6 +230,15 @@ export const partnerApi = {
   ),
   members: (partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>(
     '/api/v1/partner/members' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
+  ),
+  sessions: (partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>(
+    '/api/v1/partner/sessions' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
+  ),
+  campaigns: (partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>(
+    '/api/v1/partner/campaigns' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
+  ),
+  campaignRewards: (campaignId: string, partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>(
+    `/api/v1/partner/campaigns/${campaignId}/rewards` + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
   ),
 };
 
