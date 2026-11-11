@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Clock, Loader2, AlertCircle } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { customerApi, type CustomerAgentRun } from '@/lib/api/client';
+import { customerApi, customerToolApprovalApi, type CustomerAgentRun, type CustomerToolApproval } from '@/lib/api/client';
 
 interface WorkflowProgressViewProps {
   onBack: () => void;
@@ -37,6 +37,9 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   const [runs, setRuns] = useState<CustomerAgentRun[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [approvals, setApprovals] = useState<CustomerToolApproval[]>([]);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
+  const [approvalActionId, setApprovalActionId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -44,8 +47,16 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       try {
         setIsLoading(true);
         setError(null);
-        const result = await customerApi.agentRuns();
-        if (active) setRuns(result);
+        const [runsResult, approvalsResult] = await Promise.allSettled([
+          customerApi.agentRuns(),
+          customerToolApprovalApi.list(),
+        ]);
+        if (active) {
+          if (runsResult.status === 'fulfilled') setRuns(runsResult.value);
+          else setError(runsResult.reason instanceof Error ? runsResult.reason.message : 'Workflow tidak dapat dimuat.');
+          if (approvalsResult.status === 'fulfilled') setApprovals(approvalsResult.value);
+          else setApprovalError(approvalsResult.reason instanceof Error ? approvalsResult.reason.message : 'Persetujuan tidak dapat dimuat.');
+        }
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : 'Workflow tidak dapat dimuat.');
       } finally {
@@ -55,6 +66,21 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     void loadRuns();
     return () => { active = false; };
   }, []);
+
+  const decideApproval = async (approvalId: string, decision: 'approved' | 'denied') => {
+    try {
+      setApprovalActionId(approvalId);
+      setApprovalError(null);
+      const result = await customerToolApprovalApi.decide(approvalId, decision);
+      setApprovals((current) => current.map((item) => item.id === approvalId
+        ? { ...item, status: result.status as CustomerToolApproval['status'] }
+        : item));
+    } catch (cause) {
+      setApprovalError(cause instanceof Error ? cause.message : 'Keputusan persetujuan gagal disimpan.');
+    } finally {
+      setApprovalActionId(null);
+    }
+  };
 
   const activeCount = runs.filter((run) => ['queued', 'pending', 'running', 'awaiting_approval'].includes(run.status)).length;
   const completedCount = runs.filter((run) => run.status === 'succeeded').length;
@@ -71,6 +97,30 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         </div>
         <div className="w-5" />
       </div>
+
+      {approvals.some((item) => item.status === 'pending') && (
+        <section className="p-4 rounded-3xl bg-amber-50/70 border border-amber-200 space-y-3">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Persetujuan Tool Agent</h2>
+            <p className="text-[11px] text-slate-600 mt-1">Worker akan melanjutkan eksekusi hanya setelah persetujuan untuk argumen yang sama dikonsumsi satu kali.</p>
+          </div>
+          {approvals.filter((item) => item.status === 'pending').map((item) => (
+            <div key={item.id} className="p-3 rounded-2xl bg-white border border-amber-100 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-slate-900">{item.tool_key}</span>
+                <span className="text-[10px] text-amber-700 font-semibold">Menunggu keputusan</span>
+              </div>
+              <p className="text-[11px] text-slate-600">{item.summary}</p>
+              <p className="text-[10px] text-slate-400">Berlaku sampai {new Date(item.expires_at).toLocaleString('id-ID')}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button disabled={approvalActionId === item.id} onClick={() => void decideApproval(item.id, 'denied')} className="py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold disabled:opacity-50">Tolak</button>
+                <button disabled={approvalActionId === item.id} onClick={() => void decideApproval(item.id, 'approved')} className="py-2 rounded-xl bg-red-600 text-white text-xs font-bold disabled:opacity-50">Setujui</button>
+              </div>
+            </div>
+          ))}
+          {approvalError && <p className="text-xs text-rose-700">{approvalError}</p>}
+        </section>
+      )}
 
       <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-4">
         <div className="grid grid-cols-2 gap-3">
