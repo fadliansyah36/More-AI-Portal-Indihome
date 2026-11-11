@@ -155,3 +155,27 @@ export const partnerApi = {
     '/api/v1/partner/members' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
   ),
 };
+
+export type CustomerToolApproval = {
+  id: string;
+  run_id: string;
+  tool_key: string;
+  summary: string;
+  status: 'pending' | 'approved' | 'denied' | 'expired' | 'consumed';
+  requested_at: string;
+  expires_at: string;
+  decided_at: string | null;
+  consumed_at: string | null;
+};
+
+export const customerToolApprovalApi = {
+  list: () => moreAiApi<CustomerToolApproval[]>('/api/v1/customer/tool-approvals'),
+  request: (input: { run_id: string; tool_key: 'bash' | 'python_execute' | 'browser' | 'file_read' | 'file_write' | 'file_edit'; arguments_hash: string; summary: string }) =>
+    moreAiApi<{ id: string; status: 'pending' }>('/api/v1/customer/tool-approvals', {
+      method: 'POST', body: JSON.stringify(input),
+    }),
+  decide: (approvalId: string, decision: 'approved' | 'denied') =>
+    moreAiApi<{ id: string; status: string }>(`/api/v1/customer/tool-approvals/${approvalId}/decision`, {
+      method: 'POST', body: JSON.stringify({ decision }),
+    }),
+};
