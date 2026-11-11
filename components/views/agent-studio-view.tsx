@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Bot,
   Search,
@@ -14,21 +14,52 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { INITIAL_AGENTS } from '@/lib/data';
+import { moreAiApi } from '@/lib/api/client';
 import { AIAgent } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
 interface AgentStudioViewProps {
   onSelectAgentForChat?: (agent: AIAgent) => void;
+  onOpenWorkflow?: () => void;
 }
 
-export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentForChat }) => {
+export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentForChat, onOpenWorkflow }) => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'agent' | 'workflow'>('agent');
-  const [selectedAgentId, setSelectedAgentId] = useState<string>('marketing');
-  const [agents, setAgents] = useState<AIAgent[]>(INITIAL_AGENTS);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
+  const [agents, setAgents] = useState<AIAgent[]>([]);
+  const [isLoadingAgents, setIsLoadingAgents] = useState(true);
+  const [agentLoadError, setAgentLoadError] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    moreAiApi<Array<{ id: string; key: string; name: string; description: string; version: string; enabled: boolean }>>('/api/v1/agents')
+      .then((rows) => {
+        if (!active) return;
+        const mapped = rows.filter((row) => row.enabled).map((row) => ({
+          id: row.key, name: row.name, specialty: 'Runtime ' + row.version,
+          description: row.description, iconName: 'Bot', color: 'bg-slate-500',
+          creditsRequired: 0, active: row.enabled,
+        }));
+        setAgents(mapped);
+        setSelectedAgentId(mapped[0]?.id || '');
+      })
+      .catch((cause) => { if (active) setAgentLoadError(cause instanceof Error ? cause.message : 'Katalog agent tidak tersedia.'); })
+      .finally(() => { if (active) setIsLoadingAgents(false); });
+    return () => { active = false; };
+  }, []);
 
-  const selectedAgent = agents.find((a) => a.id === selectedAgentId) || agents[0];
+  const selectedAgent = agents.find((a) => a.id === selectedAgentId) || agents[0] || null;
+
+  if (!selectedAgent) {
+    return (
+      <div className="space-y-4 pb-20 animate-fadeIn">
+        <div><h1 className="text-xl font-bold text-slate-900 tracking-tight">AI Agent Studio</h1><p className="text-xs text-slate-500">Katalog agent dari FastAPI dan OpenManus.</p></div>
+        <div className="p-8 rounded-3xl bg-white border border-slate-100 text-center text-xs text-slate-500">
+          {isLoadingAgents ? 'Memuat katalog agent...' : agentLoadError || 'Belum ada agent yang diaktifkan di backend.'}
+        </div>
+      </div>
+    );
+  }
 
   const getAgentIcon = (id: string) => {
     switch (id) {
@@ -117,7 +148,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
                   </div>
 
                   <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full shrink-0">
-                    {agent.creditsRequired} Poin
+                    {agent.specialty}
                   </span>
                 </div>
               );
@@ -148,11 +179,11 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
             <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
               <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-slate-400 block text-[9px] uppercase font-bold">Kebutuhan Quota</span>
-                <span className="font-bold text-slate-900">{selectedAgent.creditsRequired} AI Poin / Run</span>
+                <span className="font-bold text-slate-900">{selectedAgent.specialty}</span>
               </div>
               <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-slate-400 block text-[9px] uppercase font-bold">Status Lisensi</span>
-                <span className="font-bold text-emerald-600">Aktif via Partner ISP</span>
+                <span className="font-bold text-emerald-600">Enabled oleh backend</span>
               </div>
             </div>
 
@@ -169,60 +200,13 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
           </div>
         </div>
       ) : (
-        /* Multi-Agent Workflow Builder View */
         <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Pipeline Multi-Agent Otomatis</h3>
-              <p className="text-xs text-slate-500">Menghubungkan beberapa agent secara berantai</p>
-            </div>
-            <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-              Auto-Orchestrator
-            </span>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Multi-Agent Workflow</h3>
+            <p className="text-xs text-slate-500">Pantau workflow yang benar-benar dibuat dan dijalankan melalui backend OpenManus.</p>
           </div>
-
-          <div className="space-y-3">
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-blue-500 text-white font-bold text-xs flex items-center justify-center">
-                1
-              </div>
-              <div className="flex-1">
-                <span className="text-xs font-bold text-slate-900 block">Research Agent</span>
-                <span className="text-[10px] text-slate-500">Menganalisis topik & mengumpulkan fakta valid</span>
-              </div>
-            </div>
-
-            <div className="w-0.5 h-4 bg-slate-300 mx-auto" />
-
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-amber-500 text-white font-bold text-xs flex items-center justify-center">
-                2
-              </div>
-              <div className="flex-1">
-                <span className="text-xs font-bold text-slate-900 block">Marketing & Writing Agent</span>
-                <span className="text-[10px] text-slate-500">Menyusun strategi campaign & copywriting</span>
-              </div>
-            </div>
-
-            <div className="w-0.5 h-4 bg-slate-300 mx-auto" />
-
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-purple-500 text-white font-bold text-xs flex items-center justify-center">
-                3
-              </div>
-              <div className="flex-1">
-                <span className="text-xs font-bold text-slate-900 block">Design & Data Analyst</span>
-                <span className="text-[10px] text-slate-500">Membuat visualisasi materi & laporan spreadsheet</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => showToast('Workflow Multi-Agent baru telah dijadwalkan ke queue executor!', 'success')}
-            className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5"
-          >
-            <span>Jalankan Pipeline Lengkap</span>
-            <ArrowRight className="w-4 h-4" />
+          <button onClick={() => onOpenWorkflow?.()} className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition">
+            Buka Workflow & Agent Runs
           </button>
         </div>
       )}
