@@ -234,7 +234,7 @@ export default function App() {
       />}
 
       {/* Main Full-Screen Layout */}
-      <main className="w-full max-w-full px-2 sm:px-6 lg:px-8 pt-2.5 sm:pt-4 ${isPublicEntry ? "pb-6 sm:pb-8" : "pb-36 sm:pb-32"}">
+      <main className={`w-full max-w-full px-2 sm:px-6 lg:px-8 pt-2.5 sm:pt-4 ${isPublicEntry ? "pb-6 sm:pb-8" : "pb-36 sm:pb-32"}`}>
         <div className="w-full max-w-full bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-3 sm:p-6 lg:p-8 min-h-[650px]">
           {/* Core Views */}
               {currentTab === 'home' && (
@@ -525,6 +525,7 @@ export default function App() {
 
       {/* Private workspace dock: never render on public/auth entry screens. */}
       {!isPublicEntry && (
+      <>
       {/* Permanent Fixed Bottom Navigation Dock with collapse toggle */}
       {isBottomNavCollapsed ? (
         <div className="fixed bottom-3 left-0 right-0 z-40 flex justify-center pointer-events-none select-none animate-in fade-in duration-150">
@@ -671,7 +672,7 @@ export default function App() {
           </div>
         </nav>
       )}
-
+      </>
       )}
 
       {/* Interactive Screen Gallery Modal (Sheet 1-6 Master Directory) */}
