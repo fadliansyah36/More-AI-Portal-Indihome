@@ -18,7 +18,7 @@ async function moreAiApiAt<T>(baseUrl: string, path: string, init: RequestInit =
   const headers = new Headers(init.headers);
   headers.set('Authorization', 'Bearer ' + data.session.access_token);
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  const response = await fetch(baseUrl + path,
+  const response = await fetch(baseUrl + path, {
     ...init,
     headers,
     cache: 'no-store',
