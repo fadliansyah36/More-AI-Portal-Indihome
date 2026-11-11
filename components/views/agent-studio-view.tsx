@@ -84,7 +84,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
       <div>
         <h1 className="text-xl font-bold text-slate-900 tracking-tight">AI Agent Studio</h1>
         <p className="text-xs text-slate-500">
-          Tim agen AI spesialis mandiri untuk riset, kampanye, konten, visual, dan analitik
+          Agent yang diaktifkan dan dipublikasikan oleh backend MoreAI.
         </p>
       </div>
 
@@ -168,7 +168,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
                 </div>
               </div>
               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Ready to Deploy
+                Enabled
               </span>
             </div>
 
@@ -178,11 +178,11 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
 
             <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
               <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-slate-400 block text-[9px] uppercase font-bold">Kebutuhan Quota</span>
+                <span className="text-slate-400 block text-[9px] uppercase font-bold">Versi Runtime</span>
                 <span className="font-bold text-slate-900">{selectedAgent.specialty}</span>
               </div>
               <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-slate-400 block text-[9px] uppercase font-bold">Status Lisensi</span>
+                <span className="text-slate-400 block text-[9px] uppercase font-bold">Status Backend</span>
                 <span className="font-bold text-emerald-600">Enabled oleh backend</span>
               </div>
             </div>
