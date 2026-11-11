@@ -8,6 +8,7 @@ on:
       - 'apps/sandbox/**'
       - 'engine/**'
       - 'apps/worker/**'
+      - 'apps/api/**'
       - '.github/workflows/phase04-sandbox.yml'
   pull_request:
     paths:
