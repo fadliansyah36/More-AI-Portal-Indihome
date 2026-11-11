@@ -33,7 +33,8 @@ class WorkerRuntime:
 
         run_id = str(run["id"])
         cancelled = asyncio.Event()
-        heartbeat_task = asyncio.create_task(self._heartbeat_loop(run_id, cancelled))
+        lease_lost = asyncio.Event()
+        heartbeat_task = asyncio.create_task(self._heartbeat_loop(run_id, cancelled, lease_lost))
         try:
             await self.rpc.append_run_event(run_id, "worker:run.started", "run.started", {
                 "attempt": int(run.get("attempt") or 0),
@@ -71,10 +72,21 @@ class WorkerRuntime:
             cancel_wait_task = asyncio.create_task(
                 cancelled.wait(), name=f"moreai-run-cancel-watch:{run_id}",
             )
+            lease_wait_task = asyncio.create_task(
+                lease_lost.wait(), name=f"moreai-run-lease-lost-watch:{run_id}",
+            )
             done, _ = await asyncio.wait(
-                {dispatch_task, cancel_wait_task},
+                {dispatch_task, cancel_wait_task, lease_wait_task},
                 return_when=asyncio.FIRST_COMPLETED,
             )
+            if lease_wait_task in done and lease_lost.is_set():
+                # A stale worker must never finish or publish against a lease it no
+                # longer owns. Stop local execution and let the current lease owner
+                # (or the expiry reaper) decide the durable run state.
+                cancelled.set()
+                dispatch_task.cancel()
+                await asyncio.gather(dispatch_task, return_exceptions=True)
+                return True
             if cancel_wait_task in done and cancelled.is_set():
                 dispatch_task.cancel()
                 await asyncio.gather(dispatch_task, return_exceptions=True)
@@ -85,7 +97,8 @@ class WorkerRuntime:
                 return True
 
             cancel_wait_task.cancel()
-            await asyncio.gather(cancel_wait_task, return_exceptions=True)
+            lease_wait_task.cancel()
+            await asyncio.gather(cancel_wait_task, lease_wait_task, return_exceptions=True)
             output = await dispatch_task
             if cancelled.is_set():
                 await self.rpc.append_run_event(run_id, "worker:run.cancelled", "run.cancelled", {})
@@ -100,12 +113,16 @@ class WorkerRuntime:
         except asyncio.CancelledError:
             # A user-requested cancellation is terminal. A process shutdown is not:
             # leave its lease/checkpoints intact so another worker can recover it.
-            if cancelled.is_set():
+            if cancelled.is_set() and not lease_lost.is_set():
                 await asyncio.shield(self.rpc.append_run_event(run_id, "worker:run.cancelled", "run.cancelled", {}))
                 await asyncio.shield(self.rpc.finish(run_id, "cancelled"))
             raise
         except Exception:
-            if cancelled.is_set():
+            if lease_lost.is_set():
+                # Lease loss is not a user cancellation or execution failure. Leave
+                # the durable row untouched for the lease owner/recovery path.
+                pass
+            elif cancelled.is_set():
                 await self.rpc.append_run_event(run_id, "worker:run.cancelled", "run.cancelled", {})
                 await self.rpc.finish(run_id, "cancelled")
             else:
@@ -118,7 +135,7 @@ class WorkerRuntime:
             cancelled.set()
             # Reap any child tasks if the worker process is shutting down while a
             # provider/tool call is still active. The run lease remains recoverable.
-            for task_name in ("dispatch_task", "cancel_wait_task"):
+            for task_name in ("dispatch_task", "cancel_wait_task", "lease_wait_task"):
                 task = locals().get(task_name)
                 if task is not None and not task.done():
                     task.cancel()
@@ -130,12 +147,28 @@ class WorkerRuntime:
                 pass
         return True
 
-    async def _heartbeat_loop(self, run_id: str, cancelled: asyncio.Event):
+    async def _heartbeat_loop(
+        self, run_id: str, cancelled: asyncio.Event, lease_lost: asyncio.Event,
+    ):
         while not cancelled.is_set():
             try:
                 await asyncio.wait_for(cancelled.wait(), timeout=30)
             except TimeoutError:
-                state = await self.rpc.heartbeat(run_id)
-                if not state.get("alive", False) or state.get("cancel_requested", False):
+                try:
+                    state = await self.rpc.heartbeat(run_id)
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    # A heartbeat transport failure means ownership cannot be
+                    # proven. Fail closed; do not issue finish/event writes on a
+                    # potentially stale lease.
+                    lease_lost.set()
+                    cancelled.set()
+                    return
+                if not state.get("alive", False):
+                    lease_lost.set()
+                    cancelled.set()
+                    return
+                if state.get("cancel_requested", False):
                     cancelled.set()
                     return
