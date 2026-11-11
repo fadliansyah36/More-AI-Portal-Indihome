@@ -6,7 +6,7 @@
 | 01 | Upstream source pin & provenance | COMPLETE | `dev_web_app` @ `3ceaa9182b39bbb9898ddda0a4b1c50c2758ab5f` |
 | 02 | Monorepo backend workspace foundation | COMPLETE — foundation | `apps/api`, `apps/worker`, `engine`, `packages` |
 | 03 | Complete upstream source copy | COMPLETE — hash verified | 111/111 matching Git blob SHA in `vendor/openmanusweb/` |
-| 04 | Full backend integration & security hardening | IN PROGRESS — direct-main runtime hardening started; parity incomplete | Agent tool-call loop and lifecycle hardening committed; full upstream flows/tools, runtime adapters, durable memory and sandbox integration still pending |
+| 04 | Full backend integration & security hardening | IN PROGRESS — runtime/dispatcher hardening increment CI PASS; parity incomplete | [Phase 04 run 42959145125](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42959145125): engine-policy and sandbox-policy PASS; [Engine Contract Tests 42959145056](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42959145056): PASS. Full worker tool-call wiring, upstream flows/tools and durable memory pending |
 | 05 | Supabase schema reconciliation | COMPLETE — existing migrations only; no reset/destructive DDL | Existing schema and additive migration history |
 | 06 | FastAPI core & OpenAPI contract | IN PROGRESS — core domain API | Auth, identity, conversations, enqueue, catalog, run, cancel, events and SSE |
 | 07 | Worker & durable run lifecycle | IN PROGRESS — worker dispatcher currently registers Manus text and Planning only | Durable claim/heartbeat/checkpoint/finish; worker disabled pending gates |
