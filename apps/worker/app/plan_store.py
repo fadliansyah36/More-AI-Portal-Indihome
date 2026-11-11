@@ -7,7 +7,7 @@ from app.client import WorkerRpcClient
 
 
 class SupabasePlanStore:
-    """Durable PlanningFlow state backed by canonical agent_run_steps/checkpoints."""
+    """Durable planning state backed by agent_run_steps and worker checkpoints."""
 
     def __init__(self, client: WorkerRpcClient):
         self.client = client
@@ -23,11 +23,17 @@ class SupabasePlanStore:
             if key in existing_keys:
                 continue
             await self.client.insert("agent_run_steps", {
-                "run_id": run_id, "sequence": index, "step_key": key, "status": "pending",
+                "run_id": run_id,
+                "sequence": index,
+                "step_key": key,
+                "status": "pending",
                 "input": {
-                    "objective": step["objective"], "dependencies": step["dependencies"],
-                    "expected_output": step["expected_output"], "tool_requirement": step["tool_requirement"],
-                    "risk": step["risk"], "estimated_usage": step["estimated_usage"],
+                    "objective": step["objective"],
+                    "dependencies": step["dependencies"],
+                    "expected_output": step["expected_output"],
+                    "tool_requirement": step["tool_requirement"],
+                    "risk": step["risk"],
+                    "estimated_usage": step["estimated_usage"],
                 },
             })
         return await self.get(run_id=run_id)
@@ -40,10 +46,7 @@ class SupabasePlanStore:
         })
         return {"run_id": run_id, "steps": rows}
 
-    async def mark_step(
-        self, *, run_id: str, step_index: int, status: str,
-        notes: str | None = None, output: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+    async def mark_step(self, *, run_id: str, step_index: int, status: str, notes: str | None = None) -> dict[str, Any]:
         allowed = {"pending", "running", "waiting_approval", "succeeded", "failed", "skipped", "cancelled"}
         if status not in allowed:
             raise ValueError("invalid_plan_step_status")
@@ -53,10 +56,8 @@ class SupabasePlanStore:
             payload["started_at"] = datetime.now(timezone.utc).isoformat()
         if status in {"succeeded", "failed", "skipped", "cancelled"}:
             payload["finished_at"] = datetime.now(timezone.utc).isoformat()
-        if status == "succeeded":
-            payload["output"] = output if output is not None else {"summary": (notes or "completed")[:2000]}
-        elif notes:
-            payload["error"] = {"summary": notes[:2000]}
+        if notes:
+            payload["output" if status == "succeeded" else "error"] = {"summary": notes[:2000]}
         rows = await self.client.update("agent_run_steps", {
             "run_id": f"eq.{run_id}", "sequence": f"eq.{sequence}", "step_key": f"eq.planning.step.{sequence}",
         }, payload)

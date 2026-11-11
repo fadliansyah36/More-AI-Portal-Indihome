@@ -49,7 +49,7 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
         browser_tools=browser_tools,
         event_publisher=client.append_run_event,
         sandbox_tools=sandbox_tools,
-        approval_gate=client.wait_for_tool_approval if sandbox_tools is not None else None,
+        # Browser and sandbox capabilities are independently high-risk. Any enabled high-risk tool\n        # must have the durable owner-approval gate, regardless of which adapter is enabled.\n        approval_gate=client.wait_for_tool_approval,
     )
     planning = PlanningAgentRuntime(gateway=gateway, store=plan_store, step_executor=manus)
 
