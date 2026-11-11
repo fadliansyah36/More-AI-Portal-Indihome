@@ -28,7 +28,7 @@ Updated `apps/api/app/routers/agent_runs.py`:
 - The effective cursor is the maximum of the optional `after` query and `Last-Event-ID`.
 - The existing owner check remains in place before event retrieval/streaming.
 
-Commit: `3b592151022d4425dbf9081dad34dcd607944814`.
+Commits: `3b592151022d4425dbf9081dad34dcd607944814`, `01ab679f4389d559142c55583e742784b0b22d2a` (advance the database query cursor after each emitted batch).
 
 ## 3. Remaining integration gaps
 
