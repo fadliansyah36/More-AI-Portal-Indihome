@@ -63,6 +63,8 @@ class DurableOpenManusRuntime:
         memory_store: ConversationMemoryStore | None = None, sandbox_tools: Any | None = None,
         approval_gate: Callable[[str, str, str, dict[str, Any]], Awaitable[bool]] | None = None,
         plan_store: Any | None = None,
+        search_tools: Any | None = None,
+        storage_tools: Any | None = None,
         max_rounds: int = 12,
     ):
         self.gateway = gateway
@@ -72,6 +74,10 @@ class DurableOpenManusRuntime:
         enabled_tools = {"create_chat_completion"}
         if plan_store is not None:
             enabled_tools.add("planning")
+        if search_tools is not None:
+            enabled_tools.add("google_search")
+        if storage_tools is not None:
+            enabled_tools.add("file_saver")
         if sandbox_tools is not None:
             enabled_tools.update({"bash", "python_execute"})
         self.tools = PolicyEnforcedToolRegistry(
@@ -81,6 +87,10 @@ class DurableOpenManusRuntime:
         self.tools.register("create_chat_completion", self._nested_completion)
         if plan_store is not None:
             self.tools.register("planning", self._planning_tool)
+        if search_tools is not None:
+            self.tools.register("google_search", search_tools.google_search)
+        if storage_tools is not None:
+            self.tools.register("file_saver", storage_tools.file_saver)
         if sandbox_tools is not None:
             self.tools.register("bash", sandbox_tools.bash)
             self.tools.register("python_execute", sandbox_tools.python_execute)
