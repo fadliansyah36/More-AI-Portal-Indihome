@@ -45,3 +45,22 @@ Base revision inspected: `f867e4feefab80533d3e08d08d038dcc4ec04b9f`
 - 06: reconcile every remaining Master PRD domain with live Supabase schema/RLS before adding forward-only migrations and permission-scoped transactional governance.
 - 09: only after exact screen/route baseline and before/after screenshots are available, connect existing screens through typed API methods without visual redesign.
 - 10–11: integration and release gates after explicit authorization to run verification and deployment.
+
+## Phase 07A continuation — canonical outbox reconciliation and publisher
+
+Read-only inspection of canonical Supabase project `uunfgimtokhucegqbpce` confirmed:
+- `public.agent_run_events` exists with `id, run_id, event_type, sequence, payload, created_at`.
+- `public.agent_run_checkpoints` exists.
+- `public.outbox_events` already exists with UUID `aggregate_id`, `aggregate_type`, `event_type`, JSON payload, status lifecycle `pending/processing/published/failed/dead_letter`, attempts, available_at, locked_at, published_at and last_error.
+- `outbox_events` already has restrictive RLS denying anon/authenticated clients.
+- Existing `moreai_worker_checkpoint` and `moreai_worker_finish_run` previously allocated sequence using `max(sequence)+1`, which could race with a new counter. The migration now replaces both functions to append through the same per-run row lock and event counter before releasing the worker lease.
+
+Changes committed:
+- The event migration now extends the existing canonical `outbox_events` table rather than creating a competing second outbox.
+- Adds event-key and per-run sequence uniqueness, worker lease metadata, transactional append, worker lease ownership checks, and service-role-only RPCs.
+- Replaces checkpoint and finish RPCs to use the same serialized event append, preserving checkpoint/finish behavior while eliminating split sequence allocation.
+- Adds `moreai_worker_claim_event_outbox`, `moreai_worker_ack_event_outbox`, and `moreai_worker_retry_event_outbox` with SKIP LOCKED leasing, lease expiry recovery, exponential backoff, and dead-letter after 12 attempts.
+- Worker client publishes claimed records through the Supabase Realtime Broadcast REST endpoint to private per-run topics; the consumer acknowledges only after the broadcast endpoint succeeds. Delivery is at-least-once; consumers must deduplicate by event_id/sequence.
+- Worker starts the publisher alongside the durable agent worker. A lost lease after publish can produce a duplicate broadcast; this is intentional at-least-once behavior.
+
+Important: the live schema inspection was read-only. No migration was applied and no RPC was invoked against production. The source migration still requires review and application before this publisher can function. Existing SSE GET/stream routes remain the authoritative durable replay path; Realtime Broadcast is only the low-latency notification path.
