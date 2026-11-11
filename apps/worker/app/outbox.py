@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
-
 from app.client import WorkerRpcClient
 
 logger = logging.getLogger(__name__)
@@ -29,7 +27,8 @@ class DurableEventOutboxPublisher:
                 for row in rows:
                     if stop.is_set():
                         return
-                    event_id = row.get("event_id")
+                    envelope = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+                    event_id = envelope.get("event_id")
                     outbox_id = row.get("id")
                     if not isinstance(event_id, str) or not isinstance(outbox_id, str):
                         logger.error("outbox_row_missing_identity")
