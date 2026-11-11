@@ -29,3 +29,11 @@ Aligned the existing browser API client with the actual authenticated FastAPI co
 ## Next
 
 Continue Phase 04 Flow/server parity and Phase 07 durable event lifecycle, then map and connect every existing Customer, Partner and Super Admin screen to the real typed API methods without redesigning the UI.
+
+## Durable SSE replay cursor follow-up
+
+Commit: `6b10c622b1716cf4422a99d4e2f653c5ad9642ca`.
+
+- Stream event parsing now preserves the SSE `id:` field as `MoreAiStreamEvent.id`.
+- `customerApi.streamRun(runId, after)` now accepts a durable sequence cursor and passes it to the FastAPI stream endpoint.
+- This supports caller-managed reconnect/replay from the last observed event sequence; it does not automatically reconnect or claim live stream delivery without runtime verification.
