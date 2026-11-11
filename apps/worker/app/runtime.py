@@ -100,6 +100,10 @@ class WorkerRuntime:
             lease_wait_task.cancel()
             await asyncio.gather(cancel_wait_task, lease_wait_task, return_exceptions=True)
             output = await dispatch_task
+            if lease_lost.is_set():
+                # The lease may have been lost immediately after dispatch completed.
+                # Never race the new owner with a stale terminal write.
+                return True
             if cancelled.is_set():
                 await self.rpc.append_run_event(run_id, "worker:run.cancelled", "run.cancelled", {})
                 await self.rpc.finish(run_id, "cancelled")
@@ -165,7 +169,7 @@ class WorkerRuntime:
                     lease_lost.set()
                     cancelled.set()
                     return
-                if not state.get("alive", False):
+                if not isinstance(state, dict) or not state.get("alive", False):
                     lease_lost.set()
                     cancelled.set()
                     return
