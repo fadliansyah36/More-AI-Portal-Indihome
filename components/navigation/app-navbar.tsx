@@ -218,53 +218,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <MoreAiNetworkLockup size="sm" dark={isDarkMode} />
           </div>
 
-          {/* PROMINENT SEGMENTED NAVBAR (Desktop Only: hidden on mobile, shown on md+) */}
-          <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-2xs shrink-0">
-            {/* Customer Tab */}
-            <button
-              onClick={() => handleModeSwitch('customer')}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                navMode === 'customer'
-                  ? 'bg-red-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>UI Customer</span>
-              <span
-                className={`text-[9px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-extrabold ${
-                  navMode === 'customer'
-                    ? 'bg-white/25 text-white'
-                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                Workspace
-              </span>
-            </button>
-
-            {/* Mitra Partner Tab */}
-            <button
-              onClick={() => handleModeSwitch('partner')}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                navMode === 'partner'
-                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5 text-amber-500" />
-              <span>UI Mitra Partner</span>
-              <span
-                className={`text-[9px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-extrabold ${
-                  navMode === 'partner'
-                    ? 'bg-amber-500/20 text-amber-300 dark:text-amber-700'
-                    : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-                }`}
-              >
-                B2B Venue
-              </span>
-            </button>
-          </div>
-
+          {/* Role switching is handled by separate authenticated entry routes. */}
           {/* Right utility items: Gallery Modal Button, PWA, and Menu */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Direct Screen Gallery Button */}
@@ -292,34 +246,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <Menu className="w-4 h-4" />
               </button>
             )}
-          </div>
-        </div>
-
-        {/* Row 2 (Mobile Only): Dedicated Compact Full-Width Segmented Tab for Customer vs Mitra Partner */}
-        <div className="block md:hidden px-3 py-1 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-          <div className="grid grid-cols-2 p-0.5 bg-slate-100 dark:bg-slate-800/90 rounded-xl gap-1 w-full border border-slate-200/70 dark:border-slate-700/70">
-            <button
-              onClick={() => handleModeSwitch('customer')}
-              className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-xs font-bold transition-all ${
-                navMode === 'customer'
-                  ? 'bg-red-600 text-white shadow-xs font-extrabold'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <User className="w-3.5 h-3.5 shrink-0" />
-              <span>UI Customer</span>
-            </button>
-            <button
-              onClick={() => handleModeSwitch('partner')}
-              className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-xs font-bold transition-all ${
-                navMode === 'partner'
-                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs font-extrabold'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>UI Mitra Partner</span>
-            </button>
           </div>
         </div>
 
