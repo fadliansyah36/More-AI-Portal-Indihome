@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import json
 import re
+from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
 from engine.agents.memory import ConversationMemoryStore
@@ -44,7 +45,9 @@ class DurableOpenManusRuntime:
 
     def __init__(
         self, gateway: MeteredToolGateway, *,
-        memory_store: ConversationMemoryStore | None = None, sandbox_tools: Any | None = None, max_rounds: int = 12,
+        memory_store: ConversationMemoryStore | None = None, sandbox_tools: Any | None = None,
+        approval_gate: Callable[[str, str, str, dict[str, Any]], Awaitable[bool]] | None = None,
+        max_rounds: int = 12,
     ):
         self.gateway = gateway
         self.memory_store = memory_store
@@ -53,7 +56,8 @@ class DurableOpenManusRuntime:
         if sandbox_tools is not None:
             enabled_tools.update({"bash", "python_execute"})
         self.tools = PolicyEnforcedToolRegistry(
-            ToolPolicy(enabled_tools=enabled_tools, approved_tools={"create_chat_completion"})
+            ToolPolicy(enabled_tools=enabled_tools, approved_tools={"create_chat_completion"}),
+            approval_gate=approval_gate,
         )
         self.tools.register("create_chat_completion", self._nested_completion)
         if sandbox_tools is not None:
