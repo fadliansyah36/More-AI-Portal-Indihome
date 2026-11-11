@@ -94,11 +94,13 @@ class DurableOpenManusRuntime:
         plan_store: Any | None = None,
         search_tools: Any | None = None,
         storage_tools: Any | None = None, workspace_tools: Any | None = None, browser_tools: Any | None = None,
+        event_publisher: Callable[[str, str, dict[str, Any]], Awaitable[Any]] | None = None,
         max_rounds: int = 12,
     ):
         self.gateway = gateway
         self.memory_store = memory_store
         self.plan_store = plan_store
+        self.event_publisher = event_publisher
         self.max_rounds = max_rounds
         enabled_tools = {"create_chat_completion"}
         if plan_store is not None:
@@ -353,6 +355,12 @@ class DurableOpenManusRuntime:
                         "tool_call_id": call.id, "tool": function.name,
                         "arguments_sha256": digest, "arguments": arguments,
                     })
+                    event_prefix = f"tool:{round_no}:{index}:{call.id[:80]}"
+                    if self.event_publisher is not None:
+                        await self.event_publisher(
+                            f"{event_prefix}:started", "tool.started",
+                            {"tool": function.name, "round": round_no, "index": index},
+                        )
                     try:
                         observation = await _run_tool_until_cancelled(
                             self.tools.execute(
@@ -361,12 +369,24 @@ class DurableOpenManusRuntime:
                             cancelled,
                         )
                         outcome = "succeeded"
+                    except asyncio.CancelledError:
+                        if self.event_publisher is not None:
+                            await self.event_publisher(
+                                f"{event_prefix}:cancelled", "tool.cancelled",
+                                {"tool": function.name, "round": round_no, "index": index},
+                            )
+                        raise
                     except Exception as exc:
                         observation = json.dumps({
                             "error": "tool_execution_failed", "error_type": type(exc).__name__,
                             "tool": function.name,
                         }, separators=(",", ":"))
                         outcome = "failed"
+                    if self.event_publisher is not None:
+                        await self.event_publisher(
+                            f"{event_prefix}:{outcome}", "tool.completed",
+                            {"tool": function.name, "round": round_no, "index": index, "status": outcome},
+                        )
                     observation = observation[:60_000]
                     await save(settled_key, {
                         "tool_call_id": call.id, "tool": function.name,
