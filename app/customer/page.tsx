@@ -1,5 +1,7 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import MoreAiApp from '../page';
 
 export default function CustomerRoute() {
-  redirect('/?view=home');
+  return <MoreAiApp />;
 }
