@@ -133,7 +133,8 @@ async def customer_agent_run_steps(
 
 @router.get("/agent-runs/{run_id}/stream")
 async def customer_agent_run_stream(
-    run_id: UUID, request: Request, after: int = 0, wait_seconds: int = 60,
+    run_id: UUID, request: Request,
+    after: int = Query(default=0, ge=0), wait_seconds: int = Query(default=60, ge=1, le=120),
     user: dict[str, Any] = Depends(current_user),
 ):
     principal = await require_customer_context(request, user)
