@@ -12,6 +12,8 @@ Reference: `AGENTS.md`, pinned OpenManusWeb source manifest, existing Phase 04 c
 - Converts handler failures into redacted tool observations so raw exception messages, tokens and provider internals are not sent back to the model.
 - Adds explicit terminal states for cancellation and maximum-step exhaustion; rejects empty requests and invalid max-step configuration.
 - Adds runtime tests for object/dict provider responses, successful tool roundtrip, invalid argument rejection, redacted failures, cancellation and step exhaustion.
+- Hardens `PolicyEnforcedToolRegistry` with catalog-based argument validation, default-deny policy checks, per-tool timeout enforcement, normalized tool keys and strict text output validation.
+- Adds dispatcher tests proving invalid schemas and unapproved tools never reach handlers.
 - Declares pinned engine test dependencies and adds the engine test suite to the Phase 04 CI workflow, including engine/worker path filters.
 - Updates the phase tracker to reflect direct-main execution and remaining parity gates.
 
@@ -37,7 +39,7 @@ This increment does not yet establish full upstream backend parity:
 
 ## Verification status
 
-The first engine CI run exposed two implementation/configuration defects: the new terminal enum was committed with escaped newline characters, and the existing Engine Contract Tests workflow installed pytest without the newly required async plugin. Both were corrected on main (enum syntax commit `2e27af9e365997aa459a009b748f923c8892166c`; workflow dependency commit `410c76391bf096b86b68d5989b5c282bd4c01764`). The subsequent Engine Contract Tests run `42959017293` completed successfully. The Phase 04 Sandbox Security Tests run for commit `84a5d39ec5a82a69b14c9212f0549165f4b2edcb` was queued at report update time; Phase 00 baseline revalidation was also still running. Do not treat these results as full Phase 04 acceptance.
+The first engine CI run exposed two implementation/configuration defects: the new terminal enum was committed with escaped newline characters, and the existing Engine Contract Tests workflow installed pytest without the newly required async plugin. Both were corrected on main (enum syntax commit `2e27af9e365997aa459a009b748f923c8892166c`; workflow dependency commit `410c76391bf096b86b68d5989b5c282bd4c01764`). The subsequent engine run `42959017293` passed. After dispatcher schema/policy tests were added, [Engine Contract Tests run 42959145056](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42959145056) passed, and [Phase 04 Sandbox Security Tests run 42959145125](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42959145125) passed both `engine-policy` and `sandbox-policy`. The Phase 00 run `42959145140` had API and worker tests passing while its frontend baseline job was still running at report update time. These results validate the current automated suites only, not full Phase 04 acceptance.
 
 ## Safety and release
 
