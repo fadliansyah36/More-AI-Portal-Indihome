@@ -50,3 +50,9 @@
 4. Deploy API + worker to durable container runtime with server-only credentials.
 5. Execute authenticated no-provider E2E and security/tenant isolation tests.
 6. Run Phase 10/11 release gates and attach evidence before enabling production execution.
+
+
+## Verification update
+- GitHub Actions Phase 04 run 42981030933 completed SUCCESS after Super Admin authorization/API and readiness changes. Worker-contract, engine-policy, API-contract (including new Super Admin auth tests), and sandbox-policy jobs all passed.
+- Phase 00 baseline run 42981030866 was still pending at the time of this report; no frontend build/browser regression pass is claimed for the new /admin route yet.
+- API readiness now probes Supabase Auth settings endpoint and PostgREST roles endpoint using server-side credentials; readiness distinguishes configured vs reachable dependencies and preserves prior dependency keys for compatibility. Live readiness cannot be verified until runtime secrets are supplied and API is deployed.
