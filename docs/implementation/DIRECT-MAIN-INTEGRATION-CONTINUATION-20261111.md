@@ -65,3 +65,13 @@ No end-to-end integration, live provider execution, sandbox/browser security, wo
 5. Phase 09: wire each existing UI route/component to the typed API client, remove any remaining demo/fallback data, preserve all visual behavior.
 
 Phase 10 and 11 remain blocked until their required runtime and security evidence can be performed under separately authorized conditions.
+
+
+### 3. Canonical browser approval key alignment
+
+File: `apps/api/app/routers/tool_approvals.py`
+
+- Added the canonical OpenManus tool key `browser_use` to the accepted approval-request schema. The worker policy/runtime identifies the browser tool as `browser_use`; the API schema previously accepted only the alias `browser`, so API clients could not submit an approval request using the runtime's canonical key.
+- Existing keys remain accepted for compatibility. This is a transport-contract alignment only; it does not activate browser execution or relax the worker's isolated-supervisor/egress gates.
+- Commit: `a8c69eb6d01609990cefcfcd7b85d15ec6db9ae8`.
+- No tests or runtime verification were run.
