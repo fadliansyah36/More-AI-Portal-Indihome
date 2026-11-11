@@ -387,6 +387,13 @@ class DurableOpenManusRuntime:
                                 {"tool": function.name, "round": round_no, "index": index},
                             )
                         raise
+                    except TimeoutError:
+                        observation = json.dumps({
+                            "error": "tool_execution_timed_out",
+                            "timeout_seconds": self.tool_timeout_seconds,
+                            "tool": function.name,
+                        }, separators=(",", ":"))
+                        outcome = "timed_out"
                     except Exception as exc:
                         observation = json.dumps({
                             "error": "tool_execution_failed", "error_type": type(exc).__name__,
