@@ -49,9 +49,11 @@ class DurableOpenManusRuntime:
         self.gateway = gateway
         self.memory_store = memory_store
         self.max_rounds = max_rounds
+        enabled_tools = {"create_chat_completion"}
+        if sandbox_tools is not None:
+            enabled_tools.update({"bash", "python_execute"})
         self.tools = PolicyEnforcedToolRegistry(
-            ToolPolicy(enabled_tools={"create_chat_completion"},
-                       approved_tools={"create_chat_completion"})
+            ToolPolicy(enabled_tools=enabled_tools, approved_tools={"create_chat_completion"})
         )
         self.tools.register("create_chat_completion", self._nested_completion)
         if sandbox_tools is not None:
