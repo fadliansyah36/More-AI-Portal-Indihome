@@ -32,7 +32,7 @@ async def admin_context(principal=Depends(platform_admin)):
 
 
 @router.get("/overview")
-async def admin_overview(request: Request, principal=Depends(overview_reader))
+async def admin_overview(request: Request, principal=Depends(overview_reader)):
     repo = repository(request)
     # Counts are derived from bounded live records; this endpoint intentionally
     # avoids exposing PII or relying on client-supplied role/tenant filters.
@@ -91,7 +91,7 @@ async def admin_agent_runs(
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0, le=10000),
     status: str | None = Query(default=None, max_length=32),
-    principal=Depends(platform_admin),
+    principal=Depends(overview_reader),
 ):
     filters = {
         "select": "id,user_id,workspace_id,conversation_id,status,attempt,max_attempts,created_at,started_at,finished_at,error",
