@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from typing import Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import hashlib
+import secrets
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -14,6 +16,33 @@ from app.routers.conversations import repository
 
 router = APIRouter(prefix="/api/v1/partner", tags=["partner"])
 
+
+
+
+class PartnerNetworkCreate(BaseModel):
+    location_id: UUID
+    provider_id: UUID | None = None
+    name: str = Field(min_length=2, max_length=160)
+    ssid_label: str | None = Field(default=None, max_length=120)
+    gateway_type: str = Field(min_length=2, max_length=80)
+    gateway_network_ref: str | None = Field(default=None, max_length=255)
+
+
+class NetworkVerificationConfigInput(BaseModel):
+    method_key: str = Field(pattern="^(gps|mikrotik_hotspot|radius|gateway|isp_api)$")
+    config_public: dict[str, Any] = Field(default_factory=dict)
+    secret_reference: str | None = Field(default=None, max_length=255)
+    policy: dict[str, Any] = Field(default_factory=dict)
+    enabled: bool = False
+
+
+class PartnerAccessCodeCreate(BaseModel):
+    location_id: UUID | None = None
+    network_id: UUID | None = None
+    campaign_id: UUID | None = None
+    reward_id: UUID | None = None
+    expires_at: datetime
+    max_redemptions: int = Field(default=1, ge=1, le=100000)
 
 
 class PartnerLocationCreate(BaseModel):
@@ -320,3 +349,155 @@ async def invite_partner_member(body: PartnerMemberInvite, request: Request,
         "location_id": str(body.location_id) if body.location_id else None,
         "status": "invited",
     })
+
+
+@router.get("/networks")
+async def list_partner_networks(request: Request, partner_id: UUID | None = Query(default=None),
+    user: dict[str, Any] = Depends(current_user)):
+    principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
+    filters = {"partner_id": f"eq.{principal['partner_id']}",
+        "select": "id,partner_id,location_id,provider_id,name,ssid_label,gateway_type,gateway_network_ref,status,active_verification_method,created_at,updated_at",
+        "order": "created_at.desc", "limit": "200"}
+    if principal["principal_role"] in {"location_manager", "partner_staff"}:
+        if not principal.get("location_id"):
+            return []
+        filters["location_id"] = f"eq.{principal['location_id']}"
+    return await repository(request).select("partner_networks", filters)
+
+
+@router.post("/networks", status_code=201)
+async def create_partner_network(body: PartnerNetworkCreate, request: Request,
+    partner_id: UUID | None = Query(default=None), user: dict[str, Any] = Depends(current_user)):
+    principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
+    _require_partner_manager(principal)
+    await _assert_partner_location(request, principal["partner_id"], body.location_id)
+    if body.provider_id:
+        providers = await repository(request).select("network_providers", {
+            "id": f"eq.{body.provider_id}", "status": "eq.active", "select": "id", "limit": "1"})
+        if not providers:
+            raise HTTPException(422, "Network provider is not active")
+    return await repository(request).insert("partner_networks", {
+        "partner_id": principal["partner_id"], "location_id": str(body.location_id),
+        "provider_id": str(body.provider_id) if body.provider_id else None,
+        "name": body.name.strip(), "ssid_label": body.ssid_label,
+        "gateway_type": body.gateway_type, "gateway_network_ref": body.gateway_network_ref,
+        "status": "pending",
+    })
+
+
+@router.get("/networks/{network_id}/verification-configs")
+async def list_network_verification_configs(network_id: UUID, request: Request,
+    partner_id: UUID | None = Query(default=None), user: dict[str, Any] = Depends(current_user)):
+    principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
+    networks = await repository(request).select("partner_networks", {
+        "id": f"eq.{network_id}", "partner_id": f"eq.{principal['partner_id']}",
+        "select": "id,location_id", "limit": "1"})
+    if not networks:
+        raise HTTPException(404, "Network not found")
+    if principal["principal_role"] in {"location_manager", "partner_staff"} and networks[0].get("location_id") != principal.get("location_id"):
+        raise HTTPException(403, "Network is outside the assigned location")
+    return await repository(request).select("network_verification_configs", {
+        "network_id": f"eq.{network_id}",
+        "select": "id,network_id,method_key,config_public,secret_reference,enabled,policy,created_at,updated_at",
+        "order": "created_at.desc", "limit": "100"})
+
+
+@router.post("/networks/{network_id}/verification-configs", status_code=201)
+async def configure_network_verification(network_id: UUID, body: NetworkVerificationConfigInput,
+    request: Request, partner_id: UUID | None = Query(default=None),
+    user: dict[str, Any] = Depends(current_user)):
+    principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
+    _require_partner_manager(principal)
+    networks = await repository(request).select("partner_networks", {
+        "id": f"eq.{network_id}", "partner_id": f"eq.{principal['partner_id']}",
+        "select": "id", "limit": "1"})
+    if not networks:
+        raise HTTPException(404, "Network not found")
+    catalog = await repository(request).select("network_verification_method_catalog", {
+        "method_key": f"eq.{body.method_key}", "select": "method_key,enabled,adapter_ready,requires_secret",
+        "limit": "1"})
+    if not catalog or not catalog[0].get("enabled"):
+        raise HTTPException(409, "Verification method is not enabled in the platform catalog")
+    if body.enabled and not catalog[0].get("adapter_ready"):
+        raise HTTPException(409, "Verification adapter is not ready; configuration remains disabled")
+    if catalog[0].get("requires_secret") and not body.secret_reference:
+        raise HTTPException(422, "A secret vault reference is required")
+    repo = repository(request)
+    existing = await repo.select("network_verification_configs", {
+        "network_id": f"eq.{network_id}", "method_key": f"eq.{body.method_key}",
+        "select": "id", "limit": "1"})
+    payload = {
+        "config_public": body.config_public,
+        "secret_reference": body.secret_reference,
+        "policy": body.policy,
+        "enabled": body.enabled and bool(catalog[0].get("adapter_ready")),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if existing:
+        rows = await repo.update("network_verification_configs", {"id": f"eq.{existing[0]['id']}"}, payload)
+        if not rows:
+            raise HTTPException(409, "Verification configuration update was not applied")
+        return rows[0]
+    return await repo.insert("network_verification_configs", {
+        "network_id": str(network_id), "method_key": body.method_key, **payload})
+
+
+@router.post("/access-codes", status_code=201)
+async def create_partner_access_code(body: PartnerAccessCodeCreate, request: Request,
+    partner_id: UUID | None = Query(default=None), user: dict[str, Any] = Depends(current_user)):
+    principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
+    _require_partner_manager(principal)
+    if body.expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(422, "Access code expiry must be in the future")
+    if body.location_id:
+        await _assert_partner_location(request, principal["partner_id"], body.location_id)
+    repo = repository(request)
+    if body.network_id:
+        network = await repo.select("partner_networks", {
+            "id": f"eq.{body.network_id}", "partner_id": f"eq.{principal['partner_id']}",
+            "select": "id,location_id", "limit": "1"})
+        if not network:
+            raise HTTPException(422, "Network does not belong to the active partner tenant")
+        if body.location_id and network[0].get("location_id") != str(body.location_id):
+            raise HTTPException(422, "Network and location scopes do not match")
+    if body.campaign_id:
+        campaign = await repo.select("partner_campaigns", {
+            "id": f"eq.{body.campaign_id}", "partner_id": f"eq.{principal['partner_id']}",
+            "select": "id,location_id", "limit": "1"})
+        if not campaign:
+            raise HTTPException(422, "Campaign does not belong to the active partner tenant")
+        if body.location_id and campaign[0].get("location_id") not in {None, str(body.location_id)}:
+            raise HTTPException(422, "Campaign and location scopes do not match")
+    if body.reward_id:
+        reward = await repo.select("campaign_rewards", {
+            "id": f"eq.{body.reward_id}", "select": "id,campaign_id", "limit": "1"})
+        if not reward or (body.campaign_id and reward[0].get("campaign_id") != str(body.campaign_id)):
+            raise HTTPException(422, "Reward does not match the selected campaign")
+    raw_code = secrets.token_urlsafe(24)
+    digest = hashlib.sha256(raw_code.encode("utf-8")).hexdigest()
+    row = await repo.insert("partner_access_codes", {
+        "partner_id": principal["partner_id"],
+        "location_id": str(body.location_id) if body.location_id else None,
+        "network_id": str(body.network_id) if body.network_id else None,
+        "campaign_id": str(body.campaign_id) if body.campaign_id else None,
+        "reward_id": str(body.reward_id) if body.reward_id else None,
+        "code_hash": digest, "status": "active",
+        "expires_at": body.expires_at.isoformat(),
+        "max_redemptions": body.max_redemptions, "created_by": principal["id"],
+    })
+    return {"access_code": raw_code, "record": row,
+        "notice": "The plaintext code is shown once. Store it securely; only its SHA-256 hash is persisted."}
+
+
+@router.post("/access-codes/{access_code_id}/revoke")
+async def revoke_partner_access_code(access_code_id: UUID, request: Request,
+    partner_id: UUID | None = Query(default=None), user: dict[str, Any] = Depends(current_user)):
+    principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
+    _require_partner_manager(principal)
+    rows = await repository(request).update("partner_access_codes", {
+        "id": f"eq.{access_code_id}", "partner_id": f"eq.{principal['partner_id']}",
+        "status": "eq.active",
+    }, {"status": "revoked", "revoked_at": datetime.now(timezone.utc).isoformat()})
+    if not rows:
+        raise HTTPException(404, "Active access code not found")
+    return {"id": rows[0]["id"], "status": rows[0]["status"]}
