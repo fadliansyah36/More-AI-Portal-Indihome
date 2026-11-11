@@ -41,11 +41,18 @@ async def test_docker_runner_uses_disposable_networkless_restricted_container(mo
 
     captured = []
 
+    class FakeStdin:
+        def write(self, data): pass
+        async def drain(self): pass
+        def close(self): pass
+        async def wait_closed(self): pass
+
     class FakeProcess:
         returncode = 0
         pid = 12345
 
         def __init__(self):
+            self.stdin = FakeStdin()
             self.stdout = asyncio.StreamReader()
             self.stderr = asyncio.StreamReader()
             self.stdout.feed_data(b"ok")
@@ -86,7 +93,11 @@ def test_sandbox_rejects_malformed_digest_even_when_digest_marker_exists():
 async def test_browser_request_guard_revalidates_each_redirect_and_rejects_unapproved_host():
     from app.browser_security import BrowserRequestGuard
 
-    guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)))
+    async def resolve(host, port, socktype):
+        import socket
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", port))]
+
+    guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)), resolver=resolve)
     with pytest.raises(BrowserPolicyError, match="not_allowlisted"):
         await guard.validate_redirect_chain([
             "https://trusted.example/start",
@@ -104,17 +115,16 @@ async def test_browser_request_guard_rejects_nonstandard_ports():
 
 
 @pytest.mark.asyncio
-async def test_browser_request_guard_detects_dns_rebinding(monkeypatch):
+async def test_browser_request_guard_detects_dns_rebinding():
     import socket
     from app.browser_security import BrowserRequestGuard
 
     answer = ["93.184.216.34"]
 
-    guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)))
-    # Exercise the guard with a deterministic resolver override.
-    async def resolve(host, port, type):
+    async def resolve(host, port, socktype):
         return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (answer[0], port))]
-    monkeypatch.setattr("app.browser_security.asyncio.get_running_loop", lambda: type("Loop", (), {"getaddrinfo": resolve})())
+
+    guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)), resolver=resolve)
     await guard.validate_request("https://trusted.example/one")
     answer[0] = "1.1.1.1"
     with pytest.raises(BrowserPolicyError, match="rebinding"):
