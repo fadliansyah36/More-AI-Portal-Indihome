@@ -140,3 +140,11 @@ A direct read-only query against the canonical Supabase project confirmed:
 - Existing durable structures include `conversations`, `conversation_messages`, `agent_runs`, `agent_run_steps`, `agent_run_checkpoints`, `agent_run_events` and `artifacts`.
 
 Therefore, current in-process `AgentMemory` and run checkpoints are not a long-term memory service. Semantic memory cannot be claimed implemented until an approved forward-only migration enables the required vector capability, introduces owner/workspace/consent-scoped memory records and indexes, and tests retrieval/retention/deletion boundaries. No extension, table, or policy was changed during this inspection.
+
+## 10. CI results after policy and lint fixes
+
+- [Phase 04 CI run 42952996506](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42952996506): PASS — both `engine-policy` and `sandbox-policy` jobs completed successfully on the latest code commit `9e383bd369bd55529de7f93bf884620a9c81f847`.
+- [Phase 00 baseline run 42952996532](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42952996532): queued at last inspection. The earlier run on parent commit showed lint PASS after the FilesView fix, but build was cancelled when a newer PR commit superseded it. Wait for the latest SHA baseline run before sign-off.
+- API and Worker jobs passed on the preceding PR commit; latest SHA baseline will rerun them as well.
+
+This verifies only the policy tests and current baseline pipeline. It does not verify full upstream agent/tool/memory parity.
