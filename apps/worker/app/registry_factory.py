@@ -17,8 +17,9 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     gateway = create_metered_gateway(client, http_client)
     plan_store = SupabasePlanStore(client)
     memory_store = SupabaseConversationMemoryStore(client)
-    search_tools = TavilySearchAdapter(http_client)
-    storage_tools = SupabaseArtifactTool(client)
+    # Never advertise tools whose provider/bucket is not configured at runtime.
+    search_tools = TavilySearchAdapter(http_client) if os.getenv("TAVILY_API_KEY") else None
+    storage_tools = SupabaseArtifactTool(client) if os.getenv("MOREAI_ARTIFACTS_BUCKET") else None
     sandbox_tools = None
     sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
     sandbox_gate_passed = os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
