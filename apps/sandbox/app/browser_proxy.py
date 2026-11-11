@@ -99,7 +99,9 @@ class PinnedConnectProxy:
                 asyncio.gather(relay(reader, upstream_writer), relay(upstream_reader, writer)),
                 timeout=self.limits.max_tunnel_seconds,
             )
-        except (Exception, asyncio.CancelledError):
+        except asyncio.CancelledError:
+            raise
+        except Exception:
             if not writer.is_closing():
                 try:
                     writer.write(b"HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n")
@@ -109,9 +111,15 @@ class PinnedConnectProxy:
         finally:
             if upstream_writer is not None:
                 upstream_writer.close()
-                await upstream_writer.wait_closed()
+                try:
+                    await upstream_writer.wait_closed()
+                except OSError:
+                    pass
             writer.close()
-            await writer.wait_closed()
+            try:
+                await writer.wait_closed()
+            except OSError:
+                pass
 
     async def serve(self, host: str = "0.0.0.0", port: int = 8888) -> asyncio.AbstractServer:
         return await asyncio.start_server(self.handle, host, port, limit=self.limits.header_bytes)
