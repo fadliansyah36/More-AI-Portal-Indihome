@@ -91,7 +91,7 @@ import { OnboardingModal } from '@/components/modals/onboarding-modal';
 import { ScreenGalleryModal } from '@/components/modals/screen-gallery-modal';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<NavigationTab>('home');
+  const [currentTab, setCurrentTab] = useState<NavigationTab>('splash');
   const [showDrawerMenu, setShowDrawerMenu] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showScreenGallery, setShowScreenGallery] = useState(false);
@@ -107,6 +107,14 @@ export default function App() {
       const path = window.location.pathname.replace(/\/+$/, '') || '/';
       const queryTab = new URLSearchParams(window.location.search).get('view') as NavigationTab | null;
       const pathTab: Record<string, NavigationTab> = {
+        '/': 'splash',
+        '/splash': 'splash',
+        '/onboarding': 'onboarding',
+        '/customer': 'home',
+        '/customer/login': 'login',
+        '/customer/register': 'register',
+        '/partner': 'partner',
+        '/mitra': 'partner',
         '/workflow': 'workflow_progress',
         '/workflow-progress': 'workflow_progress',
         '/login': 'login',
@@ -124,7 +132,7 @@ export default function App() {
       const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
         if (!session) {
           const path = window.location.pathname;
-          const publicRoute = ['/login', '/register', '/splash', '/onboarding'].includes(path);
+          const publicRoute = ['/', '/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path);
           if (!publicRoute) {
             setCurrentTab('login');
             window.history.replaceState({ moreaiTab: 'login' }, '', '/login');
@@ -141,7 +149,7 @@ export default function App() {
         if (error || !data.session) {
           const path = window.location.pathname.replace(/\/+$/, '') || '/';
           const requested = new URLSearchParams(window.location.search).get('view');
-          const publicRoute = ['/login', '/register', '/splash', '/onboarding'].includes(path)
+          const publicRoute = ['/', '/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path)
             || ['login', 'register', 'splash', 'onboarding'].includes(requested || '');
           if (!publicRoute) {
             setCurrentTab('login');
@@ -189,14 +197,14 @@ export default function App() {
       <OfflineIndicator />
 
       {/* Dedicated Global Navbar: Customer UI vs Mitra Partner UI (Full Width) */}
-      <AppNavbar
+      {!['splash', 'onboarding', 'login', 'register', 'welcome_success', 'partner_login'].includes(currentTab) && <AppNavbar
         currentTab={currentTab}
         onNavigate={handleNavigate}
         isDarkMode={isDarkMode}
         onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
         onOpenGallery={() => setShowScreenGallery(true)}
         onOpenDrawer={() => setShowDrawerMenu(true)}
-      />
+      />}
 
       {/* Main Full-Screen Layout */}
       <main className="w-full max-w-full px-2 sm:px-6 lg:px-8 pt-2.5 sm:pt-4 pb-36 sm:pb-32">
