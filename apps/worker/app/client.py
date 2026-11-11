@@ -98,6 +98,7 @@ class WorkerRpcClient:
     ) -> dict[str, Any]:
         result = await self.rpc("moreai_worker_append_run_event", {
             "p_run_id": run_id,
+            "p_worker_id": self.settings.worker_id,
             "p_event_key": event_key,
             "p_event_type": event_type,
             "p_payload": payload or {},
