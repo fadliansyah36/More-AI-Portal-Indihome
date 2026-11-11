@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CheckCircle2,
   Circle,
@@ -18,18 +18,39 @@ import {
   Layers,
   ArrowLeft,
 } from 'lucide-react';
-import { ARTIFACT_FILES, CAMPAIGN_WORKFLOW_STEPS, INITIAL_TASKS } from '@/lib/data';
+import { ARTIFACT_FILES } from '@/lib/data';
+import { customerApi, type CustomerAgentRun } from '@/lib/api/client';
 import { TaskItem } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
 interface TasksViewProps {
   onOpenWorkspaceFiles?: () => void;
+  onOpenWorkflow?: () => void;
 }
 
-export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles }) => {
+export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOpenWorkflow }) => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'semua' | 'aktif' | 'selesai' | 'workflow' | 'artifacts'>('semua');
-  const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [runs, setRuns] = useState<CustomerAgentRun[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    customerApi.agentRuns().then((items) => {
+      if (!active) return;
+      setRuns(items);
+      setTasks(items.map((run) => ({
+        id: run.id,
+        title: `Agent Run ${run.id.slice(0, 8)}`,
+        time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
+        completed: run.status === 'succeeded',
+        category: run.status,
+      })));
+    }).catch((error) => {
+      if (active) setLoadError(error instanceof Error ? error.message : 'Riwayat run tidak dapat dimuat.');
+    });
+    return () => { active = false; };
+  }, []);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -43,16 +64,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles }) =>
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
-    const newTask: TaskItem = {
-      id: `task-${Date.now()}`,
-      title: newTaskTitle.trim(),
-      time: 'Hari ini • ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      completed: false,
-      category: 'General',
-      credits: 20,
-    };
-
-    setTasks([newTask, ...tasks]);
+    showToast('Tugas manual belum memiliki endpoint backend. Jalankan pekerjaan melalui Chat AI agar tercatat sebagai Agent Run.', 'info');
     setNewTaskTitle('');
     setShowAddModal(false);
   };
@@ -113,7 +125,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles }) =>
           Selesai
         </button>
         <button
-          onClick={() => setActiveTab('workflow')}
+          onClick={() => onOpenWorkflow?.()}
           className={`flex-1 min-w-[95px] py-1.5 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1 ${
             activeTab === 'workflow'
               ? 'bg-red-600 text-white shadow-xs'
@@ -139,10 +151,12 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles }) =>
       {/* View Mode: Task Checklist (Semua, Aktif, Selesai) */}
       {(activeTab === 'semua' || activeTab === 'aktif' || activeTab === 'selesai') && (
         <div className="space-y-2.5">
+          {loadError && <div className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{loadError}</div>}
           {filteredTasks.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-3xl border border-slate-100 text-slate-500">
               <CheckCircle2 className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-              <p className="text-xs font-medium">Tidak ada tugas pada filter ini</p>
+              <p className="text-xs font-medium">Belum ada Agent Run tersimpan</p>
+              <p className="text-[11px] mt-1">Mulai percakapan melalui Chat AI untuk membuat workflow backend.</p>
             </div>
           ) : (
             filteredTasks.map((task) => (
@@ -196,7 +210,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles }) =>
 
           {/* Quick Access to Campaign Workflow Card */}
           <div
-            onClick={() => setActiveTab('workflow')}
+            onClick={() => onOpenWorkflow?.()}
             className="cursor-pointer p-4 rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-sm hover:shadow-md transition flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
@@ -213,102 +227,14 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles }) =>
         </div>
       )}
 
-      {/* View Mode: Workflow Progress (Sheet 6 - Campaign Launch Project) */}
+      {/* Workflow route is backed by persisted OpenManus agent runs. */}
       {activeTab === 'workflow' && (
-        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                Multi-Agent Workflow
-              </span>
-              <h2 className="text-base font-bold text-slate-900">Campaign Launch Project</h2>
-            </div>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              75% Selesai
-            </span>
-          </div>
-
-          {/* Progress Bar */}
-          <div>
-            <div className="flex justify-between text-xs text-slate-500 font-medium mb-1.5">
-              <span>Total Progress Eksekusi</span>
-              <span className="font-bold text-slate-900">75%</span>
-            </div>
-            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-red-600 to-rose-500 h-2.5 rounded-full transition-all duration-700"
-                style={{ width: '75%' }}
-              />
-            </div>
-          </div>
-
-          {/* Stepper list */}
-          <div className="space-y-3 pt-2">
-            {CAMPAIGN_WORKFLOW_STEPS.map((step, idx) => (
-              <div
-                key={step.id}
-                className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3"
-              >
-                <div className="mt-0.5 shrink-0">
-                  {step.status === 'completed' && (
-                    <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs">
-                      ✓
-                    </div>
-                  )}
-                  {step.status === 'in_progress' && (
-                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs animate-pulse">
-                      ⏳
-                    </div>
-                  )}
-                  {step.status === 'pending' && (
-                    <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">
-                      {idx + 1}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-slate-900">{step.agentName}</h3>
-                    <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                        step.status === 'completed'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : step.status === 'in_progress'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'bg-slate-100 text-slate-500'
-                      }`}
-                    >
-                      {step.status === 'completed'
-                        ? 'Selesai'
-                        : step.status === 'in_progress'
-                        ? `${step.progress}% Sedang Berjalan`
-                        : 'Menunggu'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{step.role}</p>
-                  <p className="text-[11px] text-slate-700 mt-1 font-medium bg-white p-2 rounded-xl border border-slate-100">
-                    {step.outputSummary}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-2 flex gap-2">
-            <button
-              onClick={() => setActiveTab('artifacts')}
-              className="flex-1 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs text-center"
-            >
-              Lihat Hasil & Artefak
-            </button>
-            <button
-              onClick={() => setActiveTab('semua')}
-              className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
-            >
-              Tutup
-            </button>
-          </div>
+        <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-3">
+          <h2 className="text-sm font-bold text-slate-900">Workflow AI</h2>
+          <p className="text-xs text-slate-500">{runs.length} Agent Run tersimpan di backend.</p>
+          <button onClick={() => onOpenWorkflow?.()} className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition">
+            Buka Detail Workflow
+          </button>
         </div>
       )}
 
