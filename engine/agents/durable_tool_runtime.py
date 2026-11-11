@@ -125,9 +125,14 @@ class DurableOpenManusRuntime:
 
         if not context.conversation_id:
             # Rebuild this run's prior model/tool transcript from durable checkpoints.
+            completed_for_restore = {
+                int(match.group(1)) for key in states
+                if (match := re.fullmatch(r"openmanus\.round\.(\d+)\.observations", key))
+            }
             prior_rounds = sorted({
                 int(match.group(1)) for key in states
                 if (match := re.fullmatch(r"openmanus\.round\.(\d+)\.response", key))
+                and int(match.group(1)) in completed_for_restore
             })
             for number in prior_rounds:
                 response_state = states.get(f"openmanus.round.{number}.response", {})
