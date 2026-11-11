@@ -37,3 +37,10 @@ services:
       MOREAI_LLM_ENTITLEMENT_KEY: ${MOREAI_LLM_ENTITLEMENT_KEY:-}
       MOREAI_LLM_QUOTA_METRIC_KEY: ${MOREAI_LLM_QUOTA_METRIC_KEY:-}
       WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-3}
+      WORKER_HEALTH_PORT: "8081"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/ready', timeout=3)"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
