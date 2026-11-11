@@ -61,16 +61,19 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
         if (!active) return;
         setPartnerTenants(tenants);
         if (tenants.length === 1) setSelectedPartnerId(tenants[0].tenant.id);
-        if (tenants.length === 0) setPartnerError('Tidak ada tenant Partner aktif pada akun ini.');
+        if (tenants.length === 0) {
+          setPartnerError('Tidak ada tenant Partner aktif pada akun ini.');
+          setIsLoading(false);
+        } else if (tenants.length > 1) {
+          setIsLoading(false);
+        }
       })
       .catch((error: unknown) => {
         if (!active) return;
         const message = error instanceof Error ? error.message : 'Daftar tenant Partner tidak dapat dimuat.';
         setPartnerError(message);
+        setIsLoading(false);
         showToast(message, 'error');
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
       });
     return () => { active = false; };
   }, [showToast]);
@@ -78,10 +81,6 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
   useEffect(() => {
     if (!selectedPartnerId) return;
     let active = true;
-    setIsLoading(true);
-    setPartnerError(null);
-    setPartnerContext(null);
-    setLocations([]);
     Promise.all([
       partnerApi.context(selectedPartnerId),
       partnerApi.locations(selectedPartnerId),
@@ -123,7 +122,13 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
               Tenant aktif
               <select
                 value={selectedPartnerId}
-                onChange={(event) => setSelectedPartnerId(event.target.value)}
+                onChange={(event) => {
+                  setIsLoading(true);
+                  setPartnerError(null);
+                  setPartnerContext(null);
+                  setLocations([]);
+                  setSelectedPartnerId(event.target.value);
+                }}
                 className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800"
               >
                 <option value="">Pilih tenant Partner</option>
