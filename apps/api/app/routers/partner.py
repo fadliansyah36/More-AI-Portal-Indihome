@@ -282,6 +282,8 @@ async def create_partner_campaign(body: PartnerCampaignCreate, request: Request,
     partner_id: UUID | None = Query(default=None), user: dict[str, Any] = Depends(current_user)):
     principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
     _require_partner_manager(principal)
+    if body.starts_at and body.starts_at.tzinfo is None or body.ends_at and body.ends_at.tzinfo is None:
+        raise HTTPException(422, "Campaign timestamps must include a timezone")
     if body.starts_at and body.ends_at and body.ends_at <= body.starts_at:
         raise HTTPException(422, "Campaign end must be after campaign start")
     await _assert_partner_location(request, principal["partner_id"], body.location_id)
@@ -315,6 +317,8 @@ async def update_partner_campaign(campaign_id: UUID, body: PartnerCampaignUpdate
     if starts and ends:
         start_dt = starts if isinstance(starts, datetime) else datetime.fromisoformat(str(starts).replace("Z", "+00:00"))
         end_dt = ends if isinstance(ends, datetime) else datetime.fromisoformat(str(ends).replace("Z", "+00:00"))
+        if start_dt.tzinfo is None or end_dt.tzinfo is None:
+            raise HTTPException(422, "Campaign timestamps must include a timezone")
         if end_dt <= start_dt:
             raise HTTPException(422, "Campaign end must be after campaign start")
     if changes.get("name") is not None:
@@ -447,8 +451,8 @@ async def create_partner_access_code(body: PartnerAccessCodeCreate, request: Req
     partner_id: UUID | None = Query(default=None), user: dict[str, Any] = Depends(current_user)):
     principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
     _require_partner_manager(principal)
-    if body.expires_at <= datetime.now(timezone.utc):
-        raise HTTPException(422, "Access code expiry must be in the future")
+    if body.expires_at.tzinfo is None or body.expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(422, "Access code expiry must be a future timezone-aware timestamp")
     if body.location_id:
         await _assert_partner_location(request, principal["partner_id"], body.location_id)
     repo = repository(request)
