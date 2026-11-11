@@ -60,7 +60,33 @@ class WorkerRuntime:
                 )
                 return result
 
-            output = await self.dispatcher.dispatch(run, checkpoint, cancelled)
+            # Race execution against the durable cancellation signal. The heartbeat
+            # sets this event when the API/RPC reports cancel_requested; merely passing
+            # the event into the agent is insufficient when a provider/tool call is
+            # currently blocked awaiting I/O.
+            dispatch_task = asyncio.create_task(
+                self.dispatcher.dispatch(run, checkpoint, cancelled),
+                name=f"moreai-run-dispatch:{run_id}",
+            )
+            cancel_wait_task = asyncio.create_task(
+                cancelled.wait(), name=f"moreai-run-cancel-watch:{run_id}",
+            )
+            done, _ = await asyncio.wait(
+                {dispatch_task, cancel_wait_task},
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            if cancel_wait_task in done and cancelled.is_set():
+                dispatch_task.cancel()
+                await asyncio.gather(dispatch_task, return_exceptions=True)
+                await self.rpc.append_run_event(
+                    run_id, "worker:run.cancelled", "run.cancelled", {},
+                )
+                await self.rpc.finish(run_id, "cancelled")
+                return True
+
+            cancel_wait_task.cancel()
+            await asyncio.gather(cancel_wait_task, return_exceptions=True)
+            output = await dispatch_task
             if cancelled.is_set():
                 await self.rpc.append_run_event(run_id, "worker:run.cancelled", "run.cancelled", {})
                 await self.rpc.finish(run_id, "cancelled")
@@ -90,6 +116,13 @@ class WorkerRuntime:
                 )
         finally:
             cancelled.set()
+            # Reap any child tasks if the worker process is shutting down while a
+            # provider/tool call is still active. The run lease remains recoverable.
+            for task_name in ("dispatch_task", "cancel_wait_task"):
+                task = locals().get(task_name)
+                if task is not None and not task.done():
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
             heartbeat_task.cancel()
             try:
                 await heartbeat_task
