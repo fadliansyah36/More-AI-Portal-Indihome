@@ -110,10 +110,6 @@ async def test_browser_request_guard_detects_dns_rebinding(monkeypatch):
 
     answer = ["93.184.216.34"]
 
-    async def fake_getaddrinfo(host, port, type):
-        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (answer[0], port))]
-
-    monkeypatch.setattr(asyncio.get_running_loop(), "getaddrinfo", fake_getaddrinfo, raising=False)
     guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)))
     # Exercise the guard with a deterministic resolver override.
     async def resolve(host, port, type):
