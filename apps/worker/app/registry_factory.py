@@ -20,11 +20,12 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
         image = os.getenv("MOREAI_SANDBOX_IMAGE", "")
         if "@sha256:" not in image:
             raise RuntimeError("sandbox_enabled_requires_digest_pinned_MOREAI_SANDBOX_IMAGE")
-        sandbox_tools = IsolatedSandboxToolAdapter(
-            DockerSandbox(image=image), approval_check=client.wait_for_tool_approval,
-        )
+        sandbox_tools = IsolatedSandboxToolAdapter(DockerSandbox(image=image))
     manus = DurableOpenManusRuntime(
-        gateway, memory_store=memory_store, sandbox_tools=sandbox_tools,
+        gateway,
+        memory_store=memory_store,
+        sandbox_tools=sandbox_tools,
+        approval_gate=client.wait_for_tool_approval if sandbox_tools is not None else None,
     )
     planning = PlanningAgentRuntime(gateway=gateway, store=plan_store, step_executor=manus)
 
