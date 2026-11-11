@@ -147,7 +147,22 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
 
             <button
               type="button"
-              onClick={() => showToast('Tautan pemulihan kata sandi telah dikirim ke email terdaftar.', 'info')}
+              onClick={async () => {
+                const identifier = emailOrPhone.trim();
+                if (!identifier.includes('@')) {
+                  showToast('Masukkan alamat email untuk mengirim tautan pemulihan password.', 'info');
+                  return;
+                }
+                try {
+                  const { error } = await createSupabaseBrowserClient().auth.resetPasswordForEmail(identifier, {
+                    redirectTo: window.location.origin + '/?view=login',
+                  });
+                  if (error) throw error;
+                  showToast('Jika email terdaftar, tautan pemulihan akan dikirim oleh Supabase Auth.', 'success');
+                } catch (error) {
+                  showToast(error instanceof Error ? error.message : 'Permintaan pemulihan gagal.', 'error');
+                }
+              }}
               className="text-slate-500 hover:text-red-600 transition"
             >
               Lupa password?
