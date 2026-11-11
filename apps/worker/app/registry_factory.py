@@ -16,7 +16,9 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     plan_store = SupabasePlanStore(client)
     memory_store = SupabaseConversationMemoryStore(client)
     sandbox_tools = None
-    if os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true":
+    sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
+    sandbox_gate_passed = os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
+    if sandbox_enabled and sandbox_gate_passed:
         image = os.getenv("MOREAI_SANDBOX_IMAGE", "")
         if "@sha256:" not in image:
             raise RuntimeError("sandbox_enabled_requires_digest_pinned_MOREAI_SANDBOX_IMAGE")
