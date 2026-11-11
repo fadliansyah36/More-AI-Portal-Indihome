@@ -208,3 +208,16 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - No UI screenshots, tests, lint, typecheck, build, browser checks, provider calls, database writes/migrations or deployment were performed in this increment, per the product owner's current instruction. These are committed source changes, not phase acceptance evidence.
 
 - Follow-up hardening commits: `4015422d5a8acb52a4ba014797cfcf878e1a7736` (API private-bucket check) and `5808c3fc8ad976d9e905c98eef64f91031ea2de0` (worker private-bucket check and artifact run linkage). Capability map updated at `a8cfef8e7745298f429a7daa81990330f1c1b9e3`.
+
+
+## 2026-11-11 — Phase 05 notifications and Super Admin governance increment
+
+- Increment report: [PHASE-05-06-NOTIFICATIONS-GOVERNANCE-20261111.md](./PHASE-05-06-NOTIFICATIONS-GOVERNANCE-20261111.md).
+- Applied migrations `20261111100000_moreai_notifications_private_artifacts_immutable_audit` and `20261111103000_moreai_admin_partner_status_atomic_audit` to Supabase project `uunfgimtokhucegqbpce`.
+- Verified `notifications` (12 columns) and `notification_preferences` (5 columns) exist with RLS enabled and server-only grants.
+- Verified private `moreai-artifacts` bucket, `public=false`, 2 MiB limit and MIME allowlist.
+- Verified immutable audit UPDATE/DELETE and TRUNCATE triggers on `admin_audit_logs`.
+- Added owner-scoped notification list/read/preferences endpoints, typed API client methods, and a permission-specific `partner.organization.manage` partner-status mutation. The database RPC locks the partner row and writes the audit record plus idempotency response in one transaction.
+- This is not Phase 05/06 completion: notification producers/delivery, remaining Wi-Fi/captive portal/voucher/analytics domains, full Partner operations and broader Super Admin governance remain open. No UI files were modified.
+- Supabase Storage RLS table ownership blocked a direct policy DDL attempt; existing `storage.objects` already has RLS enabled and no client policies. The migration intentionally did not bypass ownership.
+- No runtime tests, lint, typecheck, build, browser verification or deployment were performed in this increment. Schema catalog and migration application were verified only.
