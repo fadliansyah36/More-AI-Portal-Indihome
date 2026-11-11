@@ -127,3 +127,14 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - No tests, lint, typecheck, build, browser smoke, threat-model tests, Docker execution, SQL apply or deployment were run. The earlier Phase 04 CI run is historical and does not verify this increment. Approval runtime now has the required schema and Customer Workflow UI controls, but worker/Docker runtime behavior has not been executed or verified.
 - Relevant direct-main commits include `2189d45`, `fb0452b`, `f29638c`, `5212fa2`, `ebaa323`, `ce21605`, `8a1c9e8`, `dd11b09`, `95179b9`, `cfae287`, `396fa56`, `84ab207`, `debecee`.
 - Phases 04 and 06–09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
+
+## Vercel production routing fix — 2026-11-11
+
+- Vercel team authorization is active; project `more-ai-portal-indihome` is linked to the canonical GitHub repository.
+- Production deploy `dpl_37tWK4zTmehTz8FZmQLwicmir6K8` is READY at code commit `3219109f047f1a58a411970fc1c6071b06debb03`.
+- Runtime set to Node.js 24.x. Added the canonical Supabase URL and browser publishable key to Production/Preview/Development. No service-role key was added.
+- Root Auth initialization fallback fixed to preserve Splash/Onboarding and redirect protected routes to the appropriate Customer/Partner login.
+- Vercel build compiled, TypeScript validation completed, and 17/17 static pages generated. Vercel HTTP fetch returned 200 for `/`, `/splash`, `/onboarding`, `/customer/login`, `/customer/register`, `/partner/login`, and `/workflow`.
+- Latest one-hour runtime error scan found no errors. No interactive authenticated browser E2E was performed.
+- **Important:** `NEXT_PUBLIC_MOREAI_API_URL` and role-specific API origins remain unset because no deployed FastAPI public origin is currently configured in Vercel. The Next.js project does not expose the FastAPI `/api/v1/*` endpoints. Thus route shell deployment is complete, but production workflow data/approval integration remains blocked on FastAPI hosting/origin configuration.
+- Detailed evidence: `docs/implementation/VERCEL-DEPLOYMENT-ROUTING-FIX-20261111.md`.
