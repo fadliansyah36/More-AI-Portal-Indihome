@@ -6,11 +6,11 @@ on:
     paths:
       - 'apps/sandbox/**'
       - 'engine/**'
-      - 'engine/**'
       - '.github/workflows/phase04-sandbox.yml'
   pull_request:
     paths:
       - 'apps/sandbox/**'
+      - 'engine/**'
       - '.github/workflows/phase04-sandbox.yml'
   workflow_dispatch:
 
@@ -44,7 +44,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install engine test dependencies
-        run: python -m pip install --disable-pip-version-check pytest
+        run: python -m pip install --disable-pip-version-check pytest httpx==0.28.1
       - name: Run engine compatibility and policy tests
         env:
           PYTHONPATH: .
