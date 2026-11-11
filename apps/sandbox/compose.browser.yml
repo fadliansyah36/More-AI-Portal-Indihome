@@ -1,0 +1,56 @@
+services:
+  browser-supervisor:
+    build:
+      context: .
+      dockerfile: Dockerfile.browser
+    environment:
+      MOREAI_BROWSER_ALLOWED_DOMAINS: ${MOREAI_BROWSER_ALLOWED_DOMAINS:?set exact allowlisted domains}
+      MOREAI_BROWSER_SERVICE_TOKEN: ${MOREAI_BROWSER_SERVICE_TOKEN:?set 32+ character service token}
+      MOREAI_BROWSER_PROXY_URL: http://browser-egress-proxy:3128
+      MOREAI_BROWSER_PROXY_TOKEN: ${MOREAI_BROWSER_PROXY_TOKEN:?set 32+ character proxy token}
+      MOREAI_BROWSER_EGRESS_ENFORCED: "true"
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,noexec,nosuid,nodev
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 1g
+    cpus: 1.5
+    restart: unless-stopped
+    networks: [browser_isolated]
+    depends_on: [browser-egress-proxy]
+    # No published port: attach the trusted worker to browser_isolated and use
+    # http://browser-supervisor:8080; expose only through an authenticated private service mesh.
+
+  browser-egress-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.browser
+    command: ["python","-m","app.proxy_main"]
+    environment:
+      MOREAI_BROWSER_ALLOWED_DOMAINS: ${MOREAI_BROWSER_ALLOWED_DOMAINS:?set exact allowlisted domains}
+      MOREAI_BROWSER_PROXY_TOKEN: ${MOREAI_BROWSER_PROXY_TOKEN:?set 32+ character proxy token}
+      MOREAI_BROWSER_PROXY_HOST: 0.0.0.0
+      MOREAI_BROWSER_PROXY_PORT: "3128"
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,noexec,nosuid,nodev
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
+    networks: [browser_isolated, browser_egress]
+
+networks:
+  # Docker's internal network has no default route to external networks.
+  # The browser supervisor has no egress interface except the proxy endpoint.
+  browser_isolated:
+    internal: true
+  # Only the proxy is attached to a non-internal network and can reach public internet.
+  browser_egress:
+    driver: bridge
