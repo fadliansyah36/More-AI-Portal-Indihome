@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Bot, Copy, Loader2, Paperclip, Send, ShieldCheck, Sparkles, User } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 import { NavigationTab } from '@/types/moreai';
-import { moreAiApi, moreAiApiStream } from '@/lib/api/client';
+import { customerApi, moreAiApiStream } from '@/lib/api/client';
 
 interface ChatMessage {
   id: string;
@@ -57,21 +57,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '' }
     try {
       let activeConversationId = conversationId;
       if (!activeConversationId) {
-        const created = await moreAiApi<{ id: string }>('/api/v1/conversations', {
-          method: 'POST',
-          body: JSON.stringify({ title: text.slice(0, 120) }),
-        });
+        const created = await customerApi.createConversation(text.slice(0, 120));
         activeConversationId = created.id;
         setConversationId(created.id);
       }
 
-      const queued = await moreAiApi<{ run: { id: string; status: string } }>(
-        `/api/v1/conversations/${activeConversationId}/messages`,
-        {
-          method: 'POST',
-          headers: { 'Idempotency-Key': crypto.randomUUID() },
-          body: JSON.stringify({ content: text, agent_key: 'manus' }),
-        },
+      const queued = await customerApi.sendMessage(
+        activeConversationId, text, crypto.randomUUID(), 'manus',
       );
 
       setMessages((previous) => [...previous, {
