@@ -1,4 +1,5 @@
 name: Phase 04 Sandbox Security Tests
+# Main-branch integration regression: worker recovery, customer/partner auth, provider failover, sandbox adapter.
 
 on:
   push:
