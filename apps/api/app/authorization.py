@@ -60,6 +60,11 @@ async def require_partner_context(
     ]
     if not memberships:
         raise HTTPException(403, "An active Partner membership is required")
+    role_rank = {
+        "partner_owner": 0, "partner_admin": 1, "partner_analyst": 2,
+        "location_manager": 3, "partner_staff": 4,
+    }
+    memberships.sort(key=lambda row: role_rank.get(row.get("role_key"), 99))
     partner_ids = {str(row["partner_id"]) for row in memberships if row.get("partner_id")}
     if partner_id is None and len(partner_ids) > 1:
         raise HTTPException(409, "Select a partner tenant explicitly")
