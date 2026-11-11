@@ -1,0 +1,39 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:?Set SUPABASE_URL}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:?Set SUPABASE_PUBLISHABLE_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?Set SUPABASE_SERVICE_ROLE_KEY}
+      MOREAI_CORS_ALLOWED_ORIGINS: ${MOREAI_CORS_ALLOWED_ORIGINS:-}
+      MOREAI_AGENT_EXECUTION_ENABLED: "false"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=3)"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  worker:
+    profiles: ["worker"]
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:?Set SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?Set SUPABASE_SERVICE_ROLE_KEY}
+      WORKER_ID: ${WORKER_ID:-moreai-worker-01}
+      MOREAI_AGENT_RUNTIME_ENABLED: ${MOREAI_AGENT_RUNTIME_ENABLED:-false}
+      MOREAI_SANDBOX_ENABLED: "false"
+      MOREAI_SANDBOX_RELEASE_GATE_PASSED: "false"
+      MOREAI_CREDITS_PER_USD: ${MOREAI_CREDITS_PER_USD:-}
+      MOREAI_CREDIT_WALLET_CURRENCY: ${MOREAI_CREDIT_WALLET_CURRENCY:-}
+      MOREAI_LLM_ENTITLEMENT_KEY: ${MOREAI_LLM_ENTITLEMENT_KEY:-}
+      MOREAI_LLM_QUOTA_METRIC_KEY: ${MOREAI_LLM_QUOTA_METRIC_KEY:-}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-3}
