@@ -390,3 +390,12 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Commit: `a8c69eb6d01609990cefcfcd7b85d15ec6db9ae8`.
 - This closes a narrow API contract mismatch only; browser supervisor deployment, socket-level egress proof and full approval lifecycle acceptance remain open. No tests/runtime checks were run.
 - Report: [DIRECT-MAIN-INTEGRATION-CONTINUATION-20261111.md](./DIRECT-MAIN-INTEGRATION-CONTINUATION-20261111.md).
+
+
+## 2026-11-11 — Phase 04 canonical OpenManus approval key reconciliation
+- API schema, database CHECK constraint and server-only approval request RPC now consistently accept canonical runtime keys `browser_use` and `planning_step`, retaining legacy aliases.
+- Migration `20261111180000_moreai_openmanus_approval_tool_keys` applied to canonical Supabase project `uunfgimtokhucegqbpce`.
+- Read-only verification confirms the new CHECK constraint and function ACL restricted to postgres/service_role. Security Advisor continues to flag leaked-password protection disabled (WARN).
+- Commits: `379944a6d4715ce551155df7fe39d38882a79a56` (migration), `5af4da0670319326d2e562f6e4a3f21961f3f7d7` (API), `<report-commit-pending>` (report).
+- No runtime/tests/build/lint/typecheck/staging/provider/deployment. Phase 04 remains IN PROGRESS; browser supervisor socket-level egress, complete upstream Flow/server/session parity and full SWE integration remain open.
+- Report: [PHASE-04-OPENMANUS-APPROVAL-KEY-ALIGNMENT-20261111.md](./PHASE-04-OPENMANUS-APPROVAL-KEY-ALIGNMENT-20261111.md).
