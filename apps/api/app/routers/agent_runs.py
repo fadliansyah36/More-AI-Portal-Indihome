@@ -5,7 +5,7 @@ import json
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Query
 from fastapi.responses import StreamingResponse
 
 from app.authorization import customer_principal
@@ -51,6 +51,28 @@ async def list_runs(request: Request, user: dict[str, Any] = Depends(customer_pr
 @router.get("/{run_id}")
 async def get_run(run_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     return await repository(request).owned_record("agent_runs", run_id, user["id"])
+
+
+@router.get("/{run_id}/steps")
+async def get_run_steps(
+    run_id: UUID,
+    request: Request,
+    limit: int = Query(default=100, ge=1, le=500),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Return safe lifecycle metadata for the run's durable workflow steps.
+
+    Step input/output/error JSON is deliberately excluded: it may contain prompts,
+    private tool arguments, provider observations or sensitive artifact references.
+    """
+    repo = repository(request)
+    await repo.owned_record("agent_runs", run_id, user["id"])
+    return await repo.select("agent_run_steps", {
+        "run_id": f"eq.{run_id}",
+        "select": "id,sequence,step_key,status,started_at,finished_at,created_at",
+        "order": "sequence.asc",
+        "limit": str(limit),
+    })
 
 
 @router.post("/{run_id}/cancel")

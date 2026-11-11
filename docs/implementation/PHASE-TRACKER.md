@@ -357,3 +357,9 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 ## 2026-11-11 — Schema application verification
 - Applied migrations to canonical Supabase project `uunfgimtokhucegqbpce`: `20261111150000_moreai_workspace_file_cas_versioning`, `20261111160000_moreai_cancel_waiting_approval_and_outbox`, and `20261111170000_moreai_workspace_cas_expiry_recovery`.
 - Read-only verification confirmed workspace version/reservation columns, four workspace CAS RPCs, cancellation RPC, and server-only RLS policy. No runtime tests or deployments were performed.
+
+
+## 2026-11-11 — Phase 04/09 workflow step API contract
+- Implemented the previously missing authenticated `GET /api/v1/agent-runs/{run_id}/steps` route, scoped to run ownership and exposing safe metadata only.
+- Existing typed frontend client already calls this path; no UI changes required.
+- Report: PHASE-04-09-RUN-STEPS-API-20261111.md.
