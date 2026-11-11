@@ -12,15 +12,12 @@ Checkpoint = Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]]
 
 class AgentDispatcher(Protocol):
     async def dispatch(
-        self,
-        run: dict[str, Any],
-        checkpoint: Checkpoint,
-        cancelled: asyncio.Event,
+        self, run: dict[str, Any], checkpoint: Checkpoint, cancelled: asyncio.Event,
     ) -> dict[str, Any]: ...
 
 
 class WorkerRuntime:
-    """Durable lifecycle coordinator; refuses to claim work without a real dispatcher."""
+    """Durable lifecycle coordinator; interrupted leases are left recoverable."""
 
     def __init__(self, rpc: WorkerRpcClient, dispatcher: AgentDispatcher):
         if dispatcher is None:
@@ -46,15 +43,17 @@ class WorkerRuntime:
             else:
                 await self.rpc.finish(run_id, "succeeded", output=output)
         except asyncio.CancelledError:
-            await self.rpc.finish(run_id, "failed", error={"code": "worker_interrupted"})
+            # A user-requested cancellation is terminal. A process shutdown is not:
+            # leave its lease/checkpoints intact so another worker can recover it.
+            if cancelled.is_set():
+                await asyncio.shield(self.rpc.finish(run_id, "cancelled"))
             raise
         except Exception:
             if cancelled.is_set():
                 await self.rpc.finish(run_id, "cancelled")
             else:
                 await self.rpc.finish(
-                    run_id, "failed",
-                    error={"code": "agent_execution_failed"},
+                    run_id, "failed", error={"code": "agent_execution_failed"},
                     retry_delay_seconds=30,
                 )
         finally:
@@ -72,9 +71,6 @@ class WorkerRuntime:
                 await asyncio.wait_for(cancelled.wait(), timeout=30)
             except TimeoutError:
                 state = await self.rpc.heartbeat(run_id)
-                if not state.get("alive", False):
-                    cancelled.set()
-                    return
-                if state.get("cancel_requested", False):
+                if not state.get("alive", False) or state.get("cancel_requested", False):
                     cancelled.set()
                     return
