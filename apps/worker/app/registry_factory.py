@@ -26,6 +26,7 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     manus = DurableOpenManusRuntime(
         gateway,
         memory_store=memory_store,
+        plan_store=plan_store,
         sandbox_tools=sandbox_tools,
         approval_gate=client.wait_for_tool_approval if sandbox_tools is not None else None,
     )
