@@ -130,3 +130,13 @@ Read-only advisors on 11 November 2026 reported:
 8. Only after the above, run authenticated E2E with approved provider configuration and submit the full Phase 04 sign-off evidence.
 
 **Phase 04 remains IN PROGRESS.** This continuation is not a declaration of full parity.
+
+## 9. Memory schema discovery (read-only, 11 November 2026)
+
+A direct read-only query against the canonical Supabase project confirmed:
+- `pgcrypto` is installed.
+- The `vector` extension is not currently installed in the queried project.
+- No public table named for memory, embeddings or knowledge was found.
+- Existing durable structures include `conversations`, `conversation_messages`, `agent_runs`, `agent_run_steps`, `agent_run_checkpoints`, `agent_run_events` and `artifacts`.
+
+Therefore, current in-process `AgentMemory` and run checkpoints are not a long-term memory service. Semantic memory cannot be claimed implemented until an approved forward-only migration enables the required vector capability, introduces owner/workspace/consent-scoped memory records and indexes, and tests retrieval/retention/deletion boundaries. No extension, table, or policy was changed during this inspection.
