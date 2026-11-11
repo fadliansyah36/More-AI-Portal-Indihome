@@ -8,12 +8,12 @@
 | 01 | Upstream source pin & provenance | COMPLETE | `dev_web_app` @ `3ceaa9182b39bbb9898ddda0a4b1c50c2758ab5f` |
 | 02 | Monorepo backend workspace foundation | COMPLETE — foundation | `apps/api`, `apps/worker`, `engine`, `packages` |
 | 03 | Complete upstream source copy | COMPLETE — hash verified | 111/111 matching Git blob SHA in `vendor/openmanusweb/` |
-| 04 | Full backend integration & security hardening | IN PROGRESS — durable transcript/checkpoint recovery and restart resume implemented; upstream parity and approval/sandbox activation remain | [Phase 04 run 42965739026](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42965739026): sandbox 7, engine 26, worker 15, API 16 tests all PASS |
+| 04 | Full backend integration & security hardening | IN PROGRESS — durable recovery and approval persistence/API authored; worker approval pause/resume, sandbox supervisor, browser SSRF/DNS rebinding, file isolation and upstream behavioral parity remain | [Phase 04 run 42965739026](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42965739026): sandbox 7, engine 26, worker 15, API 16 tests all PASS |
 | 05 | Supabase schema reconciliation | COMPLETE — existing schema only; no reset/destructive DDL | Live columns verified for checkpoints, conversation messages, partner membership, organizations and locations; no migration needed |
-| 06 | FastAPI core & OpenAPI contract | IN PROGRESS — Customer and Partner route groups now separated with server-side role/tenant enforcement | Customer context/conversation/run/SSE; Partner tenants/context/locations/members; legacy customer routes protected; API contract tests PASS |
+| 06 | FastAPI core & OpenAPI contract | IN PROGRESS — Customer/Partner route groups plus Customer tool-approval list/request/decision routes; full domain contracts and OpenAPI parity remain | Customer context/conversation/run/SSE; Partner tenants/context/locations/members; legacy customer routes protected; API contract tests PASS |
 | 07 | Worker & durable run lifecycle | IN PROGRESS — checkpoint restoration, run-scoped transcript persistence and restart replay implemented | `WorkerRpcClient.list_checkpoints`, `SupabaseConversationMemoryStore.load_run`, durable per-tool settled observation and restart recovery tests PASS |
 | 08 | LLM/tool/workflow/orchestration integration | IN PROGRESS — configured provider fallback and metered reservation/settlement implemented; only approved existing chat-completion tool active | Ordered primary/fallback candidates; stream fallback only before first delta; engine tests PASS |
-| 09 | Existing Frontend API Integration | IN PROGRESS — Customer Chat uses Customer API; Partner Portal uses live tenant context/locations and explicit tenant selection | Typed `customerApi`/`partnerApi`; demo partner data and fabricated analytics/QR/package claims removed; frontend baseline rerun pending |
+| 09 | Existing Frontend API Integration | IN PROGRESS — Customer Chat and Partner Portal have typed API wiring; typed tool-approval client added; remaining UI screens still require domain endpoints and hardcoded/demo-data removal | Typed `customerApi`/`partnerApi`; demo partner data and fabricated analytics/QR/package claims removed; frontend baseline rerun pending |
 | 10 | End-to-end integration verification | BLOCKED | No real-provider authenticated browser → worker → provider E2E; real keys intentionally deferred |
 | 11 | Integration release gate | NOT STARTED | No production worker/sandbox activation or release until full parity and acceptance evidence |
 
@@ -78,3 +78,15 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - `27253b21d6503bf33b74ae4bb47cc5805acdf80a` — partner portal API data binding and tenant selection.
 - `9feb542cf3fc50320093266fb737110706a3d130` — server-authorized Partner tenant discovery route.
 - `c4f649c83614824fec75b0097cd618d47ff1c4f4` — Customer Chat moved to dedicated Customer API.
+
+
+## 2026-11-11 continuation — approval persistence contract (no tests run)
+
+- Product-owner instruction for this increment: do not run real or other tests. This is recorded as an execution constraint, not a passing verification result.
+- Added forward-only migration draft `20261111050000_moreai_tool_approval_lifecycle.sql`: owner/run/tool/argument-hash scoped approval records, expiry, single-use consumption, server-only RPCs and RLS with no direct anon/authenticated table access.
+- Added `apps/api/app/routers/tool_approvals.py` with Customer-principal scoped list/request/decision endpoints; registered the router in FastAPI.
+- Added typed `customerToolApprovalApi` contracts to `lib/api/client.ts`.
+- Updated `openmanus-backend-capability-map.json` to reflect the actual partial state.
+- Important: approval persistence and API contracts are authored but the worker does not yet create/pause/resume on pending approval or atomically consume approvals at dispatch. The sandbox tools remain disabled. Migration has not been applied to Supabase.
+- No local checkout was available in the execution environment (GitHub clone DNS resolution failed); code writes were made through the GitHub connector directly on `main`. No build, lint, unit, integration, E2E, SQL apply or runtime checks were run.
+- Next: implement approval pause/resume + worker atomic consume, then isolated browser supervisor with DNS pinning/redirect checks, and sandbox file workspace. Continue Phase 06–09 only with real backend contracts for every existing UI domain; do not convert unsupported data into static fallbacks.
