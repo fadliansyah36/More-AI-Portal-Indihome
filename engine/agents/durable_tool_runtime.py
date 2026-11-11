@@ -113,6 +113,11 @@ class DurableOpenManusRuntime:
                 workspace_id=context.workspace_id, limit=200,
             )
         messages: list[dict[str, Any]] = [system]
+        existing_tool_ids = {item.tool_call_id for item in history if item.role == "tool" and item.tool_call_id}
+        existing_assistant_calls = {
+            tuple(call.id for call in item.tool_calls)
+            for item in history if item.role == "assistant" and item.tool_calls
+        }
         if history:
             messages.extend(item.to_dict() for item in history if item.role != "system")
         else:
@@ -177,7 +182,11 @@ class DurableOpenManusRuntime:
                 raise ValueError("provider_tool_calls_must_be_array")
             restored_calls = _restore_tool_calls(calls)
             assistant = Message.assistant_message(text or None, restored_calls or None)
-            messages.append(assistant.to_dict())
+            call_signature = tuple(call.id for call in restored_calls)
+            if not restored_calls or call_signature not in existing_assistant_calls:
+                messages.append(assistant.to_dict())
+            if restored_calls:
+                existing_assistant_calls.add(call_signature)
             if self.memory_store is not None and context.conversation_id:
                 await self.memory_store.append(
                     conversation_id=context.conversation_id, user_id=context.user_id,
@@ -241,7 +250,9 @@ class DurableOpenManusRuntime:
                         "observation_sha256": hashlib.sha256(observation.encode()).hexdigest(),
                     })
                 tool_message = Message.tool_message(observation, name=call.function.name, tool_call_id=call.id)
-                messages.append(tool_message.to_dict())
+                if call.id not in existing_tool_ids:
+                    messages.append(tool_message.to_dict())
+                    existing_tool_ids.add(call.id)
                 if self.memory_store is not None and context.conversation_id:
                     await self.memory_store.append(
                         conversation_id=context.conversation_id, user_id=context.user_id,
