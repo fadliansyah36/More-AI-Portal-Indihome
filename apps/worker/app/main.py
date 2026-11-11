@@ -47,7 +47,7 @@ async def run_worker() -> None:
         if not quota_policies:
             raise RuntimeError("no_enabled_llm_quota_policy")
         registry = build_agent_registry(rpc, http)
-        runtime = WorkerRuntime(rpc, RegisteredAgentDispatcher(registry))
+        runtime = WorkerRuntime(rpc, RegisteredAgentDispatcher(registry, checkpoint_loader=rpc.list_checkpoints))
         poll_seconds = max(1, min(30, int(os.getenv("WORKER_POLL_SECONDS", "3"))))
         while True:
             processed = await runtime.run_once()
