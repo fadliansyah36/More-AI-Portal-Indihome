@@ -13,7 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { partnerApi } from '@/lib/api/client';
-import type { PartnerContext, PartnerLocationRecord } from '@/lib/api/client';
+import type { PartnerContext, PartnerLocationRecord, PartnerTenantOption } from '@/lib/api/client';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
@@ -42,6 +42,8 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1);
   const [locations, setLocations] = useState<PartnerLocationRecord[]>([]);
   const [partnerContext, setPartnerContext] = useState<PartnerContext | null>(null);
+  const [partnerTenants, setPartnerTenants] = useState<PartnerTenantOption[]>([]);
+  const [selectedPartnerId, setSelectedPartnerId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [partnerError, setPartnerError] = useState<string | null>(null);
 
@@ -54,16 +56,16 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
 
   useEffect(() => {
     let active = true;
-    Promise.all([partnerApi.context(), partnerApi.locations()])
-      .then(([context, rows]) => {
+    partnerApi.tenants()
+      .then((tenants) => {
         if (!active) return;
-        setPartnerContext(context);
-        setVenueName(context.tenant.display_name || context.tenant.legal_name || '');
-        setLocations(rows);
+        setPartnerTenants(tenants);
+        if (tenants.length === 1) setSelectedPartnerId(tenants[0].tenant.id);
+        if (tenants.length === 0) setPartnerError('Tidak ada tenant Partner aktif pada akun ini.');
       })
       .catch((error: unknown) => {
         if (!active) return;
-        const message = error instanceof Error ? error.message : 'Data Partner tidak dapat dimuat.';
+        const message = error instanceof Error ? error.message : 'Daftar tenant Partner tidak dapat dimuat.';
         setPartnerError(message);
         showToast(message, 'error');
       })
@@ -72,6 +74,35 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
       });
     return () => { active = false; };
   }, [showToast]);
+
+  useEffect(() => {
+    if (!selectedPartnerId) return;
+    let active = true;
+    setIsLoading(true);
+    setPartnerError(null);
+    setPartnerContext(null);
+    setLocations([]);
+    Promise.all([
+      partnerApi.context(selectedPartnerId),
+      partnerApi.locations(selectedPartnerId),
+    ])
+      .then(([context, rows]) => {
+        if (!active) return;
+        setPartnerContext(context);
+        setVenueName(context.tenant.display_name || context.tenant.legal_name || '');
+        setLocations(rows);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        const message = error instanceof Error ? error.message : 'Data tenant Partner tidak dapat dimuat.';
+        setPartnerError(message);
+        showToast(message, 'error');
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => { active = false; };
+  }, [selectedPartnerId, showToast]);
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -85,8 +116,25 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
             Partner Wi-Fi & AI Access
           </h1>
           <p className="text-xs text-slate-500">
-            Kelola Wi-Fi venue, kuota sponsor AI pelanggan, dan distribusi QR code
+            Kelola lokasi berdasarkan tenant dan role Partner yang diverifikasi server
           </p>
+          {partnerTenants.length > 1 && (
+            <label className="mt-2 block max-w-sm text-xs font-medium text-slate-600">
+              Tenant aktif
+              <select
+                value={selectedPartnerId}
+                onChange={(event) => setSelectedPartnerId(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800"
+              >
+                <option value="">Pilih tenant Partner</option>
+                {partnerTenants.map((item) => (
+                  <option key={item.tenant.id} value={item.tenant.id}>
+                    {item.tenant.display_name || item.tenant.legal_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
 
         <div className="flex gap-1.5">
