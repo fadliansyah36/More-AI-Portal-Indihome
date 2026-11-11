@@ -264,6 +264,16 @@ export const customerApi = {
   quotas: () => moreAiCustomerApi<CustomerQuota[]>('/api/v1/customer/quotas'),
 };
 
+export type PartnerCampaign = {
+  id: string; partner_id: string; location_id: string | null; name: string; status: string;
+  starts_at: string | null; ends_at: string | null; budget: number | string | null;
+  config: Record<string, unknown>; created_at: string; updated_at: string;
+};
+export type PartnerMember = {
+  id: string; partner_id: string; user_id: string; role_key: string;
+  location_id: string | null; status: string; created_at: string;
+};
+
 export const partnerApi = {
   tenants: () => moreAiPartnerApi<PartnerTenantOption[]>('/api/v1/partner/tenants'),
   context: (partnerId?: string) => moreAiPartnerApi<PartnerContext>(
@@ -281,6 +291,14 @@ export const partnerApi = {
   campaigns: (partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>(
     '/api/v1/partner/campaigns' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
   ),
+  createLocation: (payload: { name: string; address?: Record<string, unknown>; latitude?: number; longitude?: number; timezone?: string }, partnerId?: string) =>
+    moreAiPartnerApi<PartnerLocationRecord>('/api/v1/partner/locations' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST', body: JSON.stringify(payload) }),
+  createCampaign: (payload: { name: string; location_id?: string | null; starts_at?: string | null; ends_at?: string | null; budget?: number | null; config?: Record<string, unknown> }, partnerId?: string) =>
+    moreAiPartnerApi<PartnerCampaign>('/api/v1/partner/campaigns' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST', body: JSON.stringify(payload) }),
+  updateCampaign: (campaignId: string, payload: Partial<Pick<PartnerCampaign, 'name' | 'status' | 'starts_at' | 'ends_at' | 'budget' | 'config'>>, partnerId?: string) =>
+    moreAiPartnerApi<PartnerCampaign>(`/api/v1/partner/campaigns/${campaignId}` + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'PATCH', body: JSON.stringify(payload) }),
+  inviteMember: (payload: { user_id: string; role_key: 'partner_admin' | 'location_manager' | 'partner_staff' | 'partner_analyst'; location_id?: string | null }, partnerId?: string) =>
+    moreAiPartnerApi<PartnerMember>('/api/v1/partner/members' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST', body: JSON.stringify(payload) }),
   campaignRewards: (campaignId: string, partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>(
     `/api/v1/partner/campaigns/${campaignId}/rewards` + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
   ),
