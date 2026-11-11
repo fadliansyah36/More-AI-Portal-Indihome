@@ -270,3 +270,13 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Workspace CRUD/version/locking, upstream Flow/server/session + full memory/RAG parity, Phase 06 domain/governance, Phase 09 screenshot-gated UI work, Phase 10 and Phase 11 remain open.
 - Detailed report: [PHASE-07-BROWSER-EGRESS-EVENT-OUTBOX-20261111.md](./PHASE-07-BROWSER-EGRESS-EVENT-OUTBOX-20261111.md).
 - Commits: `7e1ec05` outbox claim/ack/retry RPCs; `c42aa35` canonical outbox reconciliation; `fe44df8` worker lease check; `4771ec6` checkpoint/finish serialization; `43e3f3c` worker client publisher; `6061038` publisher loop; `3d53f8f` worker loop integration; `76410ad`, `08f11b5`, `02542d8`, `ce933f8` follow-up schema/payload correctness fixes; `dfc8819` report.
+
+
+## 2026-11-11 Phase 07A — database schema acceptance
+
+- Applied canonical outbox migration to Supabase project `uunfgimtokhucegqbpce` (migration version `20261111091531`) and follow-up retry lease-fencing migration.
+- Live read-only verification confirms `agent_run_event_counters` and outbox extension columns exist; all six RPC signatures are installed; anon/authenticated EXECUTE is false and service_role EXECUTE is true.
+- Outbox publisher runs in worker source alongside durable run execution; append creates replay event and outbox record transactionally; claim uses SKIP LOCKED; retry backoff/dead-letter and lease expiry recovery are implemented; Broadcast is at-least-once and deduplicated by event_id/sequence.
+- No production run/outbox rows were created or mutated for smoke tests. No actual worker process, Realtime subscriber, cancellation, retry or crash-recovery E2E has been proven. Thus database schema gate passed; Phase 07 runtime acceptance remains OPEN pending isolated staging execution.
+- Security Advisor still flags five RLS-enabled tables with no policies and leaked-password protection disabled. See the Phase 07A report for exact tables and remediation.
+- Report: [PHASE-07A-DURABLE-EVENT-OUTBOX-ACCEPTANCE-20261111.md](./PHASE-07A-DURABLE-EVENT-OUTBOX-ACCEPTANCE-20261111.md).
