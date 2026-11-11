@@ -278,6 +278,8 @@ export const customerApi = {
   usage: (limit = 50, before?: string) => moreAiCustomerApi<CustomerUsageRecord[]>(`/api/v1/customer/usage?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
   entitlements: () => moreAiCustomerApi<CustomerEntitlement[]>('/api/v1/customer/entitlements'),
   quotas: () => moreAiCustomerApi<CustomerQuota[]>('/api/v1/customer/quotas'),
+  redeemAccessCode: (code: string, networkId: string, verificationSessionId: string, idempotencyKey: string) =>
+    moreAiCustomerApi<Record<string, unknown>>('/api/v1/customer/access-codes/redeem', { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ code, network_id: networkId, verification_session_id: verificationSessionId }) }),
 };
 
 export type PartnerCampaign = {
@@ -315,6 +317,8 @@ export const partnerApi = {
     moreAiPartnerApi<PartnerCampaign>(`/api/v1/partner/campaigns/${campaignId}` + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'PATCH', body: JSON.stringify(payload) }),
   inviteMember: (payload: { user_id: string; role_key: 'partner_admin' | 'location_manager' | 'partner_staff' | 'partner_analyst'; location_id?: string | null }, partnerId?: string) =>
     moreAiPartnerApi<PartnerMember>('/api/v1/partner/members' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST', body: JSON.stringify(payload) }),
+  accessCodes: (partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>('/api/v1/partner/access-codes' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : '')),
+  accessCodeRedemptions: (partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>('/api/v1/partner/access-code-redemptions' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : '')),
   networks: (partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>('/api/v1/partner/networks' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : '')),
   createNetwork: (payload: { location_id: string; provider_id?: string | null; name: string; ssid_label?: string | null; gateway_type: string; gateway_network_ref?: string | null }, partnerId?: string) =>
     moreAiPartnerApi<Record<string, unknown>>('/api/v1/partner/networks' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST', body: JSON.stringify(payload) }),

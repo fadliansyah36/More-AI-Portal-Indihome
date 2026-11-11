@@ -519,3 +519,42 @@ async def revoke_partner_access_code(access_code_id: UUID, request: Request,
     if not rows:
         raise HTTPException(404, "Active access code not found")
     return {"id": rows[0]["id"], "status": rows[0]["status"]}
+
+
+@router.get("/access-codes")
+async def list_partner_access_codes(
+    request: Request,
+    partner_id: UUID | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=200),
+    user: dict[str, Any] = Depends(current_user),
+):
+    principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
+    _require_partner_manager(principal)
+    return await repository(request).select("partner_access_codes", {
+        "partner_id": f"eq.{principal['partner_id']}",
+        "select": "id,location_id,network_id,campaign_id,reward_id,status,expires_at,max_redemptions,redemption_count,created_at,revoked_at",
+        "order": "created_at.desc", "limit": str(limit),
+    })
+
+
+@router.get("/access-code-redemptions")
+async def list_partner_access_code_redemptions(
+    request: Request,
+    partner_id: UUID | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=200),
+    user: dict[str, Any] = Depends(current_user),
+):
+    principal = await require_partner_context(request, user, str(partner_id) if partner_id else None)
+    _require_partner_manager(principal)
+    codes = await repository(request).select("partner_access_codes", {
+        "partner_id": f"eq.{principal['partner_id']}",
+        "select": "id", "limit": "500",
+    })
+    ids = [str(row["id"]) for row in codes if row.get("id")]
+    if not ids:
+        return []
+    return await repository(request).select("partner_access_code_redemptions", {
+        "access_code_id": f"in.({','.join(ids)})",
+        "select": "id,access_code_id,user_id,network_id,verification_session_id,redeemed_at",
+        "order": "redeemed_at.desc", "limit": str(limit),
+    })

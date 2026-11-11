@@ -330,3 +330,9 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Typed frontend run APIs now target existing `/api/v1/agent-runs` routes; UI components untouched.
 - Report: PHASE-06-CUSTOMER-ACCOUNT-READ-APIS-20261111.md.
 - Runtime/API contract tests not run.
+
+
+## 2026-11-11 — Phase 06/09 partner access-code redemption integration
+- Added tenant-scoped partner access-code inventory/redemption history and authenticated customer redemption using the existing atomic RPC with server-side hashing and Idempotency-Key.
+- Added typed client methods; UI untouched.
+- Report: PHASE-06-PARTNER-ACCESS-CODE-APIS-20261111.md.

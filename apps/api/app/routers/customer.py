@@ -355,3 +355,49 @@ async def customer_quotas(
     })
     usage_by_policy = {str(row["policy_id"]): row for row in usage_rows}
     return [{**policy, "usage": usage_by_policy.get(str(policy["id"]))} for policy in policies]
+
+
+class AccessCodeRedeem(BaseModel):
+    code: str = Field(min_length=8, max_length=128)
+    network_id: UUID
+    verification_session_id: UUID
+
+
+@router.post("/access-codes/redeem")
+async def redeem_partner_access_code(
+    body: AccessCodeRedeem,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    user: dict[str, Any] = Depends(current_user),
+):
+    import hashlib
+    principal = await require_customer_context(request, user)
+    if not idempotency_key or not 8 <= len(idempotency_key) <= 160:
+        raise HTTPException(400, "An 8–160 character Idempotency-Key header is required")
+    raw_code = body.code.strip()
+    if not raw_code or len(raw_code) < 8:
+        raise HTTPException(422, "Access code is invalid")
+    digest = hashlib.sha256(raw_code.encode("utf-8")).hexdigest()
+    try:
+        return await repository(request).rpc("moreai_redeem_partner_access_code", {
+            "p_code_hash": digest,
+            "p_user_id": principal["id"],
+            "p_network_id": str(body.network_id),
+            "p_verification_session_id": str(body.verification_session_id),
+            "p_idempotency_key": idempotency_key,
+        })
+    except Exception as exc:
+        message = str(exc)
+        if "NETWORK_VERIFICATION_REQUIRED" in message:
+            raise HTTPException(403, "Network verification is required before redeeming this code")
+        if "IDEMPOTENCY_KEY_CONFLICT" in message:
+            raise HTTPException(409, "Idempotency key was already used for another access code")
+        if "ACCESS_CODE_EXPIRED" in message:
+            raise HTTPException(410, "Access code has expired")
+        if "ACCESS_CODE_EXHAUSTED" in message:
+            raise HTTPException(409, "Access code redemption limit has been reached")
+        if "ACCESS_CODE_NOT_AVAILABLE" in message:
+            raise HTTPException(404, "Access code is not available")
+        if "ACCESS_CODE_NETWORK_MISMATCH" in message or "ACCESS_CODE_SCOPE_MISMATCH" in message:
+            raise HTTPException(403, "Access code is not valid for this network")
+        raise
