@@ -33,3 +33,38 @@ def test_download_enforces_size():
 async def test_sandbox_refuses_unpinned_or_missing_image():
     with pytest.raises(RuntimeError, match="digest_pinned"):
         await DockerSandbox(image="python:3.12").execute("print(1)", language="python")
+
+
+@pytest.mark.asyncio
+async def test_docker_runner_uses_disposable_networkless_restricted_container(monkeypatch):
+    import asyncio
+
+    captured = []
+
+    class FakeProcess:
+        returncode = 0
+        pid = 12345
+
+        async def communicate(self):
+            return b"ok", b""
+
+    async def fake_exec(*command, **kwargs):
+        captured.extend(command)
+        assert kwargs["start_new_session"] is True
+        return FakeProcess()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+    result = await DockerSandbox(
+        image="registry.example/moreai-sandbox@sha256:" + ("a" * 64),
+    ).execute("print('ok')", language="python")
+
+    assert result.exit_code == 0
+    assert "--network=none" in captured
+    assert "--read-only" in captured
+    assert "--cap-drop=ALL" in captured
+    assert "--security-opt=no-new-privileges:true" in captured
+    assert "--user" in captured and "65534:65534" in captured
+    assert "--pids-limit" in captured
+    assert "--memory" in captured
+    assert "--cpus" in captured
+    assert any(item.startswith("type=bind,src=") and item.endswith(",readonly") for item in captured)
