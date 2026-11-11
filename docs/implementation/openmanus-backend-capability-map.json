@@ -411,7 +411,9 @@
       "35a62f3ef00354cdb659084a5e174fa6832fed0d",
       "7d97ed8c9bbfe47f97e2cb779887168e4e24d985",
       "556da5e8d82d6d0c2a9e5eec8229da159d2a284f",
-      "1d57df3089f2b640e7c4f80435b6c44369fb8874"
+      "1d57df3089f2b640e7c4f80435b6c44369fb8874",
+      "4015422d5a8acb52a4ba014797cfcf878e1a7736",
+      "5808c3fc8ad976d9e905c98eef64f91031ea2de0"
     ],
     "implemented": [
       "Provider-pinned Tavily search tool adapter with bounded normalized source results; registered only when TAVILY_API_KEY exists.",
@@ -420,7 +422,8 @@
       "Customer profile PATCH using caller JWT and existing profile RLS.",
       "Partner location, campaign create/update, member invitation, network create, verification config management and one-time access code create/revoke with tenant/location scope checks.",
       "Platform permission resolver from active assignments and role_permissions; Super Admin read routes enforce granular permissions.",
-      "Typed API client additions for profile, files and Partner operations."
+      "Typed API client additions for profile, files and Partner operations.",
+      "Both API and worker artifact upload paths fail closed unless Storage confirms the configured bucket exists and is private; worker artifact rows now link to run_id."
     ],
     "blockers": [
       "No public notification schema exists in connected Supabase; notification APIs require an additive migration and RLS policies.",
