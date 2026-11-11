@@ -257,3 +257,16 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - No UI files changed. No tests, lint, typecheck, build, browser network verification, SQL apply, E2E, provider call or deployment run in this increment.
 - Report: [PHASE-07-BROWSER-EGRESS-EVENT-OUTBOX-20261111.md](./PHASE-07-BROWSER-EGRESS-EVENT-OUTBOX-20261111.md).
 - Commits: `5ce5416` (event outbox migration draft), `b1c4203` (worker event client), `ee876f8`/`ce33e22` (run lifecycle/progress), `a96df53`/`baaa049` (tool lifecycle), `aefb661` (registry wiring), `e4dafa8` (browser image), `d7cf092` (isolated network topology), `997e4b5` (implementation report).
+
+
+## 2026-11-11 Phase 07A continuation — canonical outbox publisher (source committed, DB not applied)
+
+- Read-only live schema reconciliation confirmed existing `agent_run_events`, `agent_run_checkpoints`, and canonical `outbox_events`; outbox status check allows pending/processing/published/failed/dead_letter, `aggregate_id` is UUID, and RLS has restrictive deny for anon/authenticated.
+- Corrected the earlier event migration to extend `outbox_events` instead of creating a parallel event outbox. The migration adds event idempotency/sequence columns and worker lease fields.
+- Worker append now requires an active worker lease. The migration replaces checkpoint and finish RPCs to allocate event sequence through one serialized per-run counter, eliminating the old `max(sequence)+1` race among worker event writers.
+- Added leased outbox claim, acknowledgement, exponential retry and dead-letter RPCs. Worker publisher sends private per-run Realtime Broadcast notifications and acknowledges only after successful HTTP response. Delivery is at-least-once; dedupe uses event_id/sequence. Existing authenticated Customer SSE/GET remains the durable replay source.
+- Worker runtime starts outbox publishing concurrently with agent dispatch.
+- **Not applied to Supabase**; no production RPC invocation, migration, tests, lint, typecheck, build or deployment run. Event publisher cannot be considered operational until the migration is reviewed/applied and verified.
+- Workspace CRUD/version/locking, upstream Flow/server/session + full memory/RAG parity, Phase 06 domain/governance, Phase 09 screenshot-gated UI work, Phase 10 and Phase 11 remain open.
+- Detailed report: [PHASE-07-BROWSER-EGRESS-EVENT-OUTBOX-20261111.md](./PHASE-07-BROWSER-EGRESS-EVENT-OUTBOX-20261111.md).
+- Commits: `7e1ec05` outbox claim/ack/retry RPCs; `c42aa35` canonical outbox reconciliation; `fe44df8` worker lease check; `4771ec6` checkpoint/finish serialization; `43e3f3c` worker client publisher; `6061038` publisher loop; `3d53f8f` worker loop integration; `76410ad`, `08f11b5`, `02542d8`, `ce933f8` follow-up schema/payload correctness fixes; `dfc8819` report.
