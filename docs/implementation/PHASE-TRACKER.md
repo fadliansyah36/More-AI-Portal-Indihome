@@ -374,3 +374,12 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Report: [API-CLIENT-CONTRACT-ALIGNMENT-20261111.md](./API-CLIENT-CONTRACT-ALIGNMENT-20261111.md).
 
 - SSE client follow-up commit: `6b10c622b1716cf4422a99d4e2f653c5ad9642ca`; stream event IDs are preserved and caller-supplied replay cursors are passed to FastAPI. Automatic reconnect and live runtime delivery remain unverified.
+
+
+## 2026-11-11 direct-main integration continuation
+
+- Customer run-step endpoint now uses the same metadata-only contract as the canonical run endpoint; private step input/output/error are excluded and limit is bounded. Commit `1efe43a0f87b97596ada43126aa9dad6d3781267`.
+- Durable run event replay now validates non-negative cursors and bounded limits; SSE wait windows are validated to 1–120 seconds on both general and Customer routes. Commits `b2a49909792f1ea17627d91519835d6572a0eb54` and `de60315866ac60558b67c117d5fb9d3b3ada6f65`.
+- Read-only Supabase inventory and migration history reviewed on canonical project `uunfgimtokhucegqbpce`; no SQL was applied.
+- No tests/build/lint/typecheck/staging/provider calls/deployment were run in this continuation. These commits do not constitute phase acceptance.
+- Full report: [DIRECT-MAIN-INTEGRATION-CONTINUATION-20261111.md](./DIRECT-MAIN-INTEGRATION-CONTINUATION-20261111.md).
