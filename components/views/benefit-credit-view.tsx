@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Gift,
   Zap,
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 import { NavigationTab } from '@/types/moreai';
+import { customerApi, CustomerEntitlement, CustomerLedgerEntry, CustomerQuota, CustomerUsageRecord, CustomerWallet } from '@/lib/api/client';
 
 interface BenefitCreditViewProps {
   onNavigateTab?: (tab: NavigationTab) => void;
@@ -25,62 +26,63 @@ interface BenefitCreditViewProps {
 export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigateTab }) => {
   const { showToast } = useToast();
   const [activeSubTab, setActiveSubTab] = useState<'semua' | 'wifi' | 'ai'>('semua');
-  const [isActivated, setIsActivated] = useState(true);
-  const [balance, setBalance] = useState(8500);
+  const [wallets, setWallets] = useState<CustomerWallet[]>([]);
+  const [entitlements, setEntitlements] = useState<CustomerEntitlement[]>([]);
+  const [quotas, setQuotas] = useState<CustomerQuota[]>([]);
+  const [usage, setUsage] = useState<CustomerUsageRecord[]>([]);
+  const [ledger, setLedger] = useState<CustomerLedgerEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const usageHistory = [
-    {
-      id: 'h-1',
-      title: 'Akses Wi-Fi Global Partner ISP',
-      type: 'wifi',
-      date: '12 Jul 2027 · 2 jam',
-      amount: 'Gratis via Partner',
-      positive: true,
-    },
-    {
-      id: 'h-2',
-      title: 'Research Agent Run',
-      type: 'ai',
-      date: '12 Apr, 14:20',
-      amount: '-500 Poin',
-      positive: false,
-    },
-    {
-      id: 'h-3',
-      title: 'Creative Image Generation',
-      type: 'ai',
-      date: '12 Apr, 10:15',
-      amount: '-300 Poin',
-      positive: false,
-    },
-    {
-      id: 'h-4',
-      title: 'Chat AI MoreAI Assistant',
-      type: 'ai',
-      date: '11 Apr, 16:40',
-      amount: '-50 Poin',
-      positive: false,
-    },
-    {
-      id: 'h-5',
-      title: 'Bonus Login Global Partner Network',
-      type: 'wifi',
-      date: '10 Apr, 09:00',
-      amount: '+1.000 Poin',
-      positive: true,
-    },
-  ];
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    Promise.all([
+      customerApi.wallets(),
+      customerApi.entitlements(),
+      customerApi.quotas(),
+      customerApi.usage(50),
+      customerApi.ledger(50),
+    ]).then(([walletResult, entitlementResult, quotaResult, usageResult, ledgerResult]) => {
+      if (!active) return;
+      setWallets(walletResult.wallets || []);
+      setEntitlements(entitlementResult || []);
+      setQuotas(quotaResult || []);
+      setUsage(usageResult || []);
+      setLedger(ledgerResult || []);
+      setError(null);
+    }).catch((err: unknown) => {
+      if (!active) return;
+      setError(err instanceof Error ? err.message : 'Data benefit dan kredit tidak dapat dimuat.');
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
-  const filteredHistory = usageHistory.filter((h) => {
-    if (activeSubTab === 'wifi') return h.type === 'wifi';
-    if (activeSubTab === 'ai') return h.type === 'ai';
-    return true;
-  });
-
-  const handleTopUp = () => {
-    setBalance((prev) => prev + 5000);
-    showToast('Top Up Simulasi: Berhasil menambahkan 5.000 Poin AI Credit ke wallet Anda!', 'success');
-  };
+  const balance = useMemo(
+    () => wallets.reduce((total, wallet) => total + Number(wallet.balance || 0), 0),
+    [wallets],
+  );
+  const activeEntitlements = entitlements.filter((item) => item.status === 'active');
+  const monthlyQuota = quotas.find((item) => /month|monthly|llm|token|credit/i.test(item.metric_key)) || quotas[0];
+  const history = usage.map((item) => ({
+    id: item.id,
+    title: item.model_key || item.provider_key || 'Penggunaan AI',
+    type: 'ai' as const,
+    date: new Date(item.created_at).toLocaleString('id-ID'),
+    amount: item.actual_cost !== null ? String(item.actual_cost) : String(item.estimated_cost),
+    positive: false,
+  })).concat(ledger.map((item) => ({
+    id: item.id,
+    title: item.description || item.entry_type,
+    type: 'ai' as const,
+    date: new Date(item.created_at).toLocaleString('id-ID'),
+    amount: Number(item.amount).toLocaleString('id-ID'),
+    positive: Number(item.amount) > 0,
+  }))).sort((a, b) => b.date.localeCompare(a.date));
+  const filteredHistory = activeSubTab === 'wifi' ? [] : history;
+  const handleTopUp = () => showToast('Top Up belum tersedia melalui backend pembayaran. Tidak ada saldo yang diubah.', 'info');
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -98,34 +100,30 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
           <div className="flex items-center justify-between">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-xs text-[10px] font-bold">
               <Gift className="w-3.5 h-3.5 text-amber-300" />
-              <span>PARTNER FREE · Global Partner ISP</span>
+              <span>BENEFIT &amp; AI CREDIT</span>
             </div>
             <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-400/30">
-              {isActivated ? 'Aktif hingga 31 Des 2026' : 'Belum Diaktifkan'}
+              {loading ? 'Memuat status' : activeEntitlements.length ? 'Benefit Aktif' : 'Belum Ada Benefit'}
             </span>
           </div>
 
           <div>
-            <span className="text-xs text-red-100 font-medium block">AI Credit Free Global Partner ISP</span>
+            <span className="text-xs text-red-100 font-medium block">AI Credit &amp; Entitlement</span>
             <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight">100.000</span>
-              <span className="text-xs font-bold text-red-200">Poin / Bulan</span>
+              <span className="text-2xl sm:text-3xl font-black tracking-tight">{monthlyQuota ? Number(monthlyQuota.limit_value).toLocaleString('id-ID') : '—'}</span>
+              <span className="text-xs font-bold text-red-200">{monthlyQuota?.metric_key || 'Kuota belum tersedia'}</span>
             </div>
             <span className="text-[11px] text-white/80 block mt-0.5">
-              Saldo Aktif Saat Ini: <strong>{balance.toLocaleString('id-ID')} Poin</strong> (≈ 2.5M Token)
+              Saldo wallet aktif: <strong>{loading ? 'Memuat…' : `${balance.toLocaleString('id-ID')} ${wallets[0]?.currency || 'CREDIT'}`}</strong>
             </span>
           </div>
 
           <div className="pt-2 flex gap-2">
             <button
-              onClick={() => {
-                const nextState = !isActivated;
-                setIsActivated(nextState);
-                showToast(nextState ? 'Benefit AI Credit Global Partner ISP berhasil diaktifkan!' : 'Benefit telah dinonaktifkan sementara', 'info');
-              }}
+              onClick={() => showToast(activeEntitlements.length ? 'Status benefit dibaca dari entitlement akun.' : 'Belum ada entitlement benefit aktif pada akun ini.', 'info')}
               className="flex-1 py-2.5 rounded-xl bg-white text-red-600 font-bold text-xs hover:bg-red-50 transition shadow-xs text-center"
             >
-              {isActivated ? 'Status: Terhubung & Aktif' : 'Aktifkan Sekarang'}
+              {loading ? 'Memuat Status…' : activeEntitlements.length ? 'Status Benefit Aktif' : 'Belum Ada Benefit'}
             </button>
             <button
               onClick={handleTopUp}
@@ -148,50 +146,19 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
         </h2>
 
         <div className="space-y-2">
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                <Sparkles className="w-4 h-4" />
-              </div>
+          {activeEntitlements.length ? activeEntitlements.map((item) => (
+            <div key={item.id} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
               <div>
-                <h4 className="text-xs font-bold text-slate-900">Akses MoreAI Premium</h4>
-                <p className="text-[10px] text-slate-500">Model AI canggih tanpa antrian server</p>
+                <h4 className="text-xs font-bold text-slate-900">{String(item.metadata?.label || item.entitlement_key)}</h4>
+                <p className="text-[10px] text-slate-500">{item.source_type} · berlaku mulai {new Date(item.starts_at).toLocaleDateString('id-ID')}</p>
               </div>
+              <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">Aktif</span>
             </div>
-            <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-              Gratis
-            </span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Voucher AI Tools</h4>
-                <p className="text-[10px] text-slate-500">Nilai Rp 50.000 untuk generator gambar & video</p>
-              </div>
-            </div>
-            <span className="text-[10px] text-slate-600 font-semibold bg-slate-100 px-2 py-0.5 rounded-full">
-              Terklaim
-            </span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                <Gift className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Diskon Partner Kafe & Resto</h4>
-                <p className="text-[10px] text-slate-500">Diskon Rp 25.000 di 100+ venue partner</p>
-              </div>
-            </div>
-            <span className="text-[10px] text-slate-600 font-semibold bg-slate-100 px-2 py-0.5 rounded-full">
-              Siap Digunakan
-            </span>
-          </div>
+          )) : (
+            <p className="text-xs text-slate-500 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+              {loading ? 'Memuat entitlement dari akun…' : 'Belum ada benefit aktif yang tercatat untuk akun ini.'}
+            </p>
+          )}
         </div>
 
         {/* Quick Navigation Cards (Sheet 5 #12 & #13) */}
@@ -262,6 +229,8 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
 
         {/* History items */}
         <div className="space-y-2">
+          {error && <p className="text-xs text-rose-600">{error}</p>}
+          {!loading && filteredHistory.length === 0 && <p className="text-xs text-slate-500 p-3">{activeSubTab === 'wifi' ? 'Riwayat sesi Wi-Fi belum tersedia pada endpoint ini.' : 'Belum ada riwayat kredit atau penggunaan AI.'}</p>}
           {filteredHistory.map((h) => (
             <div
               key={h.id}
