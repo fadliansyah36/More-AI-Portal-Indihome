@@ -6,10 +6,8 @@ dependencies = ["httpx==0.28.1"]
 
 [project.optional-dependencies]
 test = ["pytest==8.3.5", "pytest-asyncio==0.25.3"]
+browser = ["playwright==1.51.0"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-
-[project.optional-dependencies.browser]
-playwright = ["playwright==1.51.0"]
