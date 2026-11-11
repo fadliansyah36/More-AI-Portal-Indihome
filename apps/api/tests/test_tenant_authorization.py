@@ -38,7 +38,7 @@ def test_customer_access_rejects_active_partner_principals(monkeypatch):
 
 def test_customer_access_derives_base_customer_role_for_non_partner_user(monkeypatch):
     repo = FakeRepository()
-    monkeypatch.setattr(authorization, "repository", lambda request: repo)
+    monkeypatch.setattr(authorization, "_repository", lambda request: repo)
 
     async def run():
         result = await authorization.require_customer_context(object(), {"id": "user-1"})
@@ -52,7 +52,7 @@ def test_partner_access_resolves_only_active_membership_tenant(monkeypatch):
         memberships=[{"partner_id": "partner-1", "role_key": "partner_admin", "location_id": None}],
         orgs=[{"id": "partner-1", "status": "active", "display_name": "Partner"}],
     )
-    monkeypatch.setattr(authorization, "repository", lambda request: repo)
+    monkeypatch.setattr(authorization, "_repository", lambda request: repo)
 
     async def run():
         result = await authorization.require_partner_context(object(), {"id": "user-1"})
@@ -66,7 +66,7 @@ def test_partner_access_rejects_unassigned_tenant(monkeypatch):
         memberships=[{"partner_id": "partner-1", "role_key": "partner_staff", "location_id": "loc-1"}],
         orgs=[{"id": "partner-1", "status": "active", "display_name": "Partner"}],
     )
-    monkeypatch.setattr(authorization, "repository", lambda request: repo)
+    monkeypatch.setattr(authorization, "_repository", lambda request: repo)
 
     async def run():
         with pytest.raises(HTTPException) as error:
