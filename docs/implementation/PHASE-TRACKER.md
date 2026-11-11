@@ -399,3 +399,10 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Commits: `379944a6d4715ce551155df7fe39d38882a79a56` (migration), `5af4da0670319326d2e562f6e4a3f21961f3f7d7` (API), `8d581cdc3c4cc3fca8f753ee15e6258a03f25d6e` (report).
 - No runtime/tests/build/lint/typecheck/staging/provider/deployment. Phase 04 remains IN PROGRESS; browser supervisor socket-level egress, complete upstream Flow/server/session parity and full SWE integration remain open.
 - Report: [PHASE-04-OPENMANUS-APPROVAL-KEY-ALIGNMENT-20261111.md](./PHASE-04-OPENMANUS-APPROVAL-KEY-ALIGNMENT-20261111.md).
+
+
+## 2026-11-11 — Phase 04 browser supervisor hardening continuation
+- Browser proxy cancellation is now propagated correctly and tunnel cleanup tolerates socket-close errors. Browser action contract is typed, request count is capped at 200 per action, and WebSockets are denied because they are outside the approved action contract.
+- Commits: `ac571bd3589ef09393ee7f94043986f2bdc573c6`, `1735c5700db427b822648fdfad13b9655959a4fd`.
+- Report: [PHASE-04-BROWSER-SWE-HARDENING-CONTINUATION-20261111.md](./PHASE-04-BROWSER-SWE-HARDENING-CONTINUATION-20261111.md).
+- Phase 04 remains IN PROGRESS. Direct browser egress denial has not been provisioned/verified; SWE list/read/delete/version history/restore and Git workflows remain incomplete; full upstream Flow/session/server/WebSocket and backend capability parity remain open. Browser stays disabled. No tests, lint, typecheck, build, runtime/network verification, staging, provider calls or deployment were run.
