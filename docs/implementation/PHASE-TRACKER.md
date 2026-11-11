@@ -292,3 +292,11 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - No production rows were written and no runtime/staging tests were run.
 - Implementation report: [SECURITY-EXPLICIT-SERVER-ONLY-RLS-20261111.md](./SECURITY-EXPLICIT-SERVER-ONLY-RLS-20261111.md).
 - Commit: `2b1a728d424a93dc943d8ab9650957ee6782401a`.
+
+
+## 2026-11-11 — Phase 04 independent high-risk approval gate
+- Fixed `apps/worker/app/registry_factory.py`: the durable owner-approval gate is now always passed to the tool runtime, not conditionally coupled to Docker sandbox enablement. This covers independently enabled browser supervisor as well as sandbox tools.
+- Browser/sandbox activation flags and release gates remain unchanged; this wiring does not activate either adapter.
+- The worker still waits/heartbeats during approval rather than releasing and reclaiming the run lease. Full run-level pause/resume remains open.
+- No staging/runtime/provider tests, production data writes, migrations, build/lint/typecheck or deployment. UI untouched.
+- Report: [PHASE-04-HIGH-RISK-APPROVAL-GATE-20261111.md](./PHASE-04-HIGH-RISK-APPROVAL-GATE-20261111.md).
