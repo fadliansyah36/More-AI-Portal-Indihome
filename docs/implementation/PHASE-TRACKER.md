@@ -413,3 +413,10 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Commits: `16db80a9d9d7a5d1488de9cb2aece9afade0993a`, `57f7428ca87445b0fab985952e21c2db19a2e1b6`, `ea26636acbc0d599db52873890c0e8f1ead77eb3`, `5dc2f8753b32741458f6417472114703cd757045`, `13ca010e0fc08f17aaffd520003e9ef636126081`.
 - Acceptance report: [PHASE-04-BROWSER-NETWORK-ISOLATION-ACCEPTANCE-20261111.md](./PHASE-04-BROWSER-NETWORK-ISOLATION-ACCEPTANCE-20261111.md).
 - This is deployable source topology, not runtime proof. Do not activate browser until direct IPv4/IPv6 egress and bypass tests fail as expected. SWE CRUD/history/restore/Git and complete Flow/session/server/WebSocket/backend parity remain open. Phase 04 NOT ACCEPTED; Phase 07 not started.
+
+
+## 2026-11-11 — Browser runtime acceptance verifier
+- Added `apps/sandbox/scripts/verify-browser-network-isolation.sh` for private-only browser attachment, proxy bridge topology, Docker internal network, blocked direct IPv4/IPv6 egress, allowlisted proxy egress, rejected loopback/metadata/unlisted targets, and non-privileged/non-host network mode.
+- Commits: `8b1093cdc29765385883e79598137340ea66f52a`, `4eebf0984a5362e39f34b98865cd02844edc6f14`.
+- Report: [PHASE-04-RUNTIME-ACCEPTANCE-VERIFIER-20261111.md](./PHASE-04-RUNTIME-ACCEPTANCE-VERIFIER-20261111.md).
+- Verifier is committed but not executed: no authorized Docker host tool in this session, and prior test/build/deploy restriction remains in force. SWE API/history/restore/Git and full Flow/session/server/WebSocket/backend parity remain incomplete. Phase 04 IN PROGRESS; Phase 07 not started.
