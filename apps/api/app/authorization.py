@@ -3,9 +3,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 
-from app.routers.conversations import repository
+from app.dependencies import current_user
+
+
+def _repository(request: Request):
+    # Lazy import avoids a router/authorization import cycle.
+    from app.routers.conversations import repository
+    return repository(request)
 
 
 PARTNER_ROLES = {
@@ -20,7 +26,7 @@ PLATFORM_PRIVILEGED_ROLES = {
 
 async def require_customer_context(request: Request, user: dict[str, Any]) -> dict[str, Any]:
     """Customer is the authenticated base role; partner and platform principals use separate APIs."""
-    repo = repository(request)
+    repo = _repository(request)
     memberships = await repo.select("partner_members", {
         "user_id": f"eq.{user['id']}", "status": "eq.active",
         "select": "partner_id,role_key", "limit": "100",
@@ -85,3 +91,10 @@ async def require_partner_context(
         "location_id": selected.get("location_id"),
         "partner": orgs[0],
     }
+
+
+
+async def customer_principal(
+    request: Request, user: dict[str, Any] = Depends(current_user),
+) -> dict[str, Any]:
+    return await require_customer_context(request, user)
