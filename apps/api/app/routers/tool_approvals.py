@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/v1/customer/tool-approvals", tags=["customer-too
 
 class ApprovalRequest(BaseModel):
     run_id: UUID
-    tool_key: Literal["bash", "python_execute", "browser", "file_read", "file_write", "file_edit"]
+    tool_key: Literal["bash", "python_execute", "browser_use", "browser", "file_read", "file_write", "file_edit"]
     arguments_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
     summary: str = Field(min_length=1, max_length=1000)
 
