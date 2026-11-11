@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from urllib.parse import urlsplit
+from typing import Literal
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
@@ -12,7 +13,7 @@ app = FastAPI(title="MoreAI Isolated Browser Supervisor", version="0.1.0")
 
 class BrowserAction(BaseModel):
     url: str = Field(min_length=9, max_length=2048)
-    action: str
+    action: Literal["navigate", "extract"]
     run_id: str = Field(min_length=1, max_length=128)
     user_id: str = Field(min_length=1, max_length=128)
 
@@ -49,8 +50,6 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
     parsed = urlsplit(body.url)
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
         raise HTTPException(400, "browser_url_invalid")
-    if body.action not in ("navigate", "extract"):
-        raise HTTPException(400, "browser_action_not_supported")
     proxy_url = os.getenv("MOREAI_BROWSER_PROXY_URL", "")
     proxy_token = os.getenv("MOREAI_BROWSER_PROXY_TOKEN", "")
     if not proxy_url.startswith("http://") or len(proxy_token) < 32:
@@ -75,17 +74,29 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
                 ignore_https_errors=False,
             )
             page = await context.new_page()
+            request_count = 0
+            max_requests = 200
+
             async def request_guard(route):
+                nonlocal request_count
+                request_count += 1
                 request = urlsplit(route.request.url)
-                if request.scheme != "https" or not request.hostname:
+                if request_count > max_requests or request.scheme != "https" or not request.hostname or request.username or request.password:
                     await route.abort("blockedbyclient")
-                else:
-                    await route.continue_()
+                    return
+                await route.continue_()
+
             await page.route("**/*", request_guard)
+            # WebSockets are not part of the approved browser action contract; deny them
+            # rather than allowing a secondary channel outside normal request inspection.
+            async def deny_websocket(websocket):
+                await websocket.close(code=1008)
+
+            await page.route_web_socket("**/*", deny_websocket)
             await page.goto(body.url, wait_until="domcontentloaded", timeout=20_000)
             if body.action == "navigate":
-                return {"status": "navigated", "url": page.url, "title": await page.title()}
+                return {"status": "navigated", "url": page.url, "title": await page.title(), "requests": request_count}
             content = (await page.locator("body").inner_text(timeout=5_000))[:30_000]
-            return {"status": "extracted", "url": page.url, "title": await page.title(), "text": content}
+            return {"status": "extracted", "url": page.url, "title": await page.title(), "text": content, "requests": request_count}
         finally:
             await browser.close()
