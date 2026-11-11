@@ -121,8 +121,14 @@ export default function App() {
       try {
         const { data, error } = await createSupabaseBrowserClient().auth.getSession();
         if (error || !data.session) {
-          const publicTabs: NavigationTab[] = ['splash', 'onboarding', 'login', 'register'];
-          if (!publicTabs.includes(currentTab)) setCurrentTab('login');
+          const path = window.location.pathname.replace(/\\/+$/, '') || '/';
+          const requested = new URLSearchParams(window.location.search).get('view');
+          const publicRoute = ['/login', '/register', '/splash', '/onboarding'].includes(path)
+            || ['login', 'register', 'splash', 'onboarding'].includes(requested || '');
+          if (!publicRoute) {
+            setCurrentTab('login');
+            window.history.replaceState({ moreaiTab: 'login' }, '', '/login');
+          }
         }
       } catch {
         setCurrentTab('login');
