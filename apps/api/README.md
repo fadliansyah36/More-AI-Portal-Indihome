@@ -7,6 +7,9 @@ FastAPI is the only business-data and AI execution boundary. The browser may use
 - `SUPABASE_PUBLISHABLE_KEY` (or legacy `SUPABASE_ANON_KEY`) for validating user access tokens
 - `SUPABASE_SERVICE_ROLE_KEY` server-only for the privileged repository adapter. It must never be exposed to the web app, logs, CI artifacts or source.
 
+## Customer and Partner API origins
+The browser API client supports optional `NEXT_PUBLIC_MOREAI_CUSTOMER_API_URL` and `NEXT_PUBLIC_MOREAI_PARTNER_API_URL`. If unset, both use `NEXT_PUBLIC_MOREAI_API_URL` and remain separated by the server-enforced `/api/v1/customer/*` and `/api/v1/partner/*` namespaces. If distinct origins are configured, set `MOREAI_CORS_ALLOWED_ORIGINS` to the exact frontend origin(s), comma-separated. Never put server secrets in `NEXT_PUBLIC_*` variables.
+
 ## Run
 ```bash
 cd apps/api
