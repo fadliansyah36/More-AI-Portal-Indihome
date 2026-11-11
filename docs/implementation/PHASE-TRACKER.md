@@ -383,3 +383,10 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Read-only Supabase inventory and migration history reviewed on canonical project `uunfgimtokhucegqbpce`; no SQL was applied.
 - No tests/build/lint/typecheck/staging/provider calls/deployment were run in this continuation. These commits do not constitute phase acceptance.
 - Full report: [DIRECT-MAIN-INTEGRATION-CONTINUATION-20261111.md](./DIRECT-MAIN-INTEGRATION-CONTINUATION-20261111.md).
+
+
+## 2026-11-11 — Phase 04/06 approval transport contract alignment
+- The Customer tool-approval request schema now accepts the canonical OpenManus browser tool key `browser_use`, matching the worker registry/policy key (previously only the alias `browser` was accepted). Existing compatibility keys are retained.
+- Commit: `a8c69eb6d01609990cefcfcd7b85d15ec6db9ae8`.
+- This closes a narrow API contract mismatch only; browser supervisor deployment, socket-level egress proof and full approval lifecycle acceptance remain open. No tests/runtime checks were run.
+- Report: [DIRECT-MAIN-INTEGRATION-CONTINUATION-20261111.md](./DIRECT-MAIN-INTEGRATION-CONTINUATION-20261111.md).
