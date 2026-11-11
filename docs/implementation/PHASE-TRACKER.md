@@ -323,3 +323,10 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Approval-paused and queued runs now cancel terminally; pending approvals are denied, pause checkpoints marked cancelled, leases cleared, and a deduplicated cancellation event is written to the durable outbox.
 - Running tasks retain cooperative cancellation through heartbeat and tool boundaries.
 - Migration: 20261111160000_moreai_cancel_waiting_approval_and_outbox.sql.
+
+
+## 2026-11-11 — Phase 06 Customer wallet/ledger/usage and Phase 09 run route alignment
+- Added authenticated read endpoints for customer wallet, credit ledger, LLM usage, entitlements and quotas using existing canonical tables and authenticated principal scoping.
+- Typed frontend run APIs now target existing `/api/v1/agent-runs` routes; UI components untouched.
+- Report: PHASE-06-CUSTOMER-ACCOUNT-READ-APIS-20261111.md.
+- Runtime/API contract tests not run.

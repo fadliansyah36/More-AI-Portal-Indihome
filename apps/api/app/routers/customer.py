@@ -257,3 +257,101 @@ async def customer_quotas(request: Request, user: dict[str, Any] = Depends(curre
     })
     usage_by_policy = {str(row.get("policy_id")): row for row in usage}
     return [{**policy, "usage": usage_by_policy.get(str(policy["id"]))} for policy in policies]
+
+
+@router.get("/wallet")
+async def customer_wallet(
+    request: Request, user: dict[str, Any] = Depends(current_user),
+):
+    principal = await require_customer_context(request, user)
+    rows = await repository(request).select("wallet_accounts", {
+        "owner_type": "eq.user", "owner_id": f"eq.{principal['id']}",
+        "select": "id,currency,balance,status,created_at,updated_at",
+        "order": "created_at.asc", "limit": "20",
+    })
+    return {"wallets": rows}
+
+
+@router.get("/wallet/ledger")
+async def customer_wallet_ledger(
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=100),
+    before: datetime | None = Query(default=None),
+    user: dict[str, Any] = Depends(current_user),
+):
+    principal = await require_customer_context(request, user)
+    repo = repository(request)
+    wallets = await repo.select("wallet_accounts", {
+        "owner_type": "eq.user", "owner_id": f"eq.{principal['id']}",
+        "select": "id", "limit": "20",
+    })
+    ids = [str(row["id"]) for row in wallets if row.get("id")]
+    if not ids:
+        return []
+    filters = {
+        "wallet_id": f"in.({','.join(ids)})",
+        "select": "id,wallet_id,entry_type,amount,balance_after,reference_type,reference_id,description,created_at",
+        "order": "created_at.desc", "limit": str(limit),
+    }
+    if before:
+        if before.tzinfo is None:
+            raise HTTPException(422, "before must include a timezone")
+        filters["created_at"] = f"lt.{before.isoformat()}"
+    return await repo.select("credit_ledger", filters)
+
+
+@router.get("/usage")
+async def customer_usage(
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=100),
+    before: datetime | None = Query(default=None),
+    user: dict[str, Any] = Depends(current_user),
+):
+    principal = await require_customer_context(request, user)
+    filters = {
+        "user_id": f"eq.{principal['id']}",
+        "select": "id,run_id,provider_key,model_key,input_tokens,output_tokens,estimated_cost,actual_cost,status,latency_ms,created_at",
+        "order": "created_at.desc", "limit": str(limit),
+    }
+    if before:
+        if before.tzinfo is None:
+            raise HTTPException(422, "before must include a timezone")
+        filters["created_at"] = f"lt.{before.isoformat()}"
+    return await repository(request).select("llm_usage", filters)
+
+
+@router.get("/entitlements")
+async def customer_entitlements(
+    request: Request, user: dict[str, Any] = Depends(current_user),
+):
+    principal = await require_customer_context(request, user)
+    return await repository(request).select("user_entitlements", {
+        "user_id": f"eq.{principal['id']}",
+        "select": "id,entitlement_key,source_type,status,starts_at,expires_at,metadata",
+        "order": "created_at.desc", "limit": "200",
+    })
+
+
+@router.get("/quotas")
+async def customer_quotas(
+    request: Request, user: dict[str, Any] = Depends(current_user),
+):
+    principal = await require_customer_context(request, user)
+    repo = repository(request)
+    policies = await repo.select("quota_policies", {
+        "enabled": "eq.true",
+        "or": f"(and(scope_type.eq.global,scope_id.is.null),and(scope_type.eq.user,scope_id.eq.{principal['id']}))",
+        "select": "id,scope_type,scope_id,metric_key,limit_value,window_seconds",
+        "order": "metric_key.asc", "limit": "200",
+    })
+    if not policies:
+        return []
+    policy_ids = [str(row["id"]) for row in policies]
+    usage_rows = await repo.select("quota_usage", {
+        "policy_id": f"in.({','.join(policy_ids)})",
+        "scope_type": "eq.user", "scope_id": f"eq.{principal['id']}",
+        "select": "policy_id,used_value,window_start,updated_at",
+        "limit": "500",
+    })
+    usage_by_policy = {str(row["policy_id"]): row for row in usage_rows}
+    return [{**policy, "usage": usage_by_policy.get(str(policy["id"]))} for policy in policies]
