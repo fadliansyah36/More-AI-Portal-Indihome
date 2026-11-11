@@ -2,18 +2,20 @@
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
-| 00 | Repository baseline & UI freeze | Revalidation required after latest direct-main backend commits | [Phase 00 workflow](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/workflows/phase00-baseline.yml) |
+| Phase | Scope | Status | Evidence |
+|---|---|---|---|
+| 00 | Repository baseline & UI freeze | REVALIDATION IN PROGRESS — updated Partner UI lint correction applied; latest Phase 00 run pending | [Phase 00 run 42965739011](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42965739011): build/server/browser smoke passed, lint failure corrected in `b550329d`; [current run 42965739011 / latest rerun pending](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/workflows/phase00-baseline.yml) |
 | 01 | Upstream source pin & provenance | COMPLETE | `dev_web_app` @ `3ceaa9182b39bbb9898ddda0a4b1c50c2758ab5f` |
 | 02 | Monorepo backend workspace foundation | COMPLETE — foundation | `apps/api`, `apps/worker`, `engine`, `packages` |
 | 03 | Complete upstream source copy | COMPLETE — hash verified | 111/111 matching Git blob SHA in `vendor/openmanusweb/` |
-| 04 | Full backend integration & security hardening | IN PROGRESS — runtime/dispatcher hardening increment CI PASS; parity incomplete | [Phase 04 run 42959145125](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42959145125): engine-policy and sandbox-policy PASS; [Engine Contract Tests 42959145056](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42959145056): PASS. Full worker tool-call wiring, upstream flows/tools and durable memory pending |
-| 05 | Supabase schema reconciliation | COMPLETE — existing migrations only; no reset/destructive DDL | Existing schema and additive migration history |
-| 06 | FastAPI core & OpenAPI contract | IN PROGRESS — core domain API | Auth, identity, conversations, enqueue, catalog, run, cancel, events and SSE |
-| 07 | Worker & durable run lifecycle | IN PROGRESS — worker dispatcher currently registers Manus text and Planning only | Durable claim/heartbeat/checkpoint/finish; worker disabled pending gates |
-| 08 | LLM/tool/workflow/orchestration integration | IN PROGRESS — metering foundation | Gateway/provider contract and accounting; tool-call transport/handlers not fully wired |
-| 09 | Existing Frontend API Integration | IN PROGRESS — chat and Files metadata partial | Other product modules pending; Customer/Mitra split not started |
-| 10 | End-to-end integration verification | BLOCKED | No authenticated real-user worker E2E or complete runtime proof |
-| 11 | Integration release gate | NOT STARTED | No merge/deployment until full parity and acceptance evidence |
+| 04 | Full backend integration & security hardening | IN PROGRESS — durable transcript/checkpoint recovery and restart resume implemented; upstream parity and approval/sandbox activation remain | [Phase 04 run 42965739026](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42965739026): sandbox 7, engine 26, worker 15, API 16 tests all PASS |
+| 05 | Supabase schema reconciliation | COMPLETE — existing schema only; no reset/destructive DDL | Live columns verified for checkpoints, conversation messages, partner membership, organizations and locations; no migration needed |
+| 06 | FastAPI core & OpenAPI contract | IN PROGRESS — Customer and Partner route groups now separated with server-side role/tenant enforcement | Customer context/conversation/run/SSE; Partner tenants/context/locations/members; legacy customer routes protected; API contract tests PASS |
+| 07 | Worker & durable run lifecycle | IN PROGRESS — checkpoint restoration, run-scoped transcript persistence and restart replay implemented | `WorkerRpcClient.list_checkpoints`, `SupabaseConversationMemoryStore.load_run`, durable per-tool settled observation and restart recovery tests PASS |
+| 08 | LLM/tool/workflow/orchestration integration | IN PROGRESS — configured provider fallback and metered reservation/settlement implemented; only approved existing chat-completion tool active | Ordered primary/fallback candidates; stream fallback only before first delta; engine tests PASS |
+| 09 | Existing Frontend API Integration | IN PROGRESS — Customer Chat uses Customer API; Partner Portal uses live tenant context/locations and explicit tenant selection | Typed `customerApi`/`partnerApi`; demo partner data and fabricated analytics/QR/package claims removed; frontend baseline rerun pending |
+| 10 | End-to-end integration verification | BLOCKED | No real-provider authenticated browser → worker → provider E2E; real keys intentionally deferred |
+| 11 | Integration release gate | NOT STARTED | No production worker/sandbox activation or release until full parity and acceptance evidence |
 
 ## Direct-main execution policy
 
@@ -53,3 +55,17 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - Only `create_chat_completion` is currently registered in the tool registry. High-risk Bash/Python/browser/editor/process tools remain unavailable and default-denied pending sandbox supervisor + approval/audit wiring.
 - Added continuation report `PHASE-04-08-09-INTEGRATION-CONTINUATION-20261111.md`.
 - Not complete: provider candidate retry/failover, durable restoration of the full tool-call transcript across process restart, sandbox tool adapters, Customer/Mitra server-side route isolation, and authenticated E2E. Real provider/API-key E2E remains deferred by instruction.
+
+
+## 2026-11-11 direct-main continuation — durable recovery, tenant isolation and provider failover
+
+- Current implementation report: [PHASE-04-07-08-09-DURABLE-RECOVERY-TENANT-FAILOVER-20261111.md](./PHASE-04-07-08-09-DURABLE-RECOVERY-TENANT-FAILOVER-20261111.md).
+- Durable worker restores `agent_run_checkpoints`, restores run-scoped conversation messages, resumes pending tool calls, reuses settled observations, and returns a checkpointed final output after restart.
+- Worker process shutdown now leaves an interrupted lease recoverable; explicit user cancellation remains terminal.
+- Customer and Partner API groups are separated. Active Partner membership resolves tenant and role on the server. Existing generic conversations, runs and artifacts routes are Customer-principal gated.
+- Customer Chat and Partner Portal now use typed API clients. Partner tenant selection is constrained to active server-authorized memberships. Unsupported QR, package, analytics and onboarding actions are not simulated.
+- Provider primary/fallback routes share one maximum-estimate reservation and settle against the selected provider. Streaming failover is allowed only before any delta is emitted.
+- Python/Bash isolated Docker adapter and hardened runner are implemented, but production registration remains disabled until the approval/audit contract and deployed supervisor pass the AGENTS.md gate.
+- Phase 04 CI run 42965739026: sandbox 7/7, engine 26/26, worker 15/15, API 16/16 — all green.
+- Phase 00 run 42965739011: build/server/browser smoke passed at 360/390/768/1024/1440; lint issue in Partner tenant loading effect corrected in `b550329d`. Current rerun must be green before Phase 00 is accepted.
+- Real provider keys, authenticated production E2E and deployment remain deferred. Phases 04 and 06–09 remain in progress; Phase 10 blocked; Phase 11 not started.
