@@ -16,6 +16,17 @@ class OpenAICompatibleAdapter:
         self.http = http
 
     @staticmethod
+    def _request_timeout() -> float:
+        raw = os.getenv("MOREAI_PROVIDER_TIMEOUT_SECONDS", "90")
+        try:
+            value = float(raw)
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError("invalid_provider_timeout_configuration") from exc
+        if not 1 <= value <= 600:
+            raise RuntimeError("provider_timeout_must_be_between_1_and_600_seconds")
+        return value
+
+    @staticmethod
     def _raise_status(response: httpx.Response) -> None:
         if response.status_code in {408, 425, 429} or response.status_code >= 500:
             raise RetryableProviderError(f"provider_retryable_http_{response.status_code}")
@@ -37,7 +48,7 @@ class OpenAICompatibleAdapter:
                     **({"tools": tools, "tool_choice": "auto"} if tools else {}),
                 },
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                timeout=90.0,
+                timeout=self._request_timeout(),
             )
         except (httpx.TimeoutException, httpx.TransportError) as exc:
             raise RetryableProviderError("provider_transport_unavailable") from exc
@@ -80,7 +91,7 @@ class OpenAICompatibleAdapter:
                     "stream_options": {"include_usage": True},
                 },
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                timeout=90.0,
+                timeout=self._request_timeout(),
             ) as response:
                 self._raise_status(response)
                 async for line in response.aiter_lines():
