@@ -72,6 +72,8 @@ def test_memory_store_append_is_owner_scoped_and_idempotent():
         assert payload["conversation_id"] == "conv-1"
         assert payload["metadata"]["tool_call_id"] == "call-1"
         assert payload["metadata"]["message_key"] == "run-1:tool:0"
+        assert payload["token_input"] == 0
+        assert payload["token_output"] == 0
 
     asyncio.run(run())
 
