@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 import socket
+import ssl
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -112,9 +113,45 @@ class BrowserRequestGuard:
         self._pinned.setdefault(host, addresses)
         return url
 
+    async def resolve_pinned(self, url: str) -> tuple[str, int, tuple[str, ...]]:
+        await self.validate_request(url)
+        parsed = urlsplit(url)
+        host = parsed.hostname.rstrip(".").encode("idna").decode("ascii").lower()
+        port = parsed.port or 443
+        pinned = self._pinned.get(host)
+        if not pinned:
+            raise BrowserPolicyError("browser_dns_pin_missing")
+        return host, port, tuple(sorted(pinned))
+
+    async def open_pinned_tls_connection(self, url: str):
+        """Open TLS directly to a pinned IP; never let the socket layer resolve the hostname again.
+
+        This is the transport primitive for a browser egress proxy/route handler.
+        Browser engines must be configured to use this transport exclusively;
+        calling validate_request from page code alone is not an egress boundary.
+        """
+        host, port, addresses = await self.resolve_pinned(url)
+        last_error: OSError | None = None
+        for address in addresses:
+            context = ssl.create_default_context()
+            try:
+                reader, writer = await asyncio.open_connection(
+                    host=address, port=port, ssl=context, server_hostname=host,
+                    family=socket.AF_INET6 if ":" in address else socket.AF_INET,
+                )
+                peer = writer.get_extra_info("peername")
+                if not peer or str(ipaddress.ip_address(peer[0])) != address:
+                    writer.close()
+                    await writer.wait_closed()
+                    raise BrowserPolicyError("browser_socket_peer_did_not_match_dns_pin")
+                return reader, writer
+            except OSError as exc:
+                last_error = exc
+        raise BrowserPolicyError("browser_pinned_connection_failed") from last_error
+
     async def validate_redirect_chain(self, urls: list[str]) -> str:
-        if not urls:
-            raise BrowserPolicyError("browser_redirect_chain_empty")
+        if not urls or len(urls) > 20:
+            raise BrowserPolicyError("browser_redirect_chain_invalid")
         for url in urls:
             await self.validate_request(url)
         return urls[-1]
