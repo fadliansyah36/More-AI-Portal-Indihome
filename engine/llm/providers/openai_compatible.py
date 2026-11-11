@@ -39,8 +39,13 @@ class OpenAICompatibleAdapter:
             input_tokens * route.input_cost_per_million
             + output_tokens * route.output_cost_per_million
         ) / 1_000_000
+        message = choices[0].get("message") or {}
+        tool_calls = message.get("tool_calls") or []
+        if not isinstance(tool_calls, list):
+            raise RuntimeError("provider_tool_calls_invalid")
         return {
-            "text": choices[0].get("message", {}).get("content") or "",
+            "text": message.get("content") or "",
+            "tool_calls": tool_calls,
             "provider_key": route.provider_key,
             "model_key": route.model_key,
             "input_tokens": input_tokens,
