@@ -8,17 +8,18 @@
   },
   "observed_at": "2026-11-11",
   "inventory": {
-    "public_base_tables": 52,
-    "rls_enabled": 52,
+    "public_base_tables": 53,
+    "rls_enabled": 53,
     "force_rls": 0,
     "policies": 48,
     "tables_with_rls_but_no_policy": [
+      "agent_tool_approvals",
       "network_gateway_nonces",
       "network_verification_method_catalog",
       "partner_access_code_redemptions",
       "partner_access_codes"
     ],
-    "migration_history_count": 30,
+    "migration_history_count": 31,
     "no_schema_mutations_performed": false,
     "policy_count": 48,
     "schema_changes": [
@@ -33,6 +34,10 @@
       {
         "migration": "20261111040000_moreai_llm_quota_settlement_reconciliation",
         "change": "Add llm_request_records.quota_reservation and reconcile quota to actual credits on settle; release quota on failed request"
+      },
+      {
+        "migration": "20261111050000_moreai_tool_approval_lifecycle",
+        "change": "Add owner/run/tool/argument-hash scoped approval records with expiry and atomic single-use consume RPCs; RLS enabled, anon/authenticated table access revoked, service_role-only table and RPC access"
       }
     ]
   },
@@ -66,7 +71,8 @@
     "20261105095527_partner_access_codes_atomic_redemption",
     "20261111030000_moreai_enqueue_chat_run",
     "20261111033000_moreai_llm_reserve_with_entitlement_quota",
-    "20261111040000_moreai_llm_quota_settlement_reconciliation"
+    "20261111040000_moreai_llm_quota_settlement_reconciliation",
+    "20261111061443_moreai_tool_approval_lifecycle"
   ],
   "domains": [
     {
@@ -145,7 +151,7 @@
         "tool_executions"
       ],
       "policy": "server-only deny; worker RPC lifecycle",
-      "status": "existing durable primitives; worker claim/heartbeat/checkpoint/finish, Manus/Planning registry, durable plan steps and SSE event reads implemented; execution remains disabled"
+      "status": "existing durable primitives; worker claim/heartbeat/checkpoint/finish, Manus/Planning registry, durable plan steps, SSE events and run-scoped approval pause/decision/atomic consume are implemented; isolated tools remain disabled pending deployed sandbox/browser supervisor"
     },
     {
       "domain": "LLM gateway",
@@ -215,8 +221,9 @@
   "security_advisors": [
     {
       "finding": "RLS enabled without policies",
-      "count": 4,
+      "count": 5,
       "objects": [
+        "agent_tool_approvals",
         "network_gateway_nonces",
         "network_verification_method_catalog",
         "partner_access_code_redemptions",
@@ -247,7 +254,7 @@
       "remediation": "Do not drop automatically; low/empty production traffic may explain zero scans. Revisit after workload telemetry."
     }
   ],
-  "decision": "Reuse existing 52-table schema and durable RPC primitives. Three additive forward-only migrations were applied; no table reset, destructive DDL, RLS relaxation, or production data seeding. Runtime remains fail-closed because provider/model/routing, agent definitions, wallet, quota and user entitlement configuration is empty.",
+  "decision": "Reuse existing Supabase schema and durable RPC primitives. Four additive forward-only migrations were applied for enqueue, quota reservation/settlement reconciliation and tool approval lifecycle; no table reset, destructive DDL, RLS relaxation, or production data seeding. Approval table is server-only with no client grants. Runtime remains fail-closed because provider/model/routing, entitlement/quota/wallet seed configuration and deployed sandbox/browser supervisors are incomplete.",
   "privileged_function_review": {
     "security_definer_functions": 17,
     "anon_execute": false,
