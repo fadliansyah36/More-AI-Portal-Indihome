@@ -125,7 +125,8 @@ export default function App() {
       if (next) setCurrentTab(next);
     };
     const redirectProtectedRouteToRoleLogin = () => {
-      const path = window.location.pathname.replace(/\\/+$/, '') || '/';
+      const rawPath = window.location.pathname;
+      const path = rawPath.length > 1 && rawPath.endsWith('/') ? rawPath.slice(0, -1) : rawPath;
       const requested = new URLSearchParams(window.location.search).get('view');
       const publicRoute = (path === '/' && (!requested || ['splash', 'onboarding', 'login', 'register', 'welcome_success'].includes(requested)))
         || ['/login', '/register', '/customer/login', '/customer/register', '/partner/login', '/splash', '/onboarding'].includes(path);
