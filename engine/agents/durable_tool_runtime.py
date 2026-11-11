@@ -182,17 +182,17 @@ class DurableOpenManusRuntime:
                 raise ValueError("provider_tool_calls_must_be_array")
             restored_calls = _restore_tool_calls(calls)
             assistant = Message.assistant_message(text or None, restored_calls or None)
-            call_signature = tuple(call.id for call in restored_calls)
-            if not restored_calls or call_signature not in existing_assistant_calls:
-                messages.append(assistant.to_dict())
             if restored_calls:
+                call_signature = tuple(call.id for call in restored_calls)
+                if call_signature not in existing_assistant_calls:
+                    messages.append(assistant.to_dict())
                 existing_assistant_calls.add(call_signature)
-            if self.memory_store is not None and context.conversation_id:
-                await self.memory_store.append(
-                    conversation_id=context.conversation_id, user_id=context.user_id,
-                    workspace_id=context.workspace_id, run_id=context.run_id,
-                    message=assistant, message_key=f"{context.run_id}:round:{round_no}:assistant",
-                )
+                if self.memory_store is not None and context.conversation_id:
+                    await self.memory_store.append(
+                        conversation_id=context.conversation_id, user_id=context.user_id,
+                        workspace_id=context.workspace_id, run_id=context.run_id,
+                        message=assistant, message_key=f"{context.run_id}:round:{round_no}:assistant",
+                    )
 
             if not restored_calls:
                 if not isinstance(text, str) or not text.strip():
