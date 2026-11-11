@@ -23,7 +23,7 @@
       "module": "agents/manus",
       "target": "engine/agents/manus.py",
       "capability": "Manus general agent",
-      "status": "PARTIAL — text-only gateway-backed Manus runtime in engine/agents/gateway_runtime.py; complete upstream tool loop pending"
+      "status": "PARTIAL — durable Manus runtime registered with metered gateway, transcript/checkpoint recovery, structured tool loop and persisted planning tool; full upstream tool/domain parity remains incomplete"
     },
     {
       "source": "vendor/openmanusweb/app/agent/planning.py",
@@ -51,7 +51,7 @@
       "module": "agents/toolcall",
       "target": "engine/agents/toolcall.py",
       "capability": "tool-calling agent",
-      "status": "PARTIAL — injected tool-call loop implemented; concrete tool adapters and parity tests pending"
+      "status": "PARTIAL — durable bounded tool-call loop implemented; provider tool-call IDs/names/arguments are now strictly validated and duplicate/malformed calls rejected; concrete adapter parity remains incomplete"
     },
     {
       "source": "vendor/openmanusweb/app/config.py",
@@ -191,7 +191,7 @@
       "module": "tools/planning",
       "target": "engine/tools/planning.py",
       "capability": "plan tool",
-      "status": "PARTIAL — structured durable planning metadata, status lifecycle and checkpoint integration implemented"
+      "status": "ADAPTED — planning tool is registered in the central policy-enforced registry and operates only on the current run's durable Supabase agent_run_steps; create/get/mark_step supported; no cross-run access"
     },
     {
       "source": "vendor/openmanusweb/app/tool/python_execute.py",
@@ -366,5 +366,28 @@
       "Authenticated browser regression evidence and before/after screenshots (not run by explicit instruction)"
     ],
     "status": "PARTIAL — workflow deep route, Auth and selected Customer/Partner screens connected; not all existing UI routes are integrated"
+  },
+  "integration_increment_20261111": {
+    "branch": "main",
+    "commits": [
+      "284001641d963a2213c653e4ac6477c58ab2ac9b",
+      "e373ef1258e9cff80812b9009916eac7d73f1222",
+      "b207f30eb987e802135fe7b7720a86fe1da48a32",
+      "19d14df45cced74d8ed36b64fb94be082f71ea86",
+      "32fd349cc8952a469d09586cec45064cb0080fdf"
+    ],
+    "implemented": [
+      "Durable planning tool registered in the central policy-enforced tool registry and backed by run-scoped Supabase agent_run_steps.",
+      "Worker injects the same durable planning store into Manus runtime; planning tool supports create, get and mark_step.",
+      "Provider tool-call parsing rejects malformed shapes, duplicate IDs, invalid tool names, oversized/non-JSON arguments and non-object argument payloads rather than silently dropping malformed calls.",
+      "Customer API exposes owner-scoped persisted workflow steps after verifying agent-run ownership.",
+      "Typed frontend API client exposes CustomerWorkflowStep and getRunSteps."
+    ],
+    "not_implemented_or_unverified": [
+      "No provider calls, production runtime, live E2E, frontend build, browser regression or security tests were run per user instruction.",
+      "Bash/Python remain disabled unless sandbox flags and release gate are both enabled; browser remains default-deny without socket-level egress enforcement.",
+      "File storage/download, search provider, SWE workspace/editor, complete upstream flow/server/WebSocket/logging parity remain open.",
+      "Full Customer/Partner domain API coverage and Super Admin mutation governance remain open."
+    ]
   }
 }
