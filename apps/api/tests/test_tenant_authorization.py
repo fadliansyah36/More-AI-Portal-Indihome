@@ -73,3 +73,34 @@ def test_partner_access_rejects_unassigned_tenant(monkeypatch):
             await authorization.require_partner_context(object(), {"id": "user-1"}, "partner-other")
         assert error.value.status_code == 403
     asyncio.run(run())
+
+
+def test_customer_access_rejects_non_expiring_platform_admin_assignment(monkeypatch):
+    repo = FakeRepository(
+        assignments=[{"role_id": "role-admin"}],
+        roles=[{"key": "platform_admin", "scope": "platform"}],
+    )
+    monkeypatch.setattr(authorization, "_repository", lambda request: repo)
+
+    async def run():
+        with pytest.raises(HTTPException) as error:
+            await authorization.require_customer_context(object(), {"id": "user-1"})
+        assert error.value.status_code == 403
+    asyncio.run(run())
+
+
+def test_partner_access_prefers_partner_wide_role_over_location_membership(monkeypatch):
+    repo = FakeRepository(
+        memberships=[
+            {"partner_id": "partner-1", "role_key": "partner_staff", "location_id": "loc-1"},
+            {"partner_id": "partner-1", "role_key": "partner_admin", "location_id": None},
+        ],
+        orgs=[{"id": "partner-1", "status": "active", "display_name": "Partner"}],
+    )
+    monkeypatch.setattr(authorization, "_repository", lambda request: repo)
+
+    async def run():
+        result = await authorization.require_partner_context(object(), {"id": "user-1"})
+        assert result["principal_role"] == "partner_admin"
+        assert result["location_id"] is None
+    asyncio.run(run())
