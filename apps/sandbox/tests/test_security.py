@@ -75,3 +75,8 @@ async def test_docker_runner_uses_disposable_networkless_restricted_container(mo
     assert "--memory" in captured
     assert "--cpus" in captured
     assert any(item.startswith("type=bind,src=") and item.endswith(",readonly") for item in captured)
+
+
+def test_sandbox_rejects_malformed_digest_even_when_digest_marker_exists():
+    with pytest.raises(RuntimeError, match="digest_invalid"):
+        DockerSandbox(image="registry.example/sandbox@sha256:latest")._validate()
