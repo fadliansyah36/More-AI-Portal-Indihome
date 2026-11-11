@@ -5,24 +5,15 @@ import {
   Building2,
   MapPin,
   QrCode,
-  Users,
   BarChart3,
   Package,
-  FileCheck,
   CheckCircle2,
-  ChevronRight,
-  Download,
-  Share2,
   Plus,
-  ArrowRight,
   ArrowLeft,
-  RotateCcw,
   Sparkles,
-  TrendingUp,
-  ShieldCheck,
-  Megaphone,
 } from 'lucide-react';
-import { partnerApi, PartnerContext, PartnerLocationRecord } from '@/lib/api/client';
+import { partnerApi } from '@/lib/api/client';
+import type { PartnerContext, PartnerLocationRecord } from '@/lib/api/client';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
@@ -125,7 +116,7 @@ export const PartnerPortalView: React.FC<PartnerPortalViewProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold text-slate-900">Halo, {partnerName} 👋</h2>
+                  <h2 className="text-sm font-bold text-slate-900">Halo, {partnerContext?.tenant.display_name || 'Partner'} 👋</h2>
                 </div>
                 <p className="text-xs text-slate-500 font-medium">{venueName}</p>
                 <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-semibold mt-0.5">
