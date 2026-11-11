@@ -111,17 +111,23 @@ async def customer_agent_run(
 @router.get("/agent-runs/{run_id}/steps")
 async def customer_agent_run_steps(
     run_id: UUID, request: Request,
+    limit: int = Query(default=100, ge=1, le=500),
     user: dict[str, Any] = Depends(current_user),
 ):
-    """Return persisted workflow steps only after verifying run ownership."""
+    """Return safe workflow lifecycle metadata after verifying run ownership.
+
+    Step input/output/error payloads can contain prompts, private tool arguments,
+    provider observations and sensitive artifact references. They are intentionally
+    excluded from the customer-facing transport contract.
+    """
     principal = await require_customer_context(request, user)
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, principal["id"])
     return await repo.select("agent_run_steps", {
         "run_id": f"eq.{run_id}",
-        "select": "id,sequence,step_key,status,input,output,error,started_at,finished_at,created_at,updated_at",
+        "select": "id,sequence,step_key,status,started_at,finished_at,created_at",
         "order": "sequence.asc",
-        "limit": "200",
+        "limit": str(limit),
     })
 
 
