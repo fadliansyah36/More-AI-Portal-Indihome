@@ -354,3 +354,39 @@ export const customerToolApprovalApi = {
       method: 'POST', body: JSON.stringify({ decision }),
     }),
 };
+
+
+export type CustomerNotification = {
+  id: string;
+  notification_type: string;
+  title: string;
+  body: string;
+  resource_type: string | null;
+  resource_id: string | null;
+  action_url: string | null;
+  metadata: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type CustomerNotificationPreferences = {
+  in_app_enabled: boolean;
+  email_enabled: boolean;
+  category_settings: Record<string, boolean>;
+  updated_at: string | null;
+};
+
+export const notificationApi = {
+  list: (unreadOnly = false, limit = 30) =>
+    moreAiApi<{ items: CustomerNotification[]; limit: number }>(
+      `/api/v1/notifications?unread_only=${unreadOnly}&limit=${Math.min(100, Math.max(1, limit))}`,
+    ),
+  preferences: () => moreAiApi<CustomerNotificationPreferences>('/api/v1/notifications/preferences'),
+  updatePreferences: (payload: Partial<Omit<CustomerNotificationPreferences, 'updated_at'>>) =>
+    moreAiApi<CustomerNotificationPreferences>('/api/v1/notifications/preferences', {
+      method: 'PUT', body: JSON.stringify(payload),
+    }),
+  markRead: (notificationId: string) =>
+    moreAiApi<{ id: string; read_at: string }>(`/api/v1/notifications/${notificationId}/read`, { method: 'POST' }),
+  markAllRead: () => moreAiApi<{ updated: number }>('/api/v1/notifications/read-all', { method: 'POST' }),
+};
