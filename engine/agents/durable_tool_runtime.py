@@ -47,12 +47,16 @@ class DurableOpenManusRuntime:
         self, gateway: MeteredToolGateway, *,
         memory_store: ConversationMemoryStore | None = None, sandbox_tools: Any | None = None,
         approval_gate: Callable[[str, str, str, dict[str, Any]], Awaitable[bool]] | None = None,
+        plan_store: Any | None = None,
         max_rounds: int = 12,
     ):
         self.gateway = gateway
         self.memory_store = memory_store
+        self.plan_store = plan_store
         self.max_rounds = max_rounds
         enabled_tools = {"create_chat_completion"}
+        if plan_store is not None:
+            enabled_tools.add("planning")
         if sandbox_tools is not None:
             enabled_tools.update({"bash", "python_execute"})
         self.tools = PolicyEnforcedToolRegistry(
@@ -60,6 +64,8 @@ class DurableOpenManusRuntime:
             approval_gate=approval_gate,
         )
         self.tools.register("create_chat_completion", self._nested_completion)
+        if plan_store is not None:
+            self.tools.register("planning", self._planning_tool)
         if sandbox_tools is not None:
             self.tools.register("bash", sandbox_tools.bash)
             self.tools.register("python_execute", sandbox_tools.python_execute)
@@ -74,6 +80,48 @@ class DurableOpenManusRuntime:
             messages=messages, task_type=str(arguments.get("task_type") or "chat"),
         )
         return str(result.get("text") or "")
+
+    async def _planning_tool(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
+        """Expose the durable per-run plan store through the same policy-enforced tool registry."""
+        if self.plan_store is None:
+            raise LookupError("planning_store_unavailable")
+        command = arguments.get("command")
+        if command == "get":
+            result = await self.plan_store.get(run_id=run_id)
+        elif command == "create":
+            title = arguments.get("title")
+            raw_steps = arguments.get("steps")
+            if not isinstance(title, str) or not title.strip():
+                raise ValueError("planning_title_required")
+            if not isinstance(raw_steps, list) or not 1 <= len(raw_steps) <= 100:
+                raise ValueError("planning_steps_must_contain_1_to_100_items")
+            steps = []
+            for index, objective in enumerate(raw_steps):
+                if not isinstance(objective, str) or not objective.strip():
+                    raise ValueError("planning_step_must_be_non_empty_text")
+                steps.append({
+                    "objective": objective.strip()[:10000],
+                    "dependencies": list(range(index)),
+                    "expected_output": "A persisted result for this step",
+                    "tool_requirement": "planning",
+                    "risk": "low",
+                    "estimated_usage": {"input_tokens": 0, "output_tokens": 0},
+                })
+            result = await self.plan_store.create(run_id=run_id, title=title.strip()[:500], steps=steps)
+        elif command == "mark_step":
+            index = arguments.get("step_index")
+            status = arguments.get("status")
+            if isinstance(index, bool) or not isinstance(index, int) or index < 0:
+                raise ValueError("planning_step_index_invalid")
+            if status not in {"pending", "running", "waiting_approval", "succeeded", "failed", "skipped", "cancelled"}:
+                raise ValueError("planning_step_status_invalid")
+            result = await self.plan_store.mark_step(
+                run_id=run_id, step_index=index, status=status,
+                notes=arguments.get("notes") if isinstance(arguments.get("notes"), str) else None,
+            )
+        else:
+            raise ValueError("planning_command_invalid")
+        return json.dumps(result, separators=(",", ":"), ensure_ascii=False)
 
     async def execute(
         self, context: AgentRunContext, payload: dict[str, Any],
