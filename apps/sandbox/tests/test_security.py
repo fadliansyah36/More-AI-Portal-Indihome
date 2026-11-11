@@ -45,8 +45,12 @@ async def test_docker_runner_uses_disposable_networkless_restricted_container(mo
         returncode = 0
         pid = 12345
 
-        async def communicate(self):
-            return b"ok", b""
+        def __init__(self):
+            self.stdout = asyncio.StreamReader()
+            self.stderr = asyncio.StreamReader()
+            self.stdout.feed_data(b"ok")
+            self.stdout.feed_eof()
+            self.stderr.feed_eof()
 
     async def fake_exec(*command, **kwargs):
         captured.extend(command)
