@@ -71,7 +71,7 @@ end; $$;
 
 create or replace function public.moreai_worker_claim_run(p_worker_id text,p_lease_seconds integer default 90)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare r public.agent_runs%rowtype; seq bigint; d record;
+declare r public.agent_runs%rowtype; seq bigint; d record; v_was_resume boolean;
 begin
  if p_worker_id is null or length(p_worker_id)<8 or length(p_worker_id)>128 or p_lease_seconds not between 15 and 900 then raise exception 'invalid worker claim'; end if;
  for d in select p.id,p.run_id,p.approval_id,p.checkpoint_key from public.agent_run_approval_pauses p join public.agent_tool_approvals a on a.id=p.approval_id
@@ -96,13 +96,14 @@ begin
   and not exists(select 1 from public.agent_run_approval_pauses p where p.run_id=agent_runs.id and p.status='pending')
   order by available_at,created_at for update skip locked limit 1;
  if not found then return null; end if;
+ v_was_resume:=r.resume_pending;
  update public.agent_runs set status='running',attempt=attempt+case when resume_pending then 0 else 1 end,resume_pending=false,
   lease_owner=p_worker_id,lease_expires_at=now()+make_interval(secs=>p_lease_seconds),heartbeat_at=now(),
   started_at=coalesce(started_at,now()),updated_at=now() where id=r.id returning * into r;
  update public.agent_run_approval_pauses set resumed_at=coalesce(resumed_at,now()) where run_id=r.id and status in ('approved','denied','expired');
  select coalesce(max(sequence),0)+1 into seq from public.agent_run_events where run_id=r.id;
  insert into public.agent_run_events(run_id,event_type,sequence,payload) values(r.id,'worker.claimed',seq,
-  jsonb_build_object('worker_id',p_worker_id,'attempt',r.attempt,'lease_seconds',p_lease_seconds,'approval_resume',r.resume_pending));
+  jsonb_build_object('worker_id',p_worker_id,'attempt',r.attempt,'lease_seconds',p_lease_seconds,'approval_resume',v_was_resume));
  return jsonb_build_object('id',r.id,'user_id',r.user_id,'workspace_id',r.workspace_id,'conversation_id',r.conversation_id,
   'agent_definition_id',r.agent_definition_id,'status',r.status,'attempt',r.attempt,'max_attempts',r.max_attempts,
   'input',r.input,'lease_owner',r.lease_owner,'lease_expires_at',r.lease_expires_at);
