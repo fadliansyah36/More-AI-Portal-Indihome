@@ -21,6 +21,9 @@ class SupabaseWorkspaceTool:
     def _safe_path(value: Any) -> str:
         if not isinstance(value, str) or not value or len(value) > 512 or "\\" in value or "\x00" in value:
             raise ValueError("workspace_path_invalid")
+        parts = value.split("/")
+        if any(part in ("", ".", "..") for part in parts):
+            raise ValueError("workspace_path_traversal_denied")
         normalized = posixpath.normpath(value)
         if normalized in (".", "..") or normalized.startswith("../") or normalized.startswith("/"):
             raise ValueError("workspace_path_traversal_denied")
@@ -78,6 +81,8 @@ class SupabaseWorkspaceTool:
                 source = current.content.decode("utf-8")
             except UnicodeDecodeError as exc:
                 raise ValueError("workspace_editor_only_supports_utf8_text") from exc
+        if current.status_code != 404 and not old:
+            raise ValueError("workspace_create_cannot_overwrite_existing_file")
         if old:
             occurrences = source.count(old)
             if occurrences != 1:
