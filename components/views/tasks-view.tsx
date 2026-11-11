@@ -230,64 +230,11 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
         </div>
       )}
 
-      {/* View Mode: Hasil & Artefak (Sheet 6 - Hasil Pekerjaan) */}
+      {/* Artifact access is delegated to the authenticated Files API view. */}
       {activeTab === 'artifacts' && (
-        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                Pekerjaan Berhasil Diselesaikan!
-              </span>
-              <h2 className="text-base font-bold text-slate-900">Hasil & Artefak Campaign</h2>
-            </div>
-          </div>
-
-          {/* Artifact Files List matching Sheet 6 */}
-          <div className="space-y-2.5">
-            {ARTIFACT_FILES.slice(0, 4).map((file) => (
-              <div
-                key={file.id}
-                className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between hover:bg-slate-100/60 transition group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 text-red-600 shadow-2xs">
-                    {file.type === 'pdf' && <FileText className="w-5 h-5 text-red-600" />}
-                    {file.type === 'image' && <ImageIcon className="w-5 h-5 text-amber-600" />}
-                    {file.type === 'xlsx' && <FileSpreadsheet className="w-5 h-5 text-emerald-600" />}
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-xs font-bold text-slate-900 truncate group-hover:text-red-600 transition">
-                      {file.name}
-                    </h3>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      {file.size} · {file.date}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => showToast(`Mengunduh ${file.name}... Berkas siap digunakan.`, 'success')}
-                  className="p-2 rounded-xl bg-white text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition shadow-2xs"
-                  title="Unduh File"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-2">
-            <button
-              onClick={() => {
-                if (onOpenWorkspaceFiles) onOpenWorkspaceFiles();
-              }}
-              className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2"
-            >
-              <span>Buka di Workspace File</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-3">
+          <p className="text-xs text-slate-600">Artefak hanya ditampilkan dari penyimpanan workspace yang terhubung ke backend.</p>
+          <button onClick={() => onOpenWorkspaceFiles?.()} className="w-full py-3 rounded-2xl bg-red-600 text-white text-xs font-bold">Buka Workspace File</button>
         </div>
       )}
 
