@@ -191,6 +191,8 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 
 ## 2026-11-11 direct-main integration increment — Search, Files, Profile, Partner and RBAC
 
+Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md).
+
 - Added `TavilySearchAdapter` at `engine/tools/search_provider.py`. It is pinned to the provider endpoint, accepts only a query (not an arbitrary URL), caps result count and output lengths, and returns normalized source URLs/snippets. Worker registration is conditional on `TAVILY_API_KEY`; absent credentials mean the tool is not advertised.
 - Added `SupabaseArtifactTool` at `engine/tools/storage.py`. It writes a per-user/per-artifact Storage path, enforces a 2 MB UTF-8 text limit, validates filename/MIME type, hashes content with SHA-256, persists the artifact row and compensates a failed metadata insert by deleting the uploaded object. Worker registration is conditional on `MOREAI_ARTIFACTS_BUCKET`.
 - Added private artifact upload and signed-download API routes. Upload requires authenticated Customer context, a safe filename, raw request body up to 2 MB, a configured private bucket, service-role-only Storage access, and owner-scoped metadata persistence. Signed download first verifies the artifact row belongs to the caller and that its path is inside the caller's storage prefix, then creates a 60-second signed URL.
@@ -204,3 +206,5 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - Super Admin mutation endpoints were intentionally not added: the current API lacks a transactional mutation RPC that atomically enforces permission, performs the privileged change and appends an immutable audit record. A non-atomic "mutate then best-effort audit" implementation would violate governance requirements. The existing audit table does not itself prove immutability at the database layer.
 - Browser remains default-deny. The existing Docker sandbox is network-disabled for Python/Bash, but a browser supervisor with socket-level egress enforcement, DNS pinning/rebinding protection, redirect/subresource/download controls is not integrated. The SWE workspace editor has no isolated persistent workspace adapter and is not advertised.
 - No UI screenshots, tests, lint, typecheck, build, browser checks, provider calls, database writes/migrations or deployment were performed in this increment, per the product owner's current instruction. These are committed source changes, not phase acceptance evidence.
+
+- Follow-up hardening commits: `4015422d5a8acb52a4ba014797cfcf878e1a7736` (API private-bucket check) and `5808c3fc8ad976d9e905c98eef64f91031ea2de0` (worker private-bucket check and artifact run linkage). Capability map updated at `a8cfef8e7745298f429a7daa81990330f1c1b9e3`.
