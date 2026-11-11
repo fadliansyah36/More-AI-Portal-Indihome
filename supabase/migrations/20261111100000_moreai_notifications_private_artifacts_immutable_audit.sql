@@ -30,7 +30,6 @@ create table if not exists public.notification_preferences (
   category_settings jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
-
 alter table public.notifications enable row level security;
 alter table public.notification_preferences enable row level security;
 drop policy if exists notifications_server_only on public.notifications;
@@ -40,8 +39,8 @@ create policy notification_preferences_server_only on public.notification_prefer
 revoke all on public.notifications, public.notification_preferences from anon, authenticated;
 grant all on public.notifications, public.notification_preferences to service_role;
 
--- The API/worker uses the server-only service role and owner-scoped paths.
--- The bucket is private; no client-side Storage access is permitted by AGENTS.md.
+-- Private bucket. Storage objects already have RLS enabled and no client policies;
+-- service-role API/worker paths are the only supported access boundary.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'moreai-artifacts',
@@ -55,13 +54,6 @@ set public = false,
     file_size_limit = least(coalesce(storage.buckets.file_size_limit, 2097152), 2097152),
     allowed_mime_types = excluded.allowed_mime_types;
 
-alter table storage.objects enable row level security;
-drop policy if exists moreai_artifacts_client_deny on storage.objects;
-create policy moreai_artifacts_client_deny on storage.objects
-  for all to anon, authenticated
-  using (bucket_id = 'moreai-artifacts' and false)
-  with check (bucket_id = 'moreai-artifacts' and false);
-
 -- Existing admin audit history is retained. Entries become append-only at the DB layer.
 create or replace function public.moreai_reject_admin_audit_mutation()
 returns trigger
@@ -72,17 +64,14 @@ begin
   raise exception 'admin_audit_logs_are_immutable' using errcode = '55000';
 end;
 $$;
-
 drop trigger if exists admin_audit_logs_immutable_row on public.admin_audit_logs;
 create trigger admin_audit_logs_immutable_row
 before update or delete on public.admin_audit_logs
 for each row execute function public.moreai_reject_admin_audit_mutation();
-
 drop trigger if exists admin_audit_logs_immutable_truncate on public.admin_audit_logs;
 create trigger admin_audit_logs_immutable_truncate
 before truncate on public.admin_audit_logs
 for each statement execute function public.moreai_reject_admin_audit_mutation();
-
 revoke update, delete, truncate on public.admin_audit_logs from anon, authenticated, service_role;
 grant select, insert on public.admin_audit_logs to service_role;
 revoke all on function public.moreai_reject_admin_audit_mutation() from public, anon, authenticated;
