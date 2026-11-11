@@ -25,12 +25,12 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     workspace_tools = SupabaseWorkspaceTool(client) if os.getenv("MOREAI_WORKSPACE_BUCKET", "moreai-artifacts") else None
     browser_tools = None
     if os.getenv("MOREAI_BROWSER_ENABLED", "false").lower() == "true":
-        proxy_url = os.getenv("MOREAI_BROWSER_PROXY_URL", "")
-        proxy_token = os.getenv("MOREAI_BROWSER_PROXY_TOKEN", "")
+        service_url = os.getenv("MOREAI_BROWSER_SERVICE_URL", "")
+        service_token = os.getenv("MOREAI_BROWSER_SERVICE_TOKEN", "")
         egress_enforced = os.getenv("MOREAI_BROWSER_EGRESS_ENFORCED", "false").lower() == "true"
-        if not proxy_url or not proxy_token or not egress_enforced:
-            raise RuntimeError("browser_activation_requires_authenticated_proxy_and_network_egress_enforcement")
-        browser_tools = BrowserSupervisor(proxy_server=proxy_url, proxy_token=proxy_token, egress_enforced=egress_enforced)
+        if not service_url or not service_token or not egress_enforced:
+            raise RuntimeError("browser_activation_requires_isolated_supervisor_and_network_egress_enforcement")
+        browser_tools = BrowserSupervisor(service_url=service_url, service_token=service_token, egress_enforced=egress_enforced, http=http_client)
     sandbox_tools = None
     sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
     sandbox_gate_passed = os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
