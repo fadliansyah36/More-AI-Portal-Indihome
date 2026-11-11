@@ -94,6 +94,94 @@ begin
 end;
 $$;
 
+-- Route legacy checkpoint writes through the same serialized counter/outbox path.
+create or replace function public.moreai_worker_checkpoint(
+  p_run_id uuid, p_worker_id text, p_checkpoint_key text, p_state jsonb
+) returns jsonb
+language plpgsql security definer set search_path=public,pg_temp as $
+declare v_event jsonb;
+begin
+  if p_checkpoint_key is null or char_length(p_checkpoint_key) not between 1 and 200
+     or jsonb_typeof(p_state) <> 'object' then
+    raise exception 'invalid_checkpoint' using errcode='22023';
+  end if;
+  if not exists(select 1 from public.agent_runs where id=p_run_id and status='running'
+      and lease_owner=p_worker_id and lease_expires_at>now()) then
+    raise exception 'worker_lease_not_held' using errcode='42501';
+  end if;
+  insert into public.agent_run_checkpoints(run_id,checkpoint_key,state)
+    values(p_run_id,p_checkpoint_key,p_state)
+    on conflict(run_id,checkpoint_key) do update
+      set state=excluded.state,created_at=now();
+  update public.agent_runs set last_checkpoint_key=p_checkpoint_key,updated_at=now()
+    where id=p_run_id;
+  v_event := public.moreai_worker_append_run_event(
+    p_run_id,p_worker_id,'worker.checkpoint:'||p_checkpoint_key,
+    'worker.checkpoint',jsonb_build_object('checkpoint_key',p_checkpoint_key)
+  );
+  return jsonb_build_object(
+    'run_id',p_run_id,'checkpoint_key',p_checkpoint_key,
+    'sequence',(v_event->>'sequence')::bigint
+  );
+end;
+$;
+
+-- Finish writes the terminal/queued event before releasing the worker lease.
+create or replace function public.moreai_worker_finish_run(
+  p_run_id uuid, p_worker_id text, p_status text,
+  p_output jsonb default null, p_error jsonb default null,
+  p_retry_delay_seconds integer default 30
+) returns jsonb
+language plpgsql security definer set search_path=public,pg_temp as $
+declare
+  r public.agent_runs%rowtype;
+  next_status text;
+  dead boolean := false;
+  event_type text;
+  event_key text;
+begin
+  if p_status not in ('succeeded','failed','cancelled') then
+    raise exception 'invalid terminal status';
+  end if;
+  select * into r from public.agent_runs where id=p_run_id for update;
+  if not found then raise exception 'run not found'; end if;
+  if r.status in ('succeeded','failed','cancelled') then
+    return jsonb_build_object('run_id',r.id,'status',r.status);
+  end if;
+  if r.lease_owner is distinct from p_worker_id or r.lease_expires_at <= now() then
+    raise exception 'worker lease mismatch';
+  end if;
+  if r.cancel_requested_at is not null then
+    next_status := 'cancelled';
+  elsif p_status='failed' and r.attempt<r.max_attempts then
+    next_status := 'queued';
+  elsif p_status='failed' then
+    next_status := 'failed'; dead := true;
+  else
+    next_status := p_status;
+  end if;
+  event_type := case when dead then 'worker.dead_lettered' else 'worker.'||next_status end;
+  event_key := 'worker.finish:'||r.attempt::text||':'||next_status;
+  perform public.moreai_worker_append_run_event(
+    p_run_id,p_worker_id,event_key,event_type,
+    jsonb_build_object('attempt',r.attempt,'error_code',
+      case when p_error is null then null else coalesce(p_error->>'code','execution_failed') end)
+  );
+  if next_status='queued' then
+    update public.agent_runs set status=next_status,error=p_error,
+      available_at=now()+make_interval(secs=>greatest(1,least(p_retry_delay_seconds,3600))),
+      lease_owner=null,lease_expires_at=null,heartbeat_at=null,updated_at=now()
+      where id=r.id;
+  else
+    update public.agent_runs set status=next_status,output=p_output,error=p_error,
+      finished_at=now(),dead_lettered_at=case when dead then now() else dead_lettered_at end,
+      lease_owner=null,lease_expires_at=null,heartbeat_at=null,updated_at=now()
+      where id=r.id;
+  end if;
+  return jsonb_build_object('run_id',r.id,'status',next_status,'attempt',r.attempt,'dead_lettered',dead);
+end;
+$;
+
 create or replace function public.moreai_worker_claim_event_outbox(
   p_worker_id text, p_limit integer default 20, p_lease_seconds integer default 45
 ) returns setof public.outbox_events
