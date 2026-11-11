@@ -1,0 +1,54 @@
+# Browser supervisor network boundary.
+# The browser service has NO external network attachment. Only egress-proxy
+# joins both the private browser network and the external egress network.
+services:
+  egress-proxy:
+    build:
+      context: ../..
+      dockerfile: apps/sandbox/proxy.Dockerfile
+    environment:
+      MOREAI_BROWSER_PROXY_TOKEN: ${MOREAI_BROWSER_PROXY_TOKEN:?set a 32+ character proxy token}
+      MOREAI_BROWSER_ALLOWED_DOMAINS: ${MOREAI_BROWSER_ALLOWED_DOMAINS:?set explicit comma-separated host allowlist}
+      MOREAI_BROWSER_PROXY_HOST: 0.0.0.0
+      MOREAI_BROWSER_PROXY_PORT: "8888"
+    networks:
+      - browser_private
+      - browser_egress
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 256m
+
+  browser-supervisor:
+    build:
+      context: ../..
+      dockerfile: apps/sandbox/browser.Dockerfile
+    environment:
+      MOREAI_BROWSER_SERVICE_TOKEN: ${MOREAI_BROWSER_SERVICE_TOKEN:?set a 32+ character supervisor token}
+      MOREAI_BROWSER_PROXY_URL: http://egress-proxy:8888
+      MOREAI_BROWSER_PROXY_TOKEN: ${MOREAI_BROWSER_PROXY_TOKEN:?set a 32+ character proxy token}
+      MOREAI_BROWSER_EGRESS_ENFORCED: "true"
+    depends_on:
+      - egress-proxy
+    networks:
+      - browser_private
+    ports:
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 1g
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=128m
+
+networks:
+  browser_private:
+    internal: true
+  browser_egress:
+    driver: bridge
