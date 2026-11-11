@@ -336,3 +336,9 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Added tenant-scoped partner access-code inventory/redemption history and authenticated customer redemption using the existing atomic RPC with server-side hashing and Idempotency-Key.
 - Added typed client methods; UI untouched.
 - Report: PHASE-06-PARTNER-ACCESS-CODE-APIS-20261111.md.
+
+
+## 2026-11-11 — Phase 04 PlanningFlow restart/resume parity
+- PlanningAgentRuntime restores the persisted manifest and steps on worker recovery; it does not regenerate the plan after a pause/restart.
+- Succeeded step outputs are rehydrated, dependency gates are enforced, and step outputs/checkpoints are persisted.
+- Report: PHASE-04-PLANNINGFLOW-REPLAY-20261111.md.

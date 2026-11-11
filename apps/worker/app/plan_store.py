@@ -46,7 +46,7 @@ class SupabasePlanStore:
         })
         return {"run_id": run_id, "steps": rows}
 
-    async def mark_step(self, *, run_id: str, step_index: int, status: str, notes: str | None = None) -> dict[str, Any]:
+    async def mark_step(self, *, run_id: str, step_index: int, status: str, notes: str | None = None, output: dict[str, Any] | None = None) -> dict[str, Any]:
         allowed = {"pending", "running", "waiting_approval", "succeeded", "failed", "skipped", "cancelled"}
         if status not in allowed:
             raise ValueError("invalid_plan_step_status")
@@ -56,7 +56,9 @@ class SupabasePlanStore:
             payload["started_at"] = datetime.now(timezone.utc).isoformat()
         if status in {"succeeded", "failed", "skipped", "cancelled"}:
             payload["finished_at"] = datetime.now(timezone.utc).isoformat()
-        if notes:
+        if output is not None:
+            payload["output"] = output
+        elif notes:
             payload["output" if status == "succeeded" else "error"] = {"summary": notes[:2000]}
         rows = await self.client.update("agent_run_steps", {
             "run_id": f"eq.{run_id}", "sequence": f"eq.{sequence}", "step_key": f"eq.planning.step.{sequence}",
