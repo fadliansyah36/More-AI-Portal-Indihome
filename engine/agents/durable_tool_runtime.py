@@ -55,6 +55,35 @@ def _restore_tool_calls(raw_calls: Any) -> list[ToolCall]:
     return calls
 
 
+async def _run_tool_until_cancelled(
+    awaitable: Awaitable[str], cancelled: asyncio.Event,
+) -> str:
+    """Race each tool boundary against run cancellation and propagate cancellation inward."""
+    if cancelled.is_set():
+        raise asyncio.CancelledError()
+    tool_task = asyncio.create_task(awaitable)
+    cancel_task = asyncio.create_task(cancelled.wait())
+    try:
+        done, _ = await asyncio.wait(
+            {tool_task, cancel_task}, return_when=asyncio.FIRST_COMPLETED,
+        )
+        if cancel_task in done and cancelled.is_set():
+            tool_task.cancel()
+            await asyncio.gather(tool_task, return_exceptions=True)
+            raise asyncio.CancelledError()
+        result = await tool_task
+        if cancelled.is_set():
+            raise asyncio.CancelledError()
+        return result
+    except asyncio.CancelledError:
+        tool_task.cancel()
+        await asyncio.gather(tool_task, return_exceptions=True)
+        raise
+    finally:
+        cancel_task.cancel()
+        await asyncio.gather(cancel_task, return_exceptions=True)
+
+
 class DurableOpenManusRuntime:
     """OpenManus tool-call loop with durable transcript, per-tool replay and final-result recovery."""
 
@@ -317,8 +346,11 @@ class DurableOpenManusRuntime:
                         "arguments_sha256": digest, "arguments": arguments,
                     })
                     try:
-                        observation = await self.tools.execute(
-                            function.name, arguments, run_id=context.run_id, user_id=context.user_id,
+                        observation = await _run_tool_until_cancelled(
+                            self.tools.execute(
+                                function.name, arguments, run_id=context.run_id, user_id=context.user_id,
+                            ),
+                            cancelled,
                         )
                         outcome = "succeeded"
                     except Exception as exc:
