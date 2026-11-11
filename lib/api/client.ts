@@ -212,6 +212,32 @@ export type CustomerQuota = {
   usage: { used_value: string | number; window_start: string; updated_at: string } | null;
 };
 
+
+export type CustomerArtifact = {
+  id: string;
+  storage_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  checksum_sha256: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export const artifactApi = {
+  list: () => moreAiApi<CustomerArtifact[]>('/api/v1/artifacts'),
+  upload: (filename: string, content: Blob, mimeType = content.type || 'application/octet-stream') =>
+    moreAiApi<CustomerArtifact>('/api/v1/artifacts', {
+      method: 'POST',
+      headers: { 'X-Filename': filename, 'Content-Type': mimeType },
+      body: content,
+    }),
+  signedDownload: (artifactId: string) =>
+    moreAiApi<{ artifact_id: string; url: string; expires_in: number }>(
+      `/api/v1/artifacts/${artifactId}/signed-download`,
+      { method: 'POST' },
+    ),
+};
+
 export const customerApi = {
   context: () => moreAiCustomerApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
   conversations: () => moreAiCustomerApi<CustomerConversation[]>('/api/v1/customer/conversations'),
