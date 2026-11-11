@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Awaitable, Callable
 from typing import Any
 
 from apps.sandbox.app.runner import DockerSandbox, SandboxLimits
@@ -14,8 +13,7 @@ class IsolatedSandboxToolAdapter:
         self.sandbox = sandbox
 
     async def _execute(
-        self, *, tool_key: str, source: str, language: str,
-        run_id: str, user_id: str, timeout_seconds: int = 30,
+        self, *, source: str, language: str, timeout_seconds: int = 30,
     ) -> str:
         result = await self.sandbox.execute(
             source, language=language,
@@ -31,13 +29,11 @@ class IsolatedSandboxToolAdapter:
 
     async def python_execute(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
         return await self._execute(
-            tool_key="python_execute", source=arguments["code"], language="python",
-            run_id=run_id, user_id=user_id,
+            source=arguments["code"], language="python",
             timeout_seconds=int(arguments.get("timeout_seconds", 30)),
         )
 
     async def bash(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
         return await self._execute(
-            tool_key="bash", source=arguments["command"], language="bash",
-            run_id=run_id, user_id=user_id, timeout_seconds=30,
+            source=arguments["command"], language="bash", timeout_seconds=30,
         )
