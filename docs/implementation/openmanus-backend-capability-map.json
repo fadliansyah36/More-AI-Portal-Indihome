@@ -156,14 +156,14 @@
       "module": "tools/bash",
       "target": "apps/sandbox/bash/",
       "capability": "shell execution",
-      "status": "BLOCKED — catalogued, but execution blocked until isolated non-root sandbox, process limits and approval gates exist"
+      "status": "PARTIAL — approval-gated Docker sandbox adapter and digest-pinned networkless runner exist; runtime remains disabled until deployed supervisor, escape/resource/tenant tests and release gate pass"
     },
     {
       "source": "vendor/openmanusweb/app/tool/browser_use_tool.py",
       "module": "tools/browser",
       "target": "apps/sandbox/browser/",
       "capability": "browser automation",
-      "status": "BLOCKED — catalogued, but execution blocked until SSRF/private-IP controls, browser isolation and download scanning exist"
+      "status": "BLOCKED — per-request URL guard now validates redirect chains and pins DNS answers within a session; no deployed browser route/subresource interception or egress proxy enforces the pinned address at socket level, so browser remains unregistered/default-deny"
     },
     {
       "source": "vendor/openmanusweb/app/tool/create_chat_completion.py",
@@ -198,7 +198,7 @@
       "module": "tools/python",
       "target": "apps/sandbox/python/",
       "capability": "Python execution",
-      "status": "BLOCKED — catalogued, but execution blocked until isolated disposable sandbox; upstream exec/thread timeout is not acceptable"
+      "status": "PARTIAL — approval-gated Docker sandbox adapter and digest-pinned networkless runner exist; runtime remains disabled until deployed supervisor, escape/resource/tenant tests and release gate pass"
     },
     {
       "source": "vendor/openmanusweb/app/tool/run.py",
