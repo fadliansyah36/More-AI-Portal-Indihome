@@ -130,9 +130,12 @@ class WorkerRpcClient:
         return result
 
     async def publish_run_event(self, event: dict[str, Any]) -> None:
-        run_id = event.get("run_id")
-        event_id = event.get("event_id")
-        sequence = event.get("sequence")
+        envelope = event.get("payload")
+        if not isinstance(envelope, dict):
+            raise ValueError("outbox_event_payload_invalid")
+        run_id = envelope.get("run_id") or event.get("aggregate_id")
+        event_id = envelope.get("event_id") or event.get("id")
+        sequence = envelope.get("sequence")
         if not isinstance(run_id, str) or not isinstance(event_id, str) or not isinstance(sequence, int):
             raise ValueError("outbox_event_identity_invalid")
         response = await self.client.post(
@@ -145,9 +148,9 @@ class WorkerRpcClient:
                     "event_id": event_id,
                     "run_id": run_id,
                     "sequence": sequence,
-                    "type": event.get("event_type"),
-                    "payload": event.get("payload") or {},
-                    "created_at": event.get("created_at"),
+                    "type": envelope.get("event_type"),
+                    "payload": envelope.get("event_payload") or {},
+                    "created_at": envelope.get("created_at"),
                 },
                 "private": True,
             }]},
