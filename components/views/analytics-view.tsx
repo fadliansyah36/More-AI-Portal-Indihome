@@ -85,39 +85,7 @@ export const AnalyticsView: React.FC = () => {
 
         {/* Visual SVG Wave Chart (matching Sheet 1 red line with gradient fill) */}
         <div className="pt-2">{error ? <p className="text-xs text-amber-700">{error}</p> : <p className="text-xs text-slate-500">{loading ? "Memuat data penggunaan…" : `${totalTokens.toLocaleString("id-ID")} token diproses · ${successfulRuns} penggunaan berhasil · biaya tercatat ${totalCost.toLocaleString("id-ID")}`}</p>}
-          <svg viewBox="0 0 400 120" className="w-full h-28 overflow-visible">
-            <defs>
-              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#E11D48" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#E11D48" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-            {/* Area Fill */}
-            <path
-              d="M 0,90 Q 50,40 100,70 T 200,30 T 300,55 T 400,20 L 400,120 L 0,120 Z"
-              fill="url(#chartGradient)"
-            />
-            {/* Stroke Line */}
-            <path
-              d="M 0,90 Q 50,40 100,70 T 200,30 T 300,55 T 400,20"
-              fill="none"
-              stroke="#E11D48"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-            />
-            {/* Peak Indicator Dot */}
-            <circle cx="200" cy="30" r="5" fill="#E11D48" stroke="#FFFFFF" strokeWidth="2" />
-            <circle cx="400" cy="20" r="5" fill="#E11D48" stroke="#FFFFFF" strokeWidth="2" />
-          </svg>
-          <div className="flex justify-between text-[10px] text-slate-400 font-medium pt-1 px-1">
-            <span>Sen</span>
-            <span>Sel</span>
-            <span>Rab</span>
-            <span>Kam</span>
-            <span>Jum</span>
-            <span>Sab</span>
-            <span>Min</span>
-          </div>
+          <div className="mt-3 rounded-xl bg-slate-50 border border-slate-100 p-3 text-[11px] text-slate-500">Grafik tren akan ditampilkan setelah API menyediakan agregasi historis yang tervalidasi. Angka di atas berasal dari catatan penggunaan akun.</div>
         </div>
       </div>
 
