@@ -27,7 +27,7 @@ class FakeRepository:
 
 def test_customer_access_rejects_active_partner_principals(monkeypatch):
     repo = FakeRepository(memberships=[{"partner_id": "partner-1", "role_key": "partner_staff"}])
-    monkeypatch.setattr(authorization, "repository", lambda request: repo)
+    monkeypatch.setattr(authorization, "_repository", lambda request: repo)
 
     async def run():
         with pytest.raises(HTTPException) as error:
