@@ -10,10 +10,10 @@
 | 03 | Complete upstream source copy | COMPLETE — hash verified | 111/111 matching Git blob SHA in `vendor/openmanusweb/` |
 | 04 | Full backend integration & security hardening | IN PROGRESS — durable approval gate + atomic consume, isolated Docker runner and per-request browser SSRF/DNS pin helper; browser route/egress interception and full upstream parity still blocked | [Phase 04 run 42975296881](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42975296881): worker, sandbox, API and engine jobs PASS; browser helper is not yet a deployed browser supervisor |
 | 05 | Supabase schema reconciliation | COMPLETE — additive forward-only migrations; no reset/destructive DDL | Live Supabase reports 31 migrations; approval lifecycle migration 20261111061443 and `agent_tool_approvals` verified with RLS enabled and client grants revoked |
-| 06 | FastAPI core & OpenAPI contract | IN PROGRESS — Customer wallet/ledger/usage/entitlements/quotas and Partner sessions/campaigns/rewards read contracts added; remaining PRD domains/pagination/idempotency remain | Phase 04 run 42975296881 API contract PASS; live schema reused without DDL |
+| 06 | FastAPI core & OpenAPI contract | IN PROGRESS — Customer wallet/ledger/usage/entitlements/quotas plus owner-scoped durable workflow-step read contract; remaining PRD domains/pagination/idempotency remain | Phase 04 run 42975296881 API contract PASS; live schema reused without DDL |
 | 07 | Worker & durable run lifecycle | IN PROGRESS — checkpoint restoration, run-scoped transcript persistence and restart replay implemented | `WorkerRpcClient.list_checkpoints`, `SupabaseConversationMemoryStore.load_run`, durable per-tool settled observation and restart recovery tests PASS |
-| 08 | LLM/tool/workflow/orchestration integration | IN PROGRESS — configured provider fallback and metered reservation/settlement implemented; only approved existing chat-completion tool active | Ordered primary/fallback candidates; stream fallback only before first delta; engine tests PASS |
-| 09 | Existing Frontend API Integration | IN PROGRESS — Benefit Credit and Partner Live Sessions now consume typed FastAPI endpoints; other demo/static domains remain | [PHASE-04-06-09-FULL-INTEGRATION-CONTINUATION-20261111.md](./PHASE-04-06-09-FULL-INTEGRATION-CONTINUATION-20261111.md); Phase 00 browser/build verification pending run 42975495322 |
+| 08 | LLM/tool/workflow/orchestration integration | IN PROGRESS — metered provider fallback and durable planning tool now registered through policy-enforced registry; chat-completion tool remains active; other external/high-risk tools remain gated | Ordered primary/fallback candidates; stream fallback only before first delta; engine tests PASS |
+| 09 | Existing Frontend API Integration | IN PROGRESS — Customer Workflow now has a typed owner-scoped durable step contract; existing UI unchanged in this increment; other demo/static domains remain | [PHASE-04-06-09-FULL-INTEGRATION-CONTINUATION-20261111.md](./PHASE-04-06-09-FULL-INTEGRATION-CONTINUATION-20261111.md); Phase 00 browser/build verification pending run 42975495322 |
 | 10 | End-to-end integration verification | BLOCKED | No real-provider authenticated browser → worker → provider E2E; real keys intentionally deferred |
 | 11 | Integration release gate | NOT STARTED | No production worker/sandbox activation or release until full parity and acceptance evidence |
 
@@ -175,3 +175,15 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - Deployment quota is intentionally deferred by product owner. No Vercel deployment was attempted.
 - Service-role secret has not been supplied to the runtime. API /ready remains degraded until SUPABASE_SERVICE_ROLE_KEY is configured. No LLM provider key or paid provider call used.
 - Phase 04, 06–09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED. See FULL-ECOSYSTEM-INTEGRATION-CONTINUATION-20261111.md for exact implementation and remaining blockers.
+
+
+## 2026-11-11 direct-main integration increment — durable planning tool and workflow step API
+
+- Added the durable `planning` tool handler to `DurableOpenManusRuntime`, backed by the existing Supabase `agent_run_steps` store. Commands: create, get and mark_step. It is registered through the central `PolicyEnforcedToolRegistry`; it does not bypass tool policy.
+- Injected the same `SupabasePlanStore` instance into the Manus runtime from the worker registry factory.
+- Hardened provider tool-call parsing: malformed call objects, duplicate IDs, invalid tool names, oversized/non-JSON arguments and non-object arguments now fail closed instead of being silently discarded.
+- Added `GET /api/v1/customer/agent-runs/{run_id}/steps`; it verifies ownership of the parent run before returning persisted step metadata.
+- Added typed `CustomerWorkflowStep` and `customerApi.getRunSteps` to the existing frontend API client. No UI components, routes, styles or navigation were changed in this increment.
+- Direct-main commits: `284001641d963a2213c653e4ac6477c58ab2ac9b`, `e373ef1258e9cff80812b9009916eac7d73f1222`, `b207f30eb987e802135fe7b7720a86fe1da48a32`, `19d14df45cced74d8ed36b64fb94be082f71ea86`, `32fd349cc8952a469d09586cec45064cb0080fdf`, `92e4373b0fcd74008fbc0b77178079d764c621d4`.
+- No tests, lint, build, browser, provider, database mutation or live runtime checks were run, per explicit instruction. These commits are source changes only and are not phase acceptance.
+- Still open: safe file storage/download contract, search-provider adapter, browser supervisor/socket-level egress, isolated SWE/editor workspace, full upstream flow/server/session/WebSocket/log parity, remaining Customer/Partner APIs, Super Admin mutation/audit governance, and all Phase 10/11 gates.
