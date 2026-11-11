@@ -2,13 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import json
-import asyncio
-import json
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from fastapi.responses import StreamingResponse
 from fastapi.responses import StreamingResponse
 
 from app.authorization import require_customer_context
@@ -107,57 +104,6 @@ async def customer_agent_run(
 ):
     principal = await require_customer_context(request, user)
     return await repository(request).owned_record("agent_runs", run_id, principal["id"])
-
-
-
-@router.get("/agent-runs/{run_id}/stream")
-async def customer_agent_run_stream(
-    run_id: UUID, request: Request, after: int = 0, wait_seconds: int = 60,
-    user: dict[str, Any] = Depends(current_user),
-):
-    principal = await require_customer_context(request, user)
-    repo = repository(request)
-    await repo.owned_record("agent_runs", run_id, principal["id"])
-
-    async def events():
-        from app.routers.agent_runs import _event_with_checkpoint_state
-
-        cursor = max(after, 0)
-        idle_rounds = 0
-        while idle_rounds < max(1, min(wait_seconds, 120)):
-            if await request.is_disconnected():
-                break
-            rows = await repo.select("agent_run_events", {
-                "run_id": f"eq.{run_id}", "sequence": f"gt.{cursor}",
-                "select": "id,event_type,sequence,payload,created_at",
-                "order": "sequence.asc", "limit": "100",
-            })
-            if rows:
-                idle_rounds = 0
-                for raw in rows:
-                    row = await _event_with_checkpoint_state(repo, run_id, raw)
-                    cursor = max(cursor, int(row["sequence"]))
-                    payload = json.dumps(row, separators=(",", ":"))
-                    yield f"id: {cursor}\\nevent: {row['event_type']}\\ndata: {payload}\\n\\n"
-            else:
-                idle_rounds += 1
-                run = await repo.owned_record("agent_runs", run_id, principal["id"])
-                status = run.get("status")
-                if status in {"succeeded", "failed", "cancelled", "expired"}:
-                    terminal_event = "run.completed" if status == "succeeded" else "run.cancelled" if status == "cancelled" else "run.failed"
-                    payload = json.dumps({
-                        "run_id": str(run_id), "status": status,
-                        "output": run.get("output"), "error": run.get("error"),
-                    }, separators=(",", ":"))
-                    yield f"id: {cursor}\\nevent: {terminal_event}\\ndata: {payload}\\n\\n"
-                    return
-                yield ": keep-alive\\n\\n"
-            await asyncio.sleep(1)
-        yield "event: stream.timeout\\ndata: {}\\n\\n"
-
-    return StreamingResponse(events(), media_type="text/event-stream", headers={
-        "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no",
-    })
 
 
 
