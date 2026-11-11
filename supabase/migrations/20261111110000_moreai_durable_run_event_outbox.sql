@@ -62,7 +62,10 @@ begin
   end if;
 
   insert into public.agent_run_event_counters(run_id,last_sequence)
-  values(p_run_id,0) on conflict(run_id) do nothing;
+  values(
+    p_run_id,
+    coalesce((select max(sequence) from public.agent_run_events where run_id=p_run_id),0)
+  ) on conflict(run_id) do nothing;
 
   -- Serialize appends for this run and return the original event on retries.
   perform 1 from public.agent_run_event_counters where run_id=p_run_id for update;
