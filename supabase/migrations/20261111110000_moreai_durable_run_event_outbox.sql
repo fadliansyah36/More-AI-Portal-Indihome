@@ -36,7 +36,7 @@ revoke all on public.agent_run_event_counters from anon, authenticated;
 create or replace function public.moreai_worker_append_run_event(
   p_run_id uuid, p_worker_id text, p_event_key text, p_event_type text, p_payload jsonb default '{}'::jsonb
 ) returns jsonb
-language plpgsql security definer set search_path='' as $
+language plpgsql security definer set search_path='' as $$
 declare
   v_existing public.outbox_events;
   v_sequence bigint;
@@ -98,7 +98,7 @@ $$;
 create or replace function public.moreai_worker_checkpoint(
   p_run_id uuid, p_worker_id text, p_checkpoint_key text, p_state jsonb
 ) returns jsonb
-language plpgsql security definer set search_path='' as $
+language plpgsql security definer set search_path='' as $$
 declare v_event jsonb;
 begin
   if p_checkpoint_key is null or char_length(p_checkpoint_key) not between 1 and 200
@@ -124,7 +124,7 @@ begin
     'sequence',(v_event->>'sequence')::bigint
   );
 end;
-$;
+$$;
 
 -- Finish writes the terminal/queued event before releasing the worker lease.
 create or replace function public.moreai_worker_finish_run(
@@ -132,7 +132,7 @@ create or replace function public.moreai_worker_finish_run(
   p_output jsonb default null, p_error jsonb default null,
   p_retry_delay_seconds integer default 30
 ) returns jsonb
-language plpgsql security definer set search_path='' as $
+language plpgsql security definer set search_path='' as $$
 declare
   r public.agent_runs%rowtype;
   next_status text;
@@ -180,7 +180,7 @@ begin
   end if;
   return jsonb_build_object('run_id',r.id,'status',next_status,'attempt',r.attempt,'dead_lettered',dead);
 end;
-$;
+$$;
 
 create or replace function public.moreai_worker_claim_event_outbox(
   p_worker_id text, p_limit integer default 20, p_lease_seconds integer default 45
