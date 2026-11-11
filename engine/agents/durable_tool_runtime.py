@@ -44,7 +44,7 @@ class DurableOpenManusRuntime:
 
     def __init__(
         self, gateway: MeteredToolGateway, *,
-        memory_store: ConversationMemoryStore | None = None, max_rounds: int = 12,
+        memory_store: ConversationMemoryStore | None = None, sandbox_tools: Any | None = None, max_rounds: int = 12,
     ):
         self.gateway = gateway
         self.memory_store = memory_store
@@ -54,6 +54,9 @@ class DurableOpenManusRuntime:
                        approved_tools={"create_chat_completion"})
         )
         self.tools.register("create_chat_completion", self._nested_completion)
+        if sandbox_tools is not None:
+            self.tools.register("bash", sandbox_tools.bash)
+            self.tools.register("python_execute", sandbox_tools.python_execute)
 
     async def _nested_completion(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
         messages = arguments.get("messages")
