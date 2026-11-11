@@ -9,7 +9,7 @@ class ToolDecision:
 
 
 class ToolPolicy:
-    """Default-deny tool policy. High-risk upstream tools remain blocked."""
+    """Default-deny policy; high-risk tools require both enablement and explicit approval."""
 
     HIGH_RISK = frozenset({"bash", "python_execute", "browser_use"})
     DEFAULT_DENY = HIGH_RISK
@@ -20,10 +20,10 @@ class ToolPolicy:
 
     def evaluate(self, tool_key: str) -> ToolDecision:
         key = tool_key.strip().lower()
-        if key in self.DEFAULT_DENY:
-            return ToolDecision(False, True, "isolated_runtime_and_explicit_approval_required")
         if key not in self.enabled_tools:
-            return ToolDecision(False, False, "tool_not_enabled")
+            return ToolDecision(False, key in self.HIGH_RISK, "tool_not_enabled")
+        if key in self.HIGH_RISK and key not in self.approved_tools:
+            return ToolDecision(False, True, "isolated_runtime_and_explicit_approval_required")
         if key in self.approved_tools:
             return ToolDecision(True, False, "explicitly_approved")
         return ToolDecision(False, True, "approval_required")
