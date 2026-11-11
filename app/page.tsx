@@ -118,6 +118,17 @@ export default function App() {
     };
     resolveTab();
     window.addEventListener('popstate', resolveTab);
+    const supabase = createSupabaseBrowserClient();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        const path = window.location.pathname;
+        const publicRoute = ['/login', '/register', '/splash', '/onboarding'].includes(path);
+        if (!publicRoute) {
+          setCurrentTab('login');
+          window.history.replaceState({ moreaiTab: 'login' }, '', '/login');
+        }
+      }
+    });
     const restoreSession = async () => {
       try {
         const { data, error } = await createSupabaseBrowserClient().auth.getSession();
@@ -136,7 +147,10 @@ export default function App() {
       }
     };
     void restoreSession();
-    return () => window.removeEventListener('popstate', resolveTab);
+    return () => {
+      window.removeEventListener('popstate', resolveTab);
+      authListener.subscription.unsubscribe();
+    };
   // Auth is restored once on app entry; navigation state is managed below.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
