@@ -11,6 +11,7 @@ from engine.agents.planning_runtime import PlanningAgentRuntime
 from engine.tools.search_provider import TavilySearchAdapter
 from engine.tools.storage import SupabaseArtifactTool
 from engine.tools.workspace import SupabaseWorkspaceTool
+from apps.sandbox.app.browser_supervisor import BrowserSupervisor
 from engine.orchestration.registry import AgentRegistry
 
 
@@ -22,6 +23,14 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     # The default bucket is provisioned by the Phase 05 migration; deployments may override it.
     storage_tools = SupabaseArtifactTool(client) if os.getenv("MOREAI_ARTIFACTS_BUCKET", "moreai-artifacts") else None
     workspace_tools = SupabaseWorkspaceTool(client) if os.getenv("MOREAI_WORKSPACE_BUCKET", "moreai-artifacts") else None
+    browser_tools = None
+    if os.getenv("MOREAI_BROWSER_ENABLED", "false").lower() == "true":
+        proxy_url = os.getenv("MOREAI_BROWSER_PROXY_URL", "")
+        proxy_token = os.getenv("MOREAI_BROWSER_PROXY_TOKEN", "")
+        egress_enforced = os.getenv("MOREAI_BROWSER_EGRESS_ENFORCED", "false").lower() == "true"
+        if not proxy_url or not proxy_token or not egress_enforced:
+            raise RuntimeError("browser_activation_requires_authenticated_proxy_and_network_egress_enforcement")
+        browser_tools = BrowserSupervisor(proxy_server=proxy_url, proxy_token=proxy_token, egress_enforced=egress_enforced)
     sandbox_tools = None
     sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
     sandbox_gate_passed = os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
@@ -37,6 +46,7 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
         search_tools=search_tools,
         storage_tools=storage_tools,
         workspace_tools=workspace_tools,
+        browser_tools=browser_tools,
         sandbox_tools=sandbox_tools,
         approval_gate=client.wait_for_tool_approval if sandbox_tools is not None else None,
     )
