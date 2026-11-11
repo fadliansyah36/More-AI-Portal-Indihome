@@ -31,6 +31,21 @@ def _storage_url(request: Request, suffix: str) -> str:
     bucket = quote(settings.artifacts_bucket, safe="")
     return f"{settings.supabase_url}/storage/v1/{suffix.format(bucket=bucket)}"
 
+async def _require_private_bucket(request: Request, headers: dict[str, str]) -> None:
+    response = await request.app.state.http.get(
+        _storage_url(request, "bucket/{bucket}"),
+        headers=headers,
+        timeout=8.0,
+    )
+    if response.status_code == 404:
+        raise HTTPException(503, "Configured artifact bucket does not exist")
+    if response.status_code >= 400:
+        raise HTTPException(503, "Could not verify artifact bucket privacy")
+    payload = response.json()
+    if not isinstance(payload, dict) or payload.get("public") is not False:
+        raise HTTPException(503, "Artifact bucket must be private")
+
+
 
 def _validate_owner_path(user_id: str, path: str) -> str:
     if (
@@ -66,6 +81,7 @@ async def upload_artifact(
     if not content or len(content) > MAX_ARTIFACT_BYTES:
         raise HTTPException(413, "Artifact must contain between 1 byte and 2 MB")
     headers = _storage_headers(request)
+    await _require_private_bucket(request, headers)
     artifact_id = str(uuid4())
     storage_path = f"{user['id']}/{artifact_id}/{filename}"
     mime_type = request.headers.get("content-type", "application/octet-stream").split(";", 1)[0].strip().lower()
@@ -109,6 +125,7 @@ async def create_artifact_download(
     record = await repo.owned_record("artifacts", artifact_id, user["id"])
     storage_path = _validate_owner_path(user["id"], str(record.get("storage_path") or ""))
     headers = _storage_headers(request)
+    await _require_private_bucket(request, headers)
     response = await request.app.state.http.post(
         _storage_url(request, "object/sign/{bucket}/" + quote(storage_path, safe="/")),
         json={"expiresIn": 60},
