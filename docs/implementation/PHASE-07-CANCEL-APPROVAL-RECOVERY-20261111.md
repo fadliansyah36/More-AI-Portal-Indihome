@@ -5,3 +5,4 @@
 - Cancellation event is idempotently written to `agent_run_events` and `outbox_events` using a stable per-run event key.
 - Migration: `20261111160000_moreai_cancel_waiting_approval_and_outbox.sql`.
 - Runtime and integration verification not performed.
+\nMigration `20261111160000_moreai_cancel_waiting_approval_and_outbox.sql` was applied successfully to canonical Supabase. The updated RPC signature was confirmed by read-only catalog inspection. No worker runtime test was run.\n

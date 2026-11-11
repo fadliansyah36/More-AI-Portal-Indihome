@@ -329,7 +329,7 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Added authenticated read endpoints for customer wallet, credit ledger, LLM usage, entitlements and quotas using existing canonical tables and authenticated principal scoping.
 - Typed frontend run APIs now target existing `/api/v1/agent-runs` routes; UI components untouched.
 - Report: PHASE-06-CUSTOMER-ACCOUNT-READ-APIS-20261111.md.
-- Runtime/API contract tests not run.
+- Migration `20261111150000_moreai_workspace_file_cas_versioning` applied and schema/RLS/RPCs verified read-only. Runtime/API contract tests not run.
 
 
 ## 2026-11-11 — Phase 06/09 partner access-code redemption integration
@@ -352,3 +352,8 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 ## 2026-11-11 — Phase 04 workspace CAS crash recovery
 - Added expiring write reservations and safe reclamation after worker crashes; stale reservation tokens cannot commit.
 - Migration: 20261111170000_moreai_workspace_cas_expiry_recovery.sql.
+
+
+## 2026-11-11 — Schema application verification
+- Applied migrations to canonical Supabase project `uunfgimtokhucegqbpce`: `20261111150000_moreai_workspace_file_cas_versioning`, `20261111160000_moreai_cancel_waiting_approval_and_outbox`, and `20261111170000_moreai_workspace_cas_expiry_recovery`.
+- Read-only verification confirmed workspace version/reservation columns, four workspace CAS RPCs, cancellation RPC, and server-only RLS policy. No runtime tests or deployments were performed.
