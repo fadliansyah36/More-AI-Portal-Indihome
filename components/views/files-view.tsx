@@ -53,7 +53,6 @@ export const FilesView: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
     moreAiApi<ArtifactRecord[]>('/api/v1/artifacts')
       .then((rows) => {
         if (!active) return;
