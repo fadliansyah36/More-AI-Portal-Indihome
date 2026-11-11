@@ -13,7 +13,7 @@
 | 06 | FastAPI core & OpenAPI contract | IN PROGRESS — added profile update, artifact upload/signed-download, Partner location/campaign/member/network/verification/access-code endpoints and permission-specific Super Admin reads; notification schema and other PRD domains remain | Phase 04 run 42975296881 API contract PASS; live schema reused without DDL |
 | 07 | Worker & durable run lifecycle | IN PROGRESS — checkpoint restoration, run-scoped transcript persistence and restart replay implemented | `WorkerRpcClient.list_checkpoints`, `SupabaseConversationMemoryStore.load_run`, durable per-tool settled observation and restart recovery tests PASS |
 | 08 | LLM/tool/workflow/orchestration integration | IN PROGRESS — durable planning, configured Tavily Search and configured Supabase artifact saver are registered through the policy-enforced registry; browser, Bash/Python and workspace editor remain gated | Ordered primary/fallback candidates; stream fallback only before first delta; engine tests PASS |
-| 09 | Existing Frontend API Integration | IN PROGRESS — Customer Notifications, Profile/notification preferences and Analytics usage records bound to authenticated FastAPI; Wi-Fi/devices/Captive Portal/vouchers/EduTech and remaining Partner/Super Admin screens still open | [PHASE-09-CUSTOMER-PROFILE-ANALYTICS-INTEGRATION-20261111.md](./PHASE-09-CUSTOMER-PROFILE-ANALYTICS-INTEGRATION-20261111.md); commits 57b1d476, ee1298b4, 122b00c3; runtime/UI regression not run |
+| 09 | Existing Frontend API Integration | IN PROGRESS — Customer profile/wallet/analytics/network sessions and Partner campaigns/members/access codes now use FastAPI; Captive Portal, gateway device inventory, EduTech, reward claims, complete Partner/Admin workflows remain open | [PHASE-09-CUSTOMER-PROFILE-ANALYTICS-INTEGRATION-20261111.md](./PHASE-09-CUSTOMER-PROFILE-ANALYTICS-INTEGRATION-20261111.md); [PHASE-09-CUSTOMER-WIFI-PARTNER-OPERATIONS-INTEGRATION-20261111.md](./PHASE-09-CUSTOMER-WIFI-PARTNER-OPERATIONS-INTEGRATION-20261111.md); source commits 3c60eeb7, c436cf1a, 165cab8c, eb75e336, 5521952c, 120485e6, b5e6d437, 18d07ed3, 9ad496c7; no tests/staging run by owner instruction |
 | 10 | End-to-end integration verification | BLOCKED | No real-provider authenticated browser → worker → provider E2E; real keys intentionally deferred |
 | 11 | Integration release gate | NOT STARTED | No production worker/sandbox activation or release until full parity and acceptance evidence |
 
@@ -420,3 +420,15 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Commits: `8b1093cdc29765385883e79598137340ea66f52a`, `4eebf0984a5362e39f34b98865cd02844edc6f14`.
 - Report: [PHASE-04-RUNTIME-ACCEPTANCE-VERIFIER-20261111.md](./PHASE-04-RUNTIME-ACCEPTANCE-VERIFIER-20261111.md).
 - Verifier is committed but not executed: no authorized Docker host tool in this session, and prior test/build/deploy restriction remains in force. SWE API/history/restore/Git and full Flow/session/server/WebSocket/backend parity remain incomplete. Phase 04 IN PROGRESS; Phase 07 not started.
+
+
+## 2026-11-11 Customer Wi-Fi and Partner operations API integration
+
+- Implementation report: [PHASE-09-CUSTOMER-WIFI-PARTNER-OPERATIONS-INTEGRATION-20261111.md](./PHASE-09-CUSTOMER-WIFI-PARTNER-OPERATIONS-INTEGRATION-20261111.md).
+- Added owner-scoped Customer `GET /api/v1/customer/network-sessions` using existing `network_sessions`, `partner_networks` and `partner_locations` schema.
+- Wi-Fi Management and connected-device surfaces now consume actual session data; gateway device inventory, per-device bandwidth/IP and disconnect actions are explicitly unavailable rather than fabricated.
+- Partner access-code screen now lists/creates/revokes server-generated one-time plaintext codes; Partner staff screen reads memberships and creates UUID-based invitations; Partner campaign screen reads/creates/updates tenant campaigns.
+- Customer profile credit display now reads wallet balance. Analytics breakdown derives model/request/token counts from persisted `llm_usage` records instead of illustrative feature percentages.
+- Existing Supabase schema only was used; no DDL, migration, RLS, grant, RPC or production row mutation occurred.
+- User instruction: no real testing or staging. No build, lint, typecheck, unit/integration/E2E, browser, screenshot, CI, migration apply, runtime check or deployment was performed. No phase acceptance is claimed.
+- Phase 09 remains IN PROGRESS. Remaining domain blockers include Captive Portal verification lifecycle, actual gateway device inventory/control, customer reward catalog/claims, EduTech, partner invitation by email/revocation, promotion asset delivery, and complete Super Admin workflows.
