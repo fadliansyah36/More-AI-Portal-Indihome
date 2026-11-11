@@ -43,3 +43,13 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - Latest commits: `8bcec7a799ed1dac4587dc1d8fc9d933136820f2` removes the redundant Files loading state update that caused the baseline lint gate to fail; `713109f28705ab3dc28af25dabdf2eed79a87e8f` and `734be31ddd43636ea09d3ed16feac1f511154ac6` reconcile and test the required memory usage columns.
 - Previous Phase 00 baseline run `42959465066`: build/server/browser smoke passed; lint failed only on the redundant setState-in-effect in `components/views/files-view.tsx`. The lint defect is fixed on main; a fresh baseline run is in progress.
 - Current Phase 04 sandbox CI is re-running after the memory schema correction. Phase 04 and Phase 08 are still not accepted; Phase 09 UI separation has not started because backend foundations and authenticated E2E gates are not yet complete.
+
+
+## 2026-11-11 durable OpenManus tool-call integration increment
+
+- Added `engine/agents/durable_tool_runtime.py`: bounded OpenManus tool-call loop, structured function arguments, deterministic per-round request keys, durable round/tool intent/settlement checkpoints.
+- Worker registry now registers this durable runtime as the Manus implementation; existing worker lease/heartbeat/cancel/checkpoint/finish lifecycle remains the execution owner.
+- OpenAI-compatible provider adapter now accepts tool definitions and returns structured tool calls; metered gateway includes tool definitions in request hashing and passes them to the provider. Each model round uses the existing metered `complete` accounting path.
+- Only `create_chat_completion` is currently registered in the tool registry. High-risk Bash/Python/browser/editor/process tools remain unavailable and default-denied pending sandbox supervisor + approval/audit wiring.
+- Added continuation report `PHASE-04-08-09-INTEGRATION-CONTINUATION-20261111.md`.
+- Not complete: provider candidate retry/failover, durable restoration of the full tool-call transcript across process restart, sandbox tool adapters, Customer/Mitra server-side route isolation, and authenticated E2E. Real provider/API-key E2E remains deferred by instruction.

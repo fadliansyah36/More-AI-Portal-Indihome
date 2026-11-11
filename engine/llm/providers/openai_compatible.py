@@ -14,13 +14,13 @@ class OpenAICompatibleAdapter:
     def __init__(self, http: httpx.AsyncClient):
         self.http = http
 
-    async def complete(self, *, route: ResolvedModelRoute, messages: list[dict[str, Any]]) -> dict[str, Any]:
+    async def complete(self, *, route: ResolvedModelRoute, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         api_key = os.getenv(route.secret_env_name)
         if not api_key:
             raise RuntimeError("provider_secret_not_configured")
         response = await self.http.post(
             f"{route.base_url}/chat/completions",
-            json={"model": route.model_key, "messages": messages, "stream": False},
+            json={"model": route.model_key, "messages": messages, "stream": False, **({"tools": tools, "tool_choice": "auto"} if tools else {})},
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             timeout=90.0,
         )

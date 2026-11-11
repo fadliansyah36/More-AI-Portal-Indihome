@@ -101,13 +101,13 @@ class MeteredGateway:
         self.accounting = accounting
         self.adapter = adapter
 
-    async def complete(self, *, user_id: str, run_id: str, request_key: str, messages: list[dict[str, Any]], task_type: str = "chat", workspace_id: str | None = None, partner_id: str | None = None) -> dict[str, Any]:
+    async def complete(self, *, user_id: str, run_id: str, request_key: str, messages: list[dict[str, Any]], task_type: str = "chat", workspace_id: str | None = None, partner_id: str | None = None, tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         import hashlib
         import json
         import time
 
         route = await self.router.resolve(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)
-        request_hash = hashlib.sha256(json.dumps(messages, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        request_hash = hashlib.sha256(json.dumps({"messages": messages, "tools": tools or []}, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         claim = await self.accounting.claim_request(user_id=user_id, run_id=run_id, request_key=request_key, request_hash=request_hash)
         if not claim.get("created"):
             if claim.get("status") == "succeeded" and isinstance(claim.get("response_text"), str):
@@ -122,7 +122,7 @@ class MeteredGateway:
                 workspace_id=workspace_id, partner_id=partner_id,
             )
             started = time.monotonic()
-            result = await self.adapter.complete(route=route, messages=messages)
+            result = await self.adapter.complete(route=route, messages=messages, tools=tools)
             latency_ms = int((time.monotonic() - started) * 1000)
             await self.accounting.record_provider_result(request_id=str(claim["id"]), result=result, latency_ms=latency_ms)
             actual_credits = await self.estimator.actual_credits(route=route, result=result)
