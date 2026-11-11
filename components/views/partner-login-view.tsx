@@ -57,7 +57,6 @@ export const PartnerLoginView: React.FC<PartnerLoginViewProps> = ({
       if (!data.session) throw new Error('Sesi autentikasi tidak terbentuk. Periksa verifikasi email.');
       const tenants = await partnerApi.tenants();
       if (!tenants.length) {
-        await supabase.auth.signOut();
         throw new Error('Akun terautentikasi, tetapi belum memiliki membership Mitra aktif. Hubungi administrator organisasi.');
       }
       showToast('Autentikasi berhasil dan membership Mitra terverifikasi.', 'success');
