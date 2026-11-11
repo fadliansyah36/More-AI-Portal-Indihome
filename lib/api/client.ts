@@ -114,6 +114,20 @@ export type CustomerConversation = {
   updated_at: string;
 };
 
+export type CustomerWorkflowStep = {
+  id: string;
+  sequence: number;
+  step_key: string;
+  status: 'pending' | 'running' | 'waiting_approval' | 'succeeded' | 'failed' | 'skipped' | 'cancelled' | string;
+  input: Record<string, unknown>;
+  output: Record<string, unknown> | null;
+  error: Record<string, unknown> | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type CustomerAgentRun = {
   id: string;
   conversation_id: string | null;
@@ -212,6 +226,7 @@ export const customerApi = {
     }),
   agentRuns: () => moreAiCustomerApi<CustomerAgentRun[]>('/api/v1/customer/agent-runs'),
   getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/customer/agent-runs/${runId}`),
+  getRunSteps: (runId: string) => moreAiCustomerApi<CustomerWorkflowStep[]>(`/api/v1/customer/agent-runs/${runId}/steps`),
   streamRun: (runId: string) => `/api/v1/customer/agent-runs/${runId}/stream?wait_seconds=30`,
   wallets: () => moreAiCustomerApi<{ wallets: CustomerWallet[] }>('/api/v1/customer/wallet'),
   ledger: (limit = 50, before?: string) => moreAiCustomerApi<CustomerLedgerEntry[]>(`/api/v1/customer/wallet/ledger?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
