@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Wifi, Shield, RefreshCw, Smartphone, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Wifi, Shield, RefreshCw, Smartphone } from 'lucide-react';
 import { customerApi, CustomerNetworkSession } from '@/lib/api/client';
 
 interface DevicesConnectedViewProps {
