@@ -9,7 +9,7 @@
 | 02 | Monorepo backend workspace foundation | COMPLETE — foundation | `apps/api`, `apps/worker`, `engine`, `packages` |
 | 03 | Complete upstream source copy | COMPLETE — hash verified | 111/111 matching Git blob SHA in `vendor/openmanusweb/` |
 | 04 | Full backend integration & security hardening | IN PROGRESS — durable planning, provider-pinned Search adapter and private artifact tool added to the policy-enforced Manus registry; browser network supervisor, SWE workspace and full upstream Flow/server parity remain blocked | [Phase 04 run 42975296881](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42975296881): worker, sandbox, API and engine jobs PASS; browser helper is not yet a deployed browser supervisor |
-| 05 | Supabase schema reconciliation | COMPLETE — additive forward-only migrations; no reset/destructive DDL | Live Supabase reports 31 migrations; approval lifecycle migration 20261111061443 and `agent_tool_approvals` verified with RLS enabled and client grants revoked |
+| 05 | Supabase schema reconciliation | COMPLETE — additive forward-only migrations; five server-only RLS policies added explicitly; no reset/destructive DDL | Phase 07A migrations plus `moreai_explicit_server_only_rls_denials`; policy catalog verified for all five tables; leaked-password protection remains open |
 | 06 | FastAPI core & OpenAPI contract | IN PROGRESS — added profile update, artifact upload/signed-download, Partner location/campaign/member/network/verification/access-code endpoints and permission-specific Super Admin reads; notification schema and other PRD domains remain | Phase 04 run 42975296881 API contract PASS; live schema reused without DDL |
 | 07 | Worker & durable run lifecycle | IN PROGRESS — checkpoint restoration, run-scoped transcript persistence and restart replay implemented | `WorkerRpcClient.list_checkpoints`, `SupabaseConversationMemoryStore.load_run`, durable per-tool settled observation and restart recovery tests PASS |
 | 08 | LLM/tool/workflow/orchestration integration | IN PROGRESS — durable planning, configured Tavily Search and configured Supabase artifact saver are registered through the policy-enforced registry; browser, Bash/Python and workspace editor remain gated | Ordered primary/fallback candidates; stream fallback only before first delta; engine tests PASS |
@@ -280,3 +280,15 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - No production run/outbox rows were created or mutated for smoke tests. No actual worker process, Realtime subscriber, cancellation, retry or crash-recovery E2E has been proven. Thus database schema gate passed; Phase 07 runtime acceptance remains OPEN pending isolated staging execution.
 - Security Advisor still flags five RLS-enabled tables with no policies and leaked-password protection disabled. See the Phase 07A report for exact tables and remediation.
 - Report: [PHASE-07A-DURABLE-EVENT-OUTBOX-ACCEPTANCE-20261111.md](./PHASE-07A-DURABLE-EVENT-OUTBOX-ACCEPTANCE-20261111.md).
+
+
+## 2026-11-11 — Explicit server-only RLS remediation (direct main)
+
+- Product-owner execution constraints: work directly on `main`; do not create a branch; skip staging and runtime/real-world tests; prioritize integration within the MoreAI platform ecosystem. No test/build/deployment success is claimed.
+- Added and applied forward-only migration `20261111120000_moreai_explicit_server_only_rls_denials.sql` to canonical Supabase project `uunfgimtokhucegqbpce`.
+- Five server-owned tables now have explicit `FOR ALL TO anon, authenticated USING (false) WITH CHECK (false)` policies: `agent_tool_approvals`, `network_gateway_nonces`, `network_verification_method_catalog`, `partner_access_code_redemptions`, and `partner_access_codes`.
+- Read-only `pg_policies` inspection confirmed all five policies and their deny-all predicates. Latest Security Advisor response no longer reports the five RLS-without-policy findings.
+- Leaked Password Protection remains WARN and is not remediated by SQL. It must be enabled through Supabase Auth project configuration; no auth-setting connector action was available in this execution.
+- No production rows were written and no runtime/staging tests were run.
+- Implementation report: [SECURITY-EXPLICIT-SERVER-ONLY-RLS-20261111.md](./SECURITY-EXPLICIT-SERVER-ONLY-RLS-20261111.md).
+- Commit: `2b1a728d424a93dc943d8ab9650957ee6782401a`.
