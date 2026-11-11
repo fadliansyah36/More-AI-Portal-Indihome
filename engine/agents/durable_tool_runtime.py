@@ -93,7 +93,7 @@ class DurableOpenManusRuntime:
         approval_gate: Callable[[str, str, str, dict[str, Any]], Awaitable[bool]] | None = None,
         plan_store: Any | None = None,
         search_tools: Any | None = None,
-        storage_tools: Any | None = None,
+        storage_tools: Any | None = None, workspace_tools: Any | None = None,
         max_rounds: int = 12,
     ):
         self.gateway = gateway
@@ -107,6 +107,8 @@ class DurableOpenManusRuntime:
             enabled_tools.add("google_search")
         if storage_tools is not None:
             enabled_tools.add("file_saver")
+        if workspace_tools is not None:
+            enabled_tools.add("str_replace_editor")
         if sandbox_tools is not None:
             enabled_tools.update({"bash", "python_execute"})
         self.tools = PolicyEnforcedToolRegistry(
@@ -120,6 +122,8 @@ class DurableOpenManusRuntime:
             self.tools.register("google_search", search_tools.google_search)
         if storage_tools is not None:
             self.tools.register("file_saver", storage_tools.file_saver)
+        if workspace_tools is not None:
+            self.tools.register("str_replace_editor", workspace_tools.str_replace_editor)
         if sandbox_tools is not None:
             self.tools.register("bash", sandbox_tools.bash)
             self.tools.register("python_execute", sandbox_tools.python_execute)
@@ -348,7 +352,7 @@ class DurableOpenManusRuntime:
                     try:
                         observation = await _run_tool_until_cancelled(
                             self.tools.execute(
-                                function.name, arguments, run_id=context.run_id, user_id=context.user_id,
+                                function.name, arguments, run_id=context.run_id, user_id=context.user_id, workspace_id=context.workspace_id,
                             ),
                             cancelled,
                         )
