@@ -292,7 +292,7 @@
     "classification": "upstream templates/static assets archived only",
     "active_product_use": false
   },
-  "parity_status": "PARTIAL — full upstream backend parity remains open. Approval persistence/API contracts exist but worker pause/resume/consume is not wired. Sandbox supervisor, browser isolation/SSRF/DNS rebinding, file execution and several upstream agent/flow/tool/server capabilities remain unintegrated. Frontend now has route/auth/workflow/agent/artifact integration increments but full Phase 09 is not complete.",
+  "parity_status": "PARTIAL — worker approval pause/resume and atomic consumption are now wired in code but require migration apply and runtime verification. Docker Bash/Python runner is approval-gated and no longer host-bind-mounts source, but activation remains disabled until independent release gate. Deployed sandbox supervisor, browser network interception/SSRF/DNS rebinding/redirect/download controls, isolated file workspace and several upstream agent/flow/tool/server capabilities remain unintegrated. Frontend now has Splash/onboarding, role-specific direct routes and configurable Customer/Partner API origins; full Phase 09 domain integration is not complete.",
   "implemented_target_files": [
     "engine/agents/types.py",
     "engine/agents/runtime.py",
@@ -346,8 +346,8 @@
     "persistence": "Migration authored: supabase/migrations/20261111050000_moreai_tool_approval_lifecycle.sql",
     "api": "apps/api/app/routers/tool_approvals.py; registered in apps/api/app/main.py; customer-scoped list/request/decision contracts",
     "frontend_client": "lib/api/client.ts exports customerToolApprovalApi",
-    "worker_dispatch": "NOT_INTEGRATED — durable tool dispatcher still needs pause/resume semantics and atomic consume callback before sandbox tools can be exposed",
-    "status": "PARTIAL — persistence and server API contracts authored; not activated; no test evidence per product-owner instruction"
+    "worker_dispatch": "CONNECTED IN CODE — WorkerRpcClient creates/reuses a durable run/tool/argument-hash approval, polls while maintaining the lease, propagates cancellation, and atomically consumes the approval before the central tool registry dispatches; migration is not applied and sandbox activation remains release-gated",
+    "status": "PARTIAL — worker pause/resume and atomic consume path authored; not runtime-verified; migration not applied; Bash/Python remain disabled until sandbox release gate passes"
   },
   "frontend_integration": {
     "completed_in_this_increment": [
