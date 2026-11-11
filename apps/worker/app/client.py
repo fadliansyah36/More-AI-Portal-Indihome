@@ -126,7 +126,7 @@ class WorkerRpcClient:
             "p_event_id": event_id, "p_worker_id": self.settings.worker_id,
             "p_error_code": error_code[:80],
         })
-        if result not in {"pending", "dead_letter"}:
+        if result not in {"failed", "dead_letter"}:
             raise RuntimeError("outbox_retry_state_invalid")
         return result
 
