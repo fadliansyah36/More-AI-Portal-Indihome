@@ -3,6 +3,8 @@ from uuid import uuid4
 
 import httpx
 from fastapi import Depends, FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+import os
 from fastapi.responses import JSONResponse
 
 from app.config import Settings
@@ -24,6 +26,20 @@ app = FastAPI(
     description="Trusted MoreAI business API. Browser Supabase access is Auth-only; application data and agent execution are mediated here.",
     lifespan=lifespan,
 )
+
+# Separate Customer/Partner API origins are optional. Explicitly allow only configured
+# browser origins; same-origin deployments need no CORS entries.
+_cors_origins = [origin.strip().rstrip('/') for origin in os.getenv('MOREAI_CORS_ALLOWED_ORIGINS', '').split(',') if origin.strip()]
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials=False,
+        allow_methods=['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+        allow_headers=['Authorization', 'Content-Type', 'Accept', 'Idempotency-Key', 'X-Correlation-ID'],
+        expose_headers=['X-Correlation-ID'],
+        max_age=600,
+    )
 
 app.include_router(conversations.router)
 app.include_router(customer.router)
