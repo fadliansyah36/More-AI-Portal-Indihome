@@ -1,5 +1,7 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import MoreAiApp from '../../page';
 
 export default function CustomerRegisterRoute() {
-  redirect('/?view=register');
+  return <MoreAiApp />;
 }
