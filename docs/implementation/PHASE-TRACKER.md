@@ -231,3 +231,15 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Browser remains disabled: the browser engine is not yet forced through this transport, and socket/network namespace enforcement plus full redirect/subresource/WebSocket/download mediation are not complete.
 - SWE persistent workspace/editor and full upstream Flow/server/session parity remain open.
 - No tests, lint, typecheck, build, browser checks or deployment were run. No new pass evidence is claimed.
+
+
+## 2026-11-11 — Phase 04 Browser Supervisor & Persistent SWE Workspace increment
+
+- Report: [PHASE-04-BROWSER-SWE-INTEGRATION-20261111.md](./PHASE-04-BROWSER-SWE-INTEGRATION-20261111.md).
+- Added private Supabase Storage-backed SWE workspace editor scoped by `user_id/workspace_id`; workspace ID is passed from durable run context into `str_replace_editor`.
+- Added path traversal and implicit overwrite rejection, UTF-8/2 MiB bounds, private bucket verification and SHA-256 result metadata.
+- Added authenticated DNS-pinned CONNECT proxy and standalone proxy entrypoint. Each CONNECT is checked against domain allowlist, public DNS set and pinned peer IP.
+- Added isolated FastAPI Playwright supervisor service and worker-side HTTP adapter; browser tool is registered only when explicit feature enablement, service URL/token and network-egress enforcement flag are present.
+- Browser remains disabled by default. The egress flag is only a deployment assertion; actual network namespace/firewall denial of direct egress has not been provisioned or verified. Downloads remain disabled, and click/type are not in the exposed action contract.
+- Workspace file CAS/leases, list/read/delete/version history, complete upstream SWE parity, durable event outbox/sequence/replay, remaining OpenManus Flow/server/session parity and remaining product domains remain open.
+- No browser/SWE runtime tests, network tests, build, lint, typecheck, E2E or deployment were performed. No release acceptance is claimed.
