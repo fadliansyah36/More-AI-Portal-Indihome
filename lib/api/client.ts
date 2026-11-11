@@ -390,3 +390,12 @@ export const notificationApi = {
     moreAiApi<{ id: string; read_at: string }>(`/api/v1/notifications/${notificationId}/read`, { method: 'POST' }),
   markAllRead: () => moreAiApi<{ updated: number }>('/api/v1/notifications/read-all', { method: 'POST' }),
 };
+
+
+export const platformAdminApi = {
+  updatePartnerStatus: (partnerId: string, status: 'pending' | 'active' | 'suspended' | 'rejected' | 'closed', idempotencyKey: string) =>
+    moreAiApi<{ partner_id: string; status: string; previous_status: string; updated_at: string }>(
+      `/api/v1/admin/partners/${partnerId}/status`,
+      { method: 'PATCH', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ status }) },
+    ),
+};
