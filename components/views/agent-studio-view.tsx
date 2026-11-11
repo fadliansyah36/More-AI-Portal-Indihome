@@ -189,7 +189,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
 
             <button
               onClick={() => {
-                showToast(`Agent "${selectedAgent.name}" siap digunakan! Membuka Chat Workspace.`, 'success');
+                showToast('Membuka Chat Workspace. Eksekusi mengikuti ketersediaan backend.', 'info');
                 if (onSelectAgentForChat) onSelectAgentForChat(selectedAgent);
               }}
               className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2"
