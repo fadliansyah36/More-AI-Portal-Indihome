@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from app.dependencies import current_user
+from app.authorization import customer_principal
 from app.repositories.supabase import SupabaseRepository
 
 router = APIRouter(prefix="/api/v1/conversations", tags=["conversations"])
@@ -29,7 +29,7 @@ def repository(request: Request) -> SupabaseRepository:
 
 
 @router.post("", status_code=201)
-async def create_conversation(body: ConversationCreate, request: Request, user: dict[str, Any] = Depends(current_user)):
+async def create_conversation(body: ConversationCreate, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     return await repository(request).insert("conversations", {"user_id": user["id"], "title": body.title, "status": "active", "metadata": {}})
 
 
