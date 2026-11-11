@@ -138,3 +138,15 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - Latest one-hour runtime error scan found no errors. No interactive authenticated browser E2E was performed.
 - **Important:** `NEXT_PUBLIC_MOREAI_API_URL` and role-specific API origins remain unset because no deployed FastAPI public origin is currently configured in Vercel. The Next.js project does not expose the FastAPI `/api/v1/*` endpoints. Thus route shell deployment is complete, but production workflow data/approval integration remains blocked on FastAPI hosting/origin configuration.
 - Detailed evidence: `docs/implementation/VERCEL-DEPLOYMENT-ROUTING-FIX-20261111.md`.
+
+
+## 2026-11-11 continuation — public/auth navigation isolation and production verification
+
+- Report: [PUBLIC-AUTH-NAV-ISOLATION-OPENMANUS-STATUS-20261111.md](./PUBLIC-AUTH-NAV-ISOLATION-OPENMANUS-STATUS-20261111.md).
+- Public/auth entry screens no longer render the private fixed Bottom Navigation Dock; public-page bottom spacing no longer reserves dock space.
+- Removed global Customer ↔ Partner mode switching from header/dock. Removed gallery and cross-domain drawer header triggers. MoreAI brand navigation now returns to the active role's own home.
+- Files: `app/page.tsx`, `components/navigation/app-navbar.tsx`.
+- Phase 00 CI run [42973885825](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42973885825): SUCCESS — lint, build, browser smoke/responsive screenshot job, worker tests and API tests passed. Screenshot evidence artifact id `13834487651`.
+- Vercel production deployment `dpl_4kCc46R8WeYE1eQtbuvNV177AUcN` for commit `aecd134544eecb7c9a361c14ca067bb546bddeb2`: READY. HTTP 200 verified for root, onboarding, customer register and login routes.
+- This is a navigation-isolation increment only. No authenticated signup/login or Partner membership E2E was run. Existing OpenManus/FastAPI wiring remains partial; `NEXT_PUBLIC_MOREAI_API_URL` and role-specific origins remain unset because the actual public FastAPI URL is not known/configured. Full frontend → FastAPI → OpenManus worker → Supabase integration is not verified.
+- Phase 04 and 06–09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED. Next: configure the confirmed FastAPI public origin, then verify API health/OpenAPI/JWT/CORS and continue remaining backend parity/domain contracts before E2E acceptance.
