@@ -152,3 +152,13 @@ Do not skip inspection, overwrite user work, silently change scope, or begin pos
 - Do not add a new direct Supabase data client to a UI component. Reuse `lib/api/client.ts`; add or extend typed FastAPI contracts instead.
 - API and worker execution remain fail-closed until provider routing, entitlements, quota policies, credit wallets, secret references and worker health are verified. Do not enqueue jobs that cannot be processed.
 - Any exception to this boundary requires an explicit PRD/ADR update and security review before implementation.
+
+
+## 13. Sandbox and browser execution security gate (Phase 04)
+
+- Python, Bash and process tools must execute only in a disposable isolated runner. Require digest-pinned images, non-root UID, read-only root filesystem, no host mounts, no network by default, dropped capabilities, no-new-privileges, seccomp/AppArmor or equivalent runtime profile, CPU/memory/PID/disk/output/time limits, process-tree termination and ephemeral workspace cleanup.
+- Never execute user-provided commands through a host shell or interpolate them into Docker CLI strings. Use argument arrays and a trusted container runtime boundary. Missing runtime/image/policy must fail closed.
+- Browser navigation must enforce HTTPS, an explicit tenant/partner-scoped domain allowlist, reject credentials and non-global/private/link-local/loopback/multicast/reserved IPs, and repeat enforcement for redirects, subresources and DNS changes at the network interception layer. A one-time DNS lookup is not sufficient against DNS rebinding.
+- Browser downloads must be size-limited, MIME/content validated, stored outside the host filesystem, scanned by an available malware scanner, and rejected when scanner status is unavailable or inconclusive.
+- Do not register sandbox-dependent tools in the production agent registry until the sandbox service is deployed and threat-model tests, escape tests, SSRF tests, tenant-boundary tests and artifact scanning tests pass.
+- A unit-tested policy helper is not proof of a deployed sandbox or browser supervisor. Report implementation and deployment status separately.
