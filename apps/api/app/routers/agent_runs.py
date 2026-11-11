@@ -5,13 +5,26 @@ import json
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, Query
+from fastapi import APIRouter, Depends, Request, Query, Header, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.authorization import customer_principal
 from app.routers.conversations import repository
 
 router = APIRouter(prefix="/api/v1/agent-runs", tags=["agent-runs"])
+
+
+def _event_cursor(after: int, last_event_id: str | None) -> int:
+    """Honor EventSource reconnection cursors without accepting malformed IDs."""
+    if last_event_id is None or not last_event_id.strip():
+        return max(after, 0)
+    try:
+        header_cursor = int(last_event_id.strip(), 10)
+    except ValueError as exc:
+        raise HTTPException(400, "Last-Event-ID must be a non-negative integer") from exc
+    if header_cursor < 0:
+        raise HTTPException(400, "Last-Event-ID must be a non-negative integer")
+    return max(after, header_cursor)
 
 
 async def _event_with_checkpoint_state(repo, run_id: UUID, row: dict[str, Any]) -> dict[str, Any]:
@@ -86,13 +99,15 @@ async def cancel_run(run_id: UUID, request: Request, user: dict[str, Any] = Depe
 async def get_events(
     run_id: UUID, request: Request,
     after: int = Query(default=0, ge=0),
+    last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
     limit: int = Query(default=200, ge=1, le=500),
     user: dict[str, Any] = Depends(customer_principal),
 ):
+    cursor = _event_cursor(after, last_event_id)
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
     rows = await repo.select("agent_run_events", {
-        "run_id": f"eq.{run_id}", "sequence": f"gt.{max(after, 0)}",
+        "run_id": f"eq.{run_id}", "sequence": f"gt.{event_cursor}",
         "select": "id,event_type,sequence,payload,created_at", "order": "sequence.asc", "limit": str(limit),
     })
     return [await _event_with_checkpoint_state(repo, run_id, row) for row in rows]
@@ -102,14 +117,16 @@ async def get_events(
 async def stream_events(
     run_id: UUID, request: Request,
     after: int = Query(default=0, ge=0),
+    last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
     wait_seconds: int = Query(default=60, ge=1, le=120),
     user: dict[str, Any] = Depends(customer_principal),
 ):
+    cursor = _event_cursor(after, last_event_id)
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
 
     async def events():
-        cursor = max(after, 0)
+        event_cursor = cursor
         idle_rounds = 0
         while idle_rounds < max(1, min(wait_seconds, 120)):
             if await request.is_disconnected():
@@ -122,9 +139,9 @@ async def stream_events(
                 idle_rounds = 0
                 for raw in rows:
                     row = await _event_with_checkpoint_state(repo, run_id, raw)
-                    cursor = max(cursor, int(row["sequence"]))
+                    event_cursor = max(event_cursor, int(row["sequence"]))
                     payload = json.dumps(row, separators=(",", ":"))
-                    yield f"id: {cursor}\nevent: {row['event_type']}\ndata: {payload}\n\n"
+                    yield f"id: {event_cursor}\nevent: {row['event_type']}\ndata: {payload}\n\n"
             else:
                 idle_rounds += 1
                 run = await repo.owned_record("agent_runs", run_id, user["id"])
@@ -132,7 +149,7 @@ async def stream_events(
                 if status in {"succeeded", "failed", "cancelled", "expired"}:
                     terminal_event = "run.completed" if status == "succeeded" else "run.cancelled" if status == "cancelled" else "run.failed"
                     payload = json.dumps({"run_id": str(run_id), "status": status, "output": run.get("output"), "error": run.get("error")}, separators=(",", ":"))
-                    yield f"id: {cursor}\nevent: {terminal_event}\ndata: {payload}\n\n"
+                    yield f"id: {event_cursor}\nevent: {terminal_event}\ndata: {payload}\n\n"
                     return
                 yield ": keep-alive\n\n"
             await asyncio.sleep(1)
