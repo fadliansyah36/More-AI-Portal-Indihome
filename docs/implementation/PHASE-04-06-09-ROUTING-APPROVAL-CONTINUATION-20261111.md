@@ -4,7 +4,7 @@ Date: 2026-11-11
 Repository: fadliansyah36/More-AI-Portal-Indihome  
 Branch: main (direct commits only)  
 Baseline: 1cdd4358b9465c67234c0a28037d9018f85513a7  
-Target: 705775e2d9fd65c7efd5911e3190e31d12f938b3
+Target: c35d722fd9becbc371a090cf1ff814bd3e82d971
 
 ## Scope completed in this increment
 
@@ -64,7 +64,7 @@ Target: 705775e2d9fd65c7efd5911e3190e31d12f938b3
 - `e5a6f36`, `c4dc58d`, `153639b`, `367f406`, `afd8b2a`, `07bc8e2`, `a023173`, `7889f9d`, `3a63070`, `4f31b80`, `5ebe1b7` — shared app rendered at direct route paths.
 - `debecee` — remove host bind mount from Docker runner.
 - `2189d45`, `fb0452b`, `f29638c`, `5212fa2`, `ebaa323`, `ce21605`, `8a1c9e8`, `dd11b09`, `95179b9`, `cfae287`, `396fa56` — approval worker/dispatcher/sandbox wiring.
-- `175f4e7` — Customer Workflow approval controls.
+- `175f4e7`, `c35d722` — Customer Workflow approval controls and approval-list error state.
 - `a217439`, `705775e` — phase/parity documentation.
 
 ## Explicit remaining work — not marked complete
