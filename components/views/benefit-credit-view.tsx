@@ -65,7 +65,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
   const history = usage.map((item) => ({
     id: item.id,
     title: item.model_key || item.provider_key || 'Penggunaan AI',
-    type: 'ai' as const,
+    type: (item as CustomerUsageRecord).id ? 'ai' as const : 'ai' as const,
     date: new Date(item.created_at).toLocaleString('id-ID'),
     amount: item.actual_cost !== null ? String(item.actual_cost) : String(item.estimated_cost),
     positive: false,
@@ -240,7 +240,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
                       : 'bg-rose-50 text-rose-600'
                   }`}
                 >
-                  {h.type === 'wifi' ? <Wifi className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  {<Sparkles className="w-3.5 h-3.5" />}
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{h.title}</h4>
