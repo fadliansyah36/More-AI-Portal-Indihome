@@ -180,10 +180,14 @@ export default function App() {
   // Quick navigation handler
   const handleNavigate = (tab: NavigationTab) => {
     const routeByTab: Partial<Record<NavigationTab, string>> = {
-      workflow_progress: '/workflow',
-      login: '/login',
-      register: '/register',
+      splash: '/splash',
+      onboarding: '/onboarding',
+      home: '/customer',
+      login: '/customer/login',
+      register: '/customer/register',
+      partner: '/partner',
       partner_login: '/partner/login',
+      workflow_progress: '/workflow',
     };
     const nextUrl = routeByTab[tab] || ('/?view=' + encodeURIComponent(tab));
     if (window.location.pathname + window.location.search !== nextUrl) {
