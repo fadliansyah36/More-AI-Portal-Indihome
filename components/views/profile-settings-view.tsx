@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
-import { moreAiApi, notificationApi } from '@/lib/api/client';
+import { profileApi, customerApi, notificationApi } from '@/lib/api/client';
 
 interface ProfileSettingsViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -40,10 +40,11 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
   const [profileEmail, setProfileEmail] = useState('');
   const [profileLoading, setProfileLoading] = useState(true);
   const [savingPreference, setSavingPreference] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
-    Promise.all([moreAiApi<{ user: { email?: string }; profile: { display_name?: string | null } | null }>('/api/v1/me'), notificationApi.preferences()])
+    Promise.all([profileApi.get(), notificationApi.preferences()])
       .then(([identity, preferences]) => {
         if (!active) return;
         setProfileName(identity.profile?.display_name || 'Pengguna MoreAI');
@@ -54,6 +55,16 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
       .finally(() => { if (active) setProfileLoading(false); });
     return () => { active = false; };
   }, [showToast]);
+
+  useEffect(() => {
+    let active = true;
+    customerApi.wallets().then(({ wallets }) => {
+      if (!active) return;
+      const balance = wallets.reduce((sum, wallet) => sum + Number(wallet.balance || 0), 0);
+      setCreditBalance(Number.isFinite(balance) ? balance : null);
+    }).catch(() => { if (active) setCreditBalance(null); });
+    return () => { active = false; };
+  }, []);
 
   const toggleNotifications = async () => {
     const next = !notificationsEnabled;
@@ -96,7 +107,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
           className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-semibold transition"
         >
           <Gift className="w-3.5 h-3.5 text-red-600" />
-          <span>AI Credit Free: 8.500 Poin</span>
+          <span>AI Credit: {creditBalance === null ? 'Tidak tersedia' : creditBalance.toLocaleString('id-ID') + ' Poin'}</span>
           <ChevronRight className="w-3 h-3" />
         </div>
       </div>
@@ -104,7 +115,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
       {/* Settings Navigation Menu */}
       <div className="bg-white rounded-3xl p-3 border border-slate-100 shadow-xs space-y-1">
         <button
-          onClick={() => showToast('Profil Akun: Andi Pratama (Pengguna Global Partner ISP Aktif)', 'info')}
+          onClick={() => showToast(profileName ? 'Profil akun: ' + profileName + (profileEmail ? ' · ' + profileEmail : '') : 'Informasi profil belum tersedia.', 'info')}
           className="w-full p-3 rounded-2xl hover:bg-slate-50 flex items-center justify-between text-left transition group"
         >
           <div className="flex items-center gap-3">
