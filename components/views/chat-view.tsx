@@ -17,12 +17,13 @@ interface ChatMessage {
 interface ChatViewProps {
   onBack: () => void;
   initialPrompt?: string;
+  initialAgentKey?: 'manus' | 'planning';
   onNavigateTab?: (tab: NavigationTab) => void;
 }
 
 const timeLabel = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '' }) => {
+export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', initialAgentKey = 'manus' }) => {
   const { showToast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '' }
       }
 
       const queued = await customerApi.sendMessage(
-        activeConversationId, text, crypto.randomUUID(), 'manus',
+        activeConversationId, text, crypto.randomUUID(), initialAgentKey,
       );
 
       setMessages((previous) => [...previous, {
