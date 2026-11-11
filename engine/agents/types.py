@@ -8,7 +8,9 @@ from typing import Any, Literal
 class AgentState(StrEnum):
     IDLE = "IDLE"
     RUNNING = "RUNNING"
-    FINISHED = "FINISHED"\n    CANCELLED = "CANCELLED"\n    EXHAUSTED = "EXHAUSTED"
+    FINISHED = "FINISHED"
+    CANCELLED = "CANCELLED"
+    EXHAUSTED = "EXHAUSTED"
     ERROR = "ERROR"
 
 
