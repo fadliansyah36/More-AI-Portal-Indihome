@@ -18,7 +18,7 @@ class Settings:
             supabase_anon_key=os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_PUBLISHABLE_KEY"),
             supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
             agent_execution_enabled=os.getenv("MOREAI_AGENT_EXECUTION_ENABLED", "false").lower() == "true",
-            artifacts_bucket=os.getenv("MOREAI_ARTIFACTS_BUCKET", ""),
+            artifacts_bucket=os.getenv("MOREAI_ARTIFACTS_BUCKET", "moreai-artifacts"),
         )
 
     @property
