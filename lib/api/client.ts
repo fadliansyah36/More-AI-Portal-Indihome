@@ -135,13 +135,9 @@ export type CustomerWorkflowStep = {
   sequence: number;
   step_key: string;
   status: 'pending' | 'running' | 'waiting_approval' | 'succeeded' | 'failed' | 'skipped' | 'cancelled' | string;
-  input: Record<string, unknown>;
-  output: Record<string, unknown> | null;
-  error: Record<string, unknown> | null;
   started_at: string | null;
   finished_at: string | null;
   created_at: string;
-  updated_at: string;
 };
 
 export type CustomerAgentRun = {
@@ -257,6 +253,10 @@ export const artifactApi = {
 export const customerApi = {
   context: () => moreAiCustomerApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
   conversations: () => moreAiCustomerApi<CustomerConversation[]>('/api/v1/customer/conversations'),
+  getConversation: (conversationId: string) => moreAiCustomerApi<{
+    conversation: CustomerConversation;
+    messages: Array<{ id: string; role: string; content: string; model_key: string | null; run_id: string | null; created_at: string }>;
+  }>(`/api/v1/customer/conversations/${conversationId}`),
   createConversation: (title: string) => moreAiCustomerApi<{ id: string }>('/api/v1/customer/conversations', {
     method: 'POST', body: JSON.stringify({ title }),
   }),
@@ -272,6 +272,9 @@ export const customerApi = {
     method: 'POST',
   }),
   getRunSteps: (runId: string) => moreAiApi<CustomerWorkflowStep[]>(`/api/v1/agent-runs/${runId}/steps`),
+  getRunEvents: (runId: string, after = 0) => moreAiApi<Array<{
+    id: string; event_type: string; sequence: number; payload: Record<string, unknown>; created_at: string;
+  }>>(`/api/v1/agent-runs/${runId}/events?after=${Math.max(0, after)}`),
   streamRun: (runId: string) => `/api/v1/agent-runs/${runId}/stream?wait_seconds=30`,
   wallets: () => moreAiCustomerApi<{ wallets: CustomerWallet[] }>('/api/v1/customer/wallet'),
   ledger: (limit = 50, before?: string) => moreAiCustomerApi<CustomerLedgerEntry[]>(`/api/v1/customer/wallet/ledger?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
