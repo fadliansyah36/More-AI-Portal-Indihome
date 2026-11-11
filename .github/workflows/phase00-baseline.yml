@@ -17,6 +17,22 @@ on:
       - 'apps/api/**'
       - 'apps/worker/**'
       - '.github/workflows/phase00-baseline.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'hooks/**'
+      - 'lib/**'
+      - 'types/**'
+      - 'package.json'
+      - 'next.config.ts'
+      - 'tsconfig.json'
+      - 'scripts/phase00-browser-smoke.mjs'
+      - 'engine/**'
+      - 'apps/api/**'
+      - 'apps/worker/**'
+      - '.github/workflows/phase00-baseline.yml'
   workflow_dispatch:
 
 permissions:
