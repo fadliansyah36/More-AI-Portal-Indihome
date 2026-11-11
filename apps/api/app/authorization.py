@@ -124,3 +124,54 @@ async def require_platform_context(request: Request, user: dict[str, Any]) -> di
     if not allowed:
         raise HTTPException(403, "Platform administrative permission is required")
     return {**user, "principal_role": sorted(allowed)[0], "platform_roles": sorted(allowed)}
+
+
+async def require_platform_permission(
+    request: Request, user: dict[str, Any], permission_key: str,
+) -> dict[str, Any]:
+    """Resolve a permission through active server-side assignments and role-permission joins."""
+    if not permission_key or len(permission_key) > 128:
+        raise HTTPException(400, "Permission key is invalid")
+    repo = _repository(request)
+    assignments = await repo.select("user_role_assignments", {
+        "user_id": f"eq.{user['id']}",
+        "scope_type": "eq.platform",
+        "scope_id": "is.null",
+        "or": f"(expires_at.is.null,expires_at.gt.{datetime.now(timezone.utc).isoformat()})",
+        "select": "role_id",
+        "limit": "100",
+    })
+    role_ids = [str(row["role_id"]) for row in assignments if row.get("role_id")]
+    if not role_ids:
+        raise HTTPException(403, "Active platform assignment is required")
+    roles = await repo.select("roles", {
+        "id": f"in.({','.join(role_ids)})",
+        "scope": "eq.platform",
+        "select": "id,key",
+        "limit": "100",
+    })
+    scoped_role_ids = [str(row["id"]) for row in roles]
+    if not scoped_role_ids:
+        raise HTTPException(403, "Platform role is required")
+    role_permissions = await repo.select("role_permissions", {
+        "role_id": f"in.({','.join(scoped_role_ids)})",
+        "select": "permission_id",
+        "limit": "500",
+    })
+    permission_ids = [str(row["permission_id"]) for row in role_permissions if row.get("permission_id")]
+    if not permission_ids:
+        raise HTTPException(403, "Permission denied")
+    permissions = await repo.select("permissions", {
+        "id": f"in.({','.join(permission_ids)})",
+        "key": f"eq.{permission_key}",
+        "select": "key",
+        "limit": "1",
+    })
+    if not permissions:
+        raise HTTPException(403, "Permission denied")
+    return {
+        **user,
+        "principal_role": "platform",
+        "platform_roles": sorted({row["key"] for row in roles}),
+        "permission": permission_key,
+    }
