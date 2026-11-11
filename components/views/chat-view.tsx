@@ -1,21 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Bot, Copy, Loader2, Paperclip, Send, ShieldCheck, Sparkles, User } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
-import {
-  Send,
-  Sparkles,
-  Paperclip,
-  Mic,
-  Copy,
-  Check,
-  RotateCcw,
-  Bot,
-  User,
-  ArrowLeft,
-  ChevronRight,
-  ShieldCheck,
-} from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { moreAiApi, moreAiApiStream } from '@/lib/api/client';
 
@@ -33,32 +20,36 @@ interface ChatViewProps {
   onNavigateTab?: (tab: NavigationTab) => void;
 }
 
-export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', onNavigateTab }) => {
+const timeLabel = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '' }) => {
   const { showToast } = useToast();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      sender: 'assistant',
-      text: 'Halo! Silakan tulis kebutuhan Anda. Pesan akan diproses melalui MoreAI Agent Runtime.',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      source: 'MoreAI',
-    },
-  ]);
-  const [conversationId, setConversationId] = useState<string | null>(null);  const handleSendMessage = React.useCallback(async (textToSend?: string) => {
-    const text = textToSend || inputText.trim();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [inputText, setInputText] = useState(initialPrompt);
+  const [isLoading, setIsLoading] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+  const sentInitialPrompt = useRef(false);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = useCallback(async (textToSend?: string) => {
+    const text = (textToSend ?? inputText).trim();
     if (!text || isLoading) return;
 
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
       sender: 'user',
       text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: timeLabel(),
     };
-    setMessages((prev) => [...prev, userMsg]);
+    const assistantId = crypto.randomUUID();
+    setMessages((previous) => [...previous, userMessage]);
     setInputText('');
     setIsLoading(true);
 
-    const assistantId = `run-${Date.now()}`;
     let streamedText = '';
     let terminalStatus: string | null = null;
     let finalOutput: Record<string, unknown> | undefined;
@@ -83,46 +74,45 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         },
       );
 
-      setMessages((prev) => [...prev, {
+      setMessages((previous) => [...previous, {
         id: assistantId,
         sender: 'assistant',
         text: '',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: timeLabel(),
         source: 'MoreAI Agent Runtime',
       }]);
 
-      await moreAiApiStream(
-        `/api/v1/agent-runs/${queued.run.id}/stream?wait_seconds=30`,
-        ({ event, data }) => {
-          if (event === 'worker.checkpoint') {
-            const checkpoint = data.checkpoint as Record<string, unknown> | undefined;
-            if (typeof checkpoint?.text === 'string') {
-              streamedText += checkpoint.text;
-              setMessages((prev) => prev.map((message) =>
-                message.id === assistantId ? { ...message, text: streamedText } : message,
-              ));
-            }
-          } else if (event === 'run.completed') {
-            terminalStatus = 'succeeded';
-            finalOutput = data.output as Record<string, unknown> | undefined;
-          } else if (event === 'run.failed') {
-            terminalStatus = 'failed';
-            finalOutput = data.error as Record<string, unknown> | undefined;
-          } else if (event === 'run.cancelled') {
-            terminalStatus = 'cancelled';
+      await moreAiApiStream(`/api/v1/agent-runs/${queued.run.id}/stream?wait_seconds=30`, ({ event, data }) => {
+        if (event === 'worker.checkpoint') {
+          const checkpoint = data.checkpoint as Record<string, unknown> | undefined;
+          if (typeof checkpoint?.text === 'string') {
+            streamedText += checkpoint.text;
+            setMessages((previous) => previous.map((message) =>
+              message.id === assistantId ? { ...message, text: streamedText } : message,
+            ));
           }
-        },
-      );
+        } else if (event === 'run.completed') {
+          terminalStatus = 'succeeded';
+          finalOutput = data.output as Record<string, unknown> | undefined;
+        } else if (event === 'run.failed') {
+          terminalStatus = 'failed';
+          finalOutput = data.error as Record<string, unknown> | undefined;
+        } else if (event === 'run.cancelled') {
+          terminalStatus = 'cancelled';
+        }
+      });
 
       let finalRun: { status: string; output?: Record<string, unknown>; error?: Record<string, unknown> } | null = null;
       if (!terminalStatus) {
         for (let attempt = 0; attempt < 5; attempt += 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1200));
-          finalRun = await moreAiApi<typeof finalRun & {}>(`/api/v1/agent-runs/${queued.run.id}`);
+          await new Promise((resolve) => window.setTimeout(resolve, 1200));
+          finalRun = await moreAiApi<{ status: string; output?: Record<string, unknown>; error?: Record<string, unknown> }>(
+            `/api/v1/agent-runs/${queued.run.id}`,
+          );
           if (['succeeded', 'failed', 'cancelled'].includes(finalRun.status)) break;
         }
-        terminalStatus = finalRun?.status || queued.run.status;
-        finalOutput = finalRun?.output || finalOutput;
+        terminalStatus = finalRun?.status ?? queued.run.status;
+        finalOutput = finalRun?.output ?? finalOutput;
       }
 
       const outputText = typeof finalOutput?.text === 'string'
@@ -132,35 +122,120 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
           : streamedText;
 
       if (terminalStatus === 'succeeded') {
-        setMessages((prev) => prev.map((message) =>
-          message.id === assistantId ? { ...message, text: outputText || 'Agent selesai tanpa teks keluaran.' } : message,
+        setMessages((previous) => previous.map((message) =>
+          message.id === assistantId ? { ...message, text: outputText } : message,
         ));
       } else if (terminalStatus === 'failed' || terminalStatus === 'cancelled') {
-        throw new Error(`Agent run ${terminalStatus}. Silakan coba kembali atau periksa riwayat tugas.`);
+        throw new Error(`Agent run ${terminalStatus}. Silakan periksa riwayat tugas sebelum mencoba kembali.`);
       } else {
-        setMessages((prev) => prev.map((message) =>
+        setMessages((previous) => previous.map((message) =>
           message.id === assistantId
-            ? { ...message, text: streamedText || 'Permintaan sudah masuk antrean MoreAI. Status eksekusi dapat dipantau pada riwayat tugas.', source: `Agent Runtime · ${terminalStatus}` }
+            ? { ...message, text: streamedText || 'Run masih diproses. Periksa statusnya pada riwayat tugas.', source: `Agent Runtime · ${terminalStatus}` }
             : message,
         ));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'MoreAI API tidak dapat memproses permintaan.';
       showToast(message, 'error');
-      setMessages((prev) => {
-        const existing = prev.some((item) => item.id === assistantId);
-        if (!existing) {
-          return [...prev, {
-            id: assistantId,
-            sender: 'assistant',
-            text: message,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            source: 'MoreAI API',
-          }];
-        }
-        return prev.map((item) => item.id === assistantId ? { ...item, text: message, source: 'MoreAI API' } : item);
-      });
+      setMessages((previous) => [...previous, {
+        id: assistantId,
+        sender: 'assistant',
+        text: message,
+        time: timeLabel(),
+        source: 'MoreAI API',
+      }]);
     } finally {
       setIsLoading(false);
     }
   }, [inputText, isLoading, conversationId, showToast]);
+
+  useEffect(() => {
+    if (initialPrompt.trim() && !sentInitialPrompt.current) {
+      sentInitialPrompt.current = true;
+      void handleSendMessage(initialPrompt);
+    }
+  }, [initialPrompt, handleSendMessage]);
+
+  return (
+    <section className="flex h-[calc(100dvh-5rem)] min-h-[32rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <header className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
+        <button type="button" onClick={onBack} aria-label="Kembali" className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
+          <Bot className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-sm font-bold text-slate-900">MoreAI Assistant</h1>
+          <p className="text-xs text-slate-500">Agent Runtime · Percakapan tersimpan</p>
+        </div>
+        <ShieldCheck className="h-5 w-5 text-emerald-600" aria-label="Koneksi API terautentikasi" />
+      </header>
+
+      <div className="flex-1 space-y-4 overflow-y-auto bg-slate-50/70 px-4 py-5">
+        {messages.length === 0 && (
+          <div className="mx-auto flex max-w-md flex-col items-center py-12 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+              <Sparkles className="h-7 w-7" />
+            </div>
+            <h2 className="text-base font-semibold text-slate-900">Apa yang ingin Anda kerjakan?</h2>
+            <p className="mt-1 text-sm text-slate-500">Permintaan akan dikirim ke MoreAI API dan diproses oleh agent runtime yang dikonfigurasi.</p>
+          </div>
+        )}
+        {messages.map((message) => (
+          <article key={message.id} className={`flex gap-2.5 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {message.sender === 'assistant' && (
+              <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                <Bot className="h-4 w-4" />
+              </div>
+            )}
+            <div className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-xs ${message.sender === 'user' ? 'rounded-tr-sm bg-red-600 text-white' : 'rounded-tl-sm border border-slate-100 bg-white text-slate-800'}`}>
+              <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.text || 'Agent sedang memproses…'}</p>
+              <div className={`mt-2 flex items-center justify-between gap-4 text-[10px] ${message.sender === 'user' ? 'text-red-100' : 'text-slate-400'}`}>
+                <span>{message.source ?? (message.sender === 'user' ? 'Anda' : 'MoreAI')}</span>
+                <span>{message.time}</span>
+              </div>
+              {message.sender === 'assistant' && message.text && (
+                <button type="button" onClick={() => navigator.clipboard.writeText(message.text)} className="mt-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800">
+                  <Copy className="h-3 w-3" /> Salin
+                </button>
+              )}
+            </div>
+            {message.sender === 'user' && (
+              <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-600">
+                <User className="h-4 w-4" />
+              </div>
+            )}
+          </article>
+        ))}
+        {isLoading && (
+          <div className="flex items-center gap-2 pl-10 text-xs text-slate-500">
+            <Loader2 className="h-4 w-4 animate-spin" /> Menghubungkan ke agent runtime…
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+
+      <form onSubmit={(event) => { event.preventDefault(); void handleSendMessage(); }} className="border-t border-slate-100 bg-white p-3">
+        <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-red-300">
+          <button type="button" disabled aria-label="Lampiran belum tersedia" className="rounded-xl p-2 text-slate-300">
+            <Paperclip className="h-5 w-5" />
+          </button>
+          <textarea
+            value={inputText}
+            onChange={(event) => setInputText(event.target.value)}
+            onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void handleSendMessage(); } }}
+            placeholder="Tulis pesan untuk MoreAI…"
+            rows={1}
+            disabled={isLoading}
+            className="max-h-32 min-h-10 flex-1 resize-y bg-transparent px-2 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:opacity-60"
+          />
+          <button type="submit" disabled={isLoading || !inputText.trim()} aria-label="Kirim pesan" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </button>
+        </div>
+        <p className="mt-2 text-center text-[10px] text-slate-400">Respons diproses melalui backend MoreAI. Ketersediaan bergantung pada konfigurasi agent dan provider.</p>
+      </form>
+    </section>
+  );
+};
