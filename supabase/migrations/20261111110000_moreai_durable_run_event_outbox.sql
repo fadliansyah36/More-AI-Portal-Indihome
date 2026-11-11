@@ -34,7 +34,7 @@ alter table public.agent_run_event_counters enable row level security;
 revoke all on public.agent_run_event_counters from anon, authenticated;
 
 create or replace function public.moreai_worker_append_run_event(
-  p_run_id uuid, p_event_key text, p_event_type text, p_payload jsonb default '{}'::jsonb
+  p_run_id uuid, p_worker_id text, p_event_key text, p_event_type text, p_payload jsonb default '{}'::jsonb
 ) returns jsonb
 language plpgsql security definer set search_path=public,pg_temp as $$
 declare
@@ -48,8 +48,11 @@ begin
      or jsonb_typeof(v_payload) <> 'object' or octet_length(v_payload::text) > 16384 then
     raise exception 'invalid_run_event' using errcode='22023';
   end if;
-  if not exists(select 1 from public.agent_runs where id=p_run_id) then
-    raise exception 'agent_run_not_found' using errcode='P0002';
+  if p_worker_id is null or not exists(
+    select 1 from public.agent_runs
+    where id=p_run_id and status='running' and lease_owner=p_worker_id and lease_expires_at>now()
+  ) then
+    raise exception 'worker_lease_not_held' using errcode='42501';
   end if;
   insert into public.agent_run_event_counters(run_id,last_sequence)
   values(p_run_id,coalesce((select max(sequence) from public.agent_run_events where run_id=p_run_id),0))
@@ -151,11 +154,11 @@ begin
 end;
 $$;
 
-revoke all on function public.moreai_worker_append_run_event(uuid,text,text,jsonb) from public,anon,authenticated;
+revoke all on function public.moreai_worker_append_run_event(uuid,text,text,text,jsonb) from public,anon,authenticated;
 revoke all on function public.moreai_worker_claim_event_outbox(text,integer,integer) from public,anon,authenticated;
 revoke all on function public.moreai_worker_ack_event_outbox(uuid,text) from public,anon,authenticated;
 revoke all on function public.moreai_worker_retry_event_outbox(uuid,text,text) from public,anon,authenticated;
-grant execute on function public.moreai_worker_append_run_event(uuid,text,text,jsonb) to service_role;
+grant execute on function public.moreai_worker_append_run_event(uuid,text,text,text,jsonb) to service_role;
 grant execute on function public.moreai_worker_claim_event_outbox(text,integer,integer) to service_role;
 grant execute on function public.moreai_worker_ack_event_outbox(uuid,text) to service_role;
 grant execute on function public.moreai_worker_retry_event_outbox(uuid,text,text) to service_role;
