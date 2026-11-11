@@ -307,4 +307,4 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Worker runtime now handles RunPausedForApproval without marking the run failed or cancelled.
 - Migration: 20261111140000_moreai_run_level_approval_pause_resume.sql.
 - Report: PHASE-04-RUN-LEVEL-APPROVAL-PAUSE-RESUME-20261111.md.
-- No staging/runtime/tests/build/lint/typecheck/provider calls/deployment. Migration application and runtime acceptance remain pending.
+- Migration applied successfully to canonical Supabase project uunfgimtokhucegqbpce. Read-only verification confirmed the column, table, RPC signatures, RLS and deny policy. No staging/runtime/tests/build/lint/typecheck/provider calls/deployment; runtime acceptance remains pending.

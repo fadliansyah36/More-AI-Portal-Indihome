@@ -15,4 +15,4 @@ Date: 2026-11-11
 - No UI changes, no production business data writes.
 
 ## Verification limits
-No staging, runtime tests, tests, build/lint/typecheck, provider calls or deployment per instruction. Migration is committed but not applied; RPC behavior remains unverified. Phase 04 remains in progress pending migration application and runtime acceptance.
+No staging, runtime tests, tests, build/lint/typecheck, provider calls or deployment per instruction. Migration 20261111140000_moreai_run_level_approval_pause_resume was applied successfully to canonical Supabase project uunfgimtokhucegqbpce. Read-only schema verification confirmed resume_pending, the pause table, all three RPC signatures, RLS enabled and the server-only deny policy. Runtime behavior remains unverified because worker execution/testing was not run. Phase 04 remains in progress pending migration application and runtime acceptance.
