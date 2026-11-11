@@ -315,6 +315,17 @@ export const partnerApi = {
     moreAiPartnerApi<PartnerCampaign>(`/api/v1/partner/campaigns/${campaignId}` + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'PATCH', body: JSON.stringify(payload) }),
   inviteMember: (payload: { user_id: string; role_key: 'partner_admin' | 'location_manager' | 'partner_staff' | 'partner_analyst'; location_id?: string | null }, partnerId?: string) =>
     moreAiPartnerApi<PartnerMember>('/api/v1/partner/members' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST', body: JSON.stringify(payload) }),
+  networks: (partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>('/api/v1/partner/networks' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : '')),
+  createNetwork: (payload: { location_id: string; provider_id?: string | null; name: string; ssid_label?: string | null; gateway_type: string; gateway_network_ref?: string | null }, partnerId?: string) =>
+    moreAiPartnerApi<Record<string, unknown>>('/api/v1/partner/networks' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST', body: JSON.stringify(payload) }),
+  verificationConfigs: (networkId: string, partnerId?: string) =>
+    moreAiPartnerApi<Array<Record<string, unknown>>>(`/api/v1/partner/networks/${networkId}/verification-configs` + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : '')),
+  configureVerification: (networkId: string, payload: { method_key: 'gps' | 'mikrotik_hotspot' | 'radius' | 'gateway' | 'isp_api'; config_public?: Record<string, unknown>; secret_reference?: string | null; policy?: Record<string, unknown>; enabled?: boolean }, partnerId?: string) =>
+    moreAiPartnerApi<Record<string, unknown>>(`/api/v1/partner/networks/${networkId}/verification-configs` + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST', body: JSON.stringify(payload) }),
+  createAccessCode: (payload: { location_id?: string | null; network_id?: string | null; campaign_id?: string | null; reward_id?: string | null; expires_at: string; max_redemptions?: number }, partnerId?: string) =>
+    moreAiPartnerApi<{ access_code: string; record: Record<string, unknown>; notice: string }>('/api/v1/partner/access-codes' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST', body: JSON.stringify(payload) }),
+  revokeAccessCode: (accessCodeId: string, partnerId?: string) =>
+    moreAiPartnerApi<{ id: string; status: string }>(`/api/v1/partner/access-codes/${accessCodeId}/revoke` + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''), { method: 'POST' }),
   campaignRewards: (campaignId: string, partnerId?: string) => moreAiPartnerApi<Array<Record<string, unknown>>>(
     `/api/v1/partner/campaigns/${campaignId}/rewards` + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
   ),
