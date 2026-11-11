@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { customerApi, CustomerUsageRecord } from '@/lib/api/client';
 import {
   TrendingUp,
   BarChart2,
@@ -13,6 +14,29 @@ import {
 
 export const AnalyticsView: React.FC = () => {
   const [timeFilter, setTimeFilter] = useState<'minggu' | 'bulan' | 'tahun'>('minggu');
+  const [usage, setUsage] = useState<CustomerUsageRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    customerApi.usage(100).then((rows) => { if (active) setUsage(rows); })
+      .catch((err) => { if (active) setError(err instanceof Error ? err.message : 'Data analytics tidak tersedia.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const periodUsage = useMemo(() => {
+    const now = Date.now();
+    const duration = timeFilter === 'minggu' ? 7 : timeFilter === 'bulan' ? 30 : 365;
+    return usage.filter((row) => {
+      const created = new Date(row.created_at).getTime();
+      return Number.isFinite(created) && created >= now - duration * 86400000;
+    });
+  }, [usage, timeFilter]);
+  const totalTokens = periodUsage.reduce((sum, row) => sum + row.input_tokens + row.output_tokens, 0);
+  const totalCost = periodUsage.reduce((sum, row) => sum + Number(row.actual_cost ?? row.estimated_cost ?? 0), 0);
+  const successfulRuns = periodUsage.filter((row) => row.status === 'succeeded' || row.status === 'completed').length;
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -39,18 +63,18 @@ export const AnalyticsView: React.FC = () => {
         ))}
       </div>
 
-      {/* Metric Card: Total Aktivitas 12.5K (Exact from Sheet 1) */}
+      {/* Metric Card: Total Aktivitas {loading ? "—" : periodUsage.length.toLocaleString("id-ID")} (Exact from Sheet 1) */}
       <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs text-slate-400 font-semibold block uppercase tracking-wider">
-              Total Aktivitas
+              Aktivitas AI · {timeFilter}
             </span>
             <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-3xl font-black text-slate-900 tracking-tight">12.5K</span>
+              <span className="text-3xl font-black text-slate-900 tracking-tight">{loading ? "—" : periodUsage.length.toLocaleString("id-ID")}</span>
               <span className="text-xs font-bold text-emerald-600 flex items-center gap-0.5">
                 <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>+12%</span>
+                <span>rekaman API</span>
               </span>
             </div>
           </div>
@@ -60,7 +84,7 @@ export const AnalyticsView: React.FC = () => {
         </div>
 
         {/* Visual SVG Wave Chart (matching Sheet 1 red line with gradient fill) */}
-        <div className="pt-2">
+        <div className="pt-2">{error ? <p className="text-xs text-amber-700">{error}</p> : <p className="text-xs text-slate-500">{loading ? "Memuat data penggunaan…" : `${totalTokens.toLocaleString("id-ID")} token diproses · ${successfulRuns} penggunaan berhasil · biaya tercatat ${totalCost.toLocaleString("id-ID")}`}</p>}
           <svg viewBox="0 0 400 120" className="w-full h-28 overflow-visible">
             <defs>
               <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
