@@ -107,7 +107,7 @@ async def get_events(
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
     rows = await repo.select("agent_run_events", {
-        "run_id": f"eq.{run_id}", "sequence": f"gt.{event_cursor}",
+        "run_id": f"eq.{run_id}", "sequence": f"gt.{cursor}",
         "select": "id,event_type,sequence,payload,created_at", "order": "sequence.asc", "limit": str(limit),
     })
     return [await _event_with_checkpoint_state(repo, run_id, row) for row in rows]
@@ -132,7 +132,7 @@ async def stream_events(
             if await request.is_disconnected():
                 break
             rows = await repo.select("agent_run_events", {
-                "run_id": f"eq.{run_id}", "sequence": f"gt.{cursor}",
+                "run_id": f"eq.{run_id}", "sequence": f"gt.{event_cursor}",
                 "select": "id,event_type,sequence,payload,created_at", "order": "sequence.asc", "limit": "100",
             })
             if rows:
