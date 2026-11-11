@@ -106,6 +106,55 @@ class WorkerRpcClient:
             raise RuntimeError("durable_run_event_append_failed")
         return result
 
+    async def claim_event_outbox(self, limit: int = 20) -> list[dict[str, Any]]:
+        rows = await self.rpc("moreai_worker_claim_event_outbox", {
+            "p_worker_id": self.settings.worker_id,
+            "p_limit": max(1, min(100, limit)),
+            "p_lease_seconds": 45,
+        })
+        return rows if isinstance(rows, list) else []
+
+    async def ack_event_outbox(self, event_id: str) -> bool:
+        result = await self.rpc("moreai_worker_ack_event_outbox", {
+            "p_event_id": event_id, "p_worker_id": self.settings.worker_id,
+        })
+        return result is True
+
+    async def retry_event_outbox(self, event_id: str, error_code: str) -> str:
+        result = await self.rpc("moreai_worker_retry_event_outbox", {
+            "p_event_id": event_id, "p_worker_id": self.settings.worker_id,
+            "p_error_code": error_code[:80],
+        })
+        if result not in {"pending", "dead_letter"}:
+            raise RuntimeError("outbox_retry_state_invalid")
+        return result
+
+    async def publish_run_event(self, event: dict[str, Any]) -> None:
+        run_id = event.get("run_id")
+        event_id = event.get("event_id")
+        sequence = event.get("sequence")
+        if not isinstance(run_id, str) or not isinstance(event_id, str) or not isinstance(sequence, int):
+            raise ValueError("outbox_event_identity_invalid")
+        response = await self.client.post(
+            f"{self.settings.supabase_url.rstrip('/')}/realtime/v1/api/broadcast",
+            headers=self._headers(),
+            json={"messages": [{
+                "topic": f"run:{run_id}",
+                "event": "run.event",
+                "payload": {
+                    "event_id": event_id,
+                    "run_id": run_id,
+                    "sequence": sequence,
+                    "type": event.get("event_type"),
+                    "payload": event.get("payload") or {},
+                    "created_at": event.get("created_at"),
+                },
+                "private": True,
+            }]},
+            timeout=10.0,
+        )
+        response.raise_for_status()
+
     async def claim_run(self) -> dict[str, Any] | None:
         return await self.rpc("moreai_worker_claim_run", {
             "p_worker_id": self.settings.worker_id,
