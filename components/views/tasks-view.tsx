@@ -62,6 +62,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
     setShowAddModal(false);
   };
 
+  const latestRun = runs[0];
+
   const filteredTasks = tasks.filter((t) => {
     if (activeTab === 'aktif') return !t.completed;
     if (activeTab === 'selesai') return t.completed;
@@ -210,8 +212,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                 <Layers className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold">Campaign Launch Project (Live)</h4>
-                <p className="text-[11px] text-slate-300">4 Agent kolaboratif sedang berjalan (75%)</p>
+                <h4 className="text-xs font-bold">{latestRun ? `Workflow Terbaru · ${latestRun.id.slice(0, 8)}` : 'Workflow OpenManus'}</h4>
+                <p className="text-[11px] text-slate-300">{latestRun ? `Status backend: ${latestRun.status}` : 'Belum ada Agent Run tersimpan'}</p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-slate-400" />
