@@ -181,6 +181,25 @@ class WorkerRpcClient:
             "p_checkpoint_key": key, "p_state": state,
         })
 
+
+    async def workspace_get_file(self, user_id: str, workspace_id: str, path: str) -> dict[str, Any]:
+        result = await self.rpc("moreai_workspace_get_file", {"p_user_id":user_id,"p_workspace_id":workspace_id,"p_path":path})
+        if not isinstance(result,dict): raise RuntimeError("workspace_file_metadata_invalid")
+        return result
+
+    async def workspace_begin_write(self, run_id: str, user_id: str, workspace_id: str, path: str, expected_version: int) -> dict[str, Any]:
+        result = await self.rpc("moreai_workspace_begin_write", {"p_run_id":run_id,"p_worker_id":self.settings.worker_id,"p_user_id":user_id,"p_workspace_id":workspace_id,"p_path":path,"p_expected_version":expected_version})
+        if not isinstance(result,dict): raise RuntimeError("workspace_write_reservation_invalid")
+        return result
+
+    async def workspace_commit_write(self, run_id: str, user_id: str, workspace_id: str, path: str, token: str, version: int, storage_path: str, sha256: str, size_bytes: int) -> dict[str, Any]:
+        result = await self.rpc("moreai_workspace_commit_write", {"p_run_id":run_id,"p_worker_id":self.settings.worker_id,"p_user_id":user_id,"p_workspace_id":workspace_id,"p_path":path,"p_token":token,"p_version":version,"p_storage_path":storage_path,"p_sha256":sha256,"p_size_bytes":size_bytes})
+        if not isinstance(result,dict): raise RuntimeError("workspace_write_commit_invalid")
+        return result
+
+    async def workspace_abort_write(self, run_id: str, user_id: str, workspace_id: str, path: str, token: str) -> bool:
+        return await self.rpc("moreai_workspace_abort_write", {"p_run_id":run_id,"p_worker_id":self.settings.worker_id,"p_user_id":user_id,"p_workspace_id":workspace_id,"p_path":path,"p_token":token}) is True
+
     async def wait_for_tool_approval(
         self, run_id: str, user_id: str, tool_key: str, arguments: dict[str, Any],
     ) -> bool:
