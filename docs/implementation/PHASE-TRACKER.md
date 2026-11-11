@@ -300,3 +300,11 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - The worker still waits/heartbeats during approval rather than releasing and reclaiming the run lease. Full run-level pause/resume remains open.
 - No staging/runtime/provider tests, production data writes, migrations, build/lint/typecheck or deployment. UI untouched.
 - Report: [PHASE-04-HIGH-RISK-APPROVAL-GATE-20261111.md](./PHASE-04-HIGH-RISK-APPROVAL-GATE-20261111.md).
+
+
+## 2026-11-11 — Phase 04 run-level approval pause/resume
+- Added atomic approval + pause checkpoint + lease release, idempotent owner decision/resume, claim exclusion, expiration recovery and attempt-preserving continuation.
+- Worker runtime now handles RunPausedForApproval without marking the run failed or cancelled.
+- Migration: 20261111140000_moreai_run_level_approval_pause_resume.sql.
+- Report: PHASE-04-RUN-LEVEL-APPROVAL-PAUSE-RESUME-20261111.md.
+- No staging/runtime/tests/build/lint/typecheck/provider calls/deployment. Migration application and runtime acceptance remain pending.

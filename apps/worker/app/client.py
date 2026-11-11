@@ -9,6 +9,10 @@ from typing import Any
 import httpx
 
 
+class RunPausedForApproval(Exception):
+    """Durable pause committed and worker lease released."""
+
+
 @dataclass(frozen=True)
 class WorkerSettings:
     supabase_url: str
@@ -184,49 +188,27 @@ class WorkerRpcClient:
         arguments_hash = hashlib.sha256(
             json.dumps(arguments, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         ).hexdigest()
-        approval_id = await self.rpc("moreai_request_tool_approval", {
-            "p_run_id": run_id,
-            "p_user_id": user_id,
-            "p_tool_key": tool_key,
+        state = await self.rpc("moreai_worker_pause_for_tool_approval", {
+            "p_run_id": run_id, "p_user_id": user_id,
+            "p_worker_id": self.settings.worker_id, "p_tool_key": tool_key,
             "p_arguments_hash": arguments_hash,
             "p_summary": f"Approval required for isolated {tool_key} execution",
             "p_expires_in_seconds": 900,
         })
-        if isinstance(approval_id, dict):
-            approval_id = approval_id.get("id")
-        if not isinstance(approval_id, str) or not approval_id:
-            raise RuntimeError("tool_approval_request_failed")
-
-        for _ in range(450):
-            rows = await self.select("agent_tool_approvals", {
-                "id": f"eq.{approval_id}",
-                "run_id": f"eq.{run_id}",
-                "user_id": f"eq.{user_id}",
-                "select": "id,status,expires_at",
-                "limit": "1",
+        if not isinstance(state, dict) or not isinstance(state.get("status"), str):
+            raise RuntimeError("tool_approval_pause_failed")
+        status = state["status"]
+        if status == "pending":
+            raise RunPausedForApproval("run_paused_for_tool_approval")
+        if status == "approved":
+            consumed = await self.rpc("moreai_consume_tool_approval", {
+                "p_run_id": run_id, "p_user_id": user_id,
+                "p_tool_key": tool_key, "p_arguments_hash": arguments_hash,
             })
-            if not rows:
-                raise RuntimeError("tool_approval_record_missing")
-            status = rows[0].get("status")
-            if status == "approved":
-                consumed = await self.rpc("moreai_consume_tool_approval", {
-                    "p_run_id": run_id,
-                    "p_user_id": user_id,
-                    "p_tool_key": tool_key,
-                    "p_arguments_hash": arguments_hash,
-                })
-                return bool(consumed)
-            if status in {"denied", "expired", "consumed"}:
-                return False
-            if status != "pending":
-                raise RuntimeError("tool_approval_state_invalid")
-            lease = await self.heartbeat(run_id)
-            if lease.get("cancel_requested"):
-                raise asyncio.CancelledError()
-            if not lease.get("alive", False):
-                raise RuntimeError("worker_lease_lost_while_waiting_for_approval")
-            await asyncio.sleep(2)
-        return False
+            return bool(consumed)
+        if status in {"denied", "expired", "consumed"}:
+            return False
+        raise RuntimeError("tool_approval_state_invalid")
 
     async def finish(
         self, run_id: str, status: str, output: dict[str, Any] | None = None,

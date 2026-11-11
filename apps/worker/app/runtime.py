@@ -5,7 +5,7 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
-from app.client import WorkerRpcClient
+from app.client import RunPausedForApproval, WorkerRpcClient
 
 
 Checkpoint = Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]]
@@ -67,6 +67,10 @@ class WorkerRuntime:
             else:
                 await self.rpc.append_run_event(run_id, "worker:run.completed", "run.completed", {})
                 await self.rpc.finish(run_id, "succeeded", output=output)
+        except RunPausedForApproval:
+            # Pause RPC committed the checkpoint and released the lease atomically.
+            # Owner decision will enqueue a continuation; do not finish this run.
+            pass
         except asyncio.CancelledError:
             # A user-requested cancellation is terminal. A process shutdown is not:
             # leave its lease/checkpoints intact so another worker can recover it.
