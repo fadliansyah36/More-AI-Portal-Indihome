@@ -8,6 +8,8 @@ from app.memory_store import SupabaseConversationMemoryStore
 from app.plan_store import SupabasePlanStore
 from engine.agents.durable_tool_runtime import DurableOpenManusRuntime
 from engine.agents.planning_runtime import PlanningAgentRuntime
+from engine.tools.search_provider import TavilySearchAdapter
+from engine.tools.storage import SupabaseArtifactTool
 from engine.orchestration.registry import AgentRegistry
 
 
@@ -15,6 +17,8 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     gateway = create_metered_gateway(client, http_client)
     plan_store = SupabasePlanStore(client)
     memory_store = SupabaseConversationMemoryStore(client)
+    search_tools = TavilySearchAdapter(http_client)
+    storage_tools = SupabaseArtifactTool(client)
     sandbox_tools = None
     sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
     sandbox_gate_passed = os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
@@ -27,6 +31,8 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
         gateway,
         memory_store=memory_store,
         plan_store=plan_store,
+        search_tools=search_tools,
+        storage_tools=storage_tools,
         sandbox_tools=sandbox_tools,
         approval_gate=client.wait_for_tool_approval if sandbox_tools is not None else None,
     )
