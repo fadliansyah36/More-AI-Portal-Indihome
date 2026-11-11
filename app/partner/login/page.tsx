@@ -1,5 +1,7 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import MoreAiApp from '../../page';
 
 export default function PartnerLoginRoute() {
-  redirect('/?view=partner_login');
+  return <MoreAiApp />;
 }
