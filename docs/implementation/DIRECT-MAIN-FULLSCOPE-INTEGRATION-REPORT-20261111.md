@@ -33,7 +33,7 @@ This increment committed substantial backend/API source work directly to `main`.
 - Added partner member invitation with allowed roles and location scope checks.
 - Added partner network creation and network listing.
 - Added network verification config read/write guarded by the live platform method catalog; an adapter that is not marked ready cannot be enabled.
-- Added one-time access-code creation and revocation. Only SHA-256 code hash is persisted; plaintext code is returned once. Network-bound codes require a location.
+- Added one-time access-code creation and revocation. Only SHA-256 code hash is persisted; plaintext code is returned once. Network-bound codes require a location; reward-bound codes resolve and validate their campaign against the active partner tenant before issuance.
 - Added typed client methods for these operations.
 - These are scoped domain operations, not a complete Partner product: gateway provisioning adapters, captive portal runtime, voucher redemption settlement and analytics are still open.
 
