@@ -35,3 +35,11 @@ Latest direct-main commits:
 - `e2eb64c147f2f4a8d5ad92d152c20a4d76e5b6ca` — Phase 04 engine tests in CI.
 
 These commits are implementation increments, not Phase 04 acceptance. CI must pass and remaining integration gaps must be closed before this phase can be signed off.
+
+
+## 2026-11-11 continuation notes
+
+- Confirmed live Supabase columns for `conversations` and `conversation_messages`; both have RLS enabled. `conversation_messages.token_input` and `token_output` are NOT NULL. The worker memory insert was corrected to supply zero usage values for non-metered conversation-memory rows.
+- Latest commits: `8bcec7a799ed1dac4587dc1d8fc9d933136820f2` removes the redundant Files loading state update that caused the baseline lint gate to fail; `713109f28705ab3dc28af25dabdf2eed79a87e8f` and `734be31ddd43636ea09d3ed16feac1f511154ac6` reconcile and test the required memory usage columns.
+- Previous Phase 00 baseline run `42959465066`: build/server/browser smoke passed; lint failed only on the redundant setState-in-effect in `components/views/files-view.tsx`. The lint defect is fixed on main; a fresh baseline run is in progress.
+- Current Phase 04 sandbox CI is re-running after the memory schema correction. Phase 04 and Phase 08 are still not accepted; Phase 09 UI separation has not started because backend foundations and authenticated E2E gates are not yet complete.
