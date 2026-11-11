@@ -396,6 +396,6 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - API schema, database CHECK constraint and server-only approval request RPC now consistently accept canonical runtime keys `browser_use` and `planning_step`, retaining legacy aliases.
 - Migration `20261111180000_moreai_openmanus_approval_tool_keys` applied to canonical Supabase project `uunfgimtokhucegqbpce`.
 - Read-only verification confirms the new CHECK constraint and function ACL restricted to postgres/service_role. Security Advisor continues to flag leaked-password protection disabled (WARN).
-- Commits: `379944a6d4715ce551155df7fe39d38882a79a56` (migration), `5af4da0670319326d2e562f6e4a3f21961f3f7d7` (API), `<report-commit-pending>` (report).
+- Commits: `379944a6d4715ce551155df7fe39d38882a79a56` (migration), `5af4da0670319326d2e562f6e4a3f21961f3f7d7` (API), `8d581cdc3c4cc3fca8f753ee15e6258a03f25d6e` (report).
 - No runtime/tests/build/lint/typecheck/staging/provider/deployment. Phase 04 remains IN PROGRESS; browser supervisor socket-level egress, complete upstream Flow/server/session parity and full SWE integration remain open.
 - Report: [PHASE-04-OPENMANUS-APPROVAL-KEY-ALIGNMENT-20261111.md](./PHASE-04-OPENMANUS-APPROVAL-KEY-ALIGNMENT-20261111.md).
