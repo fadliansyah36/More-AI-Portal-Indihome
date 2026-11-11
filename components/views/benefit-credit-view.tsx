@@ -4,13 +4,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Gift,
   Zap,
-  CheckCircle2,
-  Clock,
   Sparkles,
   Wifi,
   ChevronRight,
-  ShieldCheck,
-  CreditCard,
   Plus,
   Receipt,
   Ticket,
