@@ -22,11 +22,13 @@ def test_cancel_and_event_stream_require_authentication():
         assert client.get(f"/api/v1/agent-runs/{run_id}/events").status_code == 401
 
 from app.dependencies import current_user
+from app.authorization import customer_principal
 
 
 def test_agent_run_enqueue_fails_closed_until_runtime_is_enabled(monkeypatch):
     user_id = "00000000-0000-0000-0000-000000000010"
     app.dependency_overrides[current_user] = lambda: {"id": user_id, "email": "test@example.invalid"}
+    app.dependency_overrides[customer_principal] = lambda: {"id": user_id, "email": "test@example.invalid", "principal_role": "customer"}
     monkeypatch.setenv("MOREAI_AGENT_EXECUTION_ENABLED", "false")
     try:
         with TestClient(app) as client:
