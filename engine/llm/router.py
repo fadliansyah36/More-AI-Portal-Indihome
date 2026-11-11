@@ -251,6 +251,7 @@ class MeteredGateway:
                                 provider_activity = True
                                 yield {"type": "delta", "text": chunk}
                         elif item.get("type") == "usage":
+                            provider_activity = True
                             candidate_usage = item
                     if candidate_usage is None:
                         raise RetryableProviderError("provider_stream_usage_missing")
