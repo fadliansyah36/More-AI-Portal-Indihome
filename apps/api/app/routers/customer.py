@@ -182,6 +182,30 @@ async def customer_agent_run_stream(
     })
 
 
+@router.get("/network-sessions")
+async def customer_network_sessions(
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=100),
+    user: dict[str, Any] = Depends(current_user),
+):
+    """Return the authenticated customer's own network session history.
+
+    The response intentionally excludes gateway identifiers, IP addresses,
+    device fingerprints and private verification evidence.
+    """
+    principal = await require_customer_context(request, user)
+    return await repository(request).select("network_sessions", {
+        "user_id": f"eq.{principal['id']}",
+        "select": (
+            "id,network_id,status,started_at,last_heartbeat_at,expires_at,ended_at,end_reason,"
+            "network:partner_networks(id,name,ssid_label,gateway_type,status,"
+            "location:partner_locations(id,name,address))"
+        ),
+        "order": "started_at.desc",
+        "limit": str(limit),
+    })
+
+
 @router.get("/wallet")
 async def customer_wallet(request: Request, user: dict[str, Any] = Depends(current_user)):
     principal = await require_customer_context(request, user)
