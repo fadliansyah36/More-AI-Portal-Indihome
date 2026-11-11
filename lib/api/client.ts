@@ -139,6 +139,7 @@ export const customerApi = {
       headers: { 'Idempotency-Key': idempotencyKey },
       body: JSON.stringify({ content, agent_key: agentKey }),
     }),
+  agentRuns: () => moreAiApi<CustomerAgentRun[]>('/api/v1/customer/agent-runs'),
   getRun: (runId: string) => moreAiApi<CustomerAgentRun>(`/api/v1/customer/agent-runs/${runId}`),
   streamRun: (runId: string) => `/api/v1/customer/agent-runs/${runId}/stream?wait_seconds=30`,
 };
