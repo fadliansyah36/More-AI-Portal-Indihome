@@ -70,8 +70,9 @@ class BrowserRequestGuard:
     requests through this guard; a navigation-only call is insufficient.
     """
 
-    def __init__(self, policy: BrowserPolicy):
+    def __init__(self, policy: BrowserPolicy, resolver=None):
         self.policy = policy
+        self.resolver = resolver
         self._pinned: dict[str, frozenset[str]] = {}
 
     async def validate_request(self, url: str) -> str:
@@ -90,9 +91,12 @@ class BrowserRequestGuard:
             addresses = frozenset({str(literal)})
         except ValueError:
             try:
-                records = await asyncio.get_running_loop().getaddrinfo(
-                    host, 443, type=socket.SOCK_STREAM
-                )
+                if self.resolver is None:
+                    records = await asyncio.get_running_loop().getaddrinfo(
+                        host, 443, type=socket.SOCK_STREAM
+                    )
+                else:
+                    records = await self.resolver(host, 443, socket.SOCK_STREAM)
             except OSError as exc:
                 raise BrowserPolicyError("browser_dns_resolution_failed") from exc
             addresses = frozenset(str(ipaddress.ip_address(record[4][0])) for record in records)
