@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.authorization import require_platform_context
+from app.authorization import require_platform_context, require_platform_permission
 from app.dependencies import current_user
 from app.routers.conversations import repository
 
@@ -14,13 +14,25 @@ async def platform_admin(request: Request, user: dict[str, Any] = Depends(curren
     return await require_platform_context(request, user)
 
 
+async def overview_reader(request: Request, user: dict[str, Any] = Depends(current_user)):
+    return await require_platform_permission(request, user, "platform.overview.read")
+
+
+async def partner_reader(request: Request, user: dict[str, Any] = Depends(current_user)):
+    return await require_platform_permission(request, user, "partner.organization.read")
+
+
+async def audit_reader(request: Request, user: dict[str, Any] = Depends(current_user)):
+    return await require_platform_permission(request, user, "platform.audit.read")
+
+
 @router.get("/context")
 async def admin_context(principal=Depends(platform_admin)):
     return {"principal": {"user_id": principal["id"], "roles": principal["platform_roles"]}}
 
 
 @router.get("/overview")
-async def admin_overview(request: Request, principal=Depends(platform_admin)):
+async def admin_overview(request: Request, principal=Depends(overview_reader))
     repo = repository(request)
     # Counts are derived from bounded live records; this endpoint intentionally
     # avoids exposing PII or relying on client-supplied role/tenant filters.
@@ -62,7 +74,7 @@ async def admin_partners(
     request: Request,
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0, le=10000),
-    principal=Depends(platform_admin),
+    principal=Depends(partner_reader),
 ):
     rows = await repository(request).select("partner_organizations", {
         "select": "id,display_name,legal_name,status,created_at,updated_at",
@@ -97,7 +109,7 @@ async def admin_audit(
     request: Request,
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0, le=10000),
-    principal=Depends(platform_admin),
+    principal=Depends(audit_reader),
 ):
     rows = await repository(request).select("admin_audit_logs", {
         "select": "id,actor_user_id,action,resource_type,resource_id,scope_type,scope_id,correlation_id,outcome,created_at",
