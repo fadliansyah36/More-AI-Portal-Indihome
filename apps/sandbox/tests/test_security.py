@@ -74,9 +74,52 @@ async def test_docker_runner_uses_disposable_networkless_restricted_container(mo
     assert "--pids-limit" in captured
     assert "--memory" in captured
     assert "--cpus" in captured
-    assert any(item.startswith("type=bind,src=") and item.endswith(",readonly") for item in captured)
+    assert not any(item.startswith("--mount") or item.startswith("-v") for item in captured)
 
 
 def test_sandbox_rejects_malformed_digest_even_when_digest_marker_exists():
     with pytest.raises(RuntimeError, match="digest_invalid"):
         DockerSandbox(image="registry.example/sandbox@sha256:latest")._validate()
+
+
+@pytest.mark.asyncio
+async def test_browser_request_guard_revalidates_each_redirect_and_rejects_unapproved_host():
+    from app.browser_security import BrowserRequestGuard
+
+    guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)))
+    with pytest.raises(BrowserPolicyError, match="not_allowlisted"):
+        await guard.validate_redirect_chain([
+            "https://trusted.example/start",
+            "https://attacker.example/redirect",
+        ])
+
+
+@pytest.mark.asyncio
+async def test_browser_request_guard_rejects_nonstandard_ports():
+    from app.browser_security import BrowserRequestGuard
+
+    guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)))
+    with pytest.raises(BrowserPolicyError, match="port_denied"):
+        await guard.validate_request("https://trusted.example:8443/")
+
+
+@pytest.mark.asyncio
+async def test_browser_request_guard_detects_dns_rebinding(monkeypatch):
+    import socket
+    from app.browser_security import BrowserRequestGuard
+
+    answer = ["93.184.216.34"]
+
+    async def fake_getaddrinfo(host, port, type):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (answer[0], port))]
+
+    monkeypatch.setattr(asyncio.get_running_loop(), "getaddrinfo", fake_getaddrinfo, raising=False)
+    guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)))
+    # Exercise the guard with a deterministic resolver override.
+    async def resolve(host, port, type):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (answer[0], port))]
+    monkeypatch.setattr("app.browser_security.asyncio.get_running_loop", lambda: type("Loop", (), {"getaddrinfo": resolve})())
+    await guard.validate_request("https://trusted.example/one")
+    answer[0] = "1.1.1.1"
+    with pytest.raises(BrowserPolicyError, match="rebinding"):
+        await guard.validate_request("https://trusted.example/two")
