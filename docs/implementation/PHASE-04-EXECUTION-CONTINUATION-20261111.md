@@ -148,3 +148,15 @@ Therefore, current in-process `AgentMemory` and run checkpoints are not a long-t
 - API and Worker jobs passed on the preceding PR commit; latest SHA baseline will rerun them as well.
 
 This verifies only the policy tests and current baseline pipeline. It does not verify full upstream agent/tool/memory parity.
+
+
+## 11. CI revalidation on commit 6a46013 (11 November 2026)
+
+The earlier CI status in sections 2 and 10 above is superseded by the following verified branch-head runs:
+
+- Commit: `6a46013c0b26225365c7db48c50742cf19023559` — fixes the Phase 04 workflow path filter and installs the pinned `httpx==0.28.1` dependency for engine tests.
+- [Phase 04 Sandbox Security Tests run 42957951017](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42957951017): PASS — `sandbox-policy` and `engine-policy` both completed successfully.
+- [Phase 00 Baseline Verification run 42957951040](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42957951040): PASS — API tests, worker tests, lint, production build, app startup and browser smoke/evidence jobs all completed successfully.
+- The PR remains Draft and unmerged.
+
+These CI results clear the CI repair item for this commit only. They do not close Phase 04: upstream agent/tool/flow/memory parity and sandbox/browser runtime wiring remain incomplete; frontend integration remains partial; authenticated provider E2E and Phase 11 release acceptance remain outstanding. No provider/API-key tests, worker enablement, production migration, merge, or deployment were performed.
