@@ -300,3 +300,11 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - No staging, runtime tests, provider calls, production data writes, migration, lint, typecheck, build or deployment were run.
 - Detailed report: [SECURITY-PERFORMANCE-ADVISOR-20261111.md](./SECURITY-PERFORMANCE-ADVISOR-20261111.md).
 - Phases 04, 06, 07, 08 and 09 remain IN PROGRESS; Phase 10 is skipped per product-owner instruction and Phase 11 remains NOT STARTED.
+
+
+## 2026-11-11 — Phase 04 PlanningFlow durable-resume increment
+- `engine/agents/planning_runtime.py`: restore canonical persisted plan before LLM plan generation; skip succeeded steps; validate dependency completion; persist successful outputs; checkpoint high-risk/sandbox steps as `waiting_approval` and fail closed.
+- `apps/worker/app/plan_store.py`: expose durable plan retrieval and persist structured successful output using existing `agent_run_steps` fields; no new schema/migration.
+- No UI changes, no production data writes, no staging/runtime/provider tests, no build/lint/typecheck and no deployment.
+- Phase 04 remains IN PROGRESS: worker-level approval pause/reclaim, full server/session/WebSocket parity, workspace CAS/version lifecycle and deployed browser egress isolation remain open.
+- Report: [PHASE-04-PLANNINGFLOW-DURABLE-RESUME-20261111.md](./PHASE-04-PLANNINGFLOW-DURABLE-RESUME-20261111.md).
