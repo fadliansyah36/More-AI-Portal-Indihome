@@ -99,7 +99,7 @@ class PolicyEnforcedToolRegistry:
                 })
         return definitions
 
-    async def execute(self, name: str, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
+    async def execute(self, name: str, arguments: dict[str, Any], *, run_id: str, user_id: str, workspace_id: str | None = None) -> str:
         normalized = name.strip().lower() if isinstance(name, str) else ""
         tool = self.catalog.get(normalized)
         if tool is None:
@@ -118,7 +118,7 @@ class PolicyEnforcedToolRegistry:
                 raise PermissionError("tool_approval_denied_expired_or_already_consumed")
         try:
             output = await asyncio.wait_for(
-                handler(arguments, run_id=run_id, user_id=user_id),
+                handler(arguments, run_id=run_id, user_id=user_id, **({"workspace_id": workspace_id} if normalized == "str_replace_editor" else {})),
                 timeout=tool.timeout_seconds,
             )
         except TimeoutError as exc:
