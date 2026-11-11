@@ -107,7 +107,7 @@
       "module": "runtime/logging",
       "target": "engine/observability/logging.py",
       "capability": "structured logs",
-      "status": "PENDING — correlation ID middleware exists; tenant-safe structured engine logging not ported"
+      "status": "PENDING — correlation ID middleware exists; tenant-safe structured engine logging and upstream logger parity not ported"
     },
     {
       "source": "vendor/openmanusweb/app/prompt/manus.py",
@@ -177,14 +177,14 @@
       "module": "tools/file-saver",
       "target": "engine/tools/file_saver.py",
       "capability": "artifact/file save",
-      "status": "PENDING — artifact metadata/storage adapter and safe workspace boundary pending"
+      "status": "ADAPTED — private SupabaseArtifactTool in engine/tools/storage.py writes owner-scoped object + artifacts metadata with checksum and compensating cleanup; worker advertises only when MOREAI_ARTIFACTS_BUCKET is configured; API upload and 60-second signed download require configured private bucket"
     },
     {
       "source": "vendor/openmanusweb/app/tool/google_search.py",
       "module": "tools/search",
       "target": "engine/tools/search.py",
       "capability": "web search",
-      "status": "PENDING — provider adapter, source attribution and outbound network policy pending"
+      "status": "ADAPTED — TavilySearchAdapter in engine/tools/search_provider.py is provider-host pinned, query-only and bounded; worker advertises only when TAVILY_API_KEY is configured; outbound provider allowlist is the fixed Tavily endpoint"
     },
     {
       "source": "vendor/openmanusweb/app/tool/planning.py",
@@ -212,7 +212,7 @@
       "module": "tools/editor",
       "target": "engine/tools/editor.py",
       "capability": "workspace file editing",
-      "status": "BLOCKED — catalogued, but safe workspace editor implementation and path isolation pending"
+      "status": "BLOCKED — catalogued, but safe per-run persistent workspace editor, path isolation and artifact reconciliation are not implemented"
     },
     {
       "source": "vendor/openmanusweb/app/tool/terminate.py",
@@ -388,6 +388,53 @@
       "Bash/Python remain disabled unless sandbox flags and release gate are both enabled; browser remains default-deny without socket-level egress enforcement.",
       "File storage/download, search provider, SWE workspace/editor, complete upstream flow/server/WebSocket/logging parity remain open.",
       "Full Customer/Partner domain API coverage and Super Admin mutation governance remain open."
+    ]
+  },
+  "integration_increment_20261111_fullscope": {
+    "branch": "main",
+    "commits": [
+      "536aa98105cf4b89329a368c3d105a32bbdc3619",
+      "662d24195c6c0b3c933feb4292fd1bb72a0cc6d9",
+      "cda97d516aded560a83fe96f586b2eae1840c3e9",
+      "9d5d27828429709c4f8082991d4cb72946d80844",
+      "ce21ce5a19f57fc1defbe8823b5cc2dc2df97e6b",
+      "475af4c101c646b29e4fba369d06cea957858d01",
+      "a6c87ea84ef8b7ef54feac01112ad175e5d0bf15",
+      "5dedef1f65aeda4be90203a0f75854d38be7299c",
+      "208d20e94e8187e3f21a2c4d3a35f7eb21734dd0",
+      "eb21c925341b4da7821acfa3b5b53ae98858eb8a",
+      "e6790a7bcb85a4fd96b9e75e208f6f9de324a5e4",
+      "578852194bd4a89537dcd0c252ce05d191962237",
+      "11069b1e455984968ade08f6c224ca48597e5b56",
+      "3033aa7dfc21380cdd72a4bc6e0fdcd1fe3a4c20",
+      "ad27e80255673f6417264d9c92f16d2aaef4dd1c",
+      "35a62f3ef00354cdb659084a5e174fa6832fed0d",
+      "7d97ed8c9bbfe47f97e2cb779887168e4e24d985",
+      "556da5e8d82d6d0c2a9e5eec8229da159d2a284f",
+      "1d57df3089f2b640e7c4f80435b6c44369fb8874"
+    ],
+    "implemented": [
+      "Provider-pinned Tavily search tool adapter with bounded normalized source results; registered only when TAVILY_API_KEY exists.",
+      "Supabase artifact saver tool with per-user object paths, checksum, metadata persistence and compensating object deletion; registered only when MOREAI_ARTIFACTS_BUCKET exists.",
+      "Owner-scoped artifact upload and 60-second signed-download FastAPI routes; private bucket configuration added.",
+      "Customer profile PATCH using caller JWT and existing profile RLS.",
+      "Partner location, campaign create/update, member invitation, network create, verification config management and one-time access code create/revoke with tenant/location scope checks.",
+      "Platform permission resolver from active assignments and role_permissions; Super Admin read routes enforce granular permissions.",
+      "Typed API client additions for profile, files and Partner operations."
+    ],
+    "blockers": [
+      "No public notification schema exists in connected Supabase; notification APIs require an additive migration and RLS policies.",
+      "No dedicated captive-portal settings table/adapter exists; current verification config is not a complete captive-portal management feature.",
+      "No atomic privileged-mutation RPC exists that combines permission enforcement, mutation and immutable audit append; Super Admin mutation endpoints are not exposed.",
+      "No artifact Storage bucket exists in the connected project's inventory; upload/signed download require bucket provisioning and MOREAI_ARTIFACTS_BUCKET configuration.",
+      "Browser remains default-deny without a deployed socket-level egress supervisor and redirect/subresource/download enforcement.",
+      "SWE editor remains blocked until an isolated per-run persistent workspace and path policy exist.",
+      "No screen component was edited because the AGENTS.md before/after screenshot gate could not be fulfilled in this no-browser/no-live-test increment."
+    ],
+    "verification": [
+      "Read-only schema inspection confirmed current profiles, artifacts, partner_campaigns, partner_locations, partner_members, partner_networks, network_verification_configs, partner_access_codes and RBAC tables/columns.",
+      "Read-only schema inspection confirmed no notification/captive-portal/Wi-Fi-specific tables in public schema.",
+      "No tests, lint, build, provider calls, Storage writes, database migrations, live runtime checks or deployments were run per user instruction."
     ]
   }
 }
