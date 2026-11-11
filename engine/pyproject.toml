@@ -10,3 +10,10 @@ description = "MoreAI agent, orchestration, tools and LLM runtime contracts"
 
 [tool.setuptools.packages.find]
 include = ["engine*"]
+
+[project.optional-dependencies]
+test = ["pytest==8.3.5", "pytest-asyncio==0.25.3", "httpx==0.28.1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
