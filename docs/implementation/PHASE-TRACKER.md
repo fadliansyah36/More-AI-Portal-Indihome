@@ -347,3 +347,8 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 ## 2026-11-11 — Phase 04 planning approval integration
 - Planning steps with elevated risk or non-basic tool requirements now use the durable run-level approval gate and resume from the persisted plan after owner approval.
 - Tool registry policy remains independently enforced after the planning approval.
+
+
+## 2026-11-11 — Phase 04 workspace CAS crash recovery
+- Added expiring write reservations and safe reclamation after worker crashes; stale reservation tokens cannot commit.
+- Migration: 20261111170000_moreai_workspace_cas_expiry_recovery.sql.
