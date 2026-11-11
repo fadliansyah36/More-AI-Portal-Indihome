@@ -37,7 +37,7 @@ This increment does not yet establish full upstream backend parity:
 
 ## Verification status
 
-The test suite and CI workflow were added/expanded, but CI for the direct-main commits has not yet been confirmed successful in this report. Do not treat the commit as a passing test result. Follow the Phase 04 workflow run and fix any failure before continuing.
+The first engine CI run exposed two implementation/configuration defects: the new terminal enum was committed with escaped newline characters, and the existing Engine Contract Tests workflow installed pytest without the newly required async plugin. Both were corrected on main (enum syntax commit `2e27af9e365997aa459a009b748f923c8892166c`; workflow dependency commit `410c76391bf096b86b68d5989b5c282bd4c01764`). The subsequent Engine Contract Tests run `42959017293` completed successfully. The Phase 04 Sandbox Security Tests run for commit `84a5d39ec5a82a69b14c9212f0549165f4b2edcb` was queued at report update time; Phase 00 baseline revalidation was also still running. Do not treat these results as full Phase 04 acceptance.
 
 ## Safety and release
 
