@@ -88,3 +88,62 @@ export async function moreAiApiStream(
     reader.releaseLock();
   }
 }
+
+
+export type CustomerConversation = {
+  id: string;
+  title: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CustomerAgentRun = {
+  id: string;
+  conversation_id: string | null;
+  status: string;
+  output?: Record<string, unknown>;
+  error?: Record<string, unknown>;
+};
+
+export type PartnerContext = {
+  principal: { user_id: string; role: string };
+  tenant: { id: string; display_name: string; legal_name: string; status: string };
+  location_scope: string | null;
+};
+
+export type PartnerLocationRecord = {
+  id: string;
+  partner_id: string;
+  name: string;
+  address: unknown;
+  status: string;
+  created_at: string;
+};
+
+export const customerApi = {
+  context: () => moreAiApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
+  conversations: () => moreAiApi<CustomerConversation[]>('/api/v1/customer/conversations'),
+  createConversation: (title: string) => moreAiApi<{ id: string }>('/api/v1/customer/conversations', {
+    method: 'POST', body: JSON.stringify({ title }),
+  }),
+  sendMessage: (conversationId: string, content: string, idempotencyKey: string, agentKey: 'manus' | 'planning' = 'manus') =>
+    moreAiApi<{ run: { id: string; status: string } }>(`/api/v1/customer/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+      body: JSON.stringify({ content, agent_key: agentKey }),
+    }),
+  getRun: (runId: string) => moreAiApi<CustomerAgentRun>(`/api/v1/customer/agent-runs/${runId}`),
+};
+
+export const partnerApi = {
+  context: (partnerId?: string) => moreAiApi<PartnerContext>(
+    '/api/v1/partner/context' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
+  ),
+  locations: (partnerId?: string) => moreAiApi<PartnerLocationRecord[]>(
+    '/api/v1/partner/locations' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
+  ),
+  members: (partnerId?: string) => moreAiApi<Array<Record<string, unknown>>>(
+    '/api/v1/partner/members' + (partnerId ? `?partner_id=${encodeURIComponent(partnerId)}` : ''),
+  ),
+};
