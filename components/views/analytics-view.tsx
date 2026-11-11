@@ -2,15 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { customerApi, CustomerUsageRecord } from '@/lib/api/client';
-import {
-  TrendingUp,
-  BarChart2,
-  Calendar,
-  Zap,
-  Activity,
-  ArrowUpRight,
-  ShieldCheck,
-} from 'lucide-react';
+import { Activity, ArrowUpRight } from 'lucide-react';
 
 export const AnalyticsView: React.FC = () => {
   const [timeFilter, setTimeFilter] = useState<'minggu' | 'bulan' | 'tahun'>('minggu');
