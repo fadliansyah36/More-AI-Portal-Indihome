@@ -24,19 +24,34 @@ class MeteredToolGateway(Protocol):
 
 
 def _restore_tool_calls(raw_calls: Any) -> list[ToolCall]:
-    calls: list[ToolCall] = []
+    if raw_calls is None:
+        return []
     if not isinstance(raw_calls, list):
-        return calls
+        raise ValueError("provider_tool_calls_must_be_array")
+    calls: list[ToolCall] = []
+    seen_ids: set[str] = set()
     for raw in raw_calls:
         if not isinstance(raw, dict) or not isinstance(raw.get("function"), dict):
-            continue
+            raise ValueError("provider_tool_call_shape_invalid")
         fn = raw["function"]
-        if isinstance(raw.get("id"), str) and isinstance(fn.get("name"), str):
-            args = fn.get("arguments", "{}")
-            if isinstance(args, dict):
-                args = json.dumps(args, separators=(",", ":"), sort_keys=True)
-            if isinstance(args, str):
-                calls.append(ToolCall(raw["id"], ToolFunction(fn["name"], args), raw.get("type", "function")))
+        call_id, name = raw.get("id"), fn.get("name")
+        if not isinstance(call_id, str) or not call_id or len(call_id) > 128 or call_id in seen_ids:
+            raise ValueError("provider_tool_call_id_invalid_or_duplicate")
+        if not isinstance(name, str) or not re.fullmatch(r"[a-z][a-z0-9_]{0,79}", name):
+            raise ValueError("provider_tool_name_invalid")
+        args = fn.get("arguments", "{}")
+        if isinstance(args, dict):
+            args = json.dumps(args, separators=(",", ":"), sort_keys=True)
+        if not isinstance(args, str) or len(args) > 100_000:
+            raise ValueError("provider_tool_arguments_invalid")
+        try:
+            parsed = json.loads(args)
+        except json.JSONDecodeError as exc:
+            raise ValueError("provider_tool_arguments_invalid_json") from exc
+        if not isinstance(parsed, dict):
+            raise ValueError("provider_tool_arguments_must_be_object")
+        seen_ids.add(call_id)
+        calls.append(ToolCall(call_id, ToolFunction(name, args), raw.get("type", "function")))
     return calls
 
 
