@@ -74,7 +74,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '' }
         source: 'MoreAI Agent Runtime',
       }]);
 
-      await moreAiApiStream(`/api/v1/agent-runs/${queued.run.id}/stream?wait_seconds=30`, ({ event, data }) => {
+      await moreAiApiStream(customerApi.streamRun(queued.run.id), ({ event, data }) => {
         if (event === 'worker.checkpoint') {
           const checkpoint = data.checkpoint as Record<string, unknown> | undefined;
           if (typeof checkpoint?.text === 'string') {
@@ -98,9 +98,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '' }
       if (!terminalStatus) {
         for (let attempt = 0; attempt < 5; attempt += 1) {
           await new Promise((resolve) => window.setTimeout(resolve, 1200));
-          finalRun = await moreAiApi<{ status: string; output?: Record<string, unknown>; error?: Record<string, unknown> }>(
-            `/api/v1/agent-runs/${queued.run.id}`,
-          );
+          finalRun = await customerApi.getRun(queued.run.id);
           if (['succeeded', 'failed', 'cancelled'].includes(finalRun.status)) break;
         }
         terminalStatus = finalRun?.status ?? queued.run.status;
