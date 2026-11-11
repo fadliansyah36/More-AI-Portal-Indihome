@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
-from app.dependencies import current_user
+from app.authorization import customer_principal
 from app.routers.conversations import repository
 
 router = APIRouter(prefix="/api/v1/agent-runs", tags=["agent-runs"])
@@ -28,7 +28,7 @@ async def _event_with_checkpoint_state(repo, run_id: UUID, row: dict[str, Any]) 
 
 
 @router.get("")
-async def list_runs(request: Request, user: dict[str, Any] = Depends(current_user)):
+async def list_runs(request: Request, user: dict[str, Any] = Depends(customer_principal)):
     return await repository(request).select("agent_runs", {
         "user_id": f"eq.{user['id']}",
         "select": "id,conversation_id,status,input,output,error,attempt,max_attempts,created_at,started_at,finished_at",
