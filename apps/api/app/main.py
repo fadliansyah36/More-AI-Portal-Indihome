@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import httpx
 from fastapi import Depends, FastAPI, Request
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from fastapi.responses import JSONResponse
@@ -49,6 +50,17 @@ app.include_router(tool_approvals.router)
 app.include_router(agent_runs.router)
 app.include_router(catalog.router)
 app.include_router(artifacts.router)
+
+
+
+class ProfileUpdate(BaseModel):
+    display_name: str | None = Field(default=None, max_length=120)
+    avatar_path: str | None = Field(default=None, max_length=512)
+    locale: str | None = Field(default=None, pattern=r"^[a-z]{2}(?:-[A-Z]{2})?$", max_length=10)
+    timezone: str | None = Field(default=None, max_length=64)
+
+    def changes(self) -> dict[str, str | None]:
+        return self.model_dump(exclude_unset=True)
 
 
 @app.middleware("http")
@@ -147,3 +159,41 @@ async def get_me(request: Request, user=Depends(current_user)):
         return JSONResponse(status_code=502, content={"detail": "Profile service returned an unexpected response"})
     rows = response.json()
     return {"user": user, "profile": rows[0] if rows else None}
+
+
+@app.patch("/api/v1/me/profile", tags=["identity"])
+async def update_my_profile(body: ProfileUpdate, request: Request, user=Depends(current_user)):
+    changes = body.changes()
+    if not changes:
+        return await get_me(request, user)
+    if "display_name" in changes and changes["display_name"] is not None:
+        changes["display_name"] = changes["display_name"].strip()
+        if not changes["display_name"]:
+            return JSONResponse(status_code=422, content={"detail": "Display name cannot be empty"})
+    if "avatar_path" in changes and changes["avatar_path"] is not None:
+        # Avatar references are opaque owner-scoped paths, never arbitrary URLs.
+        path = changes["avatar_path"]
+        if path.startswith(("http://", "https://", "/")) or ".." in path.split("/") or not path.startswith(f"{user['id']}/"):
+            return JSONResponse(status_code=422, content={"detail": "Avatar path must be owner-scoped"})
+    settings = request.app.state.settings
+    token = request.headers["authorization"].removeprefix("Bearer ").strip()
+    response = await request.app.state.http.patch(
+        f"{settings.supabase_url}/rest/v1/profiles",
+        params={"id": f"eq.{user['id']}", "select": "id,display_name,avatar_path,locale,timezone"},
+        json=changes,
+        headers={
+            "apikey": settings.supabase_anon_key,
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Prefer": "return=representation",
+        },
+        timeout=8.0,
+    )
+    if response.status_code >= 500:
+        return JSONResponse(status_code=503, content={"detail": "Profile service unavailable"})
+    if response.status_code >= 400:
+        return JSONResponse(status_code=422, content={"detail": "Profile update was rejected by the profile policy"})
+    rows = response.json()
+    if not rows:
+        return JSONResponse(status_code=404, content={"detail": "Profile not found or not editable"})
+    return {"user": user, "profile": rows[0]}
