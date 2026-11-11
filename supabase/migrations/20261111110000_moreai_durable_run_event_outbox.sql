@@ -57,7 +57,7 @@ begin
   perform 1 from public.agent_run_event_counters where run_id=p_run_id for update;
 
   select * into v_existing from public.outbox_events
-    where aggregate_type='agent_run' and aggregate_id=p_run_id::text and event_key=p_event_key;
+    where aggregate_type='agent_run' and aggregate_id=p_run_id and event_key=p_event_key;
   if found then
     if v_existing.event_type <> p_event_type
        or v_existing.payload->'event_payload' <> v_payload then
@@ -79,7 +79,7 @@ begin
     id,aggregate_type,aggregate_id,event_type,payload,status,attempts,available_at,
     created_at,event_key,run_sequence
   ) values(
-    v_event_id,'agent_run',p_run_id::text,'run.event',
+    v_event_id,'agent_run',p_run_id,'run.event',
     jsonb_build_object(
       'run_id',p_run_id,'event_id',v_event_id,'sequence',v_sequence,
       'event_type',p_event_type,'event_payload',v_payload,'created_at',now()
