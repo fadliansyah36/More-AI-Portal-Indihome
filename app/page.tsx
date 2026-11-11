@@ -96,6 +96,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showScreenGallery, setShowScreenGallery] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
+  const [chatInitialAgentKey, setChatInitialAgentKey] = useState<'manus' | 'planning'>('manus');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [drawerRole, setDrawerRole] = useState<'customer' | 'partner'>('customer');
   const [isBottomNavCollapsed, setIsBottomNavCollapsed] = useState(false);
@@ -157,8 +158,9 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleStartPrompt = (promptText: string) => {
+  const handleStartPrompt = (promptText: string, agentKey: 'manus' | 'planning' = 'manus') => {
     setChatInitialPrompt(promptText);
+    setChatInitialAgentKey(agentKey);
     handleNavigate('chat');
   };
 
@@ -191,6 +193,7 @@ export default function App() {
                 <ChatView
                   onBack={() => handleNavigate('home')}
                   initialPrompt={chatInitialPrompt}
+                  initialAgentKey={chatInitialAgentKey}
                   onNavigateTab={handleNavigate}
                 />
               )}
@@ -222,8 +225,12 @@ export default function App() {
               {currentTab === 'agents' && (
                 <AgentStudioView
                   onSelectAgentForChat={(agent) =>
-                    handleStartPrompt(`Saya ingin bekerja dengan ${agent.name} untuk ${agent.specialty}.`)
+                    handleStartPrompt(
+                      `Saya ingin bekerja dengan ${agent.name}. ${agent.description}`,
+                      agent.id === 'planning' ? 'planning' : 'manus',
+                    )
                   }
+                  onOpenWorkflow={() => handleNavigate('workflow_progress')}
                 />
               )}
 
