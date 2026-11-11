@@ -4,7 +4,7 @@
 |---|---|---|---|
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
-| 00 | Repository baseline & UI freeze | REVALIDATION IN PROGRESS — updated Partner UI lint correction applied; latest Phase 00 run pending | [Phase 00 run 42965739011](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42965739011): build/server/browser smoke passed, lint failure corrected in `b550329d`; [current run 42965739011 / latest rerun pending](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/workflows/phase00-baseline.yml) |
+| 00 | Repository baseline & UI freeze | REVALIDATED — current UI build/lint/server/browser smoke PASS | [Phase 00 run 42965739011](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/42965739011): lint 0 errors, build/server/browser PASS at 360/390/768/1024/1440 px; 3 existing image optimization warnings |
 | 01 | Upstream source pin & provenance | COMPLETE | `dev_web_app` @ `3ceaa9182b39bbb9898ddda0a4b1c50c2758ab5f` |
 | 02 | Monorepo backend workspace foundation | COMPLETE — foundation | `apps/api`, `apps/worker`, `engine`, `packages` |
 | 03 | Complete upstream source copy | COMPLETE — hash verified | 111/111 matching Git blob SHA in `vendor/openmanusweb/` |
@@ -67,5 +67,16 @@ These commits are implementation increments, not Phase 04 acceptance. CI must pa
 - Provider primary/fallback routes share one maximum-estimate reservation and settle against the selected provider. Streaming failover is allowed only before any delta is emitted.
 - Python/Bash isolated Docker adapter and hardened runner are implemented, but production registration remains disabled until the approval/audit contract and deployed supervisor pass the AGENTS.md gate.
 - Phase 04 CI run 42965739026: sandbox 7/7, engine 26/26, worker 15/15, API 16/16 — all green.
-- Phase 00 run 42965739011: build/server/browser smoke passed at 360/390/768/1024/1440; lint issue in Partner tenant loading effect corrected in `b550329d`. Current rerun must be green before Phase 00 is accepted.
+- Phase 00 run 42965739011: all baseline gates passed — lint 0 errors, build/server/browser smoke passed at 360/390/768/1024/1440; three non-blocking image optimization warnings remain.
 - Real provider keys, authenticated production E2E and deployment remain deferred. Phases 04 and 06–09 remain in progress; Phase 10 blocked; Phase 11 not started.
+
+
+### Latest direct-main commits for this increment
+
+- `895253b7176f25ef76f1f0852376612f25c05d0d` — Partner tenant route authentication regression test.
+- `2b28f2cd4ff9742be0cee2d9ce7c6f057ca21f32` — retain LLM reservation when streaming provider usage has been received.
+- `d81eb1566f17fc90b598e5106bacdebe22700aab` — SSE checkpoint redaction regression test.
+- `b3d7a827056c16ae1260acfbab7d9970fe7f51f3` — redact private tool arguments and observations from run events.
+- `27253b21d6503bf33b74ae4bb47cc5805acdf80a` — partner portal API data binding and tenant selection.
+- `9feb542cf3fc50320093266fb737110706a3d130` — server-authorized Partner tenant discovery route.
+- `c4f649c83614824fec75b0097cd618d47ff1c4f4` — Customer Chat moved to dedicated Customer API.
