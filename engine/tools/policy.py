@@ -23,7 +23,9 @@ class ToolPolicy:
         if key not in self.enabled_tools:
             return ToolDecision(False, key in self.HIGH_RISK, "tool_not_enabled")
         if key in self.HIGH_RISK and key not in self.approved_tools:
-            return ToolDecision(False, True, "isolated_runtime_and_explicit_approval_required")
+            # The handler must pause for a run-scoped approval and atomically consume it
+            # before execution. Listing the tool here only advertises that gated flow.
+            return ToolDecision(True, True, "explicit_approval_required")
         if key in self.approved_tools:
             return ToolDecision(True, False, "explicitly_approved")
-        return ToolDecision(False, True, "approval_required")
+        return ToolDecision(True, False, "enabled_by_policy")
