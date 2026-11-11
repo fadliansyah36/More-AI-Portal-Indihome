@@ -37,19 +37,19 @@ async def list_runs(request: Request, user: dict[str, Any] = Depends(customer_pr
 
 
 @router.get("/{run_id}")
-async def get_run(run_id: UUID, request: Request, user: dict[str, Any] = Depends(current_user)):
+async def get_run(run_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     return await repository(request).owned_record("agent_runs", run_id, user["id"])
 
 
 @router.post("/{run_id}/cancel")
-async def cancel_run(run_id: UUID, request: Request, user: dict[str, Any] = Depends(current_user)):
+async def cancel_run(run_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
     return await repo.rpc("moreai_worker_request_cancel", {"p_run_id": str(run_id), "p_user_id": user["id"]})
 
 
 @router.get("/{run_id}/events")
-async def get_events(run_id: UUID, request: Request, after: int = 0, user: dict[str, Any] = Depends(current_user)):
+async def get_events(run_id: UUID, request: Request, after: int = 0, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
     rows = await repo.select("agent_run_events", {
@@ -60,7 +60,7 @@ async def get_events(run_id: UUID, request: Request, after: int = 0, user: dict[
 
 
 @router.get("/{run_id}/stream")
-async def stream_events(run_id: UUID, request: Request, after: int = 0, wait_seconds: int = 60, user: dict[str, Any] = Depends(current_user)):
+async def stream_events(run_id: UUID, request: Request, after: int = 0, wait_seconds: int = 60, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
 
