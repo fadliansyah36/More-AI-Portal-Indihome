@@ -221,3 +221,13 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - This is not Phase 05/06 completion: notification producers/delivery, remaining Wi-Fi/captive portal/voucher/analytics domains, full Partner operations and broader Super Admin governance remain open. No UI files were modified.
 - Supabase Storage RLS table ownership blocked a direct policy DDL attempt; existing `storage.objects` already has RLS enabled and no client policies. The migration intentionally did not bypass ownership.
 - No runtime tests, lint, typecheck, build, browser verification or deployment were performed in this increment. Schema catalog and migration application were verified only.
+
+
+## 2026-11-11 — Phase 04 / 07–08 cancellation and browser egress increment
+
+- Report: [PHASE-04-07-08-CANCELLATION-EGRESS-INCREMENT-20261111.md](./PHASE-04-07-08-CANCELLATION-EGRESS-INCREMENT-20261111.md).
+- `engine/agents/durable_tool_runtime.py`: active tool invocation is raced against cancellation; when cancellation wins, the tool coroutine is cancelled and awaited before the run exits.
+- `apps/sandbox/app/browser_security.py`: added DNS-pinned TLS socket transport primitive, peer-IP verification, and bounded redirect-chain validation.
+- Browser remains disabled: the browser engine is not yet forced through this transport, and socket/network namespace enforcement plus full redirect/subresource/WebSocket/download mediation are not complete.
+- SWE persistent workspace/editor and full upstream Flow/server/session parity remain open.
+- No tests, lint, typecheck, build, browser checks or deployment were run. No new pass evidence is claimed.
