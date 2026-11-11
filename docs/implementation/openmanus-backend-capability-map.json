@@ -292,7 +292,7 @@
     "classification": "upstream templates/static assets archived only",
     "active_product_use": false
   },
-  "parity_status": "PARTIAL — worker approval pause/resume and atomic consumption are now wired in code but require migration apply and runtime verification. Docker Bash/Python runner is approval-gated and no longer host-bind-mounts source, but activation remains disabled until independent release gate. Deployed sandbox supervisor, browser network interception/SSRF/DNS rebinding/redirect/download controls, isolated file workspace and several upstream agent/flow/tool/server capabilities remain unintegrated. Frontend now has Splash/onboarding, role-specific direct routes and configurable Customer/Partner API origins; full Phase 09 domain integration is not complete.",
+  "parity_status": "PARTIAL — worker approval pause/resume and atomic consumption are wired in code; migration applied and table/RLS verified, but runtime verification remains outstanding. Docker Bash/Python runner is approval-gated and no longer host-bind-mounts source, but activation remains disabled until independent release gate. Deployed sandbox supervisor, browser network interception/SSRF/DNS rebinding/redirect/download controls, isolated file workspace and several upstream agent/flow/tool/server capabilities remain unintegrated. Frontend now has Splash/onboarding, role-specific direct routes and configurable Customer/Partner API origins; full Phase 09 domain integration is not complete.",
   "implemented_target_files": [
     "engine/agents/types.py",
     "engine/agents/runtime.py",
@@ -343,11 +343,11 @@
     "provider_calls": "blocked_until_provider_route_secret_entitlement_quota_wallet_and_credit_conversion_are_configured"
   },
   "approval_lifecycle": {
-    "persistence": "Migration authored: supabase/migrations/20261111050000_moreai_tool_approval_lifecycle.sql",
+    "persistence": "Applied to canonical Supabase project uunfgimtokhucegqbpce; agent_tool_approvals exists with RLS enabled; migration history version 20261111061443; source: supabase/migrations/20261111050000_moreai_tool_approval_lifecycle.sql",
     "api": "apps/api/app/routers/tool_approvals.py; registered in apps/api/app/main.py; customer-scoped list/request/decision contracts",
-    "frontend_client": "lib/api/client.ts exports customerToolApprovalApi",
+    "frontend_client": "lib/api/client.ts exports customerToolApprovalApi; components/views/workflow-progress-view.tsx lists pending approvals and sends owner approve/deny decisions",
     "worker_dispatch": "CONNECTED IN CODE — WorkerRpcClient creates/reuses a durable run/tool/argument-hash approval, polls while maintaining the lease, propagates cancellation, and atomically consumes the approval before the central tool registry dispatches; migration is not applied and sandbox activation remains release-gated",
-    "status": "PARTIAL — worker pause/resume and atomic consume path authored; not runtime-verified; migration not applied; Bash/Python remain disabled until sandbox release gate passes"
+    "status": "PARTIAL — worker pause/resume and atomic consume path wired; migration applied and table/RLS presence verified; Customer approval controls wired; no worker runtime verification; Bash/Python remain disabled until sandbox release gate passes"
   },
   "frontend_integration": {
     "completed_in_this_increment": [
