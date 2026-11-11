@@ -103,7 +103,7 @@ export default function App() {
   // Restore deep links and authentication on direct visits / browser history.
   useEffect(() => {
     const resolveTab = () => {
-      const path = window.location.pathname.replace(/\\/+$/, '') || '/';
+      const path = window.location.pathname.replace(/\/+$/, '') || '/';
       const queryTab = new URLSearchParams(window.location.search).get('view') as NavigationTab | null;
       const pathTab: Record<string, NavigationTab> = {
         '/workflow': 'workflow_progress',
@@ -121,7 +121,7 @@ export default function App() {
       try {
         const { data, error } = await createSupabaseBrowserClient().auth.getSession();
         if (error || !data.session) {
-          const path = window.location.pathname.replace(/\\/+$/, '') || '/';
+          const path = window.location.pathname.replace(/\/+$/, '') || '/';
           const requested = new URLSearchParams(window.location.search).get('view');
           const publicRoute = ['/login', '/register', '/splash', '/onboarding'].includes(path)
             || ['login', 'register', 'splash', 'onboarding'].includes(requested || '');
