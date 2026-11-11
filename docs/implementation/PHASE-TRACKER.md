@@ -243,3 +243,17 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Browser remains disabled by default. The egress flag is only a deployment assertion; actual network namespace/firewall denial of direct egress has not been provisioned or verified. Downloads remain disabled, and click/type are not in the exposed action contract.
 - Workspace file CAS/leases, list/read/delete/version history, complete upstream SWE parity, durable event outbox/sequence/replay, remaining OpenManus Flow/server/session parity and remaining product domains remain open.
 - No browser/SWE runtime tests, network tests, build, lint, typecheck, E2E or deployment were performed. No release acceptance is claimed.
+
+
+## 2026-11-11 continuation — browser egress topology and durable run event outbox
+
+- Added a separate browser container image and Docker Compose topology. Browser supervisor has only the Docker internal network; the authenticated egress proxy is the only component attached to the external bridge. Containers are non-root/read-only with dropped capabilities and resource limits.
+- This is deployment configuration, not packet-level verification. Browser remains disabled until the actual host/network policy is deployed and negative direct-egress tests pass.
+- Added migration draft `20261111110000_moreai_durable_run_event_outbox.sql`: per-run monotonic sequence allocation, event-key idempotency, transactional append to `agent_run_events` and `agent_run_event_outbox`, bounded payloads and service-role-only RPC.
+- Worker now emits run lifecycle/progress events and durable Manus emits tool.started/tool.completed/tool.cancelled events. Sensitive checkpoint/tool arguments and outputs are not included in public event payloads.
+- Existing event GET/SSE endpoints can replay the ordered `agent_run_events` sequence. Outbox publisher/consumer delivery acknowledgement and retry/dead-letter worker remain open.
+- Migration is not applied. Do not deploy event-publishing worker code until schema review/apply/RPC verification is authorized.
+- SWE workspace still lacks list/read/delete, version snapshots, database lease/CAS and crash recovery. Full upstream Flow/server/session and memory/RAG/provider/tool parity remain open. Phase 06 domain coverage and Phase 09 UI integration remain incomplete.
+- No UI files changed. No tests, lint, typecheck, build, browser network verification, SQL apply, E2E, provider call or deployment run in this increment.
+- Report: [PHASE-07-BROWSER-EGRESS-EVENT-OUTBOX-20261111.md](./PHASE-07-BROWSER-EGRESS-EVENT-OUTBOX-20261111.md).
+- Commits: `5ce5416` (event outbox migration draft), `b1c4203` (worker event client), `ee876f8`/`ce33e22` (run lifecycle/progress), `a96df53`/`baaa049` (tool lifecycle), `aefb661` (registry wiring), `e4dafa8` (browser image), `d7cf092` (isolated network topology), `997e4b5` (implementation report).
