@@ -94,7 +94,7 @@ class DurableOpenManusRuntime:
         plan_store: Any | None = None,
         search_tools: Any | None = None,
         storage_tools: Any | None = None, workspace_tools: Any | None = None, browser_tools: Any | None = None,
-        event_publisher: Callable[[str, str, dict[str, Any]], Awaitable[Any]] | None = None,
+        event_publisher: Callable[[str, str, str, dict[str, Any]], Awaitable[Any]] | None = None,
         max_rounds: int = 12,
     ):
         self.gateway = gateway
@@ -358,7 +358,7 @@ class DurableOpenManusRuntime:
                     event_prefix = f"tool:{round_no}:{index}:{call.id[:80]}"
                     if self.event_publisher is not None:
                         await self.event_publisher(
-                            f"{event_prefix}:started", "tool.started",
+                            context.run_id, f"{event_prefix}:started", "tool.started",
                             {"tool": function.name, "round": round_no, "index": index},
                         )
                     try:
@@ -372,7 +372,7 @@ class DurableOpenManusRuntime:
                     except asyncio.CancelledError:
                         if self.event_publisher is not None:
                             await self.event_publisher(
-                                f"{event_prefix}:cancelled", "tool.cancelled",
+                                context.run_id, f"{event_prefix}:cancelled", "tool.cancelled",
                                 {"tool": function.name, "round": round_no, "index": index},
                             )
                         raise
@@ -384,7 +384,7 @@ class DurableOpenManusRuntime:
                         outcome = "failed"
                     if self.event_publisher is not None:
                         await self.event_publisher(
-                            f"{event_prefix}:{outcome}", "tool.completed",
+                            context.run_id, f"{event_prefix}:{outcome}", "tool.completed",
                             {"tool": function.name, "round": round_no, "index": index, "status": outcome},
                         )
                     observation = observation[:60_000]
