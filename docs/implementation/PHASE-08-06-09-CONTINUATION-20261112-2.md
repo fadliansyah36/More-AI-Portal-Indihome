@@ -93,3 +93,12 @@
 - Commit: `d55aed3adb5fa0381832c68e6afdd671dab44273`.
 - No tests, lint, typecheck, build, API/browser probes, provider calls, DB writes, migration, staging or deployment were run, as instructed.
 
+
+
+## 2026-11-12 direct-main continuation #4 — gateway breaker wiring and EduTech progress
+
+- Fixed a source-level integration defect in `MeteredGateway.__init__`: the new `ProviderCircuitBreaker` instance is now constructed and assigned to `self.breaker`, which is required by the completion and streaming paths that consult the breaker. Without this wiring, the first metered provider request would raise an attribute error before reaching the provider. Commit: `78be756a640a163197d244bbfcdd6637ce07b1ec`.
+- Connected the existing Customer EduTech lesson checklist to the existing authenticated FastAPI learning-progress contract. The lesson screen now loads persisted progress for module `edu-1`, writes completion changes through `PUT /api/v1/customer/learning/progress`, and only updates local display state after the API confirms persistence. Commit: `bb333d7d8ec8f7bd5c94ce926d0cb199df309694`.
+- The lesson video action no longer displays a fabricated “starting video” success; it states that video content is not yet available from the EduTech service.
+- This is partial Phase 09 integration, not full EduTech catalog/content delivery. Module/lesson definitions still come from the existing frontend catalog, and video playback/content APIs are not yet implemented.
+- No tests, lint, typecheck, build, browser/API probes, provider calls, DB writes, migrations, staging or deployment were run. The provider breaker is still process-local; durable shared state/health telemetry remains open.
