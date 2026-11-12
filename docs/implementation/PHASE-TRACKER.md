@@ -953,3 +953,11 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Added migration `20261113120000_moreai_workspace_atomic_execution_commit.sql` (source committed only; not applied). Failed metadata transactions can leave unreferenced uploaded Storage objects; object garbage collection remains open.
 - Report: [Phase 04 Persistent Workspace Snapshot Bridge](./PHASE-04-PERSISTENT-WORKSPACE-SNAPSHOT-BRIDGE-20261113.md).
 - No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment or Supabase live migration/write. Phase 04 remains IN PROGRESS.
+
+
+## 2026-11-13 — Session lifecycle, atomic workspace and Customer dashboard integration
+- Phase 04: conversation-scoped durable session cancellation checks conversation/run ownership; WebSocket/SSE event cursors are strictly validated and bounded to bigint. Workspace multi-file write-back now uploads immutable objects and commits all metadata/deletes in one idempotent, lease-fenced PostgreSQL transaction. Migration `20261113120000_moreai_workspace_atomic_execution_commit.sql` is committed but not applied; orphan Storage object cleanup remains open.
+- Phase 06: `/api/v1/customer/agent-runs` now supports stable `(created_at,id)` keyset pagination while preserving the array response and legacy `before` cursor. `X-Next-Cursor` and `X-Pagination-Mode` are exposed.
+- Phase 09: Customer Tasks view now renders persisted prompt text and loads additional Agent Run pages; Home view reads recent runs, wallet balance and Partner entitlement from authenticated APIs. Removed fabricated quota/task metrics and unsupported fixed capability claims. Existing UI layout/navigation retained; no screenshot regression evidence because browser/runtime testing was explicitly prohibited.
+- Report: [Session, Workspace Atomicity & Customer Dashboard Integration](./PHASE-04-06-09-SESSION-WORKSPACE-CUSTOMER-DASHBOARD-20261113.md).
+- No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment, provider calls or Supabase live migration/write. Phases 04/06/09 remain IN PROGRESS.
