@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, FileText, Image as ImageIcon, FileSpreadsheet, FileCode, ChevronRight, X, Loader2, FolderOpen } from 'lucide-react';
-import { artifactApi, moreAiApi, workspaceApi, type CustomerWorkspaceFile } from '@/lib/api/client';
+import { artifactApi, moreAiApi, workspaceApi, type CustomerWorkspaceFile, type CustomerWorkspaceFileVersion } from '@/lib/api/client';
 
 type ArtifactRecord = {
   id: string;
@@ -55,6 +55,11 @@ export const FilesView: React.FC = () => {
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   const [downloadingArtifact, setDownloadingArtifact] = useState<string | null>(null);
+  const [historyFile, setHistoryFile] = useState<(CustomerWorkspaceFile & { workspaceId: string; workspaceName: string }) | null>(null);
+  const [fileVersions, setFileVersions] = useState<CustomerWorkspaceFileVersion[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [downloadingVersion, setDownloadingVersion] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -117,6 +122,20 @@ export const FilesView: React.FC = () => {
     }
   };
 
+  const openVersionHistory = async (file: CustomerWorkspaceFile & { workspaceId: string; workspaceName: string }) => {
+    setHistoryFile(file); setHistoryLoading(true); setHistoryError(null); setFileVersions([]);
+    try { const result = await workspaceApi.versions(file.workspaceId, file.id); setFileVersions(result.items); }
+    catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Gagal memuat riwayat versi file.'); }
+    finally { setHistoryLoading(false); }
+  };
+
+  const downloadWorkspaceVersion = async (version: number) => {
+    if (!historyFile) return;
+    setDownloadingVersion(version);
+    try { const result = await workspaceApi.signedDownload(historyFile.workspaceId, historyFile.id, version); window.open(result.url, '_blank', 'noopener,noreferrer'); }
+    catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Gagal mengunduh versi file.'); }
+    finally { setDownloadingVersion(null); }
+  };
   const downloadArtifact = async (file: ArtifactFile) => {
     setDownloadingArtifact(file.id);
     try {
@@ -215,18 +234,29 @@ export const FilesView: React.FC = () => {
               <p className="truncate text-xs font-semibold text-slate-900">{file.path}</p>
               <p className="mt-1 truncate text-[10px] text-slate-500">{file.workspaceName} · v{file.version} · {formatSize(file.size_bytes)}</p>
             </div>
-            <button
-              type="button"
-              disabled={!file.storage_path || downloadingFile === file.id}
-              onClick={() => void downloadWorkspaceFile(file)}
-              className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {downloadingFile === file.id ? 'Menyiapkan…' : 'Unduh'}
-            </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button type="button" onClick={() => void openVersionHistory(file)} className="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-50">Riwayat</button>
+              <button type="button" disabled={!file.storage_path || downloadingFile === file.id} onClick={() => void downloadWorkspaceFile(file)} className="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40">
+                {downloadingFile === file.id ? 'Menyiapkan…' : 'Unduh'}
+              </button>
+            </div>
           </div>
         ))}
       </section>
 
+      {historyFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-100 bg-white p-5 text-slate-800 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3"><div className="min-w-0"><h3 className="truncate text-sm font-bold text-slate-900">Riwayat versi file</h3><p className="mt-1 truncate text-[10px] text-slate-500">{historyFile.workspaceName} · {historyFile.path}</p></div><button type="button" onClick={() => setHistoryFile(null)} aria-label="Tutup riwayat versi" className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button></div>
+            <div className="mt-4 max-h-[55vh] space-y-2 overflow-y-auto">
+              {historyLoading ? <div className="flex items-center gap-2 rounded-2xl bg-slate-50 p-5 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Memuat riwayat versi…</div> : historyError ? <div role="alert" className="rounded-2xl border border-red-100 bg-red-50 p-4 text-xs text-red-600">{historyError}</div> : fileVersions.length === 0 ? <div className="rounded-2xl bg-slate-50 p-5 text-xs text-slate-500">Belum ada riwayat versi tersimpan.</div> : fileVersions.map((version) => (
+                <div key={version.id + ':' + version.version} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 p-3"><div className="min-w-0"><p className="text-xs font-semibold text-slate-900">Versi {version.version}{version.current ? ' · Saat ini' : ''}</p><p className="mt-1 text-[10px] text-slate-500">{formatSize(version.size_bytes)} · {new Date(version.committed_at).toLocaleString('id-ID')}</p><p className="mt-1 truncate text-[10px] text-slate-400">SHA-256: {version.sha256}</p></div><button type="button" disabled={downloadingVersion === version.version} onClick={() => void downloadWorkspaceVersion(version.version)} className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">{downloadingVersion === version.version ? 'Menyiapkan…' : 'Unduh'}</button></div>
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end"><button type="button" onClick={() => setHistoryFile(null)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">Tutup</button></div>
+          </div>
+        </div>
+      )}
       {selectedFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-sm rounded-3xl border border-slate-100 bg-white p-5 text-slate-800 shadow-2xl">
