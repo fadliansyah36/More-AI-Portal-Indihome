@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft, KeyRound, Smartphone, CheckCircle2, RotateCcw } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
@@ -16,15 +16,7 @@ export const CaptiveOtpView: React.FC<CaptiveOtpViewProps> = ({
 }) => {
   const { showToast } = useToast();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [timer, setTimer] = useState(45);
-  const [phone, setPhone] = useState('+62 812-3456-7890');
-
-  useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => setTimer((t) => t - 1), 1000);
-      return () => clearInterval(interval);
-    }
-  }, [timer]);
+  const [phone] = useState('');
 
   const handleDigitChange = (index: number, val: string) => {
     if (val.length > 1) val = val.slice(-1);
@@ -39,21 +31,8 @@ export const CaptiveOtpView: React.FC<CaptiveOtpViewProps> = ({
     }
   };
 
-  const handleAutoFill = () => {
-    setOtp(['8', '4', '2', '1', '9', '6']);
-    showToast('Kode OTP berhasil dimasukkan otomatis untuk simulasi.', 'info');
-  };
-
   const handleVerify = () => {
-    const code = otp.join('');
-    if (code.length < 6) {
-      showToast('Masukkan 6 digit kode verifikasi lengkap.', 'error');
-      return;
-    }
-    showToast('Verifikasi berhasil! Menghubungkan perangkat ke Wi-Fi...', 'success');
-    setTimeout(() => {
-      onNavigateTab('captive_success');
-    }, 600);
+    showToast('Verifikasi OTP belum terhubung ke layanan gateway. Tidak ada sesi Wi-Fi yang dibuat.', 'error');
   };
 
   return (
@@ -82,10 +61,10 @@ export const CaptiveOtpView: React.FC<CaptiveOtpViewProps> = ({
         <div>
           <h2 className="text-base font-bold text-slate-900">Masukkan 6 Digit OTP</h2>
           <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-            Kode verifikasi telah dikirimkan via WhatsApp / SMS ke nomor:
+            Pengiriman OTP belum terhubung ke layanan gateway. Nomor tujuan belum tersedia dari backend:
           </p>
           <span className="text-xs font-mono font-bold text-slate-800 bg-slate-100 px-3 py-1 rounded-full inline-block mt-2">
-            {phone}
+            {phone || 'Nomor belum tersedia'}
           </span>
         </div>
 
@@ -100,39 +79,19 @@ export const CaptiveOtpView: React.FC<CaptiveOtpViewProps> = ({
               maxLength={1}
               value={digit}
               onChange={(e) => handleDigitChange(idx, e.target.value)}
+              disabled
               className="w-10 sm:w-12 h-12 sm:h-14 text-center font-mono font-black text-lg sm:text-xl rounded-2xl border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-slate-50 focus:bg-white transition"
             />
           ))}
         </div>
 
-        {/* Resend Timer & Quick Fill */}
-        <div className="pt-2 flex items-center justify-between text-xs text-slate-500 px-2">
-          <span>
-            {timer > 0 ? (
-              <>Kirim ulang dalam <strong className="text-slate-800 font-mono">00:{timer < 10 ? `0${timer}` : timer}</strong></>
-            ) : (
-              <button
-                onClick={() => {
-                  setTimer(45);
-                  showToast('Kode OTP baru telah dikirimkan kembali.', 'info');
-                }}
-                className="text-red-600 font-bold hover:underline"
-              >
-                Kirim Ulang Kode Sekarang
-              </button>
-            )}
-          </span>
-
-          <button
-            onClick={handleAutoFill}
-            className="text-[11px] font-semibold text-red-600 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-lg"
-          >
-            Auto-Isi Demo
-          </button>
+        <div className="pt-2 text-left text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">
+          Verifikasi OTP dinonaktifkan sampai endpoint pengiriman dan validasi OTP dari gateway terintegrasi. Kode demo tidak digunakan.
         </div>
 
         <button
           onClick={handleVerify}
+          disabled
           className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs transition shadow-xs mt-3"
         >
           Verifikasi &amp; Hubungkan Wi-Fi
