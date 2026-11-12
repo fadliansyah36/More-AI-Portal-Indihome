@@ -103,11 +103,13 @@ class SupabaseKnowledgeTools:
             "select": "id,title,status",
             "limit": "1",
         })
-        if existing and existing[0].get("status") == "ready":
-            return json.dumps({
-                "document_id": existing[0]["id"], "title": existing[0]["title"],
-                "chunks": 0, "reused": True,
-            }, ensure_ascii=False)
+        if existing:
+            if existing[0].get("status") == "ready":
+                return json.dumps({
+                    "document_id": existing[0]["id"], "title": existing[0]["title"],
+                    "chunks": 0, "reused": True,
+                }, ensure_ascii=False)
+            raise RuntimeError("knowledge_document_with_same_content_is_not_ready")
         vectors: list[list[float]] = []
         for offset in range(0, len(chunks), 64):
             vectors.extend(await self._embed(chunks[offset:offset + 64]))
