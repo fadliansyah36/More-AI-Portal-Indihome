@@ -860,3 +860,12 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - OpenManus capability map now reflects this limited transport-level parity. Full upstream exception taxonomy and durable engine/worker log projections remain open.
 - Source commit: `e76f7ccebeca21ee6b4ac0a57488eef547c8ceea`; capability map: `7ac60192b8e32d11f2a060edc1d62382a61801fd`.
 - No tests or runtime checks were run per instruction.
+
+
+## 2026-11-13 Create Studio integration increment
+
+- Removed simulated Create Studio generation output, fake 50-point pricing and local-only clipboard result.
+- Text-based Create Studio prompts now hand off to the existing authenticated Customer Chat/Agent Run flow. Image/video generation is explicitly unavailable until real runtime adapters are connected.
+- Report: [Phase 09 Create Studio Agent Handoff](./PHASE-09-CREATE-STUDIO-AGENT-HANDOFF-20261113.md).
+- Commit: `cf1f9f5c5a51e0f65a0bf85c1195cb869e36ae1a`.
+- No tests/runtime/staging/deployment executed per instruction; Phase 09 remains IN PROGRESS.
