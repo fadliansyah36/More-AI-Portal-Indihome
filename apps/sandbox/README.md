@@ -88,3 +88,19 @@ Supervisor service environment:
 - `DOCKER_HOST=<restricted Docker socket proxy endpoint>`
 
 The supervisor readiness endpoint runs `docker info` through the configured daemon/socket proxy and will not report ready when that boundary is unavailable. The socket proxy must deny privileged/container-host operations and expose only the container lifecycle API needed by the runner. A raw unrestricted Docker daemon socket is not an acceptable production configuration.
+
+
+## Execution supervisor Compose topology
+
+A private Compose topology is defined in `compose.execution.yml`:
+
+- `execution-supervisor` is private-only and exposes no host port.
+- `execution-docker-proxy` is the only service attached to the host Docker socket; the worker never receives the socket.
+- The proxy is not published and is attached only to the internal `moreai_execution_private` network.
+- Set `DOCKER_SOCKET_PROXY_IMAGE` to an immutable image reference ending in `@sha256:<64-hex-digest>`; do not use a floating tag.
+- Build the minimal runner from `Dockerfile.runner`, publish it to the trusted image registry, resolve its immutable digest, and pass that digest as `MOREAI_SANDBOX_IMAGE`. The runner contains Python and Bash, runs as UID/GID 65534, and receives source only through stdin.
+- Attach the worker to `moreai_execution_private` while preserving its independent outbound path for Supabase and configured model providers. Configure the exact private URL `http://execution-supervisor:8080` only on that isolated network.
+
+The socket proxy exposes only the Docker API categories needed for container lifecycle, image inspection and daemon readiness. Because the Docker create API is powerful, the supervisor remains a trusted security boundary: only this service may possess the proxy token; it must validate every request and construct fixed runner arguments. Never expose the proxy or supervisor to the public internet, and never grant the worker direct Docker API access.
+
+No runner image digest, socket-proxy digest, deployment, or readiness result is asserted by this source change. The runtime remains fail-closed until the immutable images and private infrastructure are provisioned and accepted.
