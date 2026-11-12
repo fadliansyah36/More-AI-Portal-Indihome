@@ -73,3 +73,5 @@ Per instruction, no tests, lint, typecheck, build, browser/API probes, Docker bu
 4. Phase 08 remains IN PROGRESS: all upstream agent types, provider/model routing, tool adapters, orchestration, memory and RAG.
 5. Phase 09 remains IN PROGRESS: integrate remaining Customer dashboard screens and actions to real API contracts, preserving the existing UI. Prioritize account, profile, notifications, artifacts/workspace, benefits/wallet, network sessions and the remaining agent actions.
 6. Phase 10/11 remain blocked by the explicit no-testing/no-staging constraint and are not claimed complete.
+
+- Follow-up UI truthfulness fix: Home distinguishes an unavailable Agent Run API response from a successfully loaded empty history, rather than presenting an API failure as “no runs”. Commit: `9b5f59c10dafdeffdb16d95d11892ef9459bfe4b`.
