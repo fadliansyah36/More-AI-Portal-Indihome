@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import json
+from uuid import uuid4
 from urllib.parse import urlsplit
 from typing import Any
 
@@ -11,7 +13,7 @@ class IsolatedSandboxToolAdapter:
     """Worker client for the separately deployed execution supervisor.
 
     The worker never receives a Docker socket or starts a host-side Docker CLI.
-    Approval remains enforced by the central policy-enforced tool dispatcher.
+    Approval is enforced centrally by the policy-enforced tool dispatcher.
     """
 
     def __init__(
@@ -57,6 +59,19 @@ class IsolatedSandboxToolAdapter:
             raise RuntimeError("sandbox_supervisor_readiness_failed")
         return payload
 
+    async def _cancel_remote(self, request_id: str, run_id: str, user_id: str) -> None:
+        try:
+            await asyncio.shield(self.http.post(
+                f"{self.service_url}/v1/cancel",
+                json={"request_id": request_id, "run_id": run_id, "user_id": user_id},
+                headers={"Authorization": f"Bearer {self.service_token}"},
+                timeout=httpx.Timeout(5.0, connect=2.0),
+            ))
+        except Exception:
+            # The remote supervisor has its own hard execution deadline. Never
+            # convert a local cancellation into an apparent successful execution.
+            return
+
     async def _execute(
         self, *, source: str, language: str, run_id: str, user_id: str,
         timeout_seconds: int = 30,
@@ -66,20 +81,27 @@ class IsolatedSandboxToolAdapter:
         if not isinstance(source, str) or not source or len(source.encode("utf-8")) > 8_000_000:
             raise ValueError("sandbox_source_size_invalid")
         await self.check_ready()
-        response = await self.http.post(
-            f"{self.service_url}/v1/execute",
-            json={
-                "run_id": run_id, "user_id": user_id,
-                "language": language, "source": source,
-                "timeout_seconds": timeout_seconds,
-            },
-            headers={"Authorization": f"Bearer {self.service_token}"},
-            timeout=httpx.Timeout(timeout_seconds + 10.0, connect=3.0),
-        )
+        request_id = uuid4().hex
+        try:
+            response = await self.http.post(
+                f"{self.service_url}/v1/execute",
+                json={
+                    "request_id": request_id,
+                    "run_id": run_id, "user_id": user_id,
+                    "language": language, "source": source,
+                    "timeout_seconds": timeout_seconds,
+                },
+                headers={"Authorization": f"Bearer {self.service_token}"},
+                timeout=httpx.Timeout(timeout_seconds + 10.0, connect=3.0),
+            )
+        except asyncio.CancelledError:
+            await self._cancel_remote(request_id, run_id, user_id)
+            raise
         response.raise_for_status()
         result = response.json()
         if (
             not isinstance(result, dict)
+            or result.get("request_id") != request_id
             or result.get("run_id") != run_id
             or result.get("isolated") is not True
             or isinstance(result.get("exit_code"), bool)
