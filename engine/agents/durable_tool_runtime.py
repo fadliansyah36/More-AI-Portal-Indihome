@@ -117,7 +117,7 @@ class DurableOpenManusRuntime:
         self.event_publisher = event_publisher
         self.max_rounds = max_rounds
         self.system_prompt = system_prompt
-        enabled_tools = {"create_chat_completion"}
+        enabled_tools = {"create_chat_completion", "terminate"}
         if plan_store is not None:
             enabled_tools.add("planning")
         if search_tools is not None:
@@ -137,6 +137,7 @@ class DurableOpenManusRuntime:
             approval_gate=approval_gate,
         )
         self.tools.register("create_chat_completion", self._nested_completion)
+        self.tools.register("terminate", self._terminate_tool)
         if plan_store is not None:
             self.tools.register("planning", self._planning_tool)
         if search_tools is not None:
@@ -155,6 +156,12 @@ class DurableOpenManusRuntime:
         if sandbox_tools is not None:
             self.tools.register("bash", sandbox_tools.bash)
             self.tools.register("python_execute", sandbox_tools.python_execute)
+
+    async def _terminate_tool(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
+        status = arguments.get("status")
+        if status not in {"success", "failure"}:
+            raise ValueError("terminate_status_must_be_success_or_failure")
+        return json.dumps({"terminated": True, "status": status}, separators=(",", ":"))
 
     async def _nested_completion(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
         messages = arguments.get("messages")
@@ -474,6 +481,27 @@ class DurableOpenManusRuntime:
                         "outcome": outcome, "observation": observation,
                         "observation_sha256": hashlib.sha256(observation.encode()).hexdigest(),
                     })
+                if function.name == "terminate":
+                    try:
+                        termination_args = json.loads(function.arguments)
+                    except json.JSONDecodeError as exc:
+                        raise ValueError("terminate_arguments_invalid") from exc
+                    termination_status = termination_args.get("status") if isinstance(termination_args, dict) else None
+                    if termination_status not in {"success", "failure"}:
+                        raise ValueError("terminate_status_must_be_success_or_failure")
+                    final_text = text.strip() if isinstance(text, str) and text.strip() else f"Interaction terminated with status: {termination_status}"
+                    output = {
+                        "text": final_text,
+                        "termination_status": termination_status,
+                        "provider_key": response_state.get("provider_key"),
+                        "model_key": response_state.get("model_key"),
+                        "rounds": round_no,
+                        "citations": [],
+                    }
+                    await save("openmanus.final", {"output": output})
+                    await save("openmanus.completed", {"rounds": round_no, "terminated": True})
+                    return AgentRunResult(output)
+
                 tool_message = Message.tool_message(observation, name=call.function.name, tool_call_id=call.id)
                 if call.id not in existing_tool_ids:
                     messages.append(tool_message.to_dict())
