@@ -246,11 +246,18 @@ class WorkerRpcClient:
         arguments_hash = hashlib.sha256(
             json.dumps(arguments, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         ).hexdigest()
+        operation = arguments.get("operation") if isinstance(arguments.get("operation"), str) else "edit"
+        path = arguments.get("path") if isinstance(arguments.get("path"), str) else "workspace file"
+        action_labels = {
+            "create": "create", "edit": "edit", "delete": "delete",
+            "rename": "rename", "restore_deleted": "restore deleted",
+        }
+        summary = f"Approval required to {action_labels.get(operation, 'edit')} workspace file {path[:160]}"
         state = await self.rpc("moreai_worker_pause_for_tool_approval", {
             "p_run_id": run_id, "p_user_id": user_id,
             "p_worker_id": self.settings.worker_id, "p_tool_key": approval_tool_key,
             "p_arguments_hash": arguments_hash,
-            "p_summary": f"Approval required for isolated {tool_key} execution",
+            "p_summary": summary,
             "p_expires_in_seconds": 900,
         })
         if not isinstance(state, dict) or not isinstance(state.get("status"), str):
