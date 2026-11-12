@@ -32,7 +32,6 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
     Promise.all([
       customerApi.wallets(),
       customerApi.entitlements(),
