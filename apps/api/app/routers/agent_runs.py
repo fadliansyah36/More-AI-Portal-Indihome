@@ -190,7 +190,7 @@ def _thinking_message(activity: dict[str, Any]) -> dict[str, Any]:
 @router.get("/{run_id}/logs")
 async def get_run_logs(
     run_id: UUID, request: Request,
-    after: int = Query(default=0, ge=0),
+    after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
     limit: int = Query(default=200, ge=1, le=500),
     user: dict[str, Any] = Depends(customer_principal),
 ):
@@ -215,7 +215,7 @@ async def get_run_logs(
 @router.get("/{run_id}/thinking")
 async def get_run_thinking(
     run_id: UUID, request: Request,
-    after: int = Query(default=0, ge=0),
+    after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
     limit: int = Query(default=200, ge=1, le=500),
     user: dict[str, Any] = Depends(customer_principal),
 ):
@@ -284,7 +284,7 @@ async def get_run_progress(
 @router.get("/{run_id}/events")
 async def get_events(
     run_id: UUID, request: Request,
-    after: int = Query(default=0, ge=0),
+    after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
     limit: int = Query(default=200, ge=1, le=500),
     user: dict[str, Any] = Depends(customer_principal),
@@ -447,7 +447,7 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
 @router.get("/{run_id}/stream")
 async def stream_events(
     run_id: UUID, request: Request,
-    after: int = Query(default=0, ge=0),
+    after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
     wait_seconds: int = Query(default=60, ge=1, le=120),
     user: dict[str, Any] = Depends(customer_principal),
