@@ -124,11 +124,11 @@ class MeteredGateway:
         self.accounting = accounting
         self.adapter = adapter
 
-    async def _candidates(self, task_type: str, *, user_id: str, workspace_id: str | None, partner_id: str | None):
+    async def _candidates(self, task_type: str, *, user_id: str, workspace_id: str | None, partner_id: str | None, required_capabilities: set[str] | None = None):
         resolver = getattr(self.router, "resolve_candidates", None)
         if resolver:
-            return await resolver(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)
-        return [await self.router.resolve(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)]
+            return await resolver(task_type, required_capabilities, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)
+        return [await self.router.resolve(task_type, required_capabilities, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)]
 
     async def _reserve_maximum(
         self, candidates: list[ResolvedModelRoute], *, messages: list[dict[str, Any]],
@@ -148,12 +148,13 @@ class MeteredGateway:
         messages: list[dict[str, Any]], task_type: str = "chat",
         workspace_id: str | None = None, partner_id: str | None = None,
         tools: list[dict[str, Any]] | None = None,
+        required_capabilities: set[str] | None = None,
     ) -> dict[str, Any]:
         import hashlib
         import json
         import time
 
-        candidates = await self._candidates(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)
+        candidates = await self._candidates(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id, required_capabilities=required_capabilities)
         request_hash = hashlib.sha256(json.dumps(
             {"messages": messages, "tools": tools or []}, sort_keys=True, separators=(",", ":"),
         ).encode()).hexdigest()
