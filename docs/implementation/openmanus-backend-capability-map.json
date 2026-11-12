@@ -779,13 +779,21 @@
       "Customer Tasks view loads cursor-paginated durable Agent Runs and uses persisted run prompt as task title.",
       "Customer Tasks view can load additional run history pages and deduplicates by run ID.",
       "Customer Home view loads recent Agent Runs, wallet balance and active Partner entitlement through authenticated Customer APIs.",
-      "Removed fabricated 100K AI quota, sample coffee-shop task/progress and unsupported fixed agent/network metrics from Home view."
+      "Removed fabricated 100K AI quota, sample coffee-shop task/progress and unsupported fixed agent/network metrics from Home view.",
+      "Home distinguishes Agent Run API failure from a successfully loaded empty run history; unavailable backend data is not shown as an empty account."
     ],
     "files": [
       "components/views/home-view.tsx",
       "components/views/tasks-view.tsx",
       "lib/api/client.ts"
     ],
-    "status": "Partial Phase 09 source integration; remaining Customer screens/actions are still open. No screenshot/browser regression evidence due explicit no-runtime-testing constraint."
+    "status": "Partial Phase 09 source integration; remaining Customer screens/actions are still open. No screenshot/browser regression evidence due explicit no-runtime-testing constraint.",
+    "source_commits": [
+      "2f3048317bdc21ff7f55b7846b23d6f4e4eb3091",
+      "4ff60e24e371d2a5cf79ec5ca9132d97d3292c7e",
+      "2b9b4221e2483f4f8749e0de8237dc846120e330",
+      "4bc6460c981b0d9f0ef8ef6a099bdbf1d185f111",
+      "9b5f59c10dafdeffdb16d95d11892ef9459bfe4b"
+    ]
   }
 }
