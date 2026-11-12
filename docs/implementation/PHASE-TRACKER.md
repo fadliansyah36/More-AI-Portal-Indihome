@@ -808,3 +808,14 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Commit: `58c921054274722797967276363d442b6939189f`; report commit: `5bce1b1e32fa79df336ca3b2b64108081eef2326`.
 - No tests, lint, typecheck, build, runtime probe or deployment were run, following the current instruction.
 - Phase 07 remains IN PROGRESS; Phase 04 backend parity remains the upstream dependency. Continue Phase 04 before declaring Phase 07/08/06/09 complete.
+
+
+## 2026-11-12 — Customer Profile identity and greeting integration
+
+- Report: [CUSTOMER-PROFILE-IDENTITY-INTEGRATION-20261112.md](./CUSTOMER-PROFILE-IDENTITY-INTEGRATION-20261112.md).
+- Profile no longer couples identity loading to notification preference loading; an unrelated notification API failure cannot reject the Profile identity request.
+- FastAPI authenticated principal now exposes only a normalized \`display_name\` derived from Supabase Auth \`user_metadata.full_name\` / \`name\`, in addition to id/email. Raw Auth metadata is not returned.
+- Customer Home now uses the shared typed profile API and resolves registered name in this order: profile display_name → Auth metadata display_name → email local-part → existing supplied identity. Transient API errors no longer overwrite a known identity with a generic placeholder.
+- Source commits: \`3ea69daed8caf10322482042d9cd928de9a1a31f\`, \`b9ebfd71456359e5d25532c6d58ff4f07039ccaa\`, \`27966787443cd4ec2e1de4ab6e95ed40a627bc7c\`, \`f18280ac70b57e9a730ea51f0446bef9bf5dd33f\`; report commit: \`54f8d314df93d757d501011d911e4d5a07e7ed1c\`.
+- No tests, lint, typecheck, build, runtime API/browser call, migration, staging or deployment were performed per instruction. Runtime Profile availability remains unverified.
+- Phase 06/09 remain IN PROGRESS. Phase 08 remains IN PROGRESS; this is an identity integration increment, not full phase acceptance.
