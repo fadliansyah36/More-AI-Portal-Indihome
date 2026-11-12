@@ -118,7 +118,7 @@ class PolicyEnforcedToolRegistry:
                 raise PermissionError("tool_approval_denied_expired_or_already_consumed")
         try:
             output = await asyncio.wait_for(
-                handler(arguments, run_id=run_id, user_id=user_id, **({"workspace_id": workspace_id} if normalized in {"str_replace_editor", "workspace_restore_version", "workspace_read_file", "knowledge_ingest", "knowledge_search"} else {})),
+                handler(arguments, run_id=run_id, user_id=user_id, **({"workspace_id": workspace_id} if normalized in {"str_replace_editor", "workspace_restore_version", "workspace_read_file", "knowledge_ingest", "knowledge_search", "run"} else {})),
                 timeout=tool.timeout_seconds,
             )
         except TimeoutError as exc:
