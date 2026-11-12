@@ -48,6 +48,8 @@ class PlanningAgentRuntime(AgentRuntime):
                 "expected_output":expected.strip()[:5000],"tool_requirement":tool.strip()[:200],
                 "risk":risk,"estimated_usage":{"input_tokens":usage.get("input_tokens",0),"output_tokens":usage.get("output_tokens",0)},
             })
+        if len(json.dumps(validated, ensure_ascii=False, separators=(",", ":"))) > 200000:
+            raise RuntimeError("planning_manifest_too_large")
         return validated
 
     async def _new_plan(self, context: AgentRunContext, prompt: str) -> tuple[str,list[dict[str,Any]]]:
@@ -74,25 +76,56 @@ class PlanningAgentRuntime(AgentRuntime):
         if not isinstance(prompt,str) or not prompt.strip(): raise ValueError("planning_prompt_required")
         states=dict(context.recovery_checkpoints or {})
         manifest=states.get("planning.manifest")
+        persisted=await self.store.get(run_id=context.run_id)
+        rows=persisted.get("steps") if isinstance(persisted,dict) else None
+        if not isinstance(rows,list):
+            raise RuntimeError("planning_persisted_steps_invalid")
+
         if isinstance(manifest,dict):
-            persisted=await self.store.get(run_id=context.run_id)
-            rows=persisted.get("steps") if isinstance(persisted,dict) else None
-            if not isinstance(rows,list) or len(rows)!=manifest.get("step_count"):
-                raise RuntimeError("planning_persisted_manifest_mismatch")
             title=manifest.get("title")
-            if not isinstance(title,str) or not title.strip(): raise RuntimeError("planning_manifest_invalid")
+            if not isinstance(title,str) or not title.strip():
+                raise RuntimeError("planning_manifest_invalid")
+            manifest_steps=manifest.get("steps")
+            if isinstance(manifest_steps,list):
+                steps=self._validate_steps(manifest_steps)
+                if len(steps)!=manifest.get("step_count"):
+                    raise RuntimeError("planning_manifest_mismatch")
+                if len(rows)!=len(steps):
+                    # Recover a crash between writing the manifest and inserting all
+                    # durable step rows. Store.create is idempotent by run/sequence.
+                    await self.store.create(run_id=context.run_id,title=title,steps=steps)
+                    persisted=await self.store.get(run_id=context.run_id)
+                    rows=persisted.get("steps") if isinstance(persisted,dict) else None
+                if not isinstance(rows,list) or len(rows)!=len(steps):
+                    raise RuntimeError("planning_persisted_manifest_mismatch")
+            else:
+                if len(rows)!=manifest.get("step_count"):
+                    raise RuntimeError("planning_persisted_manifest_mismatch")
+                steps=[]
+                for row in rows:
+                    source=row.get("input") if isinstance(row,dict) else None
+                    if not isinstance(source,dict):
+                        raise RuntimeError("planning_persisted_step_invalid")
+                    steps.append(source)
+                steps=self._validate_steps(steps)
+        elif rows:
+            # Recover the complementary crash window: rows exist but the
+            # manifest checkpoint was not visible in the worker's recovery set.
             steps=[]
             for row in rows:
                 source=row.get("input") if isinstance(row,dict) else None
-                if not isinstance(source,dict): raise RuntimeError("planning_persisted_step_invalid")
+                if not isinstance(source,dict):
+                    raise RuntimeError("planning_persisted_step_invalid")
                 steps.append(source)
             steps=self._validate_steps(steps)
+            title=prompt.strip()[:500]
+            manifest={"title":title,"step_count":len(steps),"steps":steps}
+            await self.store.create(run_id=context.run_id,title=title,steps=steps)
+            await checkpoint("planning.manifest",manifest)
         else:
-            existing=await self.store.get(run_id=context.run_id)
-            if existing.get("steps"):
-                raise RuntimeError("planning_orphaned_steps_without_manifest")
             title,steps=await self._new_plan(context,prompt)
-            manifest={"title":title,"step_count":len(steps)}
+            manifest={"title":title,"step_count":len(steps),"steps":steps}
+            await checkpoint("planning.manifest",manifest)
 
         rows_by_index={int(row["sequence"])-1:row for row in (await self.store.get(run_id=context.run_id)).get("steps",[])}
         results=[]
