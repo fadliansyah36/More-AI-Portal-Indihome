@@ -7,10 +7,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Query, Header, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
+from fastapi import Response
 
 from app.authorization import customer_principal, require_customer_context
 from app.dependencies import current_user
 from app.routers.conversations import repository
+from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter
 
 router = APIRouter(prefix="/api/v1/agent-runs", tags=["agent-runs"])
 
@@ -54,12 +56,29 @@ async def _event_with_checkpoint_state(repo, run_id: UUID, row: dict[str, Any]) 
 
 
 @router.get("")
-async def list_runs(request: Request, user: dict[str, Any] = Depends(customer_principal)):
-    return await repository(request).select("agent_runs", {
+async def list_runs(
+    request: Request,
+    response: Response,
+    limit: int = Query(default=100, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """List owner-scoped durable runs using stable keyset pagination."""
+    decoded = decode_created_at_id_cursor(cursor)
+    params = {
         "user_id": f"eq.{user['id']}",
         "select": "id,conversation_id,status,input,output,error,attempt,max_attempts,created_at,started_at,finished_at",
-        "order": "created_at.desc", "limit": "100",
-    })
+        "order": "created_at.desc,id.desc",
+        "limit": str(limit),
+    }
+    cursor_filter = created_at_id_filter(decoded)
+    if cursor_filter:
+        params["or"] = cursor_filter
+    rows = await repository(request).select("agent_runs", params)
+    if len(rows) == limit and rows:
+        response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(rows[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return rows
 
 
 @router.get("/{run_id}")
