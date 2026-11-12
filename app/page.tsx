@@ -423,10 +423,7 @@ export default function App() {
               )}
 
               {currentTab === 'captive_otp' && (
-                <CaptiveOtpView
-                  onBack={() => handleNavigate('captive_terms')}
-                  onNavigateTab={handleNavigate}
-                />
+                <CaptiveOtpView onBack={() => handleNavigate('captive_terms')} />
               )}
 
               {currentTab === 'captive_success' && (
