@@ -68,16 +68,17 @@ source=payload.get('source')
 language=payload.get('language')
 if not isinstance(source,str) or language not in ('python','bash'): raise SystemExit('sandbox_payload_invalid')
 try:
-    if language == 'python':
-        proc=subprocess.run([sys.executable,'-I','-c',source], cwd=str(root), capture_output=True, timeout=115)
-    else:
-        proc=subprocess.run(['bash','--noprofile','--norc','-c',source], cwd=str(root), capture_output=True, timeout=115)
-    exit_code=proc.returncode
-    stdout=proc.stdout[:65536].decode('utf-8','replace')
-    stderr=proc.stderr[:65536].decode('utf-8','replace')
-except subprocess.TimeoutExpired as exc:
+    with tempfile.TemporaryFile() as out_file, tempfile.TemporaryFile() as err_file:
+        command = ([sys.executable,'-I','-c',source] if language == 'python'
+                   else ['bash','--noprofile','--norc','-c',source])
+        proc=subprocess.run(command, cwd=str(root), stdout=out_file, stderr=err_file, timeout=115)
+        exit_code=proc.returncode
+        out_file.seek(0); err_file.seek(0)
+        stdout=out_file.read(65536).decode('utf-8','replace')
+        stderr=err_file.read(65536).decode('utf-8','replace')
+except subprocess.TimeoutExpired:
     exit_code=124
-    stdout=(exc.stdout or b'')[:65536].decode('utf-8','replace')
+    stdout=''
     stderr='execution_timeout'
 changed={}
 total=0
