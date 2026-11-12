@@ -134,6 +134,7 @@ export async function moreAiApiStream(
     };
 
     let response: Response;
+    let authenticationFailed = false;
     try {
       response = await fetch(CUSTOMER_API_BASE_URL + path, {
         headers: buildHeaders(),
@@ -143,6 +144,7 @@ export async function moreAiApiStream(
       if (response.status === 401) {
         const refreshed = await supabase.auth.refreshSession();
         if (refreshed.error || !refreshed.data.session?.access_token) {
+          authenticationFailed = true;
           await supabase.auth.signOut({ scope: 'local' });
           throw new Error('Sesi login telah berakhir. Silakan masuk kembali.');
         }
@@ -154,7 +156,9 @@ export async function moreAiApiStream(
         });
       }
     } catch (error) {
-      if (options.signal?.aborted) throw error;
+      // Authentication failures are terminal; reconnecting cannot repair a
+      // rejected refresh token and would only generate repeated unauthorized traffic.
+      if (authenticationFailed || options.signal?.aborted) throw error;
       if (reconnects >= maxReconnects) throw error;
       reconnects += 1;
       await waitForRetry(Math.min(8000, initialDelay * (2 ** (reconnects - 1))));
