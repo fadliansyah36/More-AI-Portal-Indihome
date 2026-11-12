@@ -15,6 +15,7 @@ const statusLabel: Record<string, string> = {
   pending: 'Menunggu worker',
   running: 'Sedang berjalan',
   awaiting_approval: 'Menunggu persetujuan',
+  waiting_approval: 'Menunggu persetujuan',
   succeeded: 'Selesai',
   failed: 'Gagal',
   cancelled: 'Dibatalkan',
@@ -75,6 +76,9 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       setApprovals((current) => current.map((item) => item.id === approvalId
         ? { ...item, status: result.status as CustomerToolApproval['status'] }
         : item));
+      // The decision RPC atomically re-queues a paused run. Refresh durable run
+      // state immediately so the Customer screen reflects the worker resume.
+      setRuns(await customerApi.agentRuns());
     } catch (cause) {
       setApprovalError(cause instanceof Error ? cause.message : 'Keputusan persetujuan gagal disimpan.');
     } finally {
@@ -82,7 +86,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     }
   };
 
-  const activeCount = runs.filter((run) => ['queued', 'pending', 'running', 'awaiting_approval'].includes(run.status)).length;
+  const activeCount = runs.filter((run) => ['queued', 'pending', 'running', 'awaiting_approval', 'waiting_approval'].includes(run.status)).length;
   const completedCount = runs.filter((run) => run.status === 'succeeded').length;
 
   return (
