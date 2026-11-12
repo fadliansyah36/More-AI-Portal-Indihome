@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Play, RotateCcw, Copy, Check, Terminal, Code2, Sparkles, FolderGit2, Save, Download, Loader2 } from 'lucide-react';
+import { Play, Copy, Check, Terminal, Code2, FolderGit2, Save, Download, Loader2 } from 'lucide-react';
 import { artifactApi, type CustomerArtifact } from '@/lib/api/client';
 
 interface CodeViewProps { onNavigateToChat?: (prompt: string) => void; }
