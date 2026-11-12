@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from app.authorization import customer_principal, require_customer_context
 from app.dependencies import current_user
 from app.routers.conversations import ConversationCreate, MessageCreate, repository
+from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter
 
 
 router = APIRouter(prefix="/api/v1/customer", tags=["customer"])
@@ -98,21 +99,36 @@ async def send_customer_message(
 @router.get("/agent-runs")
 async def customer_agent_runs(
     request: Request,
+    response: Response,
     limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     before: datetime | None = Query(default=None),
     user: dict[str, Any] = Depends(current_user),
 ):
+    """List customer runs with stable keyset pagination and a legacy timestamp cursor."""
+    if cursor and before:
+        raise HTTPException(422, "Use either cursor or before, not both")
+    decoded = decode_created_at_id_cursor(cursor)
     principal = await require_customer_context(request, user)
     filters = {
         "user_id": f"eq.{principal['id']}",
         "select": "id,conversation_id,status,input,output,error,attempt,max_attempts,created_at,started_at,finished_at",
-        "order": "created_at.desc", "limit": str(limit),
+        "order": "created_at.desc,id.desc", "limit": str(limit + 1),
     }
+    cursor_filter = created_at_id_filter(decoded)
+    if cursor_filter:
+        filters["or"] = cursor_filter
     if before:
         if before.tzinfo is None:
             raise HTTPException(422, "before must include a timezone")
         filters["created_at"] = f"lt.{before.isoformat()}"
-    return await repository(request).select("agent_runs", filters)
+    rows = await repository(request).select("agent_runs", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(rows[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return rows
 
 
 @router.get("/agent-runs/{run_id}")
