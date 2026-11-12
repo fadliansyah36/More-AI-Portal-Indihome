@@ -38,6 +38,7 @@ def test_agent_run_enqueue_fails_closed_until_runtime_is_enabled(monkeypatch):
                 json={"content": "do not enqueue without a worker"},
             )
         assert response.status_code == 503
-        assert "Agent execution is disabled" in response.json()["detail"]
+        assert "Agent execution is disabled" in response.json()["error"]["message"]
+        assert response.json()["error"]["correlation_id"] == response.headers["X-Correlation-ID"]
     finally:
         app.dependency_overrides.clear()
