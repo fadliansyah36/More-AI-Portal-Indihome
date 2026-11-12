@@ -631,3 +631,11 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Added typed `conversationSessions(conversationId, limit)` to the existing Customer API client.
 - Commits: `0d92d72980c979589bcce4cf2e895b69b8fa902d` (FastAPI), `3628d366256f47e3c28a4e258d42de7c1731c5f1` (typed client).
 - This adds a conversation-scoped session read contract; it does not implement upstream in-memory server session creation, WebSocket semantics, Flow state transitions, or session mutation parity. Phase 04 remains active.
+
+
+## 2026-11-12 — Customer artifact API origin alignment
+- Commit: `a28719068ccdefb05d0fed88b0975799a89358eb`.
+- Customer Files artifact list/upload/signed-download methods now use the Customer API transport and honor `NEXT_PUBLIC_MOREAI_CUSTOMER_API_URL`, retaining the generic API origin fallback and shared Supabase Auth token handling.
+- No UI redesign or direct browser Supabase data/Storage access was introduced.
+- No tests, lint, typecheck, build, browser/API runtime, staging, migration or deployment were run. This is a source-level integration correction, not Phase 09 acceptance.
+- Phase 04/07/08/06/09 remain IN PROGRESS; continue Phase 04 before the dependent phases.
