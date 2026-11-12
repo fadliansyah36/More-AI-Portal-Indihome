@@ -11,7 +11,7 @@ class ToolDecision:
 class ToolPolicy:
     """Default-deny policy; high-risk tools require both enablement and explicit approval."""
 
-    HIGH_RISK = frozenset({"bash", "python_execute", "browser_use"})
+    HIGH_RISK = frozenset({"bash", "python_execute", "browser_use", "workspace_restore_version"})
     DEFAULT_DENY = HIGH_RISK
 
     def __init__(self, enabled_tools: set[str] | None = None, approved_tools: set[str] | None = None):
