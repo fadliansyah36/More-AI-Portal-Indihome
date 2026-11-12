@@ -34,7 +34,7 @@ class FakeHttp:
 
 class FakeWorkspaceClient:
     def __init__(self, raw, metadata):
-        self.settings = SimpleNamespace(supabase_url="https://project.supabase.co")
+        self.settings = SimpleNamespace(supabase_url="https://project.supabase.co", service_role_key="service-secret")
         self.client = FakeHttp(raw)
         self.metadata = metadata
 
