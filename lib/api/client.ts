@@ -493,6 +493,9 @@ export const customerApi = {
       body: JSON.stringify({ content, agent_key: agentKey }),
     }),
   agentRuns: (limit = 50, before?: string) => moreAiCustomerApi<CustomerAgentRun[]>(`/api/v1/customer/agent-runs?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
+  agentRunsPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerAgentRun>(
+    `/api/v1/customer/agent-runs?limit=${Math.max(1, Math.min(100, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
+  ),
   conversationSessions: (conversationId: string, limit = 50) => moreAiCustomerApi<{ items: Array<{
     id: string; conversation_id: string; status: string; attempt: number;
     max_attempts: number; created_at: string; started_at: string | null;
