@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, Search, ChevronDown, ChevronUp, Headphones, Phone, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Search, ChevronDown, ChevronUp, Headphones, Phone } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 
 interface HelpFaqViewProps {
