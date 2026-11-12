@@ -113,10 +113,10 @@ async def run_worker() -> None:
                             ingestion_job = await rpc.claim_knowledge_ingestion()
                             if ingestion_job:
                                 try:
-                                    await knowledge_ingestion.process_uploaded_document(ingestion_job)
+                                    extracted_page_count = await knowledge_ingestion.process_uploaded_document(ingestion_job)
                                     finished = await rpc.finish_knowledge_ingestion(
                                         str(ingestion_job["id"]), str(ingestion_job["owner_user_id"]),
-                                        True, page_count=int(ingestion_job.get("page_count") or 0),
+                                        True, page_count=extracted_page_count,
                                     )
                                     if not finished:
                                         logger.warning("knowledge_ingestion_lease_lost document_id=%s", ingestion_job.get("id"))
