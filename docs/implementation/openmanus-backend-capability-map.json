@@ -65,7 +65,7 @@
       "module": "runtime/errors",
       "target": "engine/errors.py",
       "capability": "runtime exception taxonomy",
-      "status": "pending port"
+      "status": "PARTIAL — FastAPI transport maps HTTP, validation, upstream timeout and upstream transport failures to stable sanitized error codes with correlation-aware structured logs; upstream ToolError parity and worker/engine domain exception mapping remain pending"
     },
     {
       "source": "vendor/openmanusweb/app/flow/base.py",
@@ -107,7 +107,7 @@
       "module": "runtime/logging",
       "target": "engine/observability/logging.py",
       "capability": "structured logs",
-      "status": "PENDING — correlation ID middleware exists; tenant-safe structured engine logging and upstream logger parity not ported"
+      "status": "PARTIAL — FastAPI correlation-aware logs now record path, method, correlation ID and exception class without exception messages/tracebacks; durable tenant-scoped engine/worker log projections and upstream loguru session-handler parity remain pending"
     },
     {
       "source": "vendor/openmanusweb/app/prompt/manus.py",
