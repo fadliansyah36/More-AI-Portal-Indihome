@@ -17,6 +17,8 @@ create table if not exists public.knowledge_documents (
 );
 create index if not exists knowledge_documents_owner_workspace_idx
   on public.knowledge_documents(owner_user_id, workspace_id, created_at desc);
+create unique index if not exists knowledge_documents_owner_scope_digest_uidx
+  on public.knowledge_documents(owner_user_id, coalesce(workspace_id, '00000000-0000-0000-0000-000000000000'::uuid), content_sha256);
 
 create table if not exists public.knowledge_chunks (
   id uuid primary key default gen_random_uuid(),
@@ -78,9 +80,9 @@ as $$
   from public.knowledge_chunks c
   join public.knowledge_documents d on d.id = c.document_id
   where c.owner_user_id = p_user_id
-    and c.workspace_id is not distinct from p_workspace_id
+    and (c.workspace_id is null or c.workspace_id = p_workspace_id)
     and d.owner_user_id = p_user_id
-    and d.workspace_id is not distinct from p_workspace_id
+    and (d.workspace_id is null or d.workspace_id = p_workspace_id)
     and d.status = 'ready'
     and (p_document_ids is null or c.document_id = any(p_document_ids))
   order by c.embedding <=> p_query_embedding
