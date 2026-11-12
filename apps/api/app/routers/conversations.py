@@ -192,7 +192,7 @@ async def get_conversation_session_events(
     conversation_id: UUID,
     run_id: UUID,
     request: Request,
-    after: int = Query(default=0, ge=0),
+    after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
     limit: int = Query(default=200, ge=1, le=500),
     user: dict[str, Any] = Depends(customer_principal),
 ):
