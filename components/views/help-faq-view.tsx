@@ -24,7 +24,7 @@ export const HelpFaqView: React.FC<HelpFaqViewProps> = ({ onBack }) => {
     },
     {
       q: 'Cara mendapatkan AI Credit?',
-      a: 'Setiap pengguna jaringan Global Partner ISP dan pengunjung venue partner berhak mendapatkan kuota sponsor 100.000 Poin AI per bulan secara cuma-cuma.',
+      a: 'Benefit AI Credit hanya tersedia jika backend mengonfirmasi entitlement sponsor aktif. Besaran dan masa berlaku mengikuti konfigurasi partner.',
     },
     {
       q: 'Bagaimana cara menggunakan AI Tools?',
@@ -100,16 +100,16 @@ export const HelpFaqView: React.FC<HelpFaqViewProps> = ({ onBack }) => {
         <div>
           <h3 className="text-sm font-bold text-slate-900">Masih Butuh Bantuan?</h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Tim dukungan teknis MoreAI &amp; Global Partner ISP siap melayani Anda 24/7.
+            Kanal dukungan akan ditampilkan setelah kontak resmi MoreAI atau partner dikonfigurasi.
           </p>
         </div>
 
         <button
-          onClick={() => showToast('Menghubungkan ke Call Center Global Partner & Layanan Bantuan MoreAI...', 'info')}
+          onClick={() => showToast('Kanal kontak dukungan belum dikonfigurasi. Silakan gunakan kanal bantuan resmi yang diberikan oleh operator layanan.', 'info')}
           className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2"
         >
           <Phone className="w-4 h-4" />
-          <span>Hubungi Dukungan Global Partner</span>
+          <span>Kontak dukungan belum tersedia</span>
         </button>
       </div>
     </div>
