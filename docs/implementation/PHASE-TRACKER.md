@@ -646,3 +646,10 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Workspace signed-download endpoint rejects absolute Storage URLs outside the configured HTTPS Supabase origin, URLs with userinfo, and malformed/protocol-relative relative paths. Existing authorization/private bucket checks remain.
 - Report: `docs/implementation/PHASE-04-WORKSPACE-SIGNED-URL-ORIGIN-HARDENING-20261112.md`.
 - Source-only change; no tests/lint/typecheck/build/runtime/browser QA/staging/migration/deployment. Phase 04 remains IN PROGRESS.
+
+
+## 2026-11-12 — Workspace Storage path validation follow-up
+- Commit: `53a2850bde142f4a4f01ea75e7470e13a7e9665f`.
+- Fixed single-backslash rejection in relative signed paths and URL-encoded Storage bucket path segments for bucket lookup and signed URL creation.
+- Report: `docs/implementation/PHASE-04-WORKSPACE-STORAGE-PATH-VALIDATION-20261112.md`.
+- Source-only; no tests/lint/typecheck/build/runtime/browser QA/staging/migration/deployment. Phase 04 remains IN PROGRESS.
