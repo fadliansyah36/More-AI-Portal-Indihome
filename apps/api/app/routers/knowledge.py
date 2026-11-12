@@ -12,7 +12,7 @@ import hashlib
 import os
 import re
 from datetime import datetime, timezone
-from pathlib import PurePosixPath
+from pathlib import Path
 from fastapi import File, Form, UploadFile
 
 router = APIRouter(prefix="/api/v1/customer/knowledge", tags=["customer-knowledge"])
