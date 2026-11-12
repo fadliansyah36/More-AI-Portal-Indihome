@@ -216,10 +216,12 @@ async def get_me(request: Request, user=Depends(current_user)):
         timeout=8.0,
     )
     if response.status_code >= 500:
-        return JSONResponse(status_code=503, content={"detail": "Profile service unavailable"})
+        raise HTTPException(status_code=503, detail={"code": "profile_service_unavailable", "message": "Profile service is temporarily unavailable"})
     if response.status_code != 200:
-        return JSONResponse(status_code=502, content={"detail": "Profile service returned an unexpected response"})
+        raise HTTPException(status_code=502, detail={"code": "profile_service_error", "message": "Profile service returned an unexpected response"})
     rows = response.json()
+    if not isinstance(rows, list):
+        raise HTTPException(status_code=502, detail={"code": "profile_response_invalid", "message": "Profile service returned an invalid response"})
     return {"user": user, "profile": rows[0] if rows else None}
 
 
@@ -231,11 +233,11 @@ async def update_my_profile(body: ProfileUpdate, request: Request, user=Depends(
     if "display_name" in changes and changes["display_name"] is not None:
         changes["display_name"] = changes["display_name"].strip()
         if not changes["display_name"]:
-            return JSONResponse(status_code=422, content={"detail": "Display name cannot be empty"})
+            raise HTTPException(status_code=422, detail={"code": "invalid_display_name", "message": "Display name cannot be empty"})
     if "avatar_path" in changes and changes["avatar_path"] is not None:
         path = changes["avatar_path"]
         if path.startswith(("http://", "https://", "/")) or ".." in path.split("/") or not path.startswith(f"{user['id']}/"):
-            return JSONResponse(status_code=422, content={"detail": "Avatar path must be owner-scoped"})
+            raise HTTPException(status_code=422, detail={"code": "invalid_avatar_path", "message": "Avatar path must be owner-scoped"})
     settings = request.app.state.settings
     token = request.headers["authorization"].removeprefix("Bearer ").strip()
     response = await request.app.state.http.patch(
@@ -251,10 +253,12 @@ async def update_my_profile(body: ProfileUpdate, request: Request, user=Depends(
         timeout=8.0,
     )
     if response.status_code >= 500:
-        return JSONResponse(status_code=503, content={"detail": "Profile service unavailable"})
+        raise HTTPException(status_code=503, detail={"code": "profile_service_unavailable", "message": "Profile service is temporarily unavailable"})
     if response.status_code >= 400:
-        return JSONResponse(status_code=422, content={"detail": "Profile update was rejected by the profile policy"})
+        raise HTTPException(status_code=422, detail={"code": "profile_update_rejected", "message": "Profile update was rejected by the profile policy"})
     rows = response.json()
+    if not isinstance(rows, list):
+        raise HTTPException(status_code=502, detail={"code": "profile_response_invalid", "message": "Profile service returned an invalid response"})
     if not rows:
-        return JSONResponse(status_code=404, content={"detail": "Profile not found or not editable"})
+        raise HTTPException(status_code=404, detail={"code": "profile_not_found", "message": "Profile not found or not editable"})
     return {"user": user, "profile": rows[0]}
