@@ -51,7 +51,7 @@
       "module": "agents/toolcall",
       "target": "engine/agents/toolcall.py",
       "capability": "tool-calling agent",
-      "status": "PARTIAL — durable bounded tool-call loop implemented; provider tool-call IDs/names/arguments are now strictly validated and duplicate/malformed calls rejected; concrete adapter parity remains incomplete"
+      "status": "PARTIAL — concrete ToolCallAgent adapter is now registered through the durable policy-enforced runtime using the adapted upstream ToolCall system prompt; API request contract, agent catalog allowlist and enqueue RPC migration are committed; migration is not applied and full upstream tool behavior/parity remains incomplete"
     },
     {
       "source": "vendor/openmanusweb/app/config.py",
