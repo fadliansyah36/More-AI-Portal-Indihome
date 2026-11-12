@@ -247,7 +247,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
         {/* History items */}
         <div className="space-y-2">
           {error && <p className="text-xs text-rose-600">{error}</p>}
-          {!loading && filteredHistory.length === 0 && <p className="text-xs text-slate-500 p-3">{activeSubTab === 'wifi' ? 'Riwayat sesi Wi-Fi belum tersedia pada endpoint ini.' : 'Belum ada riwayat kredit atau penggunaan AI.'}</p>}
+          {!loading && filteredHistory.length === 0 && <p className="text-xs text-slate-500 p-3">{activeSubTab === 'wifi' ? 'Belum ada sesi Wi-Fi yang tercatat untuk akun ini.' : 'Belum ada riwayat kredit atau penggunaan AI.'}</p>}
           {filteredHistory.map((h) => (
             <div
               key={h.id}
