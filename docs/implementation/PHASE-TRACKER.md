@@ -1,4 +1,4 @@
-# MoreAI Implementation Phase Tracker
+| 09 | Existing Frontend API Integration | IN PROGRESS — Knowledge Library list/detail/archive is API-backed; Files screen links to it. Existing Customer/Partner data views continue using typed FastAPI clients. Loading-state and analytics time-reference updates remove render/effect lint violations without changing visual layout. Remaining Customer journeys/screens and visual regression evidence still open | Source commits `bf19d8a9`, `d35fb118`, `c3e7e068`, `4269ebbd`, `472a7e87`, `5a73cfa3`, `5d64651b`, `80d47ed6`, `f4e1e2b6`, `fa401c4d`, `9dddeb85`, `7ba938e6`, `524a856d`, `82221637`, `f1697f90`, `560b4401`, `9a486b9f`; latest Phase 00 browser/lint/build run still pending |
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -29,7 +29,7 @@ Implementation is being performed directly on `main` as explicitly requested by 
 2. Integrate the sandbox supervisor with the OpenManus dispatcher. Keep Bash/Python/browser/file tools unavailable until the approval and supervisor gates are actually wired.
 3. Complete browser isolation, DNS pinning/rebinding defenses, redirect revalidation, private/reserved IP rejection and controlled downloads. Workspace file version restore is now available through a gated worker tool; finish remaining workspace lifecycle and UX parity.
 4. Close the source-to-target behavioral parity gaps in `openmanus-backend-capability-map.json`, including agent/flow lifecycle, tool schemas/handlers and upstream server/session/stream functions.
-5. Maintain durable recovery, idempotency and tenant boundaries. The current user instruction for this continuation is to skip tests; therefore no new pass evidence is claimed.
+5. Maintain durable recovery, idempotency and tenant boundaries. Targeted CI tests are now authorized by the current request; use the latest run evidence and do not substitute unit tests for real provider/runtime acceptance.
 
 ## 2026-11-11 frontend route, auth and workflow integration continuation
 
@@ -695,3 +695,19 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Source commits: `2f3e1cf6`, `135ceae4`, `5a10013d`, `7f4a54cd`, `5939b92d`, `8034aea4`, RAG operator fix `3b388d4c`, report `6c3978b2` and update `b63834d1`. Supabase migration version `20261112060109` applied.
 - Applied the additive RAG migration to canonical Supabase after fixing the pgvector operator schema qualification; migration history version `20261112060109` is present. Schema inventory confirms both knowledge tables exist with RLS enabled. No document data, embedding provider, or worker was invoked.
 - Per owner instruction, no tests, lint, typecheck, build, real API/browser request, staging, migration apply, provider call, worker activation or deployment was performed. This increment is source-committed but not runtime-verified and does not close Phase 08/09.
+
+
+## 2026-11-12 continuation — workspace security, Customer Knowledge Library and CI repair
+
+Baseline commit before this increment: `b06ffd183d6ce7ba28dd3491c65c36272d09af56`.
+Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839a0e6c52`.
+
+- Added `workspace_read_file` to the durable OpenManus tool catalog/runtime. It requires an existing workspace ID, validates membership through the server-side workspace RPC, enforces a private Storage bucket, rejects missing/invalid metadata, caps reads at 2 MB, accepts UTF-8 text only, and verifies byte count + SHA-256 against the persisted file version before returning content.
+- Added policy/catalog/runtime wiring and tests for workspace reader default-deny behavior, integrity mismatch and path traversal. The tool is not enabled by default.
+- Added `str_replace_editor` to the high-risk approval policy. Worker approval maps this upstream adapter key to the persisted canonical `file_edit` approval key, preserving the hash of the exact tool arguments; the edit handler cannot execute when approval is denied/expired/unavailable.
+- Updated tests to match the complete MoreAI-extended tool inventory and the durable planning store contract. Updated the API contract test to assert the normalized error envelope and correlation ID.
+- Fixed missing `BaseModel`/`Field` import in Customer routes and missing `Any` import in FastAPI main module, discovered by API CI.
+- Refactored data-loading state transitions in existing views and moved analytics time capture to API response completion to remove render/effect lint violations. No component hierarchy, spacing, colors, typography, or navigation design was intentionally changed.
+- CI evidence: [Engine Contract Tests 43167699004](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43167699004) PASS; [Phase 04 Sandbox Security Tests 43167699075](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43167699075) all four jobs PASS (API contract, worker contract, engine policy, sandbox policy). [Phase 00 baseline 43167699018](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43167699018) is pending final lint/build/browser screenshot results at report time.
+- Supabase RAG migration version `20261112060109` remains applied to canonical project; tables `knowledge_documents` and `knowledge_chunks` were previously confirmed with RLS enabled. No document data was inserted.
+- No production deploy, worker activation, real provider request, or authenticated browser-to-provider end-to-end session was performed. Phase 10 remains partial and Phase 11 remains blocked.
