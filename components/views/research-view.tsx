@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, TrendingUp, BookOpen, ChevronRight, ArrowLeft } from 'lucide-react';
 import { customerApi, type CustomerAgentRun } from '@/lib/api/client';
 
@@ -29,7 +29,7 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
     const candidate = run.input?.content ?? run.input?.prompt ?? run.input?.message ?? run.input?.task;
     return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : 'Agent run ' + run.id.slice(0, 8);
   };
-  const filteredRuns = useMemo(() => runs.filter((run) => runTitle(run).toLowerCase().includes(searchQuery.toLowerCase())), [runs, searchQuery]);
+  const filteredRuns = runs.filter((run) => runTitle(run).toLowerCase().includes(searchQuery.toLowerCase()));
   const resultText = (run: CustomerAgentRun) => {
     const value = run.output?.text ?? run.output?.content ?? run.output?.result;
     return typeof value === 'string' ? value : run.status === 'failed' ? 'Run gagal. Detail error dapat dilihat pada Workflow.' : 'Belum ada output final yang tersimpan.';
