@@ -21,6 +21,26 @@ for (const width of widths) {
   console.log(JSON.stringify({ width, status: response?.status(), title, bodyCharacters: bodyText.length, pageErrors: errors }));
   await page.close();
 }
+
+const authPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+for (const [path, expectedLabel] of [['/customer/register', 'Daftar Akun Baru'], ['/customer/login', 'Masuk ke Akun AI Workspace Anda']]) {
+  const response = await authPage.goto(new URL(path, baseURL).toString(), { waitUntil: 'networkidle', timeout: 60000 });
+  if (!response || response.status() >= 400) failures.push(`Auth route HTTP ${response?.status() ?? 'NO_RESPONSE'} at ${path}`);
+  const body = await authPage.locator('body').innerText().catch(() => '');
+  if (!body.includes(expectedLabel)) failures.push(`Expected auth screen label missing at ${path}`);
+  if (await authPage.locator('input[type="tel"]').count()) failures.push(`Phone input must not be present at ${path}`);
+  if (path.endsWith('/register')) {
+    if (!(await authPage.getByLabel(/Nama Lengkap/i).count())) failures.push('Registration full-name input is missing');
+    if (!(await authPage.getByLabel(/^Email/i).count())) failures.push('Registration email input is missing');
+    if (!(await authPage.getByLabel(/Buat Password/i).count())) failures.push('Registration password input is missing');
+  } else {
+    if (!(await authPage.getByLabel(/^Email$/i).count())) failures.push('Login email input is missing');
+    if (!(await authPage.getByLabel(/Password/i).count())) failures.push('Login password input is missing');
+  }
+  await authPage.screenshot({ path: `${outputDir}/${path.endsWith('/register') ? 'register' : 'login'}-390px.png`, fullPage: true });
+}
+await authPage.close();
+
 await browser.close();
 if (failures.length) {
   console.error(failures.join('\n'));
