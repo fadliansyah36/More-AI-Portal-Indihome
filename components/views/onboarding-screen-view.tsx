@@ -20,7 +20,7 @@ export const OnboardingScreenView: React.FC<OnboardingScreenViewProps> = ({ onNa
     },
     {
       title: 'Koneksi Super Cepat & Kuota AI Free',
-      desc: 'Dapatkan 100.000 Poin kredit otomatis saat terhubung ke Wi-Fi Global Partner ISP.',
+      desc: 'Benefit AI sponsor hanya tersedia setelah jaringan partner diverifikasi dan entitlement aktif dikonfirmasi backend.',
       role: 'Pengguna Partner Network',
       color: 'from-rose-600 to-amber-600',
     },
@@ -54,7 +54,7 @@ export const OnboardingScreenView: React.FC<OnboardingScreenViewProps> = ({ onNa
               <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-1">
                 <Laptop className="w-8 h-8" />
               </div>
-              <span className="text-xs font-black text-slate-900 leading-tight">Andi Pratama</span>
+              <span className="text-xs font-black text-slate-900 leading-tight">Pengguna MoreAI</span>
               <span className="text-[10px] text-red-600 font-bold">{slides[activeSlide].role}</span>
             </div>
           </div>
