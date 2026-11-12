@@ -49,4 +49,8 @@ No tests, lint, typecheck, build, browser QA, authenticated API call, SSE reconn
 
 ## Deployment
 
-No production deployment was performed. A separate Vercel Preview deployment will be created from the reviewed main commit after the implementation/report commits are finalized. Production aliases remain untouched.
+Vercel Git integration automatically deployed this source commit to both Production projects:
+- Frontend: `dpl_DbSaKgdd8UJbhKPxERMkL1VmcwaR` — READY, aliases include `moreai.web.id` and `www.moreai.web.id`.
+- API: `dpl_Hn8LSHR5Q6zxgEmy8u5Dn8NKT9Nw` — READY, alias includes `more-ai-api-more-ai.vercel.app`.
+
+The deployments use source commit `500510bbb041dc235d3b7a832d3dc314a6d86fc6`. Later documentation-only Production builds were canceled to preserve the release gate. No live HTTP/API/SSE/CORS or E2E verification was run; Vercel READY confirms deployment state, not runtime acceptance.
