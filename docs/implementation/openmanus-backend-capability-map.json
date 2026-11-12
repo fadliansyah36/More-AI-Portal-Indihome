@@ -292,7 +292,7 @@
     "classification": "upstream templates/static assets archived only",
     "active_product_use": false
   },
-  "parity_status": "PARTIAL — workspace editor is CAS/version-fenced and run-scoped approval-gated; workspace_read_file is owner/member-scoped, private-bucket-only, bounded to 2 MB, UTF-8-only and SHA-256/version verified. Worker now enforces bounded wall-clock run deadlines with cancellation and retryable durable failure. Browser supervisor readiness verifies a live egress proxy connection; deployed network-isolation proof is still missing. Full upstream Flow/server/session/SWE parity, browser socket-level deployment enforcement, provider capability parity and complete Customer screen integration remain open.",
+  "parity_status": "PARTIAL — workspace editor is CAS/version-fenced and run-scoped approval-gated; workspace_read_file is owner/member-scoped, private-bucket-only, bounded to 2 MB, UTF-8-only and SHA-256/version verified. Worker now enforces bounded wall-clock run deadlines with cancellation and retryable durable failure. Browser supervisor readiness verifies a live egress proxy connection; deployed network-isolation proof is still missing. PlanningFlow now passes persisted predecessor outputs to dependent steps with a bounded context; full upstream Flow/server/session/SWE parity, browser socket-level deployment enforcement, provider capability parity and complete Customer screen integration remain open.",
   "implemented_target_files": [
     "engine/agents/types.py",
     "engine/agents/runtime.py",
@@ -305,6 +305,7 @@
     "engine/prompts/toolcall.py",
     "engine/orchestration/registry.py",
     "engine/orchestration/flows.py",
+    "engine/agents/planning_runtime.py",
     "engine/orchestration/planning.py",
     "engine/tools/catalog.py",
     "engine/tools/registry.py",
@@ -336,6 +337,7 @@
     "apps/worker/tests/test_run_timeout.py",
     "apps/sandbox/app/browser_readiness.py",
     "apps/sandbox/app/browser_service.py",
+    "apps/sandbox/Dockerfile.browser",
     "apps/sandbox/tests/test_browser_readiness.py"
   ],
   "runtime_safety_gates": {
