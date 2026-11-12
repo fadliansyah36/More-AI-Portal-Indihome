@@ -153,7 +153,7 @@ class SupabaseKnowledgeTools:
         }, ensure_ascii=False)
 
 
-    async def process_uploaded_document(self, document: dict[str, Any]) -> None:
+    async def process_uploaded_document(self, document: dict[str, Any]) -> int:
         """Lease-backed PDF/image extraction, OCR, page-aware chunking and vector persistence."""
         from io import BytesIO
         from PIL import Image
@@ -252,6 +252,7 @@ class SupabaseKnowledgeTools:
                 "ocr_status": ocr_status,
             }, "page_count": page_count},
         )
+        return page_count
 
     async def knowledge_search(
         self, arguments: dict[str, Any], *, run_id: str, user_id: str,
