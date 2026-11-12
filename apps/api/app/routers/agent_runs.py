@@ -95,6 +95,145 @@ async def cancel_run(run_id: UUID, request: Request, user: dict[str, Any] = Depe
     return await repo.rpc("moreai_worker_request_cancel", {"p_run_id": str(run_id), "p_user_id": user["id"]})
 
 
+def _safe_run_activity(row: dict[str, Any]) -> dict[str, Any]:
+    """Translate durable events to owner-visible activity without leaking prompts/tool payloads."""
+    event_type = str(row.get("event_type") or "run.activity")
+    payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+    safe: dict[str, Any] = {
+        "id": row.get("id"),
+        "sequence": row.get("sequence"),
+        "timestamp": row.get("created_at"),
+        "event_type": event_type,
+    }
+    for key in ("tool", "round", "index", "status", "phase", "progress", "tool_count", "next_round", "timeout_seconds"):
+        value = payload.get(key)
+        if isinstance(value, (str, int, float, bool)) and not isinstance(value, str) or (
+            isinstance(value, str) and len(value) <= 100
+        ):
+            safe[key] = value
+    return safe
+
+
+def _thinking_message(activity: dict[str, Any]) -> dict[str, Any]:
+    event_type = activity["event_type"]
+    tool = activity.get("tool")
+    labels = {
+        "run.started": "Agent run started",
+        "run.progress": "Agent progress updated",
+        "tool.started": f"Tool started: {tool}" if tool else "Tool started",
+        "tool.completed": f"Tool completed: {tool}" if tool else "Tool completed",
+        "tool.cancelled": f"Tool cancelled: {tool}" if tool else "Tool cancelled",
+        "run.completed": "Agent run completed",
+        "run.failed": "Agent run failed",
+        "run.cancelled": "Agent run cancelled",
+        "run.timed_out": "Agent run timed out",
+        "worker.checkpoint": "Execution checkpoint saved",
+    }
+    return {
+        "message": labels.get(event_type, "Agent activity"),
+        "type": "error" if event_type in {"run.failed", "run.timed_out"} else (
+            "conclusion" if event_type == "run.completed" else "thinking"
+        ),
+        "timestamp": activity.get("timestamp"),
+        "sequence": activity.get("sequence"),
+        **{key: activity[key] for key in ("tool", "round", "index", "status", "phase", "progress") if key in activity},
+    }
+
+
+@router.get("/{run_id}/logs")
+async def get_run_logs(
+    run_id: UUID, request: Request,
+    after: int = Query(default=0, ge=0),
+    limit: int = Query(default=200, ge=1, le=500),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    await repo.owned_record("agent_runs", run_id, user["id"])
+    rows = await repo.select("agent_run_events", {
+        "run_id": f"eq.{run_id}", "sequence": f"gt.{after}",
+        "select": "id,event_type,sequence,payload,created_at",
+        "order": "sequence.asc", "limit": str(limit),
+    })
+    items = []
+    for row in rows:
+        activity = _safe_run_activity(row)
+        activity["level"] = "ERROR" if activity["event_type"] in {"run.failed", "run.timed_out"} else (
+            "WARNING" if activity.get("status") in {"failed", "timed_out", "cancelled"} else "INFO"
+        )
+        activity["message"] = _thinking_message(activity)["message"]
+        items.append(activity)
+    return {"items": items, "count": len(items), "next_after": items[-1]["sequence"] if items else after}
+
+
+@router.get("/{run_id}/thinking")
+async def get_run_thinking(
+    run_id: UUID, request: Request,
+    after: int = Query(default=0, ge=0),
+    limit: int = Query(default=200, ge=1, le=500),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    run = await repo.owned_record("agent_runs", run_id, user["id"])
+    rows = await repo.select("agent_run_events", {
+        "run_id": f"eq.{run_id}", "sequence": f"gt.{after}",
+        "select": "id,event_type,sequence,payload,created_at",
+        "order": "sequence.asc", "limit": str(limit),
+    })
+    steps = await repo.select("agent_run_steps", {
+        "run_id": f"eq.{run_id}",
+        "select": "sequence,step_key,status,started_at,finished_at",
+        "order": "sequence.asc", "limit": "200",
+    })
+    items = [
+        _thinking_message(_safe_run_activity(row))
+        for row in rows
+        if row.get("event_type") in {
+            "run.started", "run.progress", "tool.started", "tool.completed",
+            "tool.cancelled", "run.completed", "run.failed", "run.cancelled",
+            "run.timed_out", "worker.checkpoint",
+        }
+    ]
+    completed = sum(1 for step in steps if step.get("status") == "succeeded")
+    total = len(steps)
+    percentage = int(completed * 100 / total) if total else (
+        100 if run.get("status") == "succeeded" else 0
+    )
+    return {
+        "status": run.get("status"),
+        "thinking_steps": items,
+        "progress": {
+            "current_step": next((step.get("step_key") for step in reversed(steps) if step.get("status") == "running"), None),
+            "total_steps": total,
+            "completed_steps": completed,
+            "percentage": percentage,
+        },
+        "next_after": rows[-1]["sequence"] if rows else after,
+    }
+
+
+@router.get("/{run_id}/progress")
+async def get_run_progress(
+    run_id: UUID, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    run = await repo.owned_record("agent_runs", run_id, user["id"])
+    steps = await repo.select("agent_run_steps", {
+        "run_id": f"eq.{run_id}",
+        "select": "sequence,step_key,status,started_at,finished_at",
+        "order": "sequence.asc", "limit": "200",
+    })
+    completed = sum(1 for step in steps if step.get("status") == "succeeded")
+    total = len(steps)
+    return {
+        "status": run.get("status"),
+        "current_step": next((step.get("step_key") for step in reversed(steps) if step.get("status") == "running"), None),
+        "total_steps": total,
+        "completed_steps": completed,
+        "percentage": int(completed * 100 / total) if total else (100 if run.get("status") == "succeeded" else 0),
+    }
+
+
 @router.get("/{run_id}/events")
 async def get_events(
     run_id: UUID, request: Request,
