@@ -202,6 +202,57 @@ async def get_knowledge_document(
     return {"document": rows[0], "chunks": chunk_rows, "chunk_count": len(chunk_rows)}
 
 
+@router.post("/documents/{document_id}/retry", status_code=202)
+async def retry_knowledge_document(
+    document_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Requeue a failed owner-scoped file from its already-private Storage object."""
+    repo = repository(request)
+    rows = await repo.select("knowledge_documents", {
+        "id": f"eq.{document_id}",
+        "owner_user_id": f"eq.{user['id']}",
+        "source_type": "eq.file",
+        "status": "eq.failed",
+        "select": "id,workspace_id,metadata",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "Failed knowledge file not found")
+    metadata = rows[0].get("metadata") if isinstance(rows[0].get("metadata"), dict) else {}
+    if metadata.get("storage_bucket") != KNOWLEDGE_BUCKET or not isinstance(metadata.get("storage_path"), str):
+        raise HTTPException(409, "Private source object is unavailable for reprocessing")
+    workspace_id = rows[0].get("workspace_id")
+    if workspace_id:
+        await _validate_workspace_access(request, UUID(str(workspace_id)), user["id"])
+    updated = await repo.update(
+        "knowledge_documents",
+        {
+            "id": f"eq.{document_id}",
+            "owner_user_id": f"eq.{user['id']}",
+            "source_type": "eq.file",
+            "status": "eq.failed",
+        },
+        {
+            "status": "processing",
+            "ingestion_attempt": 0,
+            "ingestion_lease_until": None,
+            "ingestion_error_code": None,
+            "metadata": {
+                **metadata,
+                "ingestion_state": "queued",
+                "retry_after": None,
+                "error_code": None,
+                "requeued_at": datetime.now(timezone.utc).isoformat(),
+            },
+        },
+    )
+    if not updated:
+        raise HTTPException(409, "Knowledge file state changed; refresh and retry")
+    return {"id": str(document_id), "status": "processing", "ingestion_state": "queued"}
+
+
 @router.post("/documents/{document_id}/archive")
 async def archive_knowledge_document(
     document_id: UUID,
