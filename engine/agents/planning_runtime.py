@@ -97,6 +97,7 @@ class PlanningAgentRuntime(AgentRuntime):
         rows_by_index={int(row["sequence"])-1:row for row in (await self.store.get(run_id=context.run_id)).get("steps",[])}
         results=[]
         completed=set()
+        completed_outputs: dict[int, Any] = {}
         for index,step in enumerate(steps):
             row=rows_by_index.get(index,{})
             status=row.get("status","pending")
@@ -104,6 +105,7 @@ class PlanningAgentRuntime(AgentRuntime):
                 output=row.get("output") if isinstance(row.get("output"),dict) else {}
                 results.append({"step":index,"status":"succeeded","output":output})
                 completed.add(index)
+                completed_outputs[index] = output
                 continue
             if status in {"failed","cancelled"}:
                 raise RuntimeError("planning_run_contains_terminal_incomplete_step")
@@ -132,7 +134,7 @@ class PlanningAgentRuntime(AgentRuntime):
                     {
                         "step": dependency,
                         "objective": steps[dependency]["objective"],
-                        "output": rows_by_index[dependency].get("output"),
+                        "output": completed_outputs.get(dependency),
                     }
                     for dependency in step["dependencies"]
                 ]
@@ -159,6 +161,7 @@ class PlanningAgentRuntime(AgentRuntime):
                 await checkpoint(f"planning.step.{index}.completed",{"step_index":index,"status":"succeeded"})
                 results.append({"step":index,"status":"succeeded","output":result.output})
                 completed.add(index)
+                completed_outputs[index] = result.output
             except Exception as exc:
                 await self.store.mark_step(run_id=context.run_id,step_index=index,status="failed",notes=type(exc).__name__)
                 raise
