@@ -20,7 +20,7 @@ class ConversationCreate(BaseModel):
 
 class MessageCreate(BaseModel):
     content: str = Field(min_length=1, max_length=100_000)
-    agent_key: Literal["manus", "planning"] = "manus"
+    agent_key: Literal["manus", "planning", "toolcall"] = "manus"
 
 
 class ConversationUpdate(BaseModel):
