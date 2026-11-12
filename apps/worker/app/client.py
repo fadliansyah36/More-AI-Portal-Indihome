@@ -84,6 +84,45 @@ class WorkerRpcClient:
         response.raise_for_status()
         return response.json() if response.content else []
 
+    async def claim_knowledge_ingestion(self, lease_seconds: int = 180) -> dict[str, Any] | None:
+        rows = await self.rpc("moreai_worker_claim_knowledge_ingestion", {
+            "p_lease_seconds": max(30, min(900, lease_seconds)),
+        })
+        return rows[0] if isinstance(rows, list) and rows else None
+
+    async def finish_knowledge_ingestion(
+        self, document_id: str, owner_user_id: str, success: bool,
+        error_code: str | None = None, page_count: int | None = None,
+    ) -> bool:
+        result = await self.rpc("moreai_worker_finish_knowledge_ingestion", {
+            "p_document_id": document_id,
+            "p_owner_user_id": owner_user_id,
+            "p_success": success,
+            "p_error_code": error_code,
+            "p_page_count": page_count,
+        })
+        return result is True
+
+    async def download_storage_object(self, bucket: str, path: str, max_bytes: int = 26214400) -> bytes:
+        if bucket != "moreai-knowledge-private" or not path or path.startswith("/") or ".." in path.split("/"):
+            raise ValueError("knowledge_storage_object_path_invalid")
+        response = await self.client.get(
+            f"{self.settings.supabase_url.rstrip('/')}/storage/v1/object/{bucket}/{path}",
+            headers=self._headers(), timeout=60.0,
+        )
+        response.raise_for_status()
+        if len(response.content) > max_bytes:
+            raise ValueError("knowledge_storage_object_exceeds_limit")
+        return response.content
+
+    async def delete_knowledge_chunks(self, document_id: str, owner_user_id: str) -> None:
+        response = await self.client.delete(
+            f"{self.settings.supabase_url.rstrip('/')}/rest/v1/knowledge_chunks",
+            params={"document_id": f"eq.{document_id}", "owner_user_id": f"eq.{owner_user_id}"},
+            headers=self._headers(), timeout=20.0,
+        )
+        response.raise_for_status()
+
     async def list_checkpoints(self, run_id: str) -> dict[str, dict[str, Any]]:
         rows = await self.select("agent_run_checkpoints", {
             "run_id": f"eq.{run_id}",
