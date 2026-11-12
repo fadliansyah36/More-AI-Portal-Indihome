@@ -671,3 +671,13 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Report: [PHASE-06-FASTAPI-ERROR-CONTRACT-20261112.md](./PHASE-06-FASTAPI-ERROR-CONTRACT-20261112.md).
 - No tests, lint, typecheck, OpenAPI generation, build, API runtime, staging, migration or deployment run. Endpoint-local JSONResponse paths and full route authorization reconciliation remain open.
 - Phase 06 remains IN PROGRESS; Phase 08 and 09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
+
+
+## 2026-11-12 — Phase 08 tenant-scoped RAG implementation increment
+- Added additive pgvector schema for owner/workspace scoped knowledge documents and chunks, with server-only RLS and a tenant-filtered semantic match RPC.
+- Added worker embedding adapter, bounded text chunking/ingestion, semantic search, canonical tool definitions, durable runtime registration, and explicit retrieval/ingestion instructions.
+- RAG tools are registered only when embedding endpoint/model configuration exists; 1536-dimensional vectors are required.
+- Commits: `6e418112`, `2d08de80`, `31449379`, `0ed2225e`, `3730f40f`, `27e8d6cc`, `e625087f`.
+- Report: [PHASE-08-TENANT-KNOWLEDGE-RAG-20261112.md](./PHASE-08-TENANT-KNOWLEDGE-RAG-20261112.md).
+- This is source implementation only. Migration was not applied; provider calls, worker runtime, tests, lint, typecheck, build, staging and deployment were not run.
+- Phase 08 remains IN PROGRESS; Phase 06 and Phase 09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
