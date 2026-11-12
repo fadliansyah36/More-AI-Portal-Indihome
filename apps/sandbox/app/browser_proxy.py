@@ -70,7 +70,12 @@ class PinnedConnectProxy:
                 headers[key.strip().lower()] = value.strip()
             expected_auth = "Basic " + base64.b64encode(("moreai:" + self.token).encode()).decode("ascii")
             if headers.get("proxy-authorization") != expected_auth:
-                writer.write(b"HTTP/1.1 407 Proxy Authentication Required\r\nConnection: close\r\n\r\n")
+                logger.warning("browser proxy authentication challenge method=%s host=%s", request_method, target_host)
+                writer.write(
+                    b"HTTP/1.1 407 Proxy Authentication Required\r\n"
+                    b'Proxy-Authenticate: Basic realm="MoreAI"\r\n'
+                    b"Connection: close\r\n\r\n"
+                )
                 await writer.drain()
                 return
             host, port_text = authority.rsplit(":", 1)
