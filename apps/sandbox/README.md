@@ -54,3 +54,28 @@ Downloads remain denied (`accept_downloads=false`) until a scanner-backed downlo
 - Browser supervisor is not production-enabled by this documentation.
 - Do not enable `MOREAI_BROWSER_ENABLED` on a worker until the private network is attached and the Docker acceptance workflow is green.
 - Keep the browser tool behind the release gate until redirect, subresource, DNS pinning, download, and tenant-isolation tests pass on the target deployment platform.
+
+
+## Isolated Python/Bash execution supervisor
+
+Python and Bash execution use a separate authenticated service; the worker must not receive a Docker socket or invoke the Docker CLI locally.
+
+- Service entrypoint: `apps.sandbox.app.execution_supervisor:app`
+- Image definition: `apps/sandbox/Dockerfile.execution`
+- The supervisor accepts only authenticated worker requests, requires a digest-pinned runner image, and executes each request with network disabled, read-only root filesystem, non-root runner identity, dropped capabilities, bounded CPU/memory/PIDs/output and a hard timeout.
+- The execution service must be reachable only from the private worker network. Do not publish port 8080 publicly.
+- The Docker daemon endpoint must be exposed to this trusted service through a restricted Docker socket proxy with only the container lifecycle operations required by the runner. Do not mount an unrestricted host Docker socket into the worker or browser container.
+- The supervisor service token must be unique, at least 32 characters, stored as a server-side secret, and never included in browser configuration.
+
+Worker settings (only after the deployment security gate is accepted):
+
+- `MOREAI_SANDBOX_ENABLED=true`
+- `MOREAI_SANDBOX_RELEASE_GATE_PASSED=true`
+- `MOREAI_SANDBOX_SERVICE_URL=https://<private-supervisor-host>` or exact private Compose URL `http://execution-supervisor:8080`
+- `MOREAI_SANDBOX_SERVICE_TOKEN=<32+ character secret>`
+- `MOREAI_SANDBOX_PRIVATE_NETWORK_HTTP=true` only for the exact private Compose hostname above
+- `MOREAI_SANDBOX_IMAGE=<runner-image>@sha256:<64-hex-digest>` is configured on the supervisor, not in the browser bundle.
+
+The worker checks authenticated `/ready` before it starts claiming work. The dispatcher also requires the supervisor for the SWE agent, and the adapter re-checks readiness before each execution. Any missing, invalid or degraded supervisor fails closed; there is no local Docker fallback.
+
+This source integration does not deploy the supervisor, provision its private network/socket proxy, or authorize enabling either runtime flag. Those remain release-gated.
