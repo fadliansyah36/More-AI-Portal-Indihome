@@ -776,6 +776,8 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - API Vercel build evidence shows Python metadata under `apps/api/pyproject.toml` but deployment entrypoint `.` at monorepo root, while the function entrypoint is nested under `apps/api/api/index.py` and imports `app.main` plus root `engine`. Updated the API function entrypoint to explicitly resolve both API workspace and monorepo root before importing FastAPI; aligned Vercel API project root directory to `apps/api` and enabled source files outside root for engine imports.
 - API and worker unit tests passed on commit `b9426254f8fb8b143696edec36a46d0666e6b920`; frontend lint/build passed. Follow-up entrypoint hardening commit `17453150da788481500b36c0683e4e7db750aab6` is committed, but not yet deployed or runtime-verified.
 - Vercel production redeployment was rejected with HTTP 402 `api-deployments-free-per-day`; do not claim runtime recovery. See [PHASE-09-CUSTOMER-API-PRODUCTION-RECOVERY-20261112.md](./PHASE-09-CUSTOMER-API-PRODUCTION-RECOVERY-20261112.md).
+- Corrected Customer API contract drift: list/get/steps/stream now use `/api/v1/customer/agent-runs/*`; added authenticated Customer cancel endpoint and a route-registration regression test. The existing Tasks “Tambah Tugas” action now routes into the real authenticated Chat → FastAPI → durable Agent Run flow without creating local/mock task rows. Latest code commit `7784431a11fda14ce82fb8bc3bf8607a43d4199e`; API/worker/browser baseline CI run `43189842274` is in progress.
+
 - `MOREAI_AGENT_EXECUTION_ENABLED=false` remains intentional until durable worker/provider/credit gates are live. Do not enable merely to hide a queue that has no active worker.
 
 ## Next focused work
