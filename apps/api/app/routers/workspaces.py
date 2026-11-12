@@ -105,6 +105,7 @@ async def list_workspace_files(
     rows = await repo.select("agent_workspace_files", {
         "workspace_id": f"eq.{workspace_id}",
         "select": "id,path,version,storage_path,sha256,size_bytes,updated_at",
+        "deleted_at": "is.null",
         "order": "updated_at.desc",
         "limit": "500",
     })
@@ -121,7 +122,7 @@ async def list_workspace_file_versions(
     current = await repo.select("agent_workspace_files", {
         "id": f"eq.{file_id}",
         "workspace_id": f"eq.{workspace_id}",
-        "select": "id,path,version,storage_path,sha256,size_bytes,updated_at",
+        "select": "id,path,version,storage_path,sha256,size_bytes,updated_at,deleted_at",
         "limit": "1",
     })
     if not current:
@@ -134,7 +135,7 @@ async def list_workspace_file_versions(
         "order": "version.desc",
         "limit": "100",
     })
-    if file.get("version", 0) > 0 and file.get("storage_path") and file.get("sha256"):
+    if file.get("deleted_at") is None and file.get("version", 0) > 0 and file.get("storage_path") and file.get("sha256"):
         history.insert(0, {
             "id": str(file["id"]),
             "path": file["path"],
