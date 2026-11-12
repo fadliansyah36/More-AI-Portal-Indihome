@@ -4,14 +4,8 @@ import React, { useState } from 'react';
 import { knowledgeApi } from '@/lib/api/knowledge';
 import {
   UploadCloud,
-  FileSpreadsheet,
-  FileText,
-  CheckCircle2,
+    CheckCircle2,
   Sparkles,
-  ArrowRight,
-  TrendingUp,
-  BarChart2,
-  PieChart,
 } from 'lucide-react';
 
 export const AnalyseView: React.FC = () => {
@@ -20,11 +14,6 @@ export const AnalyseView: React.FC = () => {
   const [uploadState, setUploadState] = useState<'idle' | 'queued' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<{
-    summary: string;
-    kpis: { label: string; value: string; trend: string }[];
-    recommendations: string[];
-  } | null>(null);
 
   const handleStartAnalysis = async () => {
     if (!selectedFile || isAnalyzing) return;
@@ -35,7 +24,6 @@ export const AnalyseView: React.FC = () => {
       const result = await knowledgeApi.upload(selectedFile);
       setUploadState('queued');
       setUploadMessage('File tersimpan secara privat dan masuk antrean ingestion. Status ekstraksi dan indexing dapat dipantau di Knowledge Library.');
-      setAnalysisResult(null);
       setSelectedFileName(result.upload.filename);
     } catch (cause) {
       setUploadState('error');
@@ -81,7 +69,6 @@ export const AnalyseView: React.FC = () => {
                 const file = e.target.files?.[0] || null;
                 setSelectedFile(file);
                 setSelectedFileName(file?.name || null);
-                setAnalysisResult(null);
                 setUploadState('idle');
                 setUploadMessage(null);
                 e.target.value = '';
