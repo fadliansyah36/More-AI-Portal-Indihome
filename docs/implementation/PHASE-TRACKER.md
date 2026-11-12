@@ -23,9 +23,9 @@ Implementation is being performed directly on `main` as explicitly requested by 
 
 ## Current Phase 04 next work
 
-1. Implement worker approval pause/resume and atomic single-use consumption; the approval migration/API is only a persisted request/decision contract and is not yet connected to the worker.
+1. Approval pause/resume and atomic single-use consumption are wired through the worker RPC gate and now protect workspace restore; continue closing edge cases and recovery behavior, then obtain runtime acceptance when authorized.
 2. Integrate the sandbox supervisor with the OpenManus dispatcher. Keep Bash/Python/browser/file tools unavailable until the approval and supervisor gates are actually wired.
-3. Implement browser isolation, DNS pinning/rebinding defenses, redirect revalidation, private/reserved IP rejection, controlled downloads and isolated file workspace.
+3. Complete browser isolation, DNS pinning/rebinding defenses, redirect revalidation, private/reserved IP rejection and controlled downloads. Workspace file version restore is now available through a gated worker tool; finish remaining workspace lifecycle and UX parity.
 4. Close the source-to-target behavioral parity gaps in `openmanus-backend-capability-map.json`, including agent/flow lifecycle, tool schemas/handlers and upstream server/session/stream functions.
 5. Maintain durable recovery, idempotency and tenant boundaries. The current user instruction for this continuation is to skip tests; therefore no new pass evidence is claimed.
 
