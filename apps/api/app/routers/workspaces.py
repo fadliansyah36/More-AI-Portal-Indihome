@@ -197,3 +197,30 @@ async def create_workspace_file_download(
         raise HTTPException(502, "Storage did not return a signed download path")
     signed_url = signed_path if signed_path.startswith("https://") else base_url + "/storage/v1" + (signed_path if signed_path.startswith("/") else "/" + signed_path)
     return {"file_id": str(file_id), "version": selected.get("version", version), "url": signed_url, "expires_in": 60}
+
+
+class WorkspaceUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
+
+
+@router.patch("/{workspace_id}")
+async def update_customer_workspace(
+    workspace_id: UUID, body: WorkspaceUpdate, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Rename an owned workspace; shared members retain read access but cannot mutate its identity."""
+    repo = repository(request)
+    workspace = await _workspace_access(repo, workspace_id, user["id"])
+    if workspace.get("owner_user_id") != user["id"]:
+        raise HTTPException(403, "Only the workspace owner can rename this workspace")
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(422, "Workspace name cannot be empty")
+    rows = await repo.update(
+        "workspaces",
+        {"id": f"eq.{workspace_id}", "owner_user_id": f"eq.{user['id']}", "status": "eq.active"},
+        {"name": name, "updated_at": "now()"},
+    )
+    if not rows:
+        raise HTTPException(404, "Workspace not found")
+    return rows[0]
