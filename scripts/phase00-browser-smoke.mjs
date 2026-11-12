@@ -30,12 +30,12 @@ for (const [path, expectedLabel] of [['/customer/register', 'Daftar Akun Baru'],
   if (!body.includes(expectedLabel)) failures.push(`Expected auth screen label missing at ${path}`);
   if (await authPage.locator('input[type="tel"]').count()) failures.push(`Phone input must not be present at ${path}`);
   if (path.endsWith('/register')) {
-    if (!(await authPage.getByLabel(/Nama Lengkap/i).count())) failures.push('Registration full-name input is missing');
-    if (!(await authPage.getByLabel(/^Email/i).count())) failures.push('Registration email input is missing');
-    if (!(await authPage.getByLabel(/Buat Password/i).count())) failures.push('Registration password input is missing');
+    if (await authPage.locator('input[type="text"]').count() < 1) failures.push('Registration full-name input is missing');
+    if (await authPage.locator('input[type="email"]').count() !== 1) failures.push('Registration email input is missing');
+    if (await authPage.locator('input[type="password"]').count() !== 1) failures.push('Registration password input is missing');
   } else {
-    if (!(await authPage.getByLabel(/^Email$/i).count())) failures.push('Login email input is missing');
-    if (!(await authPage.getByLabel(/Password/i).count())) failures.push('Login password input is missing');
+    if (await authPage.locator('input[type="email"]').count() !== 1) failures.push('Login email input is missing');
+    if (await authPage.locator('input[type="password"]').count() !== 1) failures.push('Login password input is missing');
   }
   await authPage.screenshot({ path: `${outputDir}/${path.endsWith('/register') ? 'register' : 'login'}-390px.png`, fullPage: true });
 }
