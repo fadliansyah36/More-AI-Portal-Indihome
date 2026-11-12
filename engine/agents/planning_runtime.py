@@ -215,6 +215,7 @@ class PlanningAgentRuntime(AgentRuntime):
                         "prompt": step["objective"] + "\nExpected output: " + step["expected_output"] + dependency_context,
                         "planning_step": index,
                         "dependencies": step["dependencies"],
+                        "agent_key": step["agent_key"],
                     },
                     checkpoint,cancelled,
                 )
