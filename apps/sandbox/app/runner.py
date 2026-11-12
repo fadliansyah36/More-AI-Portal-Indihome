@@ -28,7 +28,7 @@ class SandboxResult:
     stdout: str
     stderr: str
     timed_out: bool
-    workspace_files: dict[str, str]
+    workspace_files: dict[str, bytes]
 
 
 class _OutputLimitExceeded(RuntimeError):
@@ -82,7 +82,8 @@ except subprocess.TimeoutExpired as exc:
 changed={}
 total=0
 for item in root.rglob('*'):
-    if item.is_symlink() or not item.is_file(): continue
+    if item.is_symlink(): raise SystemExit('workspace_symlink_not_supported')
+    if not item.is_file(): continue
     rel=item.relative_to(root).as_posix()
     if not re.fullmatch(r'[A-Za-z0-9._ -]+(?:/[A-Za-z0-9._ -]+)*',rel) or any(x in ('','.','..') for x in rel.split('/')): continue
     raw=item.read_bytes()
@@ -226,7 +227,7 @@ class DockerSandbox:
                 files[name] = raw
             return SandboxResult(
                 exit_code=int(envelope.get("exit_code", -1)),
-                stdout=str(envelope.get("stdout", ""))[:limits.output_bytes].__str__(),
+                stdout=str(envelope.get("stdout", ""))[:limits.output_bytes],
                 stderr=str(envelope.get("stderr", ""))[:limits.output_bytes],
                 timed_out=int(envelope.get("exit_code", -1)) == 124,
                 workspace_files=files,
