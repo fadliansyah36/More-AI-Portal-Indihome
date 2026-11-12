@@ -31,42 +31,9 @@ async def health():
 
 @app.get("/ready")
 async def ready():
-    import asyncio
+    from apps.sandbox.app.browser_readiness import browser_readiness
 
-    proxy = os.getenv("MOREAI_BROWSER_PROXY_URL", "")
-    token = os.getenv("MOREAI_BROWSER_PROXY_TOKEN", "")
-    enforced = os.getenv("MOREAI_BROWSER_EGRESS_ENFORCED", "false").lower() == "true"
-    parsed_proxy = urlsplit(proxy)
-    configured = (
-        parsed_proxy.scheme == "http"
-        and bool(parsed_proxy.hostname)
-        and parsed_proxy.username is None
-        and parsed_proxy.password is None
-        and parsed_proxy.port is not None
-        and len(token) >= 32
-        and enforced
-    )
-    reachable = False
-    if configured:
-        writer = None
-        try:
-            _, writer = await asyncio.wait_for(
-                asyncio.open_connection(parsed_proxy.hostname, parsed_proxy.port),
-                timeout=1.5,
-            )
-            reachable = True
-        except (OSError, TimeoutError):
-            reachable = False
-        finally:
-            if writer is not None:
-                writer.close()
-                await writer.wait_closed()
-    return {
-        "status": "ready" if configured and reachable else "degraded",
-        "egress_enforced": enforced,
-        "proxy_configured": configured,
-        "proxy_reachable": reachable,
-    }
+    return await browser_readiness()
 
 
 @app.post("/v1/browser/actions")
