@@ -6,12 +6,13 @@ from engine.tools.registry import PolicyEnforcedToolRegistry
 from engine.prompts.manus import SYSTEM_PROMPT
 
 
-def test_upstream_tool_inventory_is_complete_and_default_disabled():
+def test_upstream_and_moreai_tool_inventory_is_complete_and_default_disabled():
     keys = {tool.key for tool in OPENMANUS_TOOL_CATALOG}
     assert keys == {
         "bash", "browser_use", "create_chat_completion", "file_saver",
-        "google_search", "planning", "python_execute", "run",
-        "str_replace_editor", "terminate",
+        "google_search", "knowledge_ingest", "knowledge_search", "planning",
+        "python_execute", "run", "str_replace_editor", "terminate",
+        "workspace_restore_version",
     }
     assert all(item["enabled_by_default"] is False for item in tool_catalog())
 
