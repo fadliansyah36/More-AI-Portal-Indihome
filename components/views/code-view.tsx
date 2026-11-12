@@ -50,6 +50,10 @@ print(greet("MoreAI - Global Partner Network"))`
 
   const saveCodeSnapshot = async () => {
     if (!code.trim() || isSaving) return;
+    if (new Blob([code]).size > 2_000_000) {
+      setOutput('Snapshot kode melebihi batas penyimpanan artefak 2 MB.');
+      return;
+    }
     setIsSaving(true);
     try {
       await artifactApi.upload('main.py', new Blob([code], { type: 'text/x-python' }), 'text/x-python');
