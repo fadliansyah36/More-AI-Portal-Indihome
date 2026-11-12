@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      MOREAI_BROWSER_ALLOWED_DOMAINS: example.com
+      MOREAI_BROWSER_ALLOWED_DOMAINS: example.com,httpbin.org
       MOREAI_BROWSER_SERVICE_TOKEN: ci-browser-service-token-0123456789abcdef
       MOREAI_BROWSER_PROXY_TOKEN: ci-browser-proxy-token-0123456789abcdef
       MOREAI_BROWSER_EGRESS_ENFORCED: "true"
