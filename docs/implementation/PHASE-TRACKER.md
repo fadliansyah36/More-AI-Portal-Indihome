@@ -934,3 +934,12 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Phase 04 lifecycle correction: dispatcher now preserves `RunPausedForApproval` so durable approval pauses reach the worker's pause handler; upstream timeout/transport/429/5xx failures receive explicit retryable taxonomy without leaking response bodies. Commits: `96388b5cbd9d898c35012240f307ba9fb976429d`, `bdaf4b2c3809acb2c22bc3d26e6ed63780e57b65`. No tests or runtime probes.
 
 - Phase 04 browser download hardening: isolated browser context rejects downloads (`accept_downloads=False`), explicitly cancels download events and reports blocked download count. No download artifact persistence is enabled pending scanning/quarantine policy. Commit: `845b9e7d5ae5cff9676b06218324126fbaa6eca4`. Persistent workspace-to-Python/Bash filesystem bridge remains unimplemented; no runtime checks.
+
+
+## 2026-11-13 — Phase 04 persistent workspace snapshot bridge
+- Added a bounded copy-in/copy-out bridge between immutable Supabase workspace objects and the isolated Python/Bash runner. Snapshot is limited to 200 files / 2 MiB, membership and metadata are rechecked through the workspace RPC, and every object is size/SHA-256 verified.
+- The runner materializes files only in disposable /tmp/workspace, has no host mounts/network, rejects symlinks and returns a bounded snapshot. Successful non-timeout runs commit changed/new files through worker-lease and version-fenced CAS RPCs; removals use the existing soft-delete RPC. Failed/timed-out runs discard changes.
+- Workspace identity is now passed to bash/python_execute handlers from AgentRunContext; model tool arguments cannot choose the workspace. New-file writes are fenced against concurrent inserts and deleted paths require explicit restore.
+- Write-back is per-file, not atomic across multiple files; partial commit can occur if a later file conflicts. This limitation and recovery expectations are documented.
+- Report: [Phase 04 Persistent Workspace Snapshot Bridge](./PHASE-04-PERSISTENT-WORKSPACE-SNAPSHOT-BRIDGE-20261113.md).
+- No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment, migration or Supabase live mutation were run. Sandbox remains disabled behind both explicit activation gates. Phase 04 remains IN PROGRESS.
