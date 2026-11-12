@@ -44,15 +44,32 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
 
   useEffect(() => {
     let active = true;
-    Promise.all([profileApi.get(), notificationApi.preferences()])
-      .then(([identity, preferences]) => {
+
+    // Profile identity and notification preferences are independent resources.
+    // A notification endpoint failure must never turn a successfully loaded
+    // customer profile into a generic "Failed to fetch" state.
+    profileApi.get()
+      .then((identity) => {
         if (!active) return;
-        setProfileName(identity.profile?.display_name || 'Pengguna MoreAI');
+        const registeredName = identity.profile?.display_name?.trim()
+          || identity.user?.display_name?.trim()
+          || '';
+        setProfileName(registeredName || 'Nama belum diatur');
         setProfileEmail(identity.user?.email || '');
-        setNotificationsEnabled(preferences.in_app_enabled);
       })
-      .catch((error) => { if (active) showToast(error instanceof Error ? error.message : 'Profil gagal dimuat.', 'error'); })
+      .catch((error) => {
+        if (active) showToast(error instanceof Error ? error.message : 'Profil gagal dimuat.', 'error');
+      })
       .finally(() => { if (active) setProfileLoading(false); });
+
+    notificationApi.preferences()
+      .then((preferences) => {
+        if (active) setNotificationsEnabled(preferences.in_app_enabled);
+      })
+      .catch(() => {
+        // Keep the existing preference state; profile identity remains usable.
+      });
+
     return () => { active = false; };
   }, [showToast]);
 
