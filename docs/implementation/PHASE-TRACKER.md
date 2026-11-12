@@ -504,3 +504,12 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Migration ledger has two applied versions named `moreai_workspace_file_cas_versioning` (`20261111140238`, `20261111140255`); history needs reconciliation without destructive reset.
 - No tests, lint, typecheck, build, worker/provider runtime, browser QA, migration apply, data writes or deployment validation were performed. Approval lifecycle acceptance and all phase completion gates remain open.
 - Detailed report: `PHASE-04-09-CONTINUATION-20261112.md`.
+
+
+## 2026-11-12 — Customer API duplicate-route reconciliation
+- Removed duplicate FastAPI route registrations for Customer wallet, ledger, usage, entitlements and quotas; retained the later implementations with timezone-aware cursor validation and global/user quota visibility.
+- Source commit: `21201caaec53be5b80bdc5e3e2ec07c802d54289`.
+- Report: [PHASE-04-06-07-08-09-CUSTOMER-ROUTE-RECONCILIATION-20261112.md](./PHASE-04-06-07-08-09-CUSTOMER-ROUTE-RECONCILIATION-20261112.md).
+- No tests, lint, typecheck, build, runtime, staging, migration or deployment were run. This is not phase acceptance.
+- Read-only Supabase inventory found no dedicated EduTech/course/lesson/progress/certificate tables among the inspected public tables; EduTech requires a product-approved data model before real persistence endpoints can be implemented.
+- Phase 04, 06, 07, 08 and 09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
