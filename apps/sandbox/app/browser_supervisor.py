@@ -9,10 +9,26 @@ import httpx
 class BrowserSupervisor:
     """Worker-side authenticated client for the isolated browser supervisor service."""
 
-    def __init__(self, *, service_url: str, service_token: str, egress_enforced: bool, http: httpx.AsyncClient):
+    def __init__(
+        self, *, service_url: str, service_token: str, egress_enforced: bool,
+        http: httpx.AsyncClient, allow_private_http: bool = False,
+    ):
         parsed = urlsplit(service_url)
-        if parsed.scheme != "https" or not parsed.hostname:
-            raise ValueError("browser_supervisor_service_must_use_https")
+        private_http = (
+            allow_private_http
+            and parsed.scheme == "http"
+            and parsed.hostname == "browser-supervisor"
+            and parsed.port == 8080
+            and not parsed.username and not parsed.password
+            and not parsed.query and not parsed.fragment
+        )
+        secure_https = (
+            parsed.scheme == "https" and bool(parsed.hostname)
+            and not parsed.username and not parsed.password
+            and not parsed.query and not parsed.fragment
+        )
+        if not (secure_https or private_http):
+            raise ValueError("browser_supervisor_service_must_use_https_or_explicit_private_compose_http")
         if len(service_token) < 32:
             raise ValueError("browser_supervisor_service_token_invalid")
         if not egress_enforced:
