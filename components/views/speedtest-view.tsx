@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Gauge, Wifi, Zap, Activity, Play, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
+import { moreAiCustomerFetch } from '@/lib/api/client';
 
 interface SpeedtestViewProps {
   onBack: () => void;
@@ -16,32 +17,60 @@ export const SpeedtestView: React.FC<SpeedtestViewProps> = ({
 }) => {
   const { showToast } = useToast();
   const [isRunning, setIsRunning] = useState(false);
-  const [downloadSpeed, setDownloadSpeed] = useState(104.2);
-  const [uploadSpeed, setUploadSpeed] = useState(52.8);
-  const [ping, setPing] = useState(9);
-  const [jitter, setJitter] = useState(1.8);
+  const [downloadSpeed, setDownloadSpeed] = useState<number | null>(null);
+  const [uploadSpeed, setUploadSpeed] = useState<number | null>(null);
+  const [ping, setPing] = useState<number | null>(null);
+  const [jitter, setJitter] = useState<number | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
-  const runTest = () => {
+  const runTest = async () => {
     setIsRunning(true);
-    setDownloadSpeed(0);
-    setUploadSpeed(0);
-
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      setDownloadSpeed(Math.floor(Math.random() * 20 + 95));
-      setUploadSpeed(Math.floor(Math.random() * 10 + 48));
-
-      if (progress >= 100) {
-        clearInterval(interval);
-        setIsRunning(false);
-        setDownloadSpeed(104.2);
-        setUploadSpeed(52.8);
-        setPing(8);
-        setJitter(1.5);
-        showToast('Speedtest selesai! Koneksi Partner ISP Anda dalam kondisi Sempurna (104.2 Mbps).', 'success');
+    setTestError(null);
+    setDownloadSpeed(null);
+    setUploadSpeed(null);
+    setPing(null);
+    setJitter(null);
+    try {
+      const pingSamples: number[] = [];
+      for (let index = 0; index < 5; index += 1) {
+        const started = performance.now();
+        await moreAiCustomerFetch('/api/v1/customer/network/speedtest/ping');
+        pingSamples.push(performance.now() - started);
       }
-    }, 200);
+      const averagePing = pingSamples.reduce((sum, value) => sum + value, 0) / pingSamples.length;
+      const averageJitter = pingSamples.slice(1).reduce((sum, value, index) => sum + Math.abs(value - pingSamples[index]), 0) / Math.max(1, pingSamples.length - 1);
+
+      const downloadStarted = performance.now();
+      const downloadResponse = await moreAiCustomerFetch('/api/v1/customer/network/speedtest/download?size_bytes=4194304');
+      const downloadBytes = await downloadResponse.arrayBuffer();
+      const downloadElapsed = Math.max(1, performance.now() - downloadStarted);
+      const measuredDownload = (downloadBytes.byteLength * 8) / downloadElapsed / 1000;
+
+      const uploadBytes = new Uint8Array(4 * 1024 * 1024);
+      for (let offset = 0; offset < uploadBytes.length; offset += 65536) {
+        crypto.getRandomValues(uploadBytes.subarray(offset, Math.min(offset + 65536, uploadBytes.length)));
+      }
+      const uploadStarted = performance.now();
+      const uploadResponse = await moreAiCustomerFetch('/api/v1/customer/network/speedtest/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: uploadBytes,
+      });
+      const uploadResult = await uploadResponse.json() as { received_bytes: number };
+      const uploadElapsed = Math.max(1, performance.now() - uploadStarted);
+      if (uploadResult.received_bytes !== uploadBytes.byteLength) {
+        throw new Error('Server tidak menerima seluruh data pengujian upload.');
+      }
+      setPing(Number(averagePing.toFixed(1)));
+      setJitter(Number(averageJitter.toFixed(1)));
+      setDownloadSpeed(Number(measuredDownload.toFixed(2)));
+      setUploadSpeed(Number(((uploadResult.received_bytes * 8) / uploadElapsed / 1000).toFixed(2)));
+      showToast('Pengukuran jalur perangkat ke MoreAI API selesai.', 'success');
+    } catch (cause) {
+      setTestError(cause instanceof Error ? cause.message : 'Pengukuran jaringan gagal.');
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (
@@ -67,11 +96,11 @@ export const SpeedtestView: React.FC<SpeedtestViewProps> = ({
         <div className="flex items-center justify-between text-xs text-slate-400">
           <span className="flex items-center gap-1.5">
             <Wifi className="w-4 h-4 text-blue-500" />
-            Partner ISP Fiber 100 Mbps
+            Jalur perangkat ↔ MoreAI API
           </span>
           <span className="text-emerald-400 font-bold flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Sangat Baik
+            Data aktual
           </span>
         </div>
 
@@ -81,24 +110,24 @@ export const SpeedtestView: React.FC<SpeedtestViewProps> = ({
             {isRunning ? 'Menguji Kecepatan...' : 'Kecepatan Download'}
           </span>
           <span className="text-4xl font-black font-mono text-white tracking-tight my-1">
-            {downloadSpeed}
+            {downloadSpeed === null ? '—' : downloadSpeed}
           </span>
-          <span className="text-xs font-bold text-red-500">Mbps (Simetris)</span>
+          <span className="text-xs font-bold text-red-500">Mbps · jalur API</span>
         </div>
 
         {/* Metrics Row: Ping, Jitter, Upload */}
         <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-center">
           <div className="p-2 rounded-xl bg-slate-800/60">
             <span className="text-[10px] text-slate-400 block">Ping Latency</span>
-            <span className="font-mono font-bold text-sm text-emerald-400">{ping} ms</span>
+            <span className="font-mono font-bold text-sm text-emerald-400">{ping === null ? '—' : ping + ' ms'}</span>
           </div>
           <div className="p-2 rounded-xl bg-slate-800/60">
             <span className="text-[10px] text-slate-400 block">Jitter</span>
-            <span className="font-mono font-bold text-sm text-slate-200">{jitter} ms</span>
+            <span className="font-mono font-bold text-sm text-slate-200">{jitter === null ? '—' : jitter + ' ms'}</span>
           </div>
           <div className="p-2 rounded-xl bg-slate-800/60">
             <span className="text-[10px] text-slate-400 block">Upload Speed</span>
-            <span className="font-mono font-bold text-sm text-blue-400">{uploadSpeed} Mbps</span>
+            <span className="font-mono font-bold text-sm text-blue-400">{uploadSpeed === null ? '—' : uploadSpeed + ' Mbps'}</span>
           </div>
         </div>
 
@@ -121,30 +150,10 @@ export const SpeedtestView: React.FC<SpeedtestViewProps> = ({
         </button>
       </div>
 
-      {/* Technical Diagnostics */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3 text-xs">
-        <h3 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
-          Diagnostik Perangkat &amp; Fiber
-        </h3>
-
-        <div className="space-y-2">
-          <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-slate-500">Router ONT:</span>
-            <span className="font-bold text-slate-800">ZTE F670L (Wi-Fi 6 Ready)</span>
-          </div>
-          <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-slate-500">IP Gateway:</span>
-            <span className="font-mono font-bold text-slate-800">192.168.1.1</span>
-          </div>
-          <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-slate-500">Kualitas Sinyal Optik (Rx):</span>
-            <span className="font-bold text-emerald-600">-18.4 dBm (Normal Optimal)</span>
-          </div>
-          <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-slate-500">Kesiapan AI Agent:</span>
-            <span className="font-bold text-emerald-600">Ultra-Low Latency (Streaming Ready)</span>
-          </div>
-        </div>
+      {testError && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{testError}</div>}
+      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-2 text-xs">
+        <h3 className="font-bold text-slate-900 uppercase tracking-wider text-xs">Informasi Pengukuran</h3>
+        <p className="text-slate-600">Pengujian mengukur round-trip latency, download, dan upload antara perangkat dan endpoint MoreAI API. Hasil ini bukan pembacaan ONT, optical Rx, SSID, atau gateway ISP.</p>
       </div>
     </div>
   );
