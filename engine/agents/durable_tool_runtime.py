@@ -117,7 +117,7 @@ class DurableOpenManusRuntime:
         self.event_publisher = event_publisher
         self.max_rounds = max_rounds
         self.system_prompt = system_prompt
-        enabled_tools = {"create_chat_completion", "terminate"}
+        enabled_tools = {"create_chat_completion", "terminate", "run"}
         if plan_store is not None:
             enabled_tools.add("planning")
         if search_tools is not None:
@@ -156,6 +156,23 @@ class DurableOpenManusRuntime:
         if sandbox_tools is not None:
             self.tools.register("bash", sandbox_tools.bash)
             self.tools.register("python_execute", sandbox_tools.python_execute)
+        self.tools.register("run", self._run_tool)
+
+    async def _run_tool(
+        self, arguments: dict[str, Any], *, run_id: str, user_id: str,
+        workspace_id: str | None = None,
+    ) -> str:
+        tool_key = arguments.get("tool_key")
+        tool_arguments = arguments.get("arguments")
+        if not isinstance(tool_key, str) or not isinstance(tool_arguments, dict):
+            raise ValueError("run_tool_arguments_invalid")
+        normalized = tool_key.strip().lower()
+        if normalized in {"run", "terminate"}:
+            raise PermissionError("nested_run_or_terminate_not_allowed")
+        return await self.tools.execute(
+            normalized, tool_arguments, run_id=run_id, user_id=user_id,
+            workspace_id=workspace_id,
+        )
 
     async def _terminate_tool(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
         status = arguments.get("status")
