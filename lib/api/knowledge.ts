@@ -21,6 +21,17 @@ export type CustomerKnowledgeChunk = {
 };
 
 export const knowledgeApi = {
+  upload: (file: File, options: { workspaceId?: string; title?: string } = {}) => {
+    const body = new FormData();
+    body.append('file', file, file.name);
+    if (options.workspaceId) body.append('workspace_id', options.workspaceId);
+    if (options.title) body.append('title', options.title);
+    return moreAiCustomerApi<{
+      document: CustomerKnowledgeDocument;
+      status: 'processing';
+      upload: { filename: string; size_bytes: number; mime_type: string };
+    }>('/api/v1/customer/knowledge/documents/upload', { method: 'POST', body });
+  },
   list: (options: { workspaceId?: string; status?: CustomerKnowledgeDocument['status']; limit?: number } = {}) => {
     const params = new URLSearchParams();
     if (options.workspaceId) params.set('workspace_id', options.workspaceId);
