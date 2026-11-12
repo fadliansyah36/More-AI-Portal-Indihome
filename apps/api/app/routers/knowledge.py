@@ -67,7 +67,7 @@ async def upload_knowledge_document(
 ):
     """Accept native multipart file bytes; never accept a client-supplied Storage URL."""
     settings = request.app.state.settings
-    if not settings.supabase_data_ready:
+    if not settings.supabase_data_ready or not settings.supabase_service_role_key:
         raise HTTPException(503, "Knowledge storage is not configured")
     mime = (file.content_type or "").split(";", 1)[0].strip().lower()
     if mime not in ALLOWED_KNOWLEDGE_TYPES:
