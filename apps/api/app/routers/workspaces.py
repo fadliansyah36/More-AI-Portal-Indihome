@@ -299,3 +299,24 @@ async def remove_customer_workspace_member(
     if not rows:
         raise HTTPException(409, "Workspace membership changed; refresh and retry")
     return {"member_id": str(member_id), "status": "removed"}
+
+
+@router.get("/{workspace_id}/runs")
+async def list_customer_workspace_runs(
+    workspace_id: UUID, request: Request,
+    limit: int = 50,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """List the caller's durable agent runs associated with an accessible workspace."""
+    if limit < 1 or limit > 100:
+        raise HTTPException(422, "limit must be between 1 and 100")
+    repo = repository(request)
+    await _workspace_access(repo, workspace_id, user["id"])
+    rows = await repo.select("agent_runs", {
+        "workspace_id": f"eq.{workspace_id}",
+        "user_id": f"eq.{user['id']}",
+        "select": "id,conversation_id,status,attempt,max_attempts,created_at,started_at,finished_at,available_at,heartbeat_at,cancel_requested_at,last_checkpoint_key",
+        "order": "created_at.desc",
+        "limit": str(limit),
+    })
+    return {"items": rows, "count": len(rows)}
