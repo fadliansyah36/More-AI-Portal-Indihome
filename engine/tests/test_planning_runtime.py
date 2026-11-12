@@ -164,3 +164,28 @@ def test_planning_runtime_dispatches_steps_to_registered_agent_key():
         assert default_executor.payloads == []
         assert [p["agent_key"] for p in research_executor.payloads] == ["research", "research"]
     asyncio.run(run())
+
+
+def test_planning_runtime_rejects_unregistered_agent_before_plan_persistence():
+    async def run():
+        store = FakeStore()
+        runtime = PlanningAgentRuntime(
+            gateway=FakeGateway("not-enabled"),
+            store=store,
+            step_executor=FakeExecutor(),
+        )
+        async def checkpoint(key, state):
+            return {"ok": True}
+        try:
+            await runtime.execute(
+                AgentRunContext("run-invalid-agent", "user-1", None, None, None, 0, 3),
+                {"prompt": "use an unknown agent"},
+                checkpoint,
+                asyncio.Event(),
+            )
+        except RuntimeError as exc:
+            assert "planning_step_agent_not_registered" in str(exc)
+        else:
+            raise AssertionError("unregistered agent should fail closed")
+        assert store.plan_steps == []
+    asyncio.run(run())
