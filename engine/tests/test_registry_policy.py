@@ -18,9 +18,15 @@ def test_registry_rejects_duplicate_agent_keys():
         registry.register("MANUS", marker)
 
 
-def test_high_risk_upstream_tools_are_default_denied():
-    policy = ToolPolicy(enabled_tools={"bash", "python_execute", "browser_use"})
-    for tool in ("bash", "python_execute", "browser_use"):
+def test_high_risk_upstream_tools_require_explicit_approval():
+    policy = ToolPolicy(enabled_tools={
+        "bash", "python_execute", "browser_use",
+        "workspace_restore_version", "str_replace_editor",
+    })
+    for tool in (
+        "bash", "python_execute", "browser_use",
+        "workspace_restore_version", "str_replace_editor",
+    ):
         decision = policy.evaluate(tool)
         assert decision.allowed is True
         assert decision.requires_approval is True
@@ -85,3 +91,31 @@ def test_high_risk_tool_is_allowed_only_when_enabled_and_explicitly_approved():
     ).evaluate("python_execute")
     assert decision.allowed is True
     assert decision.requires_approval is False
+
+
+@pytest.mark.asyncio
+async def test_workspace_editor_requires_owner_approval_before_handler():
+    from engine.tools.registry import PolicyEnforcedToolRegistry
+
+    registry = PolicyEnforcedToolRegistry(
+        ToolPolicy(enabled_tools={"str_replace_editor"}),
+        approval_gate=lambda *_: _deny_approval(),
+    )
+    called = []
+
+    async def handler(arguments, *, run_id, user_id, workspace_id=None):
+        called.append(arguments)
+        return "saved"
+
+    registry.register("str_replace_editor", handler)
+    with pytest.raises(PermissionError, match="approval_denied_expired_or_already_consumed"):
+        await registry.execute(
+            "str_replace_editor",
+            {"path": "src/main.py", "old_str": "old", "new_str": "new"},
+            run_id="run-4", user_id="user-4", workspace_id="workspace-4",
+        )
+    assert called == []
+
+
+async def _deny_approval():
+    return False
