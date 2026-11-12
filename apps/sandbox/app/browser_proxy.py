@@ -105,7 +105,7 @@ class PinnedConnectProxy:
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            logger.warning("browser proxy request failed (%s)", type(exc).__name__)
+            logger.warning("browser proxy request failed (%s)", str(exc) if isinstance(exc, BrowserPolicyError) else type(exc).__name__)
             if not writer.is_closing():
                 try:
                     writer.write(b"HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n")
