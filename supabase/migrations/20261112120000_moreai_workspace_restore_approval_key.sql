@@ -20,7 +20,7 @@ declare v_id uuid;
 begin
   if p_tool_key not in (
        'bash','python_execute','browser_use','planning_step',
-       'browser','file_read','file_write','file_edit'
+       'browser','file_read','file_write','file_edit','workspace_restore_version'
      )
      or p_arguments_hash !~ '^[0-9a-f]{64}$'
      or p_expires_in_seconds < 60 or p_expires_in_seconds > 3600
