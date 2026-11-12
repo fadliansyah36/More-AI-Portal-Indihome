@@ -64,3 +64,18 @@ Follow-up implementation for the outstanding Phase 04, 05–06, 07, 08 and 09 wo
 4. Inventory canonical Supabase tables, columns, indexes, constraints, RLS, RPC grants and storage policies against all Master PRD domains; then close Phase 05–06 API contracts with forward-only migrations as required.
 5. Wire the remaining existing Customer, Captive Portal, EduTech, Partner and Super Admin screens through the typed FastAPI client without changing visual design.
 6. Request explicit authorization for Phase 10–11 tests and acceptance; do not infer it from a request to implement.
+
+
+## Additional implementation — approval pause propagation
+- Commits: `b3c493cd4ba42717ca206ace7b817d8d656c60ce`, `2f79f1086a21596294a499daff80af3d15513f33`, `a88de22363147701f75ed83d1c298fe36f5d94a2`.
+- Moved `RunPausedForApproval` to shared engine-level `engine/agents/errors.py`; the worker client imports that canonical exception.
+- `DurableOpenManusRuntime` now explicitly re-raises the pause signal from the tool invocation boundary instead of serializing it as a generic `tool_execution_failed` observation. This lets the worker lifecycle's existing `RunPausedForApproval` handler retain the durable pause/release-lease control flow.
+- This closes a concrete exception-propagation defect at source level. Approval decision/resume, lease release, and re-enqueue behavior still require acceptance evidence; no tests/runtime were run.
+
+## Canonical Supabase read-only reconciliation snapshot
+- Confirmed project ref `uunfgimtokhucegqbpce`, database PostgreSQL 17, ACTIVE_HEALTHY.
+- Read-only live inventory: 59 public base tables; all 59 report RLS enabled; 59 policies; 46 public routines; 42 applied migrations.
+- Security advisor returned one warning: leaked-password protection is disabled. No DDL or data mutation was performed.
+- The migration ledger contains two different versions with the same name `moreai_workspace_file_cas_versioning` (`20261111140238`, `20261111140255`). This is a migration-history reconciliation item, not a reason to reset or rewrite production history.
+- Live schema inventory confirms server-only deny policies on privileged tables and selected owner/member read policies. Presence of RLS does not prove policy correctness or role/grant safety; object-by-object predicate/grant review remains open.
+- No migration was generated/applied and no SQL write was executed.
