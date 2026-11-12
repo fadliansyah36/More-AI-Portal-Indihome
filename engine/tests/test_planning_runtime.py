@@ -40,14 +40,19 @@ class FakeStore:
 
 
 class FakeExecutor:
+    def __init__(self):
+        self.payloads = []
+
     async def execute(self, context, payload, checkpoint, cancelled):
+        self.payloads.append(payload)
         return AgentRunResult({"text": payload["prompt"]})
 
 
 def test_planning_runtime_persists_and_executes_steps():
     async def run():
         store = FakeStore()
-        runtime = PlanningAgentRuntime(gateway=FakeGateway(), store=store, step_executor=FakeExecutor())
+        executor = FakeExecutor()
+        runtime = PlanningAgentRuntime(gateway=FakeGateway(), store=store, step_executor=executor)
 
         async def checkpoint(key, state):
             return {"ok": True}
@@ -61,5 +66,9 @@ def test_planning_runtime_persists_and_executes_steps():
         assert result.output["completed_steps"] == 2
         assert [item["status"] for item in store.steps] == ["running", "succeeded", "running", "succeeded"]
         assert [item["status"] for item in store.plan_steps] == ["succeeded", "succeeded"]
+        assert executor.payloads[0]["dependencies"] == []
+        assert executor.payloads[1]["dependencies"] == [0]
+        assert "Completed dependency results" in executor.payloads[1]["prompt"]
+        assert "step one" in executor.payloads[1]["prompt"]
 
     asyncio.run(run())
