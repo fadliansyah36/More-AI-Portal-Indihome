@@ -22,8 +22,14 @@ export const AnalyseView: React.FC = () => {
     setUploadMessage(null);
     try {
       const result = await knowledgeApi.upload(selectedFile);
-      setUploadState('queued');
-      setUploadMessage('File tersimpan secara privat dan masuk antrean ingestion. Status ekstraksi dan indexing dapat dipantau di Knowledge Library.');
+      setUploadState(result.status === 'failed' ? 'error' : 'queued');
+      setUploadMessage(result.status === 'ready'
+        ? 'File identik sudah terindeks dan tersedia di Knowledge Library.'
+        : result.status === 'failed'
+          ? 'File identik sebelumnya gagal diproses. Buka Knowledge Library untuk menjalankan proses ulang.'
+          : result.reused
+            ? 'File identik sudah berada dalam antrean ingestion.'
+            : 'File tersimpan secara privat dan masuk antrean ingestion. Status ekstraksi dan indexing dapat dipantau di Knowledge Library.');
       setSelectedFileName(result.upload.filename);
     } catch (cause) {
       setUploadState('error');
