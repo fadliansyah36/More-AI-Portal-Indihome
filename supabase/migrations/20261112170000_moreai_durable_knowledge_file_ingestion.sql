@@ -45,6 +45,7 @@ begin
     where d.source_type = 'file'
       and d.status = 'processing'
       and coalesce(d.metadata->>'ingestion_state','') in ('queued','processing')
+      and (nullif(d.metadata->>'retry_after','') is null or (d.metadata->>'retry_after')::timestamptz <= now())
       and (d.ingestion_lease_until is null or d.ingestion_lease_until < now())
     order by d.created_at asc
     for update skip locked
@@ -85,7 +86,9 @@ begin
       metadata = jsonb_set(
         jsonb_set(coalesce(metadata,'{}'::jsonb), '{ingestion_state}', to_jsonb(case when p_success then 'ready' when ingestion_attempt >= 3 then 'failed' else 'queued' end), true),
         '{processed_at}', to_jsonb(now()), true
-      ),
+      ) || case when not p_success and ingestion_attempt < 3 then
+        jsonb_build_object('retry_after', to_jsonb(now() + make_interval(secs => least(300, 15 * power(2, ingestion_attempt))))) 
+      else '{}'::jsonb end,
       updated_at = now()
   where id = p_document_id
     and owner_user_id = p_owner_user_id
