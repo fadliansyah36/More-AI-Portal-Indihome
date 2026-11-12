@@ -46,8 +46,16 @@ async function moreAiApiAt<T>(baseUrl: string, path: string, init: RequestInit =
   }
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    const message = payload?.detail || payload?.error?.message || ('MoreAI API error (' + response.status + ')');
-    throw new Error(message);
+    const detail = payload?.detail;
+    const message = (typeof detail === 'string' ? detail : detail?.message)
+      || payload?.error?.message
+      || ('MoreAI API error (' + response.status + ')');
+    const code = typeof detail === 'object' ? detail?.code : payload?.error?.code;
+    const correlationId = payload?.error?.correlation_id;
+    const error = new Error(message);
+    if (typeof code === 'string') Object.assign(error, { code });
+    if (typeof correlationId === 'string') Object.assign(error, { correlationId });
+    throw error;
   }
   return response.json() as Promise<T>;
 }
