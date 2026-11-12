@@ -852,3 +852,11 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Report: [Phase 09 Customer Security, Device & Wi-Fi Correctness](./PHASE-09-CUSTOMER-SECURITY-DEVICE-WIFI-CORRECTNESS-20261113.md).
 - Commits: `083bef75`, `0a0675c2`, `b0b54e37`, `477f590e`, `55138bc0`, `d7f7cd6f`.
 - No tests, lint, typecheck, build, screenshots, browser/API probes, staging, deployment, provider calls or database mutations were run per instruction. Phase 09 remains IN PROGRESS; TOTP login-time challenge/AAL enforcement and real gateway APIs are outstanding.
+
+
+## 2026-11-13 API error contract increment
+
+- Phase 04/06 partial: FastAPI now distinguishes upstream HTTP timeouts (504 `upstream_timeout`) from upstream transport failures (503 `upstream_unavailable`). Unhandled exceptions emit correlation ID, route, method and exception class without logging raw exception text/tracebacks.
+- OpenManus capability map now reflects this limited transport-level parity. Full upstream exception taxonomy and durable engine/worker log projections remain open.
+- Source commit: `e76f7ccebeca21ee6b4ac0a57488eef547c8ceea`; capability map: `7ac60192b8e32d11f2a060edc1d62382a61801fd`.
+- No tests or runtime checks were run per instruction.
