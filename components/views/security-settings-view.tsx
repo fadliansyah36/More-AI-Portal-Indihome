@@ -16,7 +16,7 @@ export const SecuritySettingsView: React.FC<SecuritySettingsViewProps> = ({
   onNavigateTab,
 }) => {
   const { showToast } = useToast();
-  const [twoFactorAuth, setTwoFactorAuth] = useState(true);
+  const [twoFactorAuth, setTwoFactorAuth] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
