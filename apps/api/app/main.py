@@ -11,7 +11,7 @@ from fastapi.exceptions import RequestValidationError
 
 from app.config import Settings
 from app.dependencies import current_user
-from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, notifications, partner, tool_approvals, workspaces, learning
+from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, notifications, partner, tool_approvals, workspaces, learning, knowledge
 
 
 @asynccontextmanager
@@ -52,6 +52,7 @@ app.include_router(catalog.router)
 app.include_router(artifacts.router)
 app.include_router(notifications.router)
 app.include_router(learning.router)
+app.include_router(knowledge.router)
 
 
 class ProfileUpdate(BaseModel):
