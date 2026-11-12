@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import os
 import re
 from typing import Literal
@@ -21,6 +22,7 @@ class ExecutionRequest(BaseModel):
     language: Literal["python", "bash"]
     source: str = Field(min_length=1, max_length=8_000_000)
     timeout_seconds: int = Field(default=30, ge=1, le=120)
+    workspace_files: dict[str, str] = Field(default_factory=dict)
 
 
 class CancellationRequest(BaseModel):
