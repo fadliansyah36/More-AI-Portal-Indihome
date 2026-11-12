@@ -25,9 +25,10 @@ import { useToast } from '@/components/ui/toast-context';
 interface TasksViewProps {
   onOpenWorkspaceFiles?: () => void;
   onOpenWorkflow?: () => void;
+  onStartPrompt?: (prompt: string, agentKey?: 'manus' | 'planning') => void;
 }
 
-export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOpenWorkflow }) => {
+export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOpenWorkflow, onStartPrompt }) => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'semua' | 'aktif' | 'selesai' | 'workflow' | 'artifacts'>('semua');
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -57,9 +58,16 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
-    showToast('Tugas manual belum memiliki endpoint backend. Jalankan pekerjaan melalui Chat AI agar tercatat sebagai Agent Run.', 'info');
-    setNewTaskTitle('');
     setShowAddModal(false);
+    const prompt = newTaskTitle.trim();
+    setNewTaskTitle('');
+    if (onStartPrompt) {
+      // Reuse the existing authenticated Chat -> FastAPI -> durable Agent Run
+      // path; never create a local-only task record or placeholder task.
+      onStartPrompt(prompt, 'manus');
+    } else {
+      showToast('Chat AI belum tersedia untuk membuat Agent Run.', 'error');
+    }
   };
 
   const latestRun = runs[0];
