@@ -1,8 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Wifi, Gift, Sparkles, CheckCircle2 } from 'lucide-react';
-import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
+import { ArrowLeft, Wifi, CheckCircle2 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
