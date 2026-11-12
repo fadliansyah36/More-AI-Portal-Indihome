@@ -121,7 +121,7 @@ class DurableOpenManusRuntime:
         if storage_tools is not None:
             enabled_tools.add("file_saver")
         if workspace_tools is not None:
-            enabled_tools.add("str_replace_editor")
+            enabled_tools.update({"str_replace_editor", "workspace_restore_version"})
         if browser_tools is not None:
             enabled_tools.add("browser_use")
         if sandbox_tools is not None:
@@ -139,6 +139,7 @@ class DurableOpenManusRuntime:
             self.tools.register("file_saver", storage_tools.file_saver)
         if workspace_tools is not None:
             self.tools.register("str_replace_editor", workspace_tools.str_replace_editor)
+            self.tools.register("workspace_restore_version", workspace_tools.restore_version)
         if browser_tools is not None:
             self.tools.register("browser_use", browser_tools.browser_use)
         if sandbox_tools is not None:
