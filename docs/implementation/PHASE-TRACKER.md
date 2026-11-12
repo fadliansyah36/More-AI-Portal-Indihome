@@ -563,3 +563,34 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - New files/changes: `supabase/migrations/20261112130000_moreai_customer_learning_progress.sql`, `apps/api/app/routers/learning.py`, `apps/api/app/main.py`, `lib/api/client.ts`, `components/views/edutech-view.tsx`.
 - No app test suite, lint, typecheck, build, browser E2E, staging or deployment was run. Database schema/migration verification was run directly against Supabase. UI visual regression screenshots are therefore not claimed.
 - Remaining Phase 04/07/08/06/09 work is still open; no phase is declared complete.
+
+
+## Focused OpenManus ↔ Customer integration audit (2026-11-12)
+
+Scope is restricted to the Customer application and OpenManus backend integration. Network gateway, Wi-Fi, Captive Portal, and partner network features are explicitly deferred until the OpenManus integration gate is closed.
+
+### Confirmed integration surfaces from source inspection
+
+- The pinned upstream snapshot is present at `vendor/openmanusweb`; the source manifest is retained at `docs/implementation/openmanusweb-source-manifest.json`. This confirms source provenance/copy only, not production parity.
+- Existing Customer chat enqueue uses `moreai_enqueue_chat_run` to persist user message + durable run atomically; the worker dispatcher resolves an allowlisted runtime.
+- Manus tool loop, planning adapter, model router/provider adapter, credit/quota accounting, conversation memory adapter, workspace/file tools, run checkpoints/events, approval flow, and outbox publisher exist as production integration seams.
+- Customer APIs expose conversations, run status/steps/events/stream/cancel, workspace files/version/download/restore approval, artifacts, catalog, notifications, learning progress and other account domains.
+- Existing Customer UI components and typed API client are retained; no upstream frontend was mounted.
+
+### Blocking gaps — integration is NOT full
+
+1. Upstream `app/web` server behavior has not yet been reconciled endpoint-by-endpoint into FastAPI. Existing SSE/run APIs cover part of the surface, but server/session lifecycle, job/task management, log/thinking tracker, file/session parity and websocket behavior require a documented compatibility map and implementation/acceptance.
+2. Workspace lifecycle remains partial: workspace list/create/rename and file list/download/history/restore exist, but full lifecycle (archive/delete semantics, membership management, file CRUD/rename/delete, conflict/version behavior and recovery) is not closed.
+3. Runtime parity is partial. Production registry currently enables a subset of upstream tool adapters based on environment/configuration. Browser and sandbox adapters are intentionally disabled unless their isolated service/release gates are configured. A source catalog entry alone is not an executable adapter.
+4. Agent/Flow parity is partial: Manus and durable planning are registered. Every upstream agent/flow behavior, planner/tool interaction, prompt/schema contract and server-exposed workflow must be mapped and reconciled; process-global upstream plan/log/session behavior must remain replaced by durable state.
+5. RAG/vector retrieval and knowledge ingestion/retrieval lifecycle have not been proven end-to-end. Conversation history memory exists; that is not equivalent to full RAG/memory parity.
+6. Model routing and accounting adapters exist, but provider/model configuration, fallback behavior, stream accounting, interruption reconciliation, entitlement/quota and idempotency need runtime proof against actual enabled configuration.
+7. Customer UI domain coverage is not proof of complete integration: some catalogs/content remain static and gateway-dependent screens are explicitly outside the current scope.
+
+### Verification boundary
+
+This is a source-level audit only. No tests, typecheck, build, browser E2E, staging, provider calls, or deployment were run. Do not mark Phase 04/07/08/06/09 complete on the basis of source presence or GitHub commits.
+
+### Required next order
+
+Phase 04: produce endpoint/capability parity matrix from the pinned upstream tree; finish durable server/session/Flow and workspace lifecycle; complete browser/sandbox isolation and egress gate. Then Phase 07 → Phase 08 → Phase 06 → Phase 09. No gateway-network integration before these gates.
