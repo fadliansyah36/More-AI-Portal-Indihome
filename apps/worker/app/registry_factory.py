@@ -29,6 +29,10 @@ def build_agent_registry(
     # The default bucket is provisioned by the Phase 05 migration; deployments may override it.
     storage_tools = SupabaseArtifactTool(client) if os.getenv("MOREAI_ARTIFACTS_BUCKET", "moreai-artifacts") else None
     workspace_tools = SupabaseWorkspaceTool(client) if os.getenv("MOREAI_WORKSPACE_BUCKET", "moreai-artifacts") else None
+    if sandbox_tools is not None:
+        if workspace_tools is None:
+            raise RuntimeError("sandbox_execution_requires_persistent_workspace_store")
+        sandbox_tools.workspace_tools = workspace_tools
     browser_tools = None
     if os.getenv("MOREAI_BROWSER_ENABLED", "false").lower() == "true":
         service_url = os.getenv("MOREAI_BROWSER_SERVICE_URL", "")
