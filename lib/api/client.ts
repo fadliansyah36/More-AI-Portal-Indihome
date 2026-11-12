@@ -246,9 +246,9 @@ export type CustomerProfile = {
 };
 
 export const profileApi = {
-  get: () => moreAiApi<{ user: { id: string; email?: string }; profile: CustomerProfile | null }>('/api/v1/me'),
+  get: () => moreAiApi<{ user: { id: string; email?: string; display_name?: string | null }; profile: CustomerProfile | null }>('/api/v1/me'),
   update: (payload: Partial<Pick<CustomerProfile, 'display_name' | 'avatar_path' | 'locale' | 'timezone'>>) =>
-    moreAiApi<{ user: { id: string; email?: string }; profile: CustomerProfile }>('/api/v1/me/profile', {
+    moreAiApi<{ user: { id: string; email?: string; display_name?: string | null }; profile: CustomerProfile }>('/api/v1/me/profile', {
       method: 'PATCH', body: JSON.stringify(payload),
     }),
 };
