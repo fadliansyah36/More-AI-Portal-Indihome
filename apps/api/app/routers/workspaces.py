@@ -147,3 +147,55 @@ async def list_workspace_file_versions(
             "current": True,
         })
     return {"items": history, "count": len(history), "current_version": file["version"]}
+
+@router.post("/{workspace_id}/files/{file_id}/signed-download")
+async def create_workspace_file_download(
+    workspace_id: UUID, file_id: UUID, request: Request,
+    version: int | None = None,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    from urllib.parse import quote
+    repo = repository(request)
+    await _workspace_access(repo, workspace_id, user["id"])
+    rows = await repo.select("agent_workspace_files", {
+        "id": "eq." + str(file_id), "workspace_id": "eq." + str(workspace_id),
+        "select": "id,path,version,storage_path,sha256,size_bytes", "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "Workspace file not found")
+    current = rows[0]
+    selected = current
+    if version is not None and version != current.get("version"):
+        history = await repo.select("agent_workspace_file_versions", {
+            "workspace_id": "eq." + str(workspace_id), "path": "eq." + current["path"],
+            "version": "eq." + str(version),
+            "select": "version,storage_path,sha256,size_bytes", "limit": "1",
+        })
+        if not history:
+            raise HTTPException(404, "Workspace file version not found")
+        selected = history[0]
+    storage_path = selected.get("storage_path")
+    expected_segment = "/workspaces/" + str(workspace_id) + "/versions/"
+    if not isinstance(storage_path, str) or expected_segment not in storage_path or storage_path.startswith("/") or ".." in storage_path.split("/"):
+        raise HTTPException(403, "Workspace object path is outside the workspace scope")
+    settings = request.app.state.settings
+    if not settings.supabase_data_ready or not settings.supabase_service_role_key:
+        raise HTTPException(503, "Workspace Storage is not configured")
+    base_url = settings.supabase_url.rstrip("/")
+    headers = {"apikey": settings.supabase_service_role_key, "Authorization": "Bearer " + settings.supabase_service_role_key}
+    bucket = "moreai-artifacts"
+    bucket_response = await request.app.state.http.get(base_url + "/storage/v1/bucket/" + bucket, headers=headers, timeout=8.0)
+    if bucket_response.status_code >= 400 or not isinstance(bucket_response.json(), dict) or bucket_response.json().get("public") is not False:
+        raise HTTPException(503, "Workspace Storage bucket must exist and be private")
+    response = await request.app.state.http.post(
+        base_url + "/storage/v1/object/sign/" + bucket + "/" + quote(storage_path, safe="/"),
+        json={"expiresIn": 60}, headers={**headers, "Content-Type": "application/json"}, timeout=12.0,
+    )
+    if response.status_code >= 400:
+        raise HTTPException(502, "Could not create workspace download link")
+    payload = response.json()
+    signed_path = payload.get("signedURL") or payload.get("signedUrl")
+    if not isinstance(signed_path, str) or not signed_path:
+        raise HTTPException(502, "Storage did not return a signed download path")
+    signed_url = signed_path if signed_path.startswith("https://") else base_url + "/storage/v1" + (signed_path if signed_path.startswith("/") else "/" + signed_path)
+    return {"file_id": str(file_id), "version": selected.get("version", version), "url": signed_url, "expires_in": 60}
