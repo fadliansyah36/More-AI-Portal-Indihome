@@ -227,19 +227,29 @@ async def stream_conversation_session(websocket: WebSocket, conversation_id: UUI
 async def list_conversation_sessions(
     conversation_id: UUID,
     request: Request,
-    limit: int = 50,
+    response: Response,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(customer_principal),
 ):
-    """Return durable OpenManus run sessions for a conversation without exposing private execution payloads."""
-    if limit < 1 or limit > 100:
-        raise HTTPException(422, "limit must be between 1 and 100")
+    """Return owner-scoped durable sessions with stable keyset pagination."""
+    decoded = decode_created_at_id_cursor(cursor)
     repo = repository(request)
     await repo.owned_record("conversations", conversation_id, user["id"])
-    rows = await repo.select("agent_runs", {
+    params = {
         "conversation_id": f"eq.{conversation_id}",
         "user_id": f"eq.{user['id']}",
         "select": "id,conversation_id,status,attempt,max_attempts,created_at,started_at,finished_at,available_at,heartbeat_at,cancel_requested_at,last_checkpoint_key",
-        "order": "created_at.desc",
-        "limit": str(limit),
-    })
+        "order": "created_at.desc,id.desc",
+        "limit": str(limit + 1),
+    }
+    cursor_filter = created_at_id_filter(decoded)
+    if cursor_filter:
+        params["or"] = cursor_filter
+    rows = await repo.select("agent_runs", params)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(rows[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
     return {"items": rows, "count": len(rows)}
