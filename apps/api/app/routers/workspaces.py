@@ -224,3 +224,30 @@ async def update_customer_workspace(
     if not rows:
         raise HTTPException(404, "Workspace not found")
     return rows[0]
+
+
+@router.post("/{workspace_id}/archive")
+async def archive_customer_workspace(
+    workspace_id: UUID, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Soft-archive an owned workspace; preserve immutable file versions and audit history."""
+    repo = repository(request)
+    workspace = await _workspace_access(repo, workspace_id, user["id"])
+    if workspace.get("owner_user_id") != user["id"]:
+        raise HTTPException(403, "Only the workspace owner can archive this workspace")
+    active_runs = await repo.select("agent_runs", {
+        "workspace_id": f"eq.{workspace_id}",
+        "status": "in.(queued,running,waiting_approval)",
+        "select": "id", "limit": "1",
+    })
+    if active_runs:
+        raise HTTPException(409, "Workspace has active agent runs; cancel or finish them before archiving")
+    rows = await repo.update(
+        "workspaces",
+        {"id": f"eq.{workspace_id}", "owner_user_id": f"eq.{user['id']}", "status": "eq.active"},
+        {"status": "archived"},
+    )
+    if not rows:
+        raise HTTPException(409, "Workspace is not active or cannot be archived")
+    return {"workspace": rows[0], "archived": True}
