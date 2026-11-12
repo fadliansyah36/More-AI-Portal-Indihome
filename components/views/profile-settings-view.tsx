@@ -42,7 +42,6 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
   const [savingPreference, setSavingPreference] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [language, setLanguage] = useState<'id' | 'en'>('id');
-  const [profileLocale, setProfileLocale] = useState('id-ID');
   const [editProfile, setEditProfile] = useState(false);
   const [draftProfileName, setDraftProfileName] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -62,7 +61,6 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
         setProfileName(registeredName || 'Nama belum diatur');
         setProfileEmail(identity.user?.email || '');
         const locale = identity.profile?.locale || 'id-ID';
-        setProfileLocale(locale);
         setLanguage(locale.toLowerCase().startsWith('en') ? 'en' : 'id');
       })
       .catch((error) => {
@@ -121,7 +119,6 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
     const locale = next === 'id' ? 'id-ID' : 'en-US';
     try {
       const saved = await profileApi.update({ locale });
-      setProfileLocale(saved.profile.locale || locale);
       setLanguage(next);
       showToast(next === 'id' ? 'Bahasa akun disimpan.' : 'Account language saved.', 'success');
     } catch (error) {
