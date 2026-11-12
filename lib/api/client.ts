@@ -49,62 +49,147 @@ export type MoreAiStreamEvent = {
   data: Record<string, unknown>;
 };
 
+export type MoreAiStreamOptions = {
+  /** Last durably processed event sequence; used when opening or recovering a stream. */
+  after?: number;
+  /** Abort the active request and any reconnect delay. */
+  signal?: AbortSignal;
+  /** Maximum reconnect attempts after a clean timeout or transient transport failure. */
+  maxReconnects?: number;
+  /** Initial reconnect delay; exponential backoff is capped at 8 seconds. */
+  reconnectDelayMs?: number;
+};
+
 export async function moreAiApiStream(
   path: string,
   onEvent: (event: MoreAiStreamEvent) => void,
+  options: MoreAiStreamOptions = {},
 ): Promise<void> {
   if (!CUSTOMER_API_BASE_URL) {
     throw new Error('Customer API belum dikonfigurasi. Isi NEXT_PUBLIC_MOREAI_CUSTOMER_API_URL atau NEXT_PUBLIC_MOREAI_API_URL.');
   }
-  const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase.auth.getSession();
-  if (error || !data.session?.access_token) {
-    throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
-  }
-  const response = await fetch(CUSTOMER_API_BASE_URL + path, {
-    headers: { Authorization: 'Bearer ' + data.session.access_token, Accept: 'text/event-stream' },
-    cache: 'no-store',
-  });
-  if (!response.ok || !response.body) {
-    const payload = await response.json().catch(() => null);
-    throw new Error(payload?.detail || ('MoreAI stream error (' + response.status + ')'));
-  }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  const dispatch = (block: string) => {
-    const lines = block.split(/\r?\n/);
-    let event = 'message';
-    let id: string | undefined;
-    const dataLines: string[] = [];
-    for (const line of lines) {
-      if (line.startsWith('event:')) event = line.slice(6).trim();
-      else if (line.startsWith('id:')) id = line.slice(3).trim();
-      else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
-    }
-    if (!dataLines.length) return;
-    try {
-      const parsed = JSON.parse(dataLines.join('\n'));
-      if (parsed && typeof parsed === 'object') onEvent({ id, event, data: parsed as Record<string, unknown> });
-    } catch {
-      // Ignore malformed or partial provider events; the durable run endpoint remains authoritative.
-    }
+  const maxReconnects = Math.max(0, Math.min(20, options.maxReconnects ?? 5));
+  const initialDelay = Math.max(100, Math.min(8000, options.reconnectDelayMs ?? 500));
+  let cursor = Number.isSafeInteger(options.after) && (options.after ?? 0) >= 0 ? options.after ?? 0 : 0;
+  let reconnects = 0;
+  let terminal = false;
+
+  const waitForRetry = async (delay: number) => {
+    if (options.signal?.aborted) throw new DOMException('Stream aborted', 'AbortError');
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        options.signal?.removeEventListener('abort', abort);
+        resolve();
+      }, delay);
+      const abort = () => {
+        clearTimeout(timer);
+        options.signal?.removeEventListener('abort', abort);
+        reject(new DOMException('Stream aborted', 'AbortError'));
+      };
+      options.signal?.addEventListener('abort', abort, { once: true });
+    });
   };
 
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const blocks = buffer.split(/\r?\n\r?\n/);
-      buffer = blocks.pop() || '';
-      for (const block of blocks) dispatch(block);
+  while (!terminal) {
+    if (options.signal?.aborted) throw new DOMException('Stream aborted', 'AbortError');
+
+    // Refresh the Supabase Auth session on every reconnect. Never persist or expose
+    // the bearer token in the stream cursor or event payload.
+    const supabase = createSupabaseBrowserClient();
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session?.access_token) {
+      throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
     }
-    buffer += decoder.decode();
-    if (buffer.trim()) dispatch(buffer);
-  } finally {
-    reader.releaseLock();
+
+    const headers = new Headers({
+      Authorization: 'Bearer ' + data.session.access_token,
+      Accept: 'text/event-stream',
+    });
+    if (cursor > 0) headers.set('Last-Event-ID', String(cursor));
+
+    let response: Response;
+    try {
+      response = await fetch(CUSTOMER_API_BASE_URL + path, {
+        headers,
+        cache: 'no-store',
+        signal: options.signal,
+      });
+    } catch (error) {
+      if (options.signal?.aborted) throw error;
+      if (reconnects >= maxReconnects) throw error;
+      reconnects += 1;
+      await waitForRetry(Math.min(8000, initialDelay * (2 ** (reconnects - 1))));
+      continue;
+    }
+
+    if (!response.ok || !response.body) {
+      const payload = await response.json().catch(() => null);
+      // Authentication/authorization and contract errors are not transient.
+      if ([400, 401, 403, 404, 422].includes(response.status)) {
+        throw new Error(payload?.detail || ('MoreAI stream error (' + response.status + ')'));
+      }
+      if (reconnects >= maxReconnects) {
+        throw new Error(payload?.detail || ('MoreAI stream error (' + response.status + ')'));
+      }
+      reconnects += 1;
+      await waitForRetry(Math.min(8000, initialDelay * (2 ** (reconnects - 1))));
+      continue;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let receivedEvent = false;
+
+    const dispatch = (block: string) => {
+      const lines = block.split(/\r?\n/);
+      let event = 'message';
+      let id: string | undefined;
+      const dataLines: string[] = [];
+      for (const line of lines) {
+        if (line.startsWith('event:')) event = line.slice(6).trim();
+        else if (line.startsWith('id:')) id = line.slice(3).trim();
+        else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+      }
+      if (!dataLines.length) return;
+      try {
+        const parsed = JSON.parse(dataLines.join('\n'));
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return;
+        if (id && /^\d+$/.test(id)) {
+          const sequence = Number(id);
+          if (Number.isSafeInteger(sequence) && sequence >= cursor) cursor = sequence;
+        }
+        receivedEvent = true;
+        onEvent({ id, event, data: parsed as Record<string, unknown> });
+        if (['run.completed', 'run.failed', 'run.cancelled'].includes(event)) terminal = true;
+      } catch {
+        // Malformed frames are ignored; durable run/event retrieval remains authoritative.
+      }
+    };
+
+    try {
+      while (!terminal) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const blocks = buffer.split(/\r?\n\r?\n/);
+        buffer = blocks.pop() || '';
+        for (const block of blocks) dispatch(block);
+      }
+      buffer += decoder.decode();
+      if (buffer.trim()) dispatch(buffer);
+    } finally {
+      reader.releaseLock();
+    }
+
+    if (terminal) return;
+    // A server-side stream.timeout is a normal long-poll boundary. Reconnect
+    // from the last delivered event ID so a disconnect cannot skip durable events.
+    if (reconnects >= maxReconnects) return;
+    reconnects += 1;
+    const delay = receivedEvent ? initialDelay : Math.min(8000, initialDelay * (2 ** (reconnects - 1)));
+    await waitForRetry(delay);
   }
 }
 
