@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   GraduationCap,
   PlayCircle,
@@ -15,17 +15,42 @@ import {
 import { EDUTECH_MODULES } from '@/lib/data';
 import { EduTechModule } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
+import { learningApi } from '@/lib/api/client';
 
 export const EdutechView: React.FC = () => {
   const { showToast } = useToast();
   const [activeCategory, setActiveCategory] = useState<'semua' | 'ai' | 'produktivitas' | 'karier'>('semua');
   const [selectedModule, setSelectedModule] = useState<EduTechModule | null>(null);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [progressLoading, setProgressLoading] = useState(true);
+  const [savingLesson, setSavingLesson] = useState<string | null>(null);
 
-  const toggleLesson = (lesson: string) => {
-    setCompletedLessons((prev) =>
-      prev.includes(lesson) ? prev.filter((l) => l !== lesson) : [...prev, lesson]
-    );
+  useEffect(() => {
+    let active = true;
+    learningApi.progress()
+      .then(({ items }) => {
+        if (active) setCompletedLessons(items.map((item) => item.module_key + ':' + item.lesson_key));
+      })
+      .catch((error) => {
+        if (active) showToast(error instanceof Error ? error.message : 'Progress belajar gagal dimuat.', 'error');
+      })
+      .finally(() => { if (active) setProgressLoading(false); });
+    return () => { active = false; };
+  }, [showToast]);
+
+  const toggleLesson = async (moduleKey: string, lesson: string) => {
+    const key = moduleKey + ':' + lesson;
+    if (savingLesson) return;
+    const completed = !completedLessons.includes(key);
+    setSavingLesson(key);
+    try {
+      await learningApi.setProgress(moduleKey, lesson, completed);
+      setCompletedLessons((prev) => completed ? [...prev, key] : prev.filter((item) => item !== key));
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Progress belajar gagal disimpan.', 'error');
+    } finally {
+      setSavingLesson(null);
+    }
   };
 
   return (
@@ -147,18 +172,19 @@ export const EdutechView: React.FC = () => {
               <span className="text-xs font-bold text-slate-900 block">Daftar Materi:</span>
               <div className="space-y-1.5">
                 {selectedModule.lessons.map((lesson, idx) => {
-                  const isDone = completedLessons.includes(lesson);
+                  const progressKey = selectedModule.id + ':' + lesson;
+                  const isDone = completedLessons.includes(progressKey);
                   return (
                     <div
                       key={idx}
-                      onClick={() => toggleLesson(lesson)}
+                      onClick={() => void toggleLesson(selectedModule.id, lesson)}
                       className={`cursor-pointer p-2.5 rounded-xl border text-xs flex items-center justify-between transition ${
                         isDone
                           ? 'bg-emerald-50/80 border-emerald-200 text-emerald-800 font-medium'
                           : 'bg-slate-50 border-slate-100 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
-                      <span>{lesson}</span>
+                      <span>{lesson}{progressLoading ? ' · memuat' : savingLesson === progressKey ? ' · menyimpan' : ''}</span>
                       <CheckCircle2
                         className={`w-4 h-4 shrink-0 ml-2 ${
                           isDone ? 'text-emerald-600' : 'text-slate-300'
