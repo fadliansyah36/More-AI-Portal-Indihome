@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, FileText, Image as ImageIcon, FileSpreadsheet, FileCode, ChevronRight, X, Loader2, FolderOpen } from 'lucide-react';
-import { moreAiApi, workspaceApi, type CustomerWorkspaceFile } from '@/lib/api/client';
+import { artifactApi, moreAiApi, workspaceApi, type CustomerWorkspaceFile } from '@/lib/api/client';
 
 type ArtifactRecord = {
   id: string;
@@ -54,6 +54,7 @@ export const FilesView: React.FC = () => {
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const [downloadingArtifact, setDownloadingArtifact] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -113,6 +114,20 @@ export const FilesView: React.FC = () => {
       setWorkspaceError(cause instanceof Error ? cause.message : 'Gagal membuat tautan unduhan.');
     } finally {
       setDownloadingFile(null);
+    }
+  };
+
+  const downloadArtifact = async (file: ArtifactFile) => {
+    setDownloadingArtifact(file.id);
+    try {
+      const result = await artifactApi.signedDownload(file.id);
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+      setSelectedFile(null);
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Gagal membuat tautan unduhan artefak.');
+    } finally {
+      setDownloadingArtifact(null);
     }
   };
 
@@ -224,7 +239,23 @@ export const FilesView: React.FC = () => {
               <div className="flex justify-between gap-3"><span className="text-slate-400">Dibuat</span><span>{selectedFile.date}</span></div>
               <div className="flex justify-between gap-3"><span className="text-slate-400">SHA-256</span><span className="max-w-[60%] truncate">{selectedFile.checksum || 'Belum tersedia'}</span></div>
             </div>
-            <p className="text-xs leading-5 text-slate-500">Akses unduh dan berbagi akan tersedia setelah endpoint Storage dengan signed URL dan otorisasi artifact selesai diaktifkan.</p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedFile(null)}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                disabled={downloadingArtifact === selectedFile.id}
+                onClick={() => void downloadArtifact(selectedFile)}
+                className="rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {downloadingArtifact === selectedFile.id ? 'Menyiapkan…' : 'Unduh artefak'}
+              </button>
+            </div>
           </div>
         </div>
       )}
