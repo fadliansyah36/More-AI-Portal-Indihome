@@ -84,7 +84,7 @@ class WorkerRpcClient:
         response.raise_for_status()
         return response.json() if response.content else []
 
-    async def claim_knowledge_ingestion(self, lease_seconds: int = 180) -> dict[str, Any] | None:
+    async def claim_knowledge_ingestion(self, lease_seconds: int = 900) -> dict[str, Any] | None:
         rows = await self.rpc("moreai_worker_claim_knowledge_ingestion", {
             "p_lease_seconds": max(30, min(900, lease_seconds)),
         })
