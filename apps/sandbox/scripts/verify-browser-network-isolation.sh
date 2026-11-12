@@ -74,7 +74,9 @@ else
   fail "Playwright allowlisted navigation failed"
 fi
 
-redirect_location="$(docker exec "$browser_id" sh -lc 'curl --silent --show-error --output /dev/null --write-out "%{redirect_url}" --max-time 15 --proxy "$MOREAI_BROWSER_PROXY_URL" --proxy-user "moreai:$MOREAI_BROWSER_PROXY_TOKEN" "$1"' sh 'https://httpbin.org/redirect-to?url=https%3A%2F%2Fnot-allowlisted.invalid%2F&status_code=302' 2>/dev/null)"
+redirect_headers="$(docker exec "$browser_id" sh -lc 'curl --silent --show-error --dump-header - --output /dev/null --max-time 15 --proxy "$MOREAI_BROWSER_PROXY_URL" --proxy-user "moreai:$MOREAI_BROWSER_PROXY_TOKEN" "$1"' sh 'https://httpbin.org/redirect-to?url=https%3A%2F%2Fnot-allowlisted.invalid%2F&status_code=302' 2>/dev/null)"
+redirect_location="$(printf '%s\\n' "$redirect_headers" | awk 'BEGIN { IGNORECASE=1 } /^Location:/ { sub(/^[^:]*:[[:space:]]*/, ""); gsub(/\\r/, ""); print; exit }')"
+echo "redirect test Location: ${redirect_location:-<missing>}"
 if [[ "$redirect_location" == "https://not-allowlisted.invalid/" ]]; then
   pass "redirect test origin emits the expected non-allowlisted Location"
 else
