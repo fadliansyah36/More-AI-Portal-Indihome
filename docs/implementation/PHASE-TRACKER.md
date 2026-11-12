@@ -963,3 +963,11 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment, provider calls or Supabase live migration/write. Phases 04/06/09 remain IN PROGRESS.
 
 - Home view now differentiates an unavailable Agent Run API from a valid empty history state; no backend failure is presented as “no tasks”. Commit `9b5f59c10dafdeffdb16d95d11892ef9459bfe4b`.
+
+
+## 2026-11-13 — Customer profile and Wi-Fi session integration continuation
+
+- Phase 09: existing Customer Profile Settings now persists display-name edits and language locale through the authenticated FastAPI profile API; email remains read-only from Auth identity. Existing Wi-Fi Session screen now reads network sessions, wallet balances and quota usage through Customer APIs, derives active-session expiry from persisted timestamps, and exposes API errors without fabricating gateway telemetry.
+- Source commits: `a7282fa7fd774d8dc4a78d66ed07fa8aa363122f`, `4bd3ca15a7951b1b3bc7027450e7f934285efdd7`, `2d74e9d0e8f1f28e99f45d79093d8ff369142daa`.
+- Report: [Phase 09 Customer Profile & Wi-Fi Session Integration](./PHASE-09-CUSTOMER-PROFILE-WIFI-SESSION-INTEGRATION-20261113.md).
+- No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment, Supabase migration or live write were run. This is source-only progress; Phase 09 remains IN PROGRESS and no runtime success is claimed.
