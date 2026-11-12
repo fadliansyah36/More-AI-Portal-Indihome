@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Search, TrendingUp, Sparkles, BookOpen, Clock, ChevronRight, ArrowLeft } from 'lucide-react';
-import { RESEARCH_TOPICS } from '@/lib/data';
+import { customerApi, type CustomerAgentRun } from '@/lib/api/client';
 import { useToast } from '@/components/ui/toast-context';
 
 interface ResearchViewProps {
@@ -14,11 +14,28 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'populer' | 'riwayat'>('populer');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState<typeof RESEARCH_TOPICS[0] | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<CustomerAgentRun | null>(null);
+  const [runs, setRuns] = useState<CustomerAgentRun[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = RESEARCH_TOPICS.filter((t) =>
-    t.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    let active = true;
+    customerApi.agentRuns().then((items) => { if (active) setRuns(items); })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Riwayat riset tidak dapat dimuat.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const runTitle = (run: CustomerAgentRun) => {
+    const candidate = run.input?.content ?? run.input?.prompt ?? run.input?.message ?? run.input?.task;
+    return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : 'Agent run ' + run.id.slice(0, 8);
+  };
+  const filteredRuns = useMemo(() => runs.filter((run) => runTitle(run).toLowerCase().includes(searchQuery.toLowerCase())), [runs, searchQuery]);
+  const resultText = (run: CustomerAgentRun) => {
+    const value = run.output?.text ?? run.output?.content ?? run.output?.result;
+    return typeof value === 'string' ? value : run.status === 'failed' ? 'Run gagal. Detail error dapat dilihat pada Workflow.' : 'Belum ada output final yang tersimpan.';
+  };
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -76,55 +93,39 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
         </button>
       </div>
 
-      {/* Topics List */}
-      <div className="space-y-2.5">
-        {filtered.map((topic) => (
-          <div
-            key={topic.id}
-            onClick={() => setSelectedTopic(topic)}
-            className="cursor-pointer p-4 rounded-3xl bg-white border border-slate-100 hover:border-red-200 shadow-2xs hover:shadow-xs transition flex items-start gap-3.5 group"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100 group-hover:scale-105 transition-transform">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-red-600 transition">
-                  {topic.title}
-                </h3>
-                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-red-500 group-hover:translate-x-0.5 transition" />
+      {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{error}</div>}
+      {activeTab === 'populer' ? (
+        <div className="rounded-3xl border border-slate-100 bg-white p-6 text-center">
+          <BookOpen className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+          <p className="text-xs font-semibold text-slate-800">Topik riset publik belum tersedia</p>
+          <p className="mt-1 text-[11px] text-slate-500">Daftar topik populer akan ditampilkan setelah sumber publik resmi terhubung. Tidak ada topik contoh yang ditampilkan sebagai data nyata.</p>
+          <button onClick={() => setActiveTab('riwayat')} className="mt-3 text-xs font-bold text-red-600">Lihat riwayat riset akun</button>
+        </div>
+      ) : loading ? (
+        <div className="rounded-3xl border border-slate-100 bg-white p-8 text-center text-xs text-slate-500">Memuat riwayat dari backend…</div>
+      ) : filteredRuns.length ? (
+        <div className="space-y-2.5">
+          {filteredRuns.map((run) => (
+            <button key={run.id} type="button" onClick={() => setSelectedTopic(run)} className="flex w-full items-start gap-3.5 rounded-3xl border border-slate-100 bg-white p-4 text-left shadow-2xs transition hover:border-red-200">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-red-100 bg-red-50 text-red-600"><TrendingUp className="h-5 w-5" /></div>
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-xs font-bold text-slate-900">{runTitle(run)}</h3>
+                <p className="mt-1 text-[11px] text-slate-500">Status: {run.status} · {run.created_at ? new Date(run.created_at).toLocaleString('id-ID') : 'Waktu tidak tersedia'}</p>
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">{topic.category}</p>
-              <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
-                {topic.summary}
-              </p>
-              <div className="flex items-center gap-3 text-[10px] text-slate-400 mt-2 font-medium">
-                <span>{topic.views} pembaca</span>
-                <span>·</span>
-                <span>{topic.date}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Button Eksplor Topik Lainnya */}
-      <button
-        onClick={() => showToast('Memuat topik riset terkini dari basis data MoreAI & Telkom Insight...', 'info')}
-        className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
-      >
-        <span>Eksplor Topik Lainnya</span>
-        <ChevronRight className="w-4 h-4" />
-      </button>
-
+              <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-3xl border border-slate-100 bg-white p-8 text-center text-xs text-slate-500">Belum ada riwayat agent run yang cocok dengan pencarian ini.</div>
+      )}
       {/* Topic Detail Modal */}
       {selectedTopic && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-slate-100 text-slate-800 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
-                {selectedTopic.category}
+                Run · {selectedTopic.status}
               </span>
               <button
                 onClick={() => setSelectedTopic(null)}
@@ -139,22 +140,21 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
             </h3>
 
             <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              {selectedTopic.summary}
+              {resultText(selectedTopic)}
             </p>
 
             <div className="space-y-1.5 text-xs text-slate-700">
               <div className="font-bold text-slate-900 text-[11px]">Metode Riset:</div>
               <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[11px]">
-                <li>Penyisiran web terstruktur & sumber jurnal terverifikasi</li>
-                <li>Sintesis komparatif data statistik pasar Indonesia</li>
-                <li>Validasi kepatuhan privasi data oleh MoreAI Guard</li>
+                <li>Data ditampilkan dari agent run yang tersimpan.</li>
+                <li>Hasil mengikuti status dan output backend.</li>
               </ul>
             </div>
 
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => {
-                  if (onSelectTopic) onSelectTopic(selectedTopic.title);
+                  if (onSelectTopic) onSelectTopic(runTitle(selectedTopic));
                   setSelectedTopic(null);
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition"
