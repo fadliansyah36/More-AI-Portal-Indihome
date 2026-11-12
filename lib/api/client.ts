@@ -609,3 +609,21 @@ export const workspaceApi = {
     method: 'POST',
   }),
 };
+
+
+export type CustomerLearningProgress = {
+  module_key: string;
+  lesson_key: string;
+  completed_at: string;
+  updated_at: string;
+};
+
+export const learningApi = {
+  progress: () => moreAiCustomerApi<{ items: CustomerLearningProgress[]; count: number }>('/api/v1/customer/learning/progress'),
+  setProgress: (moduleKey: string, lessonKey: string, completed: boolean) => moreAiCustomerApi<{
+    module_key: string; lesson_key: string; completed: boolean; completed_at: string | null;
+  }>('/api/v1/customer/learning/progress', {
+    method: 'PUT',
+    body: JSON.stringify({ module_key: moduleKey, lesson_key: lessonKey, completed }),
+  }),
+};
