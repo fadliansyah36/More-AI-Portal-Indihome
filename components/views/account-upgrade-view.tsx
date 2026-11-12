@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Crown, Check, Sparkles, Shield, HardDrive, Zap } from 'lucide-react';
+import { ArrowLeft, Crown } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { useToast } from '@/components/ui/toast-context';
 import { customerApi, type CustomerEntitlement } from '@/lib/api/client';
 
 interface AccountUpgradeViewProps {
@@ -15,7 +14,6 @@ export const AccountUpgradeView: React.FC<AccountUpgradeViewProps> = ({
   onBack,
   onNavigateTab,
 }) => {
-  const { showToast } = useToast();
   const [entitlements, setEntitlements] = useState<CustomerEntitlement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
