@@ -39,18 +39,18 @@ export const WelcomeSuccessView: React.FC<WelcomeSuccessViewProps> = ({ onNaviga
             Selamat Datang di MoreAI
           </h2>
           <p className="text-xs text-slate-500 font-medium leading-relaxed">
-            Akses WiFi cepat dan AI canggih bersama Global Partner ISP/Network untuk bekerja dan berkreasi tanpa batas.
+            Akun MoreAI Anda siap digunakan. Akses jaringan partner dan benefit AI akan ditampilkan setelah diverifikasi oleh layanan terkait.
           </p>
         </div>
 
         <div className="mt-5 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-left text-xs text-slate-700 w-full max-w-xs space-y-1.5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Bonus AI Credit: <strong>100.000 Poin</strong> Terisi</span>
+            <span>AI Credit: <strong>Menunggu entitlement</strong></span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Koneksi Wi-Fi Partner ISP <strong>100 Mbps</strong> Siap</span>
+            <span>Koneksi Wi-Fi Partner <strong>Belum diverifikasi</strong></span>
           </div>
         </div>
       </div>
