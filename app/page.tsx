@@ -276,7 +276,7 @@ export default function App() {
 
               {currentTab === 'analyse' && <AnalyseView />}
 
-              {currentTab === 'code' && <CodeView />}
+              {currentTab === 'code' && <CodeView onNavigateToChat={handleStartPrompt} />}
 
               {currentTab === 'agents' && (
                 <AgentStudioView
