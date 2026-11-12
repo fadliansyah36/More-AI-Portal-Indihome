@@ -594,3 +594,12 @@ This is a source-level audit only. No tests, typecheck, build, browser E2E, stag
 ### Required next order
 
 Phase 04: produce endpoint/capability parity matrix from the pinned upstream tree; finish durable server/session/Flow and workspace lifecycle; complete browser/sandbox isolation and egress gate. Then Phase 07 → Phase 08 → Phase 06 → Phase 09. No gateway-network integration before these gates.
+
+
+## Active implementation increment — Customer OpenManus workspace lifecycle (2026-11-12)
+
+- Added owner-only soft archive endpoint `POST /api/v1/customer/workspaces/{workspace_id}/archive`.
+- Archive is blocked with HTTP 409 while workspace has queued, running, or waiting-approval agent runs. No hard delete is performed; workspace file version history and audit records remain intact.
+- Added typed `customerWorkspaceApi.archive()` method to the existing Customer API client.
+- Commits: `70101b310847040f6af9be75f2846bd2a55b4cec` (FastAPI) and `e2af2140438ab7c20aa2848e3c0107f33b8feee8` (typed client).
+- This closes only the soft-archive slice of workspace lifecycle. It does not close Phase 04 or imply UI exposure; no existing UI file was changed.
