@@ -80,6 +80,30 @@ else
   fail "curl is unavailable in browser image; cannot verify proxy success"
 fi
 
+docker exec "$proxy_id" python - <<'PY'
+import asyncio, socket
+from app.browser_security import BrowserPolicy, BrowserPolicyError, BrowserRequestGuard
+
+answers = ["93.184.216.34", "127.0.0.1"]
+async def resolver(host, port, socktype):
+    address = answers.pop(0)
+    return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, port))]
+
+async def verify():
+    guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)), resolver=resolver)
+    await guard.validate_request("https://trusted.example/first")
+    try:
+        await guard.validate_request("https://trusted.example/second")
+    except BrowserPolicyError as exc:
+        if "rebinding" not in str(exc):
+            raise
+        return
+    raise SystemExit("DNS rebinding was not rejected")
+
+asyncio.run(verify())
+PY
+pass "DNS rebinding from a public address to loopback is rejected by the proxy guard"
+
 for target in "https://$PRIVATE_TEST_IP/" "https://$METADATA_TEST_IP/" "https://not-allowlisted.invalid/"; do
   if docker exec "$browser_id" sh -lc 'curl --silent --max-time 8 --proxy "$MOREAI_BROWSER_PROXY_URL" --proxy-user "moreai:$MOREAI_BROWSER_PROXY_TOKEN" "$1" >/dev/null 2>&1' sh "$target"; then fail "proxy accepted forbidden target $target"; else pass "proxy rejected forbidden target $target"; fi
 done
