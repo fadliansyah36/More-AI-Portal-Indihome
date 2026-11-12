@@ -90,6 +90,40 @@ class WorkerRpcClient:
         })
         return rows[0] if isinstance(rows, list) and rows else None
 
+    async def heartbeat_knowledge_ingestion(
+        self, document_id: str, owner_user_id: str, current_lease_until: str,
+        lease_seconds: int = 900,
+    ) -> str | None:
+        from datetime import datetime, timedelta, timezone
+
+        try:
+            current = datetime.fromisoformat(current_lease_until.replace("Z", "+00:00"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("knowledge_lease_timestamp_invalid") from exc
+        if current.tzinfo is None:
+            raise ValueError("knowledge_lease_timestamp_must_be_timezone_aware")
+        next_lease = max(current, datetime.now(timezone.utc)) + timedelta(
+            seconds=max(30, min(900, lease_seconds))
+        )
+        response = await self.client.patch(
+            f"{self.settings.supabase_url.rstrip('/')}/rest/v1/knowledge_documents",
+            params={
+                "id": f"eq.{document_id}",
+                "owner_user_id": f"eq.{owner_user_id}",
+                "source_type": "eq.file",
+                "status": "eq.processing",
+                "ingestion_lease_until": f"eq.{current_lease_until}",
+            },
+            json={"ingestion_lease_until": next_lease.isoformat()},
+            headers={**self._headers(), "Prefer": "return=representation"},
+            timeout=15.0,
+        )
+        response.raise_for_status()
+        rows = response.json()
+        if not isinstance(rows, list) or not rows:
+            return None
+        return str(rows[0].get("ingestion_lease_until") or next_lease.isoformat())
+
     async def finish_knowledge_ingestion(
         self, document_id: str, owner_user_id: str, success: bool,
         error_code: str | None = None, page_count: int | None = None,
