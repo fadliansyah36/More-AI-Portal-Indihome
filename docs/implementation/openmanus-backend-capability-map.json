@@ -747,12 +747,14 @@
         "Immutable Storage objects are uploaded before metadata transaction; RPC validates private bucket and object existence.",
         "Worker lease, user/run/workspace binding, active membership, unique safe paths, expected versions, SHA-256, file sizes and operation key are validated.",
         "Existing version-history trigger and explicit delete history writes are preserved in the transaction.",
-        "A deterministic SHA-256 operation key and server-only commit ledger make retries idempotent."
+        "A deterministic SHA-256 operation key and server-only commit ledger make retries idempotent.",
+        "The RPC stores a server-only idempotency result keyed by run_id and a deterministic SHA-256 operation key."
       ],
       "remaining": [
         "Uploaded Storage objects can be orphaned when metadata transaction fails; garbage collection is not implemented.",
         "Migration is committed but has not been applied to Supabase.",
-        "No test, lint, typecheck, build, deployment or runtime verification performed."
+        "No test, lint, typecheck, build, deployment or runtime verification performed.",
+        "Storage garbage collection for objects uploaded before a failed metadata transaction remains pending."
       ]
     }
   },
@@ -763,5 +765,27 @@
       "Session event query parameters use the same bigint upper bound."
     ],
     "status": "Source implementation only; no runtime acceptance."
+  },
+  "customer_session_api": {
+    "implemented": [
+      "POST /api/v1/conversations/{conversation_id}/sessions/{run_id}/cancel verifies conversation and run ownership before requesting durable cancellation.",
+      "WebSocket and SSE replay cursors are validated and bounded to PostgreSQL bigint.",
+      "Customer agent-run history supports stable created_at/id keyset pagination with X-Next-Cursor while preserving the legacy array payload and before timestamp parameter."
+    ],
+    "status": "Source implementation only; runtime acceptance not performed."
+  },
+  "customer_dashboard_data_binding": {
+    "implemented": [
+      "Customer Tasks view loads cursor-paginated durable Agent Runs and uses persisted run prompt as task title.",
+      "Customer Tasks view can load additional run history pages and deduplicates by run ID.",
+      "Customer Home view loads recent Agent Runs, wallet balance and active Partner entitlement through authenticated Customer APIs.",
+      "Removed fabricated 100K AI quota, sample coffee-shop task/progress and unsupported fixed agent/network metrics from Home view."
+    ],
+    "files": [
+      "components/views/home-view.tsx",
+      "components/views/tasks-view.tsx",
+      "lib/api/client.ts"
+    ],
+    "status": "Partial Phase 09 source integration; remaining Customer screens/actions are still open. No screenshot/browser regression evidence due explicit no-runtime-testing constraint."
   }
 }
