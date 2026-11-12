@@ -18,27 +18,47 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
 }) => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'masuk' | 'daftar'>('masuk');
-  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) || !password) {
+      showToast('Masukkan email dan password yang valid.', 'error');
+      return;
+    }
+    setIsSubmitting(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const identifier = emailOrPhone.trim();
-      const credentials = identifier.includes('@') ? { email: identifier, password } : { phone: identifier, password };
-      const { data, error } = await supabase.auth.signInWithPassword(credentials);
-      if (error) throw error;
+      const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+      if (error) {
+        const message = error.message.toLowerCase();
+        if (message.includes('email not confirmed')) {
+          showToast('Akun belum dapat masuk karena Confirm Email masih aktif pada pengaturan Supabase Auth.', 'error');
+          return;
+        }
+        if (message.includes('rate limit') || message.includes('too many')) {
+          showToast('Terlalu banyak percobaan login. Tunggu beberapa saat lalu coba kembali.', 'error');
+          return;
+        }
+        showToast('Email atau password salah. Periksa kembali data akun Anda.', 'error');
+        return;
+      }
       if (!data.session) {
-        showToast('Login belum selesai. Periksa email Anda untuk konfirmasi akun.', 'info');
+        showToast('Login belum berhasil. Silakan coba kembali.', 'error');
         return;
       }
       onLoginSuccess();
       onNavigate('home');
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Login gagal. Periksa kembali data akun.', 'error');
+    } catch {
+      showToast('Layanan login sedang tidak tersedia. Silakan coba kembali.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -96,15 +116,17 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
             <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-              Email atau nomor HP
+              Email
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="text"
-                value={emailOrPhone}
-                onChange={(e) => setEmailOrPhone(e.target.value)}
-                placeholder="email@domain.com atau 0812..."
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nama@email.com"
                 className="w-full text-xs sm:text-sm pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition"
               />
             </div>
@@ -121,6 +143,8 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Masukkan kata sandi..."
+                autoComplete="current-password"
+                required
                 className="w-full text-xs sm:text-sm pl-10 pr-10 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition"
               />
               <button
@@ -148,7 +172,7 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
             <button
               type="button"
               onClick={async () => {
-                const identifier = emailOrPhone.trim();
+                const identifier = email.trim().toLowerCase();
                 if (!identifier.includes('@')) {
                   showToast('Masukkan alamat email untuk mengirim tautan pemulihan password.', 'info');
                   return;
@@ -172,9 +196,10 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs sm:text-sm font-bold transition shadow-xs mt-2"
+            disabled={isSubmitting}
+            className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs sm:text-sm font-bold transition shadow-xs mt-2 disabled:opacity-50"
           >
-            Masuk dengan akun
+            {isSubmitting ? 'Memproses...' : 'Masuk dengan akun'}
           </button>
         </form>
 
