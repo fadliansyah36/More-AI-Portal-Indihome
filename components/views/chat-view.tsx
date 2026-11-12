@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Bot, Copy, Loader2, Paperclip, Send, ShieldCheck, Sparkles, User } from 'lucide-react';
+import { ArrowLeft, Bot, Copy, Loader2, Paperclip, Send, ShieldCheck, Sparkles, StopCircle, User } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 import { NavigationTab } from '@/types/moreai';
 import { customerApi, moreAiApiStream } from '@/lib/api/client';
@@ -29,6 +29,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [inputText, setInputText] = useState(initialPrompt);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const sentInitialPrompt = useRef(false);
 
@@ -66,6 +68,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       const queued = await customerApi.sendMessage(
         activeConversationId, text, crypto.randomUUID(), initialAgentKey,
       );
+      setActiveRunId(queued.run.id);
 
       setMessages((previous) => [...previous, {
         id: assistantId,
@@ -120,8 +123,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         setMessages((previous) => previous.map((message) =>
           message.id === assistantId ? { ...message, text: outputText } : message,
         ));
-      } else if (terminalStatus === 'failed' || terminalStatus === 'cancelled') {
-        throw new Error(`Agent run ${terminalStatus}. Silakan periksa riwayat tugas sebelum mencoba kembali.`);
+      } else if (terminalStatus === 'cancelled') {
+        setMessages((previous) => previous.map((message) =>
+          message.id === assistantId ? { ...message, text: streamedText || 'Proses dihentikan sesuai permintaan.', source: 'Agent Runtime · cancelled' } : message,
+        ));
+      } else if (terminalStatus === 'failed') {
+        throw new Error('Agent run failed. Silakan periksa riwayat tugas sebelum mencoba kembali.');
       } else {
         setMessages((previous) => previous.map((message) =>
           message.id === assistantId
@@ -140,9 +147,23 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         source: 'MoreAI API',
       }]);
     } finally {
+      setActiveRunId(null);
+      setIsCancelling(false);
       setIsLoading(false);
     }
   }, [inputText, isLoading, conversationId, showToast, initialAgentKey]);
+
+  const handleCancelRun = useCallback(async () => {
+    if (!activeRunId || isCancelling) return;
+    setIsCancelling(true);
+    try {
+      await customerApi.cancelRun(activeRunId);
+      showToast('Permintaan penghentian dikirim ke worker. Proses akan berhenti setelah checkpoint aman.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Tidak dapat menghentikan agent run.', 'error');
+      setIsCancelling(false);
+    }
+  }, [activeRunId, isCancelling, showToast]);
 
   useEffect(() => {
     if (initialPrompt.trim() && !sentInitialPrompt.current) {
@@ -164,6 +185,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
           <h1 className="text-sm font-bold text-slate-900">MoreAI Assistant</h1>
           <p className="text-xs text-slate-500">Agent Runtime · Percakapan tersimpan</p>
         </div>
+        {activeRunId && (
+          <button type="button" onClick={() => void handleCancelRun()} disabled={isCancelling} className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60" aria-label="Hentikan proses agent">
+            {isCancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : <StopCircle className="h-4 w-4" />}
+            {isCancelling ? 'Menghentikan…' : 'Hentikan'}
+          </button>
+        )}
         <ShieldCheck className="h-5 w-5 text-emerald-600" aria-label="Koneksi API terautentikasi" />
       </header>
 
