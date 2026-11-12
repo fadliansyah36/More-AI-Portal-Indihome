@@ -10,10 +10,7 @@ interface AccountUpgradeViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
 }
 
-export const AccountUpgradeView: React.FC<AccountUpgradeViewProps> = ({
-  onBack,
-  onNavigateTab,
-}) => {
+export const AccountUpgradeView: React.FC<AccountUpgradeViewProps> = ({ onBack }) => {
   const [entitlements, setEntitlements] = useState<CustomerEntitlement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
