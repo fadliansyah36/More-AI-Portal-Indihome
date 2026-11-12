@@ -203,12 +203,18 @@ class WorkerRpcClient:
         self, run_id: str, user_id: str, tool_key: str, arguments: dict[str, Any],
     ) -> bool:
         """Pause execution until an owner decision, then atomically consume one approval."""
+        # The durable approval table stores canonical action keys, not every
+        # OpenManus adapter name. Keep the original arguments hash so a decision
+        # is bound to the exact tool call while mapping the editor to file_edit.
+        approval_tool_key = {
+            "str_replace_editor": "file_edit",
+        }.get(tool_key, tool_key)
         arguments_hash = hashlib.sha256(
             json.dumps(arguments, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         ).hexdigest()
         state = await self.rpc("moreai_worker_pause_for_tool_approval", {
             "p_run_id": run_id, "p_user_id": user_id,
-            "p_worker_id": self.settings.worker_id, "p_tool_key": tool_key,
+            "p_worker_id": self.settings.worker_id, "p_tool_key": approval_tool_key,
             "p_arguments_hash": arguments_hash,
             "p_summary": f"Approval required for isolated {tool_key} execution",
             "p_expires_in_seconds": 900,
@@ -221,7 +227,7 @@ class WorkerRpcClient:
         if status == "approved":
             consumed = await self.rpc("moreai_consume_tool_approval", {
                 "p_run_id": run_id, "p_user_id": user_id,
-                "p_tool_key": tool_key, "p_arguments_hash": arguments_hash,
+                "p_tool_key": approval_tool_key, "p_arguments_hash": arguments_hash,
             })
             return bool(consumed)
         if status in {"denied", "expired", "consumed"}:
