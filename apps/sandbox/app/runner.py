@@ -59,6 +59,28 @@ class DockerSandbox:
         if any(c in self.image for c in "\n\r\x00"):
             raise RuntimeError("invalid_sandbox_image")
 
+    async def check_ready(self) -> None:
+        """Require the configured Docker daemon/socket proxy to be reachable."""
+        self._validate()
+        process = await asyncio.create_subprocess_exec(
+            self.docker_binary, "info", "--format", "{{.ServerVersion}}",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            start_new_session=True,
+            env={
+                "PATH": os.getenv("PATH", "/usr/bin:/bin"),
+                "DOCKER_HOST": os.getenv("DOCKER_HOST", ""),
+            },
+        )
+        try:
+            stdout, _ = await asyncio.wait_for(process.communicate(), timeout=3.0)
+        except TimeoutError as exc:
+            self._terminate(process)
+            await process.wait()
+            raise RuntimeError("sandbox_runtime_unavailable") from exc
+        if process.returncode != 0 or not stdout.strip():
+            raise RuntimeError("sandbox_runtime_unavailable")
+
     @staticmethod
     def _terminate(process: asyncio.subprocess.Process) -> None:
         try:
