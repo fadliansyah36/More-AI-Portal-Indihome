@@ -12,7 +12,7 @@ def test_upstream_and_moreai_tool_inventory_is_complete_and_default_disabled():
         "bash", "browser_use", "create_chat_completion", "file_saver",
         "google_search", "knowledge_ingest", "knowledge_search", "planning",
         "python_execute", "run", "str_replace_editor", "terminate",
-        "workspace_restore_version",
+        "workspace_read_file", "workspace_restore_version",
     }
     assert all(item["enabled_by_default"] is False for item in tool_catalog())
 
