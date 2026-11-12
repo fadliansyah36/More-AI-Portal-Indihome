@@ -5,10 +5,11 @@ import json
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, Query, Header, HTTPException
+from fastapi import APIRouter, Depends, Request, Query, Header, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 
-from app.authorization import customer_principal
+from app.authorization import customer_principal, require_customer_context
+from app.dependencies import current_user
 from app.routers.conversations import repository
 
 router = APIRouter(prefix="/api/v1/agent-runs", tags=["agent-runs"])
@@ -250,6 +251,68 @@ async def get_events(
         "select": "id,event_type,sequence,payload,created_at", "order": "sequence.asc", "limit": str(limit),
     })
     return [await _event_with_checkpoint_state(repo, run_id, row) for row in rows]
+
+
+@router.websocket("/{run_id}/ws")
+async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
+    """Authenticated WebSocket parity over the durable event log; events remain replayable."""
+    try:
+        authorization = websocket.headers.get("authorization")
+        user = await current_user(websocket, authorization)
+        principal = await require_customer_context(websocket, user)
+        repo = repository(websocket)
+        await repo.owned_record("agent_runs", run_id, principal["id"])
+    except HTTPException as exc:
+        await websocket.close(code=4401 if exc.status_code == 401 else 4403)
+        return
+    except Exception:
+        await websocket.close(code=1011)
+        return
+
+    try:
+        cursor_text = websocket.query_params.get("after", "0")
+        try:
+            cursor = max(0, int(cursor_text))
+        except ValueError:
+            await websocket.close(code=4400)
+            return
+        await websocket.accept()
+        idle_rounds = 0
+        while idle_rounds < 300:
+            rows = await repo.select("agent_run_events", {
+                "run_id": f"eq.{run_id}", "sequence": f"gt.{cursor}",
+                "select": "id,event_type,sequence,payload,created_at",
+                "order": "sequence.asc", "limit": "100",
+            })
+            if rows:
+                idle_rounds = 0
+                for row in rows:
+                    activity = _safe_run_activity(row)
+                    cursor = max(cursor, int(activity["sequence"]))
+                    await websocket.send_json(activity)
+            else:
+                idle_rounds += 1
+                run = await repo.owned_record("agent_runs", run_id, principal["id"])
+                if run.get("status") in {"succeeded", "failed", "cancelled", "expired"}:
+                    await websocket.send_json({
+                        "event_type": "run.state",
+                        "run_id": str(run_id),
+                        "status": run.get("status"),
+                        "sequence": cursor,
+                    })
+                    await websocket.close(code=1000)
+                    return
+                await websocket.send_json({"event_type": "stream.keepalive", "sequence": cursor})
+            await asyncio.sleep(1)
+        await websocket.send_json({"event_type": "stream.timeout", "sequence": cursor})
+        await websocket.close(code=1000)
+    except WebSocketDisconnect:
+        return
+    except Exception:
+        try:
+            await websocket.close(code=1011)
+        except Exception:
+            pass
 
 
 @router.get("/{run_id}/stream")
