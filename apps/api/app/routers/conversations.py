@@ -4,12 +4,13 @@ from typing import Any, Literal
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, Query, WebSocket
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Query, WebSocket, Response
 from pydantic import BaseModel, Field
 
 from app.authorization import customer_principal, require_customer_context
 from app.dependencies import current_user
 from app.repositories.supabase import SupabaseRepository
+from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter
 
 router = APIRouter(prefix="/api/v1/conversations", tags=["conversations"])
 
@@ -41,8 +42,29 @@ async def create_conversation(body: ConversationCreate, request: Request, user: 
 
 
 @router.get("")
-async def list_conversations(request: Request, user: dict[str, Any] = Depends(customer_principal)):
-    return await repository(request).select("conversations", {"user_id": f"eq.{user['id']}", "select": "id,title,status,created_at,updated_at", "order": "updated_at.desc", "limit": "100"})
+async def list_conversations(
+    request: Request,
+    response: Response,
+    limit: int = Query(default=100, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """List conversations with backwards-compatible array payload and opaque keyset cursor header."""
+    decoded = decode_created_at_id_cursor(cursor)
+    params = {
+        "user_id": f"eq.{user['id']}",
+        "select": "id,title,status,created_at,updated_at",
+        "order": "created_at.desc,id.desc",
+        "limit": str(limit),
+    }
+    cursor_filter = created_at_id_filter(decoded)
+    if cursor_filter:
+        params["or"] = cursor_filter
+    rows = await repository(request).select("conversations", params)
+    if len(rows) == limit and rows:
+        response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(rows[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return rows
 
 
 @router.get("/{conversation_id}")
