@@ -630,6 +630,10 @@ export const customerWorkspaceApi = {
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId),
     { method: 'PATCH', body: JSON.stringify({ name }) },
   ),
+  archive: (workspaceId: string) => moreAiCustomerApi<{ workspace: CustomerWorkspace; archived: boolean }>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/archive',
+    { method: 'POST' },
+  ),
 };
 
 export type CustomerLearningProgress = {
