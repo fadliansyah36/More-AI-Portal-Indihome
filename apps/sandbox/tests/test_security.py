@@ -126,8 +126,8 @@ async def test_browser_request_guard_detects_dns_rebinding():
 
     guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)), resolver=resolve)
     await guard.validate_request("https://trusted.example/one")
-    answer[0] = "1.1.1.1"
-    with pytest.raises(BrowserPolicyError, match="rebinding"):
+    answer[0] = "127.0.0.1"
+    with pytest.raises(BrowserPolicyError, match="private_or_reserved"):
         await guard.validate_request("https://trusted.example/two")
 
 
