@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import Settings
 from app.dependencies import current_user
-from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, notifications, partner, tool_approvals, workspaces
+from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, notifications, partner, tool_approvals, workspaces, learning
 
 
 @asynccontextmanager
@@ -50,6 +50,7 @@ app.include_router(agent_runs.router)
 app.include_router(catalog.router)
 app.include_router(artifacts.router)
 app.include_router(notifications.router)
+app.include_router(learning.router)
 
 
 class ProfileUpdate(BaseModel):
