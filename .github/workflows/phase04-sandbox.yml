@@ -118,6 +118,28 @@ jobs:
           docker compose -f apps/sandbox/compose.browser.yml ps
           docker compose -f apps/sandbox/compose.browser.yml logs --no-color
           exit 1
+      - name: Build trusted worker client image
+        run: docker build -f apps/worker/Dockerfile -t moreai-worker-browser-ci .
+      - name: Verify worker-to-supervisor private network connectivity
+        run: |
+          docker run --rm --network sandbox_browser_isolated \
+            -e MOREAI_BROWSER_SERVICE_TOKEN \
+            --entrypoint python moreai-worker-browser-ci -c '
+          import asyncio, os, httpx
+          from apps.sandbox.app.browser_supervisor import BrowserSupervisor
+          async def main():
+              async with httpx.AsyncClient() as client:
+                  supervisor = BrowserSupervisor(
+                      service_url="http://browser-supervisor:8080",
+                      service_token=os.environ["MOREAI_BROWSER_SERVICE_TOKEN"],
+                      egress_enforced=True,
+                      allow_private_http=True,
+                      http=client,
+                  )
+                  result = await supervisor.check_ready()
+                  assert result["status"] == "ready"
+          asyncio.run(main())
+          '
       - name: Verify IPv4 IPv6 isolation and authenticated proxy egress
         run: bash apps/sandbox/scripts/verify-browser-network-isolation.sh
       - name: Collect browser network diagnostics on failure
