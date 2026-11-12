@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 from uuid import uuid4
 from urllib.parse import urlsplit
@@ -39,7 +40,7 @@ class IsolatedSandboxToolAdapter:
             raise ValueError("sandbox_supervisor_service_token_invalid")
         self.service_url = service_url.rstrip("/")
         self.service_token = service_token
-        self.http = http
+        self.http = http\n        self.workspace_tools = workspace_tools
 
     async def check_ready(self) -> dict[str, Any]:
         response = await self.http.get(
@@ -74,12 +75,19 @@ class IsolatedSandboxToolAdapter:
 
     async def _execute(
         self, *, source: str, language: str, run_id: str, user_id: str,
-        timeout_seconds: int = 30,
+        timeout_seconds: int = 30, workspace_id: str | None = None,
+        user_id: str | None = None,
     ) -> str:
         if not isinstance(run_id, str) or not run_id or not isinstance(user_id, str) or not user_id:
             raise PermissionError("sandbox_run_identity_required")
         if not isinstance(source, str) or not source or len(source.encode("utf-8")) > 8_000_000:
             raise ValueError("sandbox_source_size_invalid")
+        if not workspace_id or self.workspace_tools is None:
+            raise PermissionError("sandbox_workspace_binding_required")
+        snapshot, baseline = await self.workspace_tools.export_execution_snapshot(
+            user_id=user_id, workspace_id=workspace_id,
+        )
+        encoded_snapshot = {path: base64.b64encode(raw).decode("ascii") for path, raw in snapshot.items()}
         await self.check_ready()
         request_id = uuid4().hex
         try:
@@ -90,6 +98,7 @@ class IsolatedSandboxToolAdapter:
                     "run_id": run_id, "user_id": user_id,
                     "language": language, "source": source,
                     "timeout_seconds": timeout_seconds,
+                    "workspace_files": encoded_snapshot,
                 },
                 headers={"Authorization": f"Bearer {self.service_token}"},
                 timeout=httpx.Timeout(timeout_seconds + 10.0, connect=3.0),
@@ -109,19 +118,39 @@ class IsolatedSandboxToolAdapter:
             or not isinstance(result.get("stdout"), str)
             or not isinstance(result.get("stderr"), str)
             or not isinstance(result.get("timed_out"), bool)
+            or not isinstance(result.get("workspace_files"), dict)
         ):
             raise RuntimeError("sandbox_supervisor_response_invalid")
+        returned_files = {}
+        returned_total = 0
+        for path, encoded in result["workspace_files"].items():
+            if not isinstance(path, str) or not isinstance(encoded, str):
+                raise RuntimeError("sandbox_supervisor_workspace_response_invalid")
+            raw = base64.b64decode(encoded, validate=True)
+            returned_total += len(raw)
+            if returned_total > 2_000_000:
+                raise RuntimeError("sandbox_supervisor_workspace_response_too_large")
+            returned_files[path] = raw
+        changes = {"saved": [], "deleted": [], "saved_count": 0, "deleted_count": 0}
+        if result["exit_code"] == 0 and not result["timed_out"]:
+            changes = await self.workspace_tools.apply_execution_snapshot(
+                run_id=run_id, user_id=user_id, workspace_id=workspace_id,
+                before=snapshot, baseline=baseline, after=returned_files,
+            )
+        result.pop("workspace_files", None)
+        result["workspace_changes"] = changes
+        result["workspace_writeback"] = "committed" if result["exit_code"] == 0 and not result["timed_out"] else "discarded_execution_failed"
         return json.dumps(result, ensure_ascii=False, separators=(",", ":"))
 
-    async def python_execute(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
+    async def python_execute(self, arguments: dict[str, Any], *, run_id: str, user_id: str, workspace_id: str | None = None) -> str:
         return await self._execute(
             source=arguments["code"], language="python",
-            run_id=run_id, user_id=user_id,
+            run_id=run_id, user_id=user_id, workspace_id=workspace_id,
             timeout_seconds=int(arguments.get("timeout_seconds", 30)),
         )
 
-    async def bash(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
+    async def bash(self, arguments: dict[str, Any], *, run_id: str, user_id: str, workspace_id: str | None = None) -> str:
         return await self._execute(
             source=arguments["command"], language="bash",
-            run_id=run_id, user_id=user_id, timeout_seconds=30,
+            run_id=run_id, user_id=user_id, workspace_id=workspace_id, timeout_seconds=30,
         )
