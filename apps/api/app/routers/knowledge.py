@@ -90,8 +90,25 @@ async def upload_knowledge_document(
     if mime == "image/webp" and (len(content) < 12 or content[:4] != b"RIFF" or content[8:12] != b"WEBP"):
         raise HTTPException(415, "File content does not match WEBP type")
 
-    document_id = str(uuid4())
     digest = hashlib.sha256(content).hexdigest()
+    existing = await repository(request).select("knowledge_documents", {
+        "owner_user_id": f"eq.{user['id']}",
+        "workspace_id": "is.null" if workspace_id is None else f"eq.{workspace_id}",
+        "source_type": "eq.file",
+        "content_sha256": f"eq.{digest}",
+        "status": "in.(processing,ready,failed)",
+        "select": "id,title,workspace_id,source_type,status,content_sha256,metadata,created_at,updated_at",
+        "order": "created_at.desc",
+        "limit": "1",
+    })
+    if existing:
+        return {
+            "document": existing[0],
+            "status": existing[0].get("status"),
+            "reused": True,
+            "upload": {"filename": filename, "size_bytes": len(content), "mime_type": mime},
+        }
+    document_id = str(uuid4())
     safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", filename)[:180]
     storage_path = f"{user['id']}/{document_id}/{safe_name}"
     title_value = (title or Path(filename).stem).strip()
@@ -140,6 +157,13 @@ async def upload_knowledge_document(
             {"id": f"eq.{document_id}", "owner_user_id": f"eq.{user['id']}", "status": "eq.processing"},
             {"metadata": {**metadata, "ingestion_state": "queued", "uploaded_at": datetime.now(timezone.utc).isoformat()}},
         )
+        updated_rows = await repo.select("knowledge_documents", {
+            "id": f"eq.{document_id}", "owner_user_id": f"eq.{user['id']}",
+            "select": "id,title,workspace_id,source_type,status,content_sha256,metadata,created_at,updated_at",
+            "limit": "1",
+        })
+        if not updated_rows:
+            raise HTTPException(502, "Uploaded document metadata could not be reloaded")
     except Exception:
         # Keep the durable row for diagnosis/retry; do not expose storage credentials or response bodies.
         await repo.update(
@@ -149,8 +173,9 @@ async def upload_knowledge_document(
         )
         raise
     return {
-        "document": document,
+        "document": updated_rows[0],
         "status": "processing",
+        "reused": False,
         "upload": {"filename": filename, "size_bytes": len(content), "mime_type": mime},
     }
 
