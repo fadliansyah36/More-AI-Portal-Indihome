@@ -756,3 +756,15 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Latest full Phase 04 workflow: [run 43178037719](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43178037719) — running at report time. Prior worker-contract and engine-policy suites have passed, but no Docker acceptance result is claimed until this run completes.
 - No production/staging worker deployment or browser activation. Download scanning is not implemented; downloads remain denied by default. The Docker test proves the container topology/client contract on GitHub-hosted Docker, not the target production platform's network connectivity.
 - Phase 04 remains IN PROGRESS. Phase 07 and Phase 08 remain downstream and must not start until Phase 04 acceptance is signed off. Phase 06/09, Phase 10 authenticated Customer-to-provider E2E and Phase 11 release gate remain open.
+
+
+## 2026-11-12 — Customer registration/login hardening (incremental)
+
+- Registration form removes WhatsApp phone number and submits only normalized email, full name and password. Password policy is 12–128 characters with upper/lowercase, digit and symbol checks; duplicate submissions are disabled while in flight.
+- Login form is email-only. Supabase Auth errors are mapped to safe user-facing messages, and session absence is no longer represented as successful registration/login.
+- Applied and recorded Supabase migration `20261112084047_moreai_auth_profile_provisioning_and_owner_update`: creates an auth.users insert trigger in non-exposed `auth_private` to provision profiles, adds owner-scoped profile UPDATE RLS, and backfills existing Auth users without overwriting existing profile rows.
+- Added API mutation Origin and Fetch Metadata checks, plus baseline browser/API security response headers. Tests were added for cross-site mutation rejection.
+- Security Advisor currently reports `auth_leaked_password_protection` WARN. Enable leaked-password protection and tune Auth rate limits/CAPTCHA in Supabase Dashboard.
+- **External configuration gate:** connected Supabase DB tools cannot update hosted Auth provider settings. Project owner must switch Authentication → Sign In / Providers → Email → Confirm email OFF. Until this is saved, signup may return a user with a null session and immediate login remains blocked by the provider setting. No claim of successful real signup/login E2E is made.
+- CI for the latest auth commit is running: [API/worker/frontend baseline 43185083732](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43185083732) and [integration policy/Docker acceptance 43185083751](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43185083751). Record final conclusions after completion.
+- Detailed implementation and configuration steps: [AUTH-REGISTER-LOGIN-SECURITY-20261112.md](AUTH-REGISTER-LOGIN-SECURITY-20261112.md).
