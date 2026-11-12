@@ -53,8 +53,8 @@ begin
      or p_worker_id is null or length(p_worker_id) not between 8 and 128
      or p_bucket is null or length(p_bucket) not between 1 and 100
      or p_operation_key is null or p_operation_key !~ '^[0-9a-f]{64}$'
-     or jsonb_typeof(p_changes) <> 'array'
-     or jsonb_typeof(p_deletes) <> 'array'
+     or p_changes is null or jsonb_typeof(p_changes) is distinct from 'array'
+     or p_deletes is null or jsonb_typeof(p_deletes) is distinct from 'array'
      or jsonb_array_length(p_changes) > 200
      or jsonb_array_length(p_deletes) > 200
      or jsonb_array_length(p_changes) + jsonb_array_length(p_deletes) > 200 then
