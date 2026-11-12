@@ -897,3 +897,11 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Conversation session WebSocket delegates to the same run stream after validating conversation ownership and run association.
 - Commit: `66a374c6`. Capability map and [WebSocket replay report](./PHASE-04-WEBSOCKET-REPLAY-CURSOR-20261113.md) updated.
 - No tests, lint, typecheck, build, runtime API/browser calls, staging, migration apply or deployment performed. Phase 04 remains IN PROGRESS.
+
+
+## 2026-11-13 — Conversation session keyset pagination
+
+- Added bounded keyset pagination to `GET /api/v1/conversations/{conversation_id}/sessions`, retaining the existing `{items,count}` response and enforcing conversation/user ownership before listing.
+- Uses the shared opaque cursor and emits `X-Next-Cursor` only when a further page exists. Commit `e93eea09`.
+- Report: [Conversation Session Pagination](./PHASE-06-CONVERSATION-SESSION-PAGINATION-20261113.md). Customer screens still need Phase 09 incremental-loading integration.
+- No tests, lint, typecheck, build, runtime API/browser calls, staging, migration apply or deployment. Phase 06 remains IN PROGRESS.
