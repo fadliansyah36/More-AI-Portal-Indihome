@@ -75,7 +75,7 @@ as $$
     c.document_id,
     d.title,
     c.content,
-    1 - (c.embedding <=> p_query_embedding) as similarity,
+    1 - (c.embedding OPERATOR(extensions.<=>) p_query_embedding) as similarity,
     c.metadata
   from public.knowledge_chunks c
   join public.knowledge_documents d on d.id = c.document_id
@@ -85,7 +85,7 @@ as $$
     and (d.workspace_id is null or d.workspace_id = p_workspace_id)
     and d.status = 'ready'
     and (p_document_ids is null or c.document_id = any(p_document_ids))
-  order by c.embedding <=> p_query_embedding
+  order by c.embedding OPERATOR(extensions.<=>) p_query_embedding
   limit greatest(1, least(coalesce(p_match_count, 8), 20));
 $$;
 revoke all on function public.moreai_match_knowledge_chunks(uuid,uuid,extensions.vector,integer,uuid[]) from public, anon, authenticated;
