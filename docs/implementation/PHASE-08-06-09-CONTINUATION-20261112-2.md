@@ -80,3 +80,16 @@
 2. Finish Phase 06: audit every API/WebSocket route, standardize response schemas/pagination/idempotency, document role/tenant boundaries and generate compatibility evidence.
 3. Finish Phase 09: integrate security MFA/session, device control, Wi-Fi session, EduTech, creative generation and all remaining Customer actions without mock data.
 4. Only after those source phases are accepted, request explicit authorization for Phase 10 verification and Phase 11 release.
+
+
+## 2026-11-12 direct-main continuation #3 — provider circuit breaker
+
+- Added a provider/model scoped circuit breaker to `engine/llm/router.py` and wired it into both metered completion and streaming candidate selection.
+- Retryable provider availability/transport failures increment the breaker; after the configured threshold, the route is skipped during the cooldown. After cooldown, only one half-open probe is admitted. Successful provider response resets the breaker.
+- Non-retryable exceptions do not count as provider outages and release a half-open probe rather than silently failing over.
+- Configuration: `MOREAI_PROVIDER_BREAKER_THRESHOLD` (default 3) and `MOREAI_PROVIDER_BREAKER_COOLDOWN_SECONDS` (default 30 seconds).
+- Failover remains limited to retryable errors. Streaming does not switch providers after any text has been emitted, avoiding mixed provider output.
+- This is intentionally process-local protection, not distributed/durable circuit state. Multi-worker consistency and provider health telemetry still require a shared Supabase-backed breaker/health service and acceptance. No retry is attempted against a provider after a non-retryable response.
+- Commit: `d55aed3adb5fa0381832c68e6afdd671dab44273`.
+- No tests, lint, typecheck, build, API/browser probes, provider calls, DB writes, migration, staging or deployment were run, as instructed.
+
