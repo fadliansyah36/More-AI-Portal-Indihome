@@ -28,7 +28,11 @@ export const WifiManagementView: React.FC<WifiManagementViewProps> = ({ onNaviga
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(() => { if (active) void load(); });
+    return () => { active = false; };
+  }, [load]);
 
   const activeSession = sessions.find((session) => session.status === 'active') || null;
   const network = activeSession?.network || null;
