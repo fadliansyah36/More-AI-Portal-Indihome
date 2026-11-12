@@ -1,22 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, KeyRound, Smartphone, CheckCircle2, RotateCcw } from 'lucide-react';
-import { NavigationTab } from '@/types/moreai';
+import { ArrowLeft, KeyRound } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 
 interface CaptiveOtpViewProps {
   onBack: () => void;
-  onNavigateTab: (tab: NavigationTab) => void;
 }
 
-export const CaptiveOtpView: React.FC<CaptiveOtpViewProps> = ({
-  onBack,
-  onNavigateTab,
-}) => {
+export const CaptiveOtpView: React.FC<CaptiveOtpViewProps> = ({ onBack }) => {
   const { showToast } = useToast();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [phone] = useState('');
+  const phone = '';
 
   const handleDigitChange = (index: number, val: string) => {
     if (val.length > 1) val = val.slice(-1);
