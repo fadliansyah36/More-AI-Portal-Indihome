@@ -40,11 +40,10 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const result = await notificationApi.list(false, 100);
       setItems(result.items);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Notifikasi tidak dapat dimuat.');
     } finally {
@@ -89,7 +88,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
         <button onClick={onBack} className="p-1 rounded-lg text-slate-400 hover:text-slate-700"><ArrowLeft className="w-5 h-5" /></button>
         <h1 className="text-base font-bold text-slate-900 leading-tight">Notifikasi</h1>
         <div className="flex items-center gap-2">
-          <button onClick={() => void load()} disabled={loading} className="p-1 text-slate-400 hover:text-slate-700" aria-label="Muat ulang"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
+          <button onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="p-1 text-slate-400 hover:text-slate-700" aria-label="Muat ulang"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
           <button onClick={() => void markAllRead()} disabled={busy || items.every((item) => item.read_at)} className="text-xs text-red-600 font-semibold disabled:opacity-40"><CheckCheck className="w-4 h-4 inline mr-1" />Baca semua</button>
         </div>
       </div>
