@@ -20,6 +20,7 @@ class BrowserSupervisor:
             and parsed.hostname == "browser-supervisor"
             and parsed.port == 8080
             and not parsed.username and not parsed.password
+            and parsed.path in ("", "/")
             and not parsed.query and not parsed.fragment
         )
         secure_https = (
