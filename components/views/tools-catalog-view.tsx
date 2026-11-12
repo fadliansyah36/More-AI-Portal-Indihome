@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Search,
   Wrench,
@@ -9,9 +9,6 @@ import {
   Search as SearchIcon,
   Database,
   Brain,
-  ChevronRight,
-  Sparkles,
-  ArrowRight,
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { platformCatalogApi, type CustomerToolCatalogItem } from '@/lib/api/client';
@@ -21,10 +18,7 @@ interface ToolsCatalogViewProps {
   onSelectToolForPrompt?: (toolName: string) => void;
 }
 
-export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({
-  onNavigateTab,
-  onSelectToolForPrompt,
-}) => {
+export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCat, setFilterCat] = useState<'semua' | 'produktivitas' | 'kreatif'>('semua');
   const [toolsList, setToolsList] = useState<CustomerToolCatalogItem[]>([]);
@@ -55,11 +49,11 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({
 
 
 
-  const filtered = useMemo(() => toolsList.filter((tool) => {
+  const filtered = toolsList.filter((tool) => {
     const matchesSearch = (tool.key + ' ' + tool.description).toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = filterCat === 'semua' || categoryFor(tool) === filterCat;
     return matchesSearch && matchesCategory;
-  }), [toolsList, searchQuery, filterCat]);
+  });
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
