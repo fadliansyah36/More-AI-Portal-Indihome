@@ -176,9 +176,11 @@ class SupabaseKnowledgeTools:
             if not isinstance(row, dict):
                 continue
             safe_rows.append({
+                "chunk_id": row.get("chunk_id"),
                 "document_id": row.get("document_id"),
                 "title": row.get("title"),
                 "content": row.get("content"),
                 "similarity": row.get("similarity"),
+                "metadata": row.get("metadata") if isinstance(row.get("metadata"), dict) else {},
             })
         return json.dumps({"results": safe_rows, "count": len(safe_rows)}, ensure_ascii=False)
