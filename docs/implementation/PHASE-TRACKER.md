@@ -495,3 +495,12 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - The `str_replace_editor` tool schema now exposes optional non-negative `expected_version`, aligning the LLM-visible contract with the existing lease-fenced workspace CAS handler. Stale explicit versions are rejected by the handler; omission retains compatibility by resolving the current version.
 - No tests, lint, typecheck, build, browser/runtime, migration or deployment checks were run. This is a narrow contract fix, not SWE workspace or Phase 04 acceptance.
 - Detailed remaining phase gaps and next sequence: `PHASE-04-09-CONTINUATION-20261112.md`.
+
+
+## 2026-11-12 — durable approval pause propagation and live Supabase inventory
+- Commits: `b3c493cd4ba42717ca206ace7b817d8d656c60ce`, `2f79f1086a21596294a499daff80af3d15513f33`, `a88de22363147701f75ed83d1c298fe36f5d94a2`.
+- Added shared `engine.agents.errors.RunPausedForApproval`; worker client and durable OpenManus tool loop now share and preserve the pause control-flow signal. Approval pause no longer gets converted to a generic tool failure observation before reaching WorkerRuntime.
+- Read-only Supabase snapshot for canonical ref `uunfgimtokhucegqbpce`: 59 public tables, 59 RLS-enabled, 59 policies, 46 public routines, 42 applied migrations. Security advisor reports leaked-password protection disabled.
+- Migration ledger has two applied versions named `moreai_workspace_file_cas_versioning` (`20261111140238`, `20261111140255`); history needs reconciliation without destructive reset.
+- No tests, lint, typecheck, build, worker/provider runtime, browser QA, migration apply, data writes or deployment validation were performed. Approval lifecycle acceptance and all phase completion gates remain open.
+- Detailed report: `PHASE-04-09-CONTINUATION-20261112.md`.
