@@ -29,6 +29,7 @@ class SupabasePlanStore:
                 "status": "pending",
                 "input": {
                     "objective": step["objective"],
+                    "agent_key": step.get("agent_key", "manus"),
                     "dependencies": step["dependencies"],
                     "expected_output": step["expected_output"],
                     "tool_requirement": step["tool_requirement"],
