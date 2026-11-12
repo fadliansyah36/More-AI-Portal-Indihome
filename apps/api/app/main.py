@@ -71,8 +71,20 @@ async def correlation_id(request: Request, call_next):
     supplied = request.headers.get("x-correlation-id", "").strip()
     valid = supplied[:128] if supplied and all(c.isalnum() or c in "-_." for c in supplied) else str(uuid4())
     request.state.correlation_id = valid
+    # Bearer-token APIs do not rely on ambient browser cookies. Reject cross-site
+    # state-changing browser requests as defense in depth; CORS remains a separate gate.
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        origin = request.headers.get("origin")
+        fetch_site = request.headers.get("sec-fetch-site", "").lower()
+        if origin and origin.rstrip("/") not in _cors_origins:
+            return JSONResponse(status_code=403, content={"error": {"code": "untrusted_origin", "message": "Request origin is not allowed", "correlation_id": valid}})
+        if not origin and fetch_site == "cross-site":
+            return JSONResponse(status_code=403, content={"error": {"code": "cross_site_request_denied", "message": "Cross-site mutation is not allowed", "correlation_id": valid}})
+
     response = await call_next(request)
     response.headers["X-Correlation-ID"] = valid
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/") else response.headers.get("Cache-Control", "no-cache")
     return response
 
 
