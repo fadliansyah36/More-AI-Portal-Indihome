@@ -33,6 +33,7 @@ Connect the existing tenant-scoped Phase 08 RAG document model to authenticated 
 
 ## Source commits
 
+- RAG migration operator qualification: `3b388d4c9a07c82603d0c2adf52125db5f3778d1`
 - API router: `2f3e1cf61d60a3cff736ad2c32ca030b1616ff3d`
 - FastAPI router mount: `135ceae49f80406f9fae65f060a8b8eba85fadbe`
 - Typed API client: `5a10013d08484875317ee54c0aba6659841348c2`
@@ -43,13 +44,13 @@ Connect the existing tenant-scoped Phase 08 RAG document model to authenticated 
 ## Database and runtime prerequisites
 
 - The existing additive RAG migration is `supabase/migrations/20261112150000_moreai_knowledge_rag_vector.sql`.
-- This source increment did not apply the migration to the connected production Supabase database.
+- Applied the additive migration to the connected canonical Supabase project after qualifying the pgvector cosine operator with `OPERATOR(extensions.<=>)`. Supabase migration history records version `20261112060109` (`moreai_knowledge_rag_vector`). A schema inventory confirms both `public.knowledge_documents` and `public.knowledge_chunks` exist with RLS enabled and the expected columns. No document data was written.
 - Worker embedding configuration remains required: `MOREAI_EMBEDDING_BASE_URL`, `MOREAI_EMBEDDING_MODEL`, and a server-only API key resolved by `MOREAI_EMBEDDING_SECRET_ENV`.
 - The existing Agent Runtime remains the only ingestion/retrieval execution authority. This UI lists and archives documents; it does not bypass the worker to create embeddings.
 
 ## Verification boundary
 
-Per product-owner instruction, no tests, lint, typecheck, build, browser session, real API request, database migration, provider request, staging or deployment was run. Commits confirm source writes only. Runtime behavior, migration availability and provider readiness are unverified. This is an implementation increment, not Phase 08/09 acceptance.
+Per product-owner instruction, no tests, lint, typecheck, build, browser session, real API request, database migration, provider request, staging or deployment was run. Commits confirm source writes only. Runtime behavior and provider readiness are unverified. The migration's application and resulting table/RLS inventory were confirmed; no semantic retrieval or authenticated Customer API request was executed. This is an implementation increment, not Phase 08/09 acceptance.
 
 ## Remaining work
 
