@@ -629,13 +629,16 @@
       "897fe2f5aab51d05eec529676e51a7ab732177d8",
       "fa822a601b25346a434e7460cb80efad791817a8",
       "7af75ae9d47ea57c3edfe793c04ad26d1b9e5b02",
-      "60e701f514e46941c7e3e3e82110c8bea1bd1f27"
+      "60e701f514e46941c7e3e3e82110c8bea1bd1f27",
+      "2b3598a4c0f1e9c811044d670b14bb80d1aba285",
+      "068553a012b95412fd39a3e83d38b96684a74262"
     ],
     "implemented": [
       "Added authenticated FastAPI execution supervisor for isolated Python/Bash runs and a dedicated Dockerfile.",
       "Worker sandbox adapter now calls the supervisor over HTTPS or the exact private Compose hostname; worker no longer invokes Docker CLI or requires a Docker socket.",
       "Worker startup performs authenticated readiness preflight before claiming runs; dispatcher requires the supervisor for SWE; each invocation rechecks readiness.",
-      "Added run-scoped cancellation API and worker cancellation propagation."
+      "Added run-scoped cancellation API and worker cancellation propagation.",
+      "Supervisor readiness now verifies that the configured Docker daemon/socket proxy is reachable, not only that configuration and image digest are present."
     ],
     "gates": [
       "MOREAI_SANDBOX_ENABLED and MOREAI_SANDBOX_RELEASE_GATE_PASSED must both be true.",
