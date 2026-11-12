@@ -95,7 +95,7 @@ async def verify():
     try:
         await guard.validate_request("https://trusted.example/second")
     except BrowserPolicyError as exc:
-        if "rebinding" not in str(exc):
+        if str(exc) not in {"browser_private_or_reserved_address_denied", "browser_dns_rebinding_detected"}:
             raise
         return
     raise SystemExit("DNS rebinding was not rejected")
