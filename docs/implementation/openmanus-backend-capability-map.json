@@ -698,5 +698,28 @@
     ],
     "verification": "No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment or Supabase mutation performed.",
     "status": "PARTIAL — browser download denial implemented; Phase 04 remains in progress."
+  },
+  "workspace_execution_bridge": {
+    "branch": "main",
+    "report": "docs/implementation/PHASE-04-PERSISTENT-WORKSPACE-SNAPSHOT-BRIDGE-20261113.md",
+    "implemented": [
+      "Worker exports active workspace files through workspace_id and user identity from durable AgentRunContext; tool arguments cannot select another workspace.",
+      "Each workspace file is re-authorized through the owner/member-scoped workspace RPC and checked against immutable Storage size and SHA-256 metadata.",
+      "Bounded snapshot transport to isolated supervisor and runner: maximum 200 files and 2 MiB total.",
+      "Runner materializes snapshot only under disposable /tmp/workspace tmpfs, network disabled, no host mounts, and rejects symlinks.",
+      "Successful non-timeout Python/Bash execution returns file snapshot; changed/new files commit to immutable Storage versions through existing lease-fenced CAS RPCs.",
+      "Deleted files use existing soft-delete RPC; deleted paths cannot be silently recreated.",
+      "New-file creation is fenced against concurrent insert through expected version 0.",
+      "Workspace identity is forwarded to bash and python_execute adapters from trusted run context."
+    ],
+    "limits": [
+      "Write-back is per-file, not atomic across the full multi-file snapshot; a later conflict may occur after earlier file commits.",
+      "Failed or timed-out execution changes are discarded.",
+      "Snapshot maximum is 200 files / 2 MiB; workspace contract remains per-file limited to 2 MiB.",
+      "Sandbox remains fail-closed until both MOREAI_SANDBOX_ENABLED and MOREAI_SANDBOX_RELEASE_GATE_PASSED are true.",
+      "Runner/supervisor images, private worker network, restricted Docker socket proxy and runtime deployment remain unaccepted."
+    ],
+    "verification": "No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment, migration or live Supabase mutation performed.",
+    "status": "SOURCE INTEGRATION ADDED — runtime acceptance not performed; Phase 04 remains in progress."
   }
 }
