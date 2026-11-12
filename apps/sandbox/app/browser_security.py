@@ -18,6 +18,9 @@ class BrowserPolicy:
     max_download_bytes: int = 10_000_000
     allowed_schemes: tuple[str, ...] = ("https",)
 
+    def allows_host(self, host: str) -> bool:
+        return _domain_allowed(host, self.allowed_domains)
+
 
 def _domain_allowed(host: str, allowlist: tuple[str, ...]) -> bool:
     host = host.rstrip(".").lower()
