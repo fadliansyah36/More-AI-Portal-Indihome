@@ -662,3 +662,12 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Report: [PHASE-04-BROWSER-COMPOSE-VERIFIER-ALIGNMENT-20261112.md](./PHASE-04-BROWSER-COMPOSE-VERIFIER-ALIGNMENT-20261112.md).
 - Source-only alignment. No Docker, shell verifier, tests, lint, typecheck, build, staging, migration or deployment was run; browser runtime remains inactive and no network acceptance is claimed.
 - Phase 04/06/07/08/09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
+
+
+## 2026-11-12 — Phase 06 FastAPI error contract normalization
+- Added a shared error response envelope for FastAPI `HTTPException`, request validation failures, and unexpected server exceptions.
+- Stable error codes now cover common HTTP statuses; correlation IDs are included; authentication challenge headers are preserved; validation details omit submitted values.
+- Source commit: `0d0ef242dd17713b8fa649ba74e3c988b6379353`.
+- Report: [PHASE-06-FASTAPI-ERROR-CONTRACT-20261112.md](./PHASE-06-FASTAPI-ERROR-CONTRACT-20261112.md).
+- No tests, lint, typecheck, OpenAPI generation, build, API runtime, staging, migration or deployment run. Endpoint-local JSONResponse paths and full route authorization reconciliation remain open.
+- Phase 06 remains IN PROGRESS; Phase 08 and 09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
