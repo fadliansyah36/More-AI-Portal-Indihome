@@ -622,3 +622,12 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Added typed `workspaceApi.runs(workspaceId, limit)`.
 - Commits: `0cb9a0bc3c288315184dc8866fdcf91f619caa89` (FastAPI), `5d123d879f387f4177f26b1957b5fe35d9053e33` (typed client).
 - This is a read-side workspace/session integration seam; it does not claim parity with upstream server-side session creation, websocket, logs, thinking tracker, or Flow lifecycle. Phase 04 remains active.
+
+
+## Active implementation increment — Conversation session parity (2026-11-12)
+
+- Added `GET /api/v1/conversations/{conversation_id}/sessions?limit=50` to expose durable OpenManus run sessions attached to an owned Customer conversation.
+- Endpoint validates conversation ownership before querying; filters run rows by both conversation_id and authenticated user_id; returns lifecycle/checkpoint metadata only and excludes private input/output/tool state.
+- Added typed `conversationSessions(conversationId, limit)` to the existing Customer API client.
+- Commits: `0d92d72980c979589bcce4cf2e895b69b8fa902d` (FastAPI), `3628d366256f47e3c28a4e258d42de7c1731c5f1` (typed client).
+- This adds a conversation-scoped session read contract; it does not implement upstream in-memory server session creation, WebSocket semantics, Flow state transitions, or session mutation parity. Phase 04 remains active.
