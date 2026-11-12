@@ -93,7 +93,7 @@
       "module": "flow/tracking",
       "target": "engine/orchestration/tracking.py",
       "capability": "run progress/tracking",
-      "status": "PARTIAL — worker checkpoint and agent_run_events API/SSE exist; full tracker event parity pending"
+      "status": "PARTIAL — worker checkpoint and agent_run_events API/SSE exist; WebSocket initial replay now honors the caller sequence cursor and streams only subsequent ordered events; durable tracker event parity and runtime replay acceptance remain pending"
     },
     {
       "source": "vendor/openmanusweb/app/llm.py",
