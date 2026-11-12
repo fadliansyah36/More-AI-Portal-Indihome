@@ -2,7 +2,6 @@ import os
 
 from app.client import WorkerRpcClient
 from app.sandbox_tools import IsolatedSandboxToolAdapter
-from apps.sandbox.app.runner import DockerSandbox
 from app.llm_gateway import create_metered_gateway
 from app.memory_store import SupabaseConversationMemoryStore
 from app.knowledge_tools import SupabaseKnowledgeTools
@@ -18,7 +17,10 @@ from engine.orchestration.flows import FlowFactory
 from engine.prompts.toolcall import SYSTEM_PROMPT as TOOLCALL_SYSTEM_PROMPT
 
 
-def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
+def build_agent_registry(
+    client: WorkerRpcClient, http_client, *,
+    sandbox_tools: IsolatedSandboxToolAdapter | None = None,
+) -> AgentRegistry:
     gateway = create_metered_gateway(client, http_client)
     plan_store = SupabasePlanStore(client)
     memory_store = SupabaseConversationMemoryStore(client)
@@ -40,14 +42,14 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
             egress_enforced=egress_enforced, http=http_client,
             allow_private_http=allow_private_http,
         )
-    sandbox_tools = None
+
     sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
     sandbox_gate_passed = os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
-    if sandbox_enabled and sandbox_gate_passed:
-        image = os.getenv("MOREAI_SANDBOX_IMAGE", "")
-        if "@sha256:" not in image:
-            raise RuntimeError("sandbox_enabled_requires_digest_pinned_MOREAI_SANDBOX_IMAGE")
-        sandbox_tools = IsolatedSandboxToolAdapter(DockerSandbox(image=image))
+    if sandbox_enabled and sandbox_gate_passed and sandbox_tools is None:
+        raise RuntimeError("sandbox_activation_requires_authenticated_execution_supervisor")
+    if sandbox_tools is not None and not (sandbox_enabled and sandbox_gate_passed):
+        raise RuntimeError("sandbox_supervisor_must_remain_behind_independent_release_gates")
+
     manus = DurableOpenManusRuntime(
         gateway,
         memory_store=memory_store,
@@ -59,17 +61,16 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
         browser_tools=browser_tools,
         event_publisher=client.append_run_event,
         sandbox_tools=sandbox_tools,
-        # Browser and sandbox capabilities are independently high-risk. Any enabled high-risk tool\n        # must have the durable owner-approval gate, regardless of which adapter is enabled.\n        approval_gate=client.wait_for_tool_approval,
+        # Browser and sandbox capabilities are independently high-risk. Any enabled high-risk tool
+        # must have the durable owner-approval gate, regardless of which adapter is enabled.
+        approval_gate=client.wait_for_tool_approval,
         tool_timeout_seconds=float(os.getenv("MOREAI_TOOL_TIMEOUT_SECONDS", "120")),
     )
     flow_factory = FlowFactory()
     # OpenManus PlanningFlow is adapted to the durable MoreAI plan store and
     # resumable run/checkpoint contract; upstream process-global log/plan state
     # is intentionally not carried into the worker.
-    flow_factory.register(
-        "planning",
-        lambda **deps: PlanningAgentRuntime(**deps),
-    )
+    flow_factory.register("planning", lambda **deps: PlanningAgentRuntime(**deps))
     planning = flow_factory.create(
         "planning", gateway=gateway, store=plan_store, step_executor=manus,
         approval_gate=client.wait_for_tool_approval,
@@ -91,21 +92,14 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
         system_prompt=TOOLCALL_SYSTEM_PROMPT,
     )
     registry.register("toolcall", toolcall)
-    # The OpenManus SWE role is exposed only when the isolated sandbox adapter
-    # has passed both independent activation gates. It shares durable storage,
-    # provider metering and policy-enforced tools, but uses a code-focused prompt.
+    # SWE remains absent unless the separately deployed supervisor is ready and
+    # both explicit runtime/release gates are enabled by deployment configuration.
     if sandbox_tools is not None:
         swe = DurableOpenManusRuntime(
-            gateway,
-            memory_store=memory_store,
-            knowledge_tools=knowledge_tools,
-            plan_store=plan_store,
-            search_tools=search_tools,
-            storage_tools=storage_tools,
-            workspace_tools=workspace_tools,
-            browser_tools=browser_tools,
-            event_publisher=client.append_run_event,
-            sandbox_tools=sandbox_tools,
+            gateway, memory_store=memory_store, knowledge_tools=knowledge_tools,
+            plan_store=plan_store, search_tools=search_tools, storage_tools=storage_tools,
+            workspace_tools=workspace_tools, browser_tools=browser_tools,
+            event_publisher=client.append_run_event, sandbox_tools=sandbox_tools,
             approval_gate=client.wait_for_tool_approval,
             tool_timeout_seconds=float(os.getenv("MOREAI_TOOL_TIMEOUT_SECONDS", "120")),
             system_prompt=(
@@ -117,6 +111,4 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
             ),
         )
         registry.register("swe", swe)
-    # Bash/Python are registered only when both explicit sandbox activation and the
-    # independent release-gate flag are true; the dispatcher then requires a consumed approval.
     return registry
