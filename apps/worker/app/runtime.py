@@ -75,10 +75,34 @@ class WorkerRuntime:
             lease_wait_task = asyncio.create_task(
                 lease_lost.wait(), name=f"moreai-run-lease-lost-watch:{run_id}",
             )
+            run_timeout_seconds = int(
+                getattr(self.rpc.settings, "run_timeout_seconds", 1800)
+            )
+            if not 30 <= run_timeout_seconds <= 7200:
+                raise RuntimeError("worker_run_timeout_configuration_invalid")
             done, _ = await asyncio.wait(
                 {dispatch_task, cancel_wait_task, lease_wait_task},
+                timeout=run_timeout_seconds,
                 return_when=asyncio.FIRST_COMPLETED,
             )
+            if not done and not lease_lost.is_set() and not cancelled.is_set():
+                # Timeouts are durable failures, not process crashes: stop the
+                # current attempt, append an idempotent event and let the database
+                # retry policy decide whether another attempt may be claimed.
+                dispatch_task.cancel()
+                await asyncio.gather(dispatch_task, return_exceptions=True)
+                if lease_lost.is_set():
+                    return True
+                await self.rpc.append_run_event(
+                    run_id, "worker:run.timed_out", "run.timed_out",
+                    {"timeout_seconds": run_timeout_seconds},
+                )
+                await self.rpc.finish(
+                    run_id, "failed",
+                    error={"code": "agent_run_timeout"},
+                    retry_delay_seconds=30,
+                )
+                return True
             if lease_wait_task in done and lease_lost.is_set():
                 # A stale worker must never finish or publish against a lease it no
                 # longer owns. Stop local execution and let the current lease owner
