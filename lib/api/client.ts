@@ -12,7 +12,7 @@ async function moreAiApiAt<T>(baseUrl: string, path: string, init: RequestInit =
   }
   const supabase = createSupabaseBrowserClient();
   const headers = new Headers(init.headers);
-  if (init.body && !(init.body instanceof Blob) && !headers.has('Content-Type')) {
+  if (init.body && !(init.body instanceof Blob) && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
