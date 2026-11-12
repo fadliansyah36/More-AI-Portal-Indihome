@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import math
@@ -150,6 +151,107 @@ class SupabaseKnowledgeTools:
             "document_id": document["id"], "title": title.strip(),
             "chunks": len(chunks), "reused": False,
         }, ensure_ascii=False)
+
+
+    async def process_uploaded_document(self, document: dict[str, Any]) -> None:
+        """Lease-backed PDF/image extraction, OCR, page-aware chunking and vector persistence."""
+        from io import BytesIO
+        from PIL import Image
+        import pytesseract
+        from pypdf import PdfReader
+
+        document_id = str(document.get("id") or "")
+        owner_id = str(document.get("owner_user_id") or "")
+        metadata = document.get("metadata") if isinstance(document.get("metadata"), dict) else {}
+        bucket = metadata.get("storage_bucket")
+        storage_path = metadata.get("storage_path")
+        mime = metadata.get("mime_type")
+        if not document_id or not owner_id or not isinstance(storage_path, str):
+            raise ValueError("knowledge_ingestion_metadata_invalid")
+        raw = await self.client.download_storage_object(str(bucket), storage_path)
+        pages: list[tuple[int, str]] = []
+        page_count = 0
+        ocr_status = "not_applicable"
+        if mime == "application/pdf":
+            reader = PdfReader(BytesIO(raw), strict=True)
+            if getattr(reader, "is_encrypted", False):
+                raise ValueError("knowledge_pdf_encrypted")
+            if len(reader.pages) > 500:
+                raise ValueError("knowledge_pdf_page_limit_exceeded")
+            page_count = len(reader.pages)
+            for index, page in enumerate(reader.pages, start=1):
+                text = page.extract_text() or ""
+                if text.strip():
+                    pages.append((index, text))
+        elif mime in {"image/jpeg", "image/png", "image/webp"}:
+            image = Image.open(BytesIO(raw))
+            image.verify()
+            image = Image.open(BytesIO(raw)).convert("RGB")
+            if image.width * image.height > 40_000_000:
+                raise ValueError("knowledge_image_pixel_limit_exceeded")
+            text = await asyncio.to_thread(pytesseract.image_to_string, image)
+            ocr_status = "completed" if text.strip() else "no_text_detected"
+            page_count = 1
+            if text.strip():
+                pages.append((1, text))
+        else:
+            raise ValueError("knowledge_file_type_unsupported")
+
+        if not pages:
+            raise ValueError("knowledge_extraction_empty_or_ocr_unavailable")
+
+        indexed_chunks: list[tuple[str, dict[str, Any]]] = []
+        for page_number, page_text in pages:
+            normalized = re.sub(r"\s+", " ", page_text).strip()
+            start = 0
+            while start < len(normalized):
+                end = min(len(normalized), start + 2400)
+                if end < len(normalized):
+                    boundary = normalized.rfind(" ", start + 1200, end)
+                    if boundary > start:
+                        end = boundary
+                chunk = normalized[start:end].strip()
+                if chunk:
+                    indexed_chunks.append((chunk, {
+                        "source": "file_ingestion",
+                        "source_page": page_number,
+                        "char_start": start,
+                        "char_end": end,
+                        "ocr": mime.startswith("image/"),
+                    }))
+                if end >= len(normalized):
+                    break
+                start = max(start + 1, end - 250)
+        if not indexed_chunks or len(indexed_chunks) > 500:
+            raise ValueError("knowledge_document_chunk_limit_exceeded")
+
+        vectors: list[list[float]] = []
+        chunks = [item[0] for item in indexed_chunks]
+        for offset in range(0, len(chunks), 64):
+            vectors.extend(await self._embed(chunks[offset:offset + 64]))
+
+        # Idempotent recovery: a reclaimed job rebuilds the chunk set from source bytes.
+        await self.client.delete_knowledge_chunks(document_id, owner_id)
+        for index, ((chunk, source_metadata), vector) in enumerate(zip(indexed_chunks, vectors, strict=True)):
+            await self.client.insert("knowledge_chunks", {
+                "document_id": document_id,
+                "owner_user_id": owner_id,
+                "workspace_id": document.get("workspace_id"),
+                "chunk_index": index,
+                "content": chunk,
+                "embedding": "[" + ",".join(format(value, ".9g") for value in vector) + "]",
+                "token_count": None,
+                "metadata": source_metadata,
+            })
+        await self.client.update(
+            "knowledge_documents",
+            {"id": f"eq.{document_id}", "owner_user_id": f"eq.{owner_id}", "status": "eq.processing"},
+            {"metadata": {
+                **metadata, "ingestion_state": "indexed",
+                "chunk_count": len(indexed_chunks), "page_count": page_count,
+                "ocr_status": ocr_status,
+            }, "page_count": page_count},
+        )
 
     async def knowledge_search(
         self, arguments: dict[str, Any], *, run_id: str, user_id: str,
