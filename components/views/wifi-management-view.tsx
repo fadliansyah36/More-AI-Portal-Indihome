@@ -17,10 +17,9 @@ export const WifiManagementView: React.FC<WifiManagementViewProps> = ({ onNaviga
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
     try {
       setSessions(await customerApi.networkSessions(50));
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Status jaringan tidak dapat dimuat.');
     } finally {
