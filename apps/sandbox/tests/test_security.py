@@ -163,3 +163,57 @@ def test_browser_policy_host_allowlist_blocks_redirect_hosts_and_suffix_lookalik
     assert policy.allows_host("sub.example.com")
     assert not policy.allows_host("not-allowlisted.invalid")
     assert not policy.allows_host("example.com.attacker.invalid")
+
+
+def test_connect_proxy_rejects_socket_peer_that_differs_from_dns_pin(monkeypatch):
+    import asyncio
+    import base64
+    import socket
+    from app.browser_proxy import PinnedConnectProxy
+    from app.browser_security import BrowserPolicy, BrowserRequestGuard
+
+    token = "p" * 40
+    async def resolver(host, port, socktype):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", port))]
+
+    class FakeWriter:
+        def __init__(self, peer):
+            self.peer = peer
+            self.output = bytearray()
+            self.closed = False
+        def get_extra_info(self, name):
+            return self.peer if name == "peername" else None
+        def write(self, data):
+            self.output.extend(data)
+        async def drain(self):
+            return None
+        def close(self):
+            self.closed = True
+        async def wait_closed(self):
+            return None
+        def is_closing(self):
+            return self.closed
+
+    async def run():
+        upstream_reader = asyncio.StreamReader()
+        candidate = FakeWriter(("127.0.0.1", 443))
+        async def fake_open_connection(*args, **kwargs):
+            return upstream_reader, candidate
+        monkeypatch.setattr(asyncio, "open_connection", fake_open_connection)
+
+        authorization = base64.b64encode(("moreai:" + token).encode()).decode()
+        client_reader = asyncio.StreamReader()
+        client_reader.feed_data(
+            f"CONNECT example.com:443 HTTP/1.1\\r\\nProxy-Authorization: Basic {authorization}\\r\\n\\r\\n".encode()
+        )
+        client_reader.feed_eof()
+        client_writer = FakeWriter(("172.18.0.2", 3128))
+        proxy = PinnedConnectProxy(
+            BrowserRequestGuard(BrowserPolicy(("example.com",)), resolver=resolver),
+            token=token,
+        )
+        await proxy.handle(client_reader, client_writer)
+        assert candidate.closed is True
+        assert b"502 Bad Gateway" in client_writer.output
+
+    asyncio.run(run())
