@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Clock, Star, Play, CheckCircle2, BookOpen } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle2, BookOpen } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 import { learningApi } from '@/lib/api/client';
@@ -61,7 +61,7 @@ export const EdutechLessonView: React.FC<EdutechLessonViewProps> = ({
         </button>
         <div className="text-center">
           <h1 className="text-base font-bold text-slate-900 leading-tight">Mengenal AI untuk Pemula</h1>
-          <span className="text-[10px] text-slate-500 font-medium">Modul EduTech Partner Network</span>
+          <span className="text-[10px] text-slate-500 font-medium">Materi pengantar MoreAI</span>
         </div>
         <div className="w-5" />
       </div>
@@ -73,11 +73,6 @@ export const EdutechLessonView: React.FC<EdutechLessonViewProps> = ({
             <Clock className="w-3.5 h-3.5" />
             <span>5 menit</span>
           </span>
-          <span>·</span>
-          <span className="flex items-center gap-1 text-amber-300">
-            <Star className="w-3.5 h-3.5 fill-current" />
-            <span>4.8 (1.2k ulasan)</span>
-          </span>
         </div>
 
         <h2 className="text-lg font-black tracking-tight leading-snug">
@@ -87,13 +82,9 @@ export const EdutechLessonView: React.FC<EdutechLessonViewProps> = ({
           Pelajari dasar-dasar AI, manfaatnya dalam kehidupan sehari-hari, dan cara menggunakannya dengan mudah.
         </p>
 
-        <button
-          onClick={() => showToast('Konten video belum tersedia dari layanan EduTech.', 'info')}
-          className="w-full py-2.5 rounded-xl bg-white text-red-600 font-bold text-xs hover:bg-red-50 transition shadow-xs flex items-center justify-center gap-1.5"
-        >
-          <Play className="w-3.5 h-3.5 fill-current" />
-          <span>Mulai Belajar Sekarang</span>
-        </button>
+        <p className="rounded-xl border border-white/25 bg-white/10 px-3 py-2 text-[11px] leading-relaxed text-red-50">
+          Materi video belum tersedia. Anda tetap dapat membaca silabus dan menyimpan progress penyelesaian materi.
+        </p>
       </div>
 
       {/* Daftar Materi (Sheet 5 Screen 11) */}
