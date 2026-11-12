@@ -212,7 +212,7 @@
       "module": "tools/editor",
       "target": "engine/tools/editor.py",
       "capability": "workspace file editing",
-      "status": "BLOCKED — catalogued, but safe per-run persistent workspace editor, path isolation and artifact reconciliation are not implemented"
+      "status": "PARTIAL — persistent workspace editor uses version-fenced compare-and-swap, path validation and workspace ownership; now classified high-risk and requires explicit run-scoped approval mapped to persisted `file_edit`; private workspace bucket and runtime approval gate remain prerequisites"
     },
     {
       "source": "vendor/openmanusweb/app/tool/terminate.py",
@@ -292,7 +292,7 @@
     "classification": "upstream templates/static assets archived only",
     "active_product_use": false
   },
-  "parity_status": "PARTIAL — worker approval pause/resume and atomic consumption are wired in code; migration applied and table/RLS verified, but runtime verification remains outstanding. Docker Bash/Python runner is approval-gated and no longer host-bind-mounts source, but activation remains disabled until independent release gate. Deployed sandbox supervisor, browser network interception/SSRF/DNS rebinding/redirect/download controls, isolated file workspace and several upstream agent/flow/tool/server capabilities remain unintegrated. Frontend now has Splash/onboarding, role-specific direct routes and configurable Customer/Partner API origins; full Phase 09 domain integration is not complete.",
+  "parity_status": "PARTIAL — workspace editor now uses persistent CAS and run-scoped approval; workspace_read_file is owner/member-scoped, private-bucket-only, bounded to 2 MB, UTF-8-only and SHA-256/version verified. Full upstream Flow/server/session/SWE parity, deployed sandbox supervisor, browser socket-level egress enforcement, provider capability parity and complete Customer screen integration remain open.",
   "implemented_target_files": [
     "engine/agents/types.py",
     "engine/agents/runtime.py",
@@ -327,7 +327,10 @@
     "supabase/migrations/20261111040000_moreai_llm_quota_settlement_reconciliation.sql",
     "apps/api/app/routers/tool_approvals.py",
     "supabase/migrations/20261111050000_moreai_tool_approval_lifecycle.sql",
-    "lib/api/client.ts"
+    "lib/api/client.ts",
+    "engine/tools/workspace.py",
+    "engine/agents/durable_tool_runtime.py",
+    "engine/tests/test_workspace_tool.py"
   ],
   "runtime_safety_gates": {
     "agent_execution_default": "disabled",
@@ -339,8 +342,9 @@
     "bash": "blocked_until_sandbox",
     "python_execute": "blocked_until_sandbox",
     "browser_use": "blocked_until_ssrf_and_browser_isolation",
-    "str_replace_editor": "blocked_until_workspace_isolation",
-    "provider_calls": "blocked_until_provider_route_secret_entitlement_quota_wallet_and_credit_conversion_are_configured"
+    "str_replace_editor": "approval_gated_file_edit; workspace CAS/path validation; requires private bucket and run-scoped file_edit approval; not enabled by default",
+    "provider_calls": "blocked_until_provider_route_secret_entitlement_quota_wallet_and_credit_conversion_are_configured",
+    "workspace_read_file": "default_deny; workspace membership RPC; private bucket; 2 MB maximum; UTF-8 only; SHA-256 + version integrity check"
   },
   "approval_lifecycle": {
     "persistence": "Applied to canonical Supabase project uunfgimtokhucegqbpce; agent_tool_approvals exists with RLS enabled; migration history version 20261111061443; source: supabase/migrations/20261111050000_moreai_tool_approval_lifecycle.sql",
@@ -470,6 +474,45 @@
     "limitations": [
       "No provider call, usage row, credit settlement, fallback, retry, test or runtime verification was performed.",
       "No pricing, accounting schema or credit policy was changed."
+    ]
+  },
+  "moreai_extensions": [
+    {
+      "key": "workspace_read_file",
+      "target": "engine/tools/workspace.py",
+      "capability": "read existing owner/member-scoped workspace files for SWE/Manus",
+      "status": "IMPLEMENTED — private Storage + workspace membership RPC + 2 MB UTF-8 bound + persisted version/SHA-256 integrity verification; disabled by default",
+      "source_commit": "MoreAI extension; not a separate upstream OpenManus tool"
+    }
+  ],
+  "integration_increment_20261112_workspace_reader": {
+    "branch": "main",
+    "commits": [
+      "bf19d8a9d376f6cc949bdb9b60a235014a89daa0",
+      "d35fb118918422d1d3303a85db238bb96c1c2ba3",
+      "c3e7e068852d3f53d96fac5ab1e9e8401eef4493",
+      "4269ebbd52ca523f85cfe3872eb9f20ce7ebb101",
+      "472a7e87bc10c3ec0e92961b48832fd1c4bea03d",
+      "5a73cfa3e25686281c8927eaa393ccdf209c64b4",
+      "11b1e20bd5be7c63c952385ae1bf12e571df60a7",
+      "1439f40eed421b019717ad491b33858b75d980bf",
+      "d5983ea19ac9ae6432ceaee51b40c3839a0e6c52"
+    ],
+    "implemented": [
+      "Workspace read is available as a catalogued OpenManus runtime tool; membership/ownership is checked through the server-side workspace RPC.",
+      "Private Storage, maximum 2 MB, UTF-8-only decode and byte count/SHA-256/version verification are required before the model receives content.",
+      "str_replace_editor is high-risk and now pauses for explicit approval; WorkerRpcClient maps the adapter to persisted file_edit approval key while retaining the exact argument hash.",
+      "Tool inventory, planning store, workspace reader, worker approval mapping and API error envelope tests were updated."
+    ],
+    "verification": {
+      "engine_contract_tests": "PASS — https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43167699004",
+      "phase04_security_tests": "PASS — https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43167699075",
+      "frontend_baseline": "PASS — https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43168282282 (lint, build, server start, responsive browser smoke and screenshot upload)"
+    },
+    "limitations": [
+      "No deployed worker runtime or production sandbox/browser supervisor was activated.",
+      "No live provider call or authenticated Customer-to-provider E2E was performed.",
+      "No full OpenManus backend parity claim is made."
     ]
   }
 }
