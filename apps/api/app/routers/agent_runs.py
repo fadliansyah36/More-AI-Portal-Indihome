@@ -255,13 +255,13 @@ async def get_events(
 
 @router.websocket("/{run_id}/ws")
 async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
-    """Authenticated WebSocket parity over the durable event log; events remain replayable."""
+    """Authenticated replayable WebSocket using the OpenManus status/log/thinking envelope."""
     try:
         authorization = websocket.headers.get("authorization")
         user = await current_user(websocket, authorization)
         principal = await require_customer_context(websocket, user)
         repo = repository(websocket)
-        await repo.owned_record("agent_runs", run_id, principal["id"])
+        run = await repo.owned_record("agent_runs", run_id, principal["id"])
     except HTTPException as exc:
         await websocket.close(code=4401 if exc.status_code == 401 else 4403)
         return
@@ -277,6 +277,56 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
             await websocket.close(code=4400)
             return
         await websocket.accept()
+
+        initial_rows = await repo.select("agent_run_events", {
+            "run_id": f"eq.{run_id}",
+            "select": "id,event_type,sequence,payload,created_at",
+            "order": "sequence.desc",
+            "limit": "200",
+        })
+        initial_rows = list(reversed(initial_rows))
+        initial_activities = [_safe_run_activity(row) for row in initial_rows]
+        initial_thinking = [
+            _thinking_message(item) for item in initial_activities
+            if item["event_type"] in {
+                "run.started", "run.progress", "tool.started", "tool.completed",
+                "tool.cancelled", "run.completed", "run.failed", "run.cancelled",
+                "run.timed_out", "worker.checkpoint",
+            }
+        ]
+        initial_logs = [
+            {
+                **_thinking_message(item),
+                "level": "ERROR" if item["event_type"] in {"run.failed", "run.timed_out"} else "INFO",
+                "event_type": item["event_type"],
+            }
+            for item in initial_activities
+        ]
+        cursor = max(cursor, max((int(item["sequence"]) for item in initial_activities if item.get("sequence") is not None), default=0))
+        steps = await repo.select("agent_run_steps", {
+            "run_id": f"eq.{run_id}",
+            "select": "sequence,step_key,status,started_at,finished_at",
+            "order": "sequence.asc", "limit": "200",
+        })
+        completed = sum(1 for step in steps if step.get("status") == "succeeded")
+        total = len(steps)
+        progress = {
+            "current_step": next((step.get("step_key") for step in reversed(steps) if step.get("status") == "running"), None),
+            "total_steps": total,
+            "completed_steps": completed,
+            "percentage": int(completed * 100 / total) if total else (100 if run.get("status") == "succeeded" else 0),
+        }
+        await websocket.send_json({
+            "status": run.get("status"),
+            "log": initial_logs,
+            "thinking_steps": initial_thinking,
+            "logs": initial_logs,
+            "system_logs": initial_logs,
+            "progress": progress,
+            "sequence": cursor,
+            **({"result": run.get("output")} if run.get("status") in {"succeeded", "failed", "cancelled", "expired"} else {}),
+        })
+
         idle_rounds = 0
         while idle_rounds < 300:
             rows = await repo.select("agent_run_events", {
@@ -286,25 +336,52 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
             })
             if rows:
                 idle_rounds = 0
-                for row in rows:
-                    activity = _safe_run_activity(row)
-                    cursor = max(cursor, int(activity["sequence"]))
-                    await websocket.send_json(activity)
+                activities = [_safe_run_activity(row) for row in rows]
+                cursor = max(cursor, max(int(item["sequence"]) for item in activities))
+                thinking = [
+                    _thinking_message(item) for item in activities
+                    if item["event_type"] in {
+                        "run.started", "run.progress", "tool.started", "tool.completed",
+                        "tool.cancelled", "run.completed", "run.failed", "run.cancelled",
+                        "run.timed_out", "worker.checkpoint",
+                    }
+                ]
+                logs = [
+                    {
+                        **_thinking_message(item),
+                        "level": "ERROR" if item["event_type"] in {"run.failed", "run.timed_out"} else "INFO",
+                        "event_type": item["event_type"],
+                    }
+                    for item in activities
+                ]
+                run = await repo.owned_record("agent_runs", run_id, principal["id"])
+                await websocket.send_json({
+                    "status": run.get("status"),
+                    "log": logs,
+                    "thinking_steps": thinking,
+                    "logs": logs,
+                    "system_logs": logs,
+                    "sequence": cursor,
+                })
             else:
                 idle_rounds += 1
                 run = await repo.owned_record("agent_runs", run_id, principal["id"])
                 if run.get("status") in {"succeeded", "failed", "cancelled", "expired"}:
                     await websocket.send_json({
-                        "event_type": "run.state",
-                        "run_id": str(run_id),
                         "status": run.get("status"),
+                        "result": run.get("output"),
+                        "log": [], "thinking_steps": [], "logs": [], "system_logs": [],
                         "sequence": cursor,
                     })
                     await websocket.close(code=1000)
                     return
-                await websocket.send_json({"event_type": "stream.keepalive", "sequence": cursor})
+                await websocket.send_json({
+                    "status": run.get("status"),
+                    "keepalive": True,
+                    "sequence": cursor,
+                })
             await asyncio.sleep(1)
-        await websocket.send_json({"event_type": "stream.timeout", "sequence": cursor})
+        await websocket.send_json({"status": run.get("status"), "stream_timeout": True, "sequence": cursor})
         await websocket.close(code=1000)
     except WebSocketDisconnect:
         return
