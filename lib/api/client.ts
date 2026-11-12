@@ -416,7 +416,7 @@ export const customerApi = {
       headers: { 'Idempotency-Key': idempotencyKey },
       body: JSON.stringify({ content, agent_key: agentKey }),
     }),
-  agentRuns: () => moreAiCustomerApi<CustomerAgentRun[]>('/api/v1/agent-runs'),
+  agentRuns: () => moreAiCustomerApi<CustomerAgentRun[]>('/api/v1/customer/agent-runs'),
   conversationSessions: (conversationId: string, limit = 50) => moreAiCustomerApi<{ items: Array<{
     id: string; conversation_id: string; status: string; attempt: number;
     max_attempts: number; created_at: string; started_at: string | null;
