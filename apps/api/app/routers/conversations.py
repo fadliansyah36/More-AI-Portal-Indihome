@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Query, WebSocket
 from pydantic import BaseModel, Field
 
-from app.authorization import customer_principal
+from app.authorization import customer_principal, require_customer_context
+from app.dependencies import current_user
 from app.repositories.supabase import SupabaseRepository
 
 router = APIRouter(prefix="/api/v1/conversations", tags=["conversations"])
@@ -19,6 +21,11 @@ class ConversationCreate(BaseModel):
 class MessageCreate(BaseModel):
     content: str = Field(min_length=1, max_length=100_000)
     agent_key: Literal["manus", "planning"] = "manus"
+
+
+class ConversationUpdate(BaseModel):
+    title: str | None = Field(default=None, max_length=180)
+    status: Literal["active", "archived"] | None = None
 
 
 def repository(request: Request) -> SupabaseRepository:
@@ -69,6 +76,124 @@ async def send_message(
         "p_agent_key": body.agent_key,
         "p_idempotency_key": idempotency_key,
     })
+
+
+@router.patch("/{conversation_id}")
+async def update_conversation(
+    conversation_id: UUID,
+    body: ConversationUpdate,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    await repo.owned_record("conversations", conversation_id, user["id"])
+    changes: dict[str, Any] = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if body.title is not None:
+        changes["title"] = body.title.strip() or None
+    if body.status is not None:
+        changes["status"] = body.status
+    if len(changes) == 1:
+        raise HTTPException(422, "conversation_update_requires_title_or_status")
+    rows = await repo.update("conversations", {"id": f"eq.{conversation_id}", "user_id": f"eq.{user['id']}"}, changes)
+    if not rows:
+        raise HTTPException(404, "conversation_not_found")
+    return rows[0]
+
+
+@router.delete("/{conversation_id}")
+async def archive_conversation(
+    conversation_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    await repo.owned_record("conversations", conversation_id, user["id"])
+    rows = await repo.update("conversations", {
+        "id": f"eq.{conversation_id}", "user_id": f"eq.{user['id']}",
+    }, {"status": "archived", "updated_at": datetime.now(timezone.utc).isoformat()})
+    if not rows:
+        raise HTTPException(404, "conversation_not_found")
+    return {"id": str(conversation_id), "status": "archived"}
+
+
+@router.get("/{conversation_id}/sessions/{run_id}")
+async def get_conversation_session(
+    conversation_id: UUID,
+    run_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    await repo.owned_record("conversations", conversation_id, user["id"])
+    run = await repo.owned_record("agent_runs", run_id, user["id"])
+    if str(run.get("conversation_id")) != str(conversation_id):
+        raise HTTPException(404, "session_not_found")
+    return {
+        "id": run.get("id"),
+        "conversation_id": run.get("conversation_id"),
+        "status": run.get("status"),
+        "attempt": run.get("attempt"),
+        "max_attempts": run.get("max_attempts"),
+        "created_at": run.get("created_at"),
+        "started_at": run.get("started_at"),
+        "finished_at": run.get("finished_at"),
+        "last_checkpoint_key": run.get("last_checkpoint_key"),
+    }
+
+
+@router.get("/{conversation_id}/sessions/{run_id}/events")
+async def get_conversation_session_events(
+    conversation_id: UUID,
+    run_id: UUID,
+    request: Request,
+    after: int = Query(default=0, ge=0),
+    limit: int = Query(default=200, ge=1, le=500),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    await repo.owned_record("conversations", conversation_id, user["id"])
+    run = await repo.owned_record("agent_runs", run_id, user["id"])
+    if str(run.get("conversation_id")) != str(conversation_id):
+        raise HTTPException(404, "session_not_found")
+    rows = await repo.select("agent_run_events", {
+        "run_id": f"eq.{run_id}", "sequence": f"gt.{after}",
+        "select": "id,event_type,sequence,payload,created_at",
+        "order": "sequence.asc", "limit": str(limit),
+    })
+    safe_items = []
+    for row in rows:
+        payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+        safe_payload = {
+            key: value for key, value in payload.items()
+            if key in {"tool", "round", "index", "status", "phase", "progress", "checkpoint_key"}
+            and isinstance(value, (str, int, float, bool))
+            and (not isinstance(value, str) or len(value) <= 100)
+        }
+        safe_items.append({
+            "id": row.get("id"), "event_type": row.get("event_type"),
+            "sequence": row.get("sequence"), "created_at": row.get("created_at"),
+            "payload": safe_payload,
+        })
+    return {"items": safe_items, "count": len(safe_items), "next_after": rows[-1]["sequence"] if rows else after}
+
+
+@router.websocket("/{conversation_id}/sessions/{run_id}/ws")
+async def stream_conversation_session(websocket: WebSocket, conversation_id: UUID, run_id: UUID):
+    try:
+        user = await current_user(websocket, websocket.headers.get("authorization"))
+        principal = await require_customer_context(websocket, user)
+        repo = repository(websocket)
+        await repo.owned_record("conversations", conversation_id, principal["id"])
+        run = await repo.owned_record("agent_runs", run_id, principal["id"])
+        if str(run.get("conversation_id")) != str(conversation_id):
+            await websocket.close(code=4404)
+            return
+        from app.routers.agent_runs import stream_run_websocket
+        await stream_run_websocket(websocket, run_id)
+    except HTTPException as exc:
+        await websocket.close(code=4401 if exc.status_code == 401 else 4403)
+    except Exception:
+        await websocket.close(code=1011)
 
 
 @router.get("/{conversation_id}/sessions")
