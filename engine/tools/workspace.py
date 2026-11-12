@@ -168,3 +168,74 @@ class SupabaseWorkspaceTool:
                 await self.client.workspace_abort_write(
                     run_id, user_id, workspace_id, path, token,
                 )
+
+    async def read_file(
+        self,
+        arguments: dict[str, Any],
+        *,
+        run_id: str,
+        user_id: str,
+        workspace_id: str | None = None,
+    ) -> str:
+        """Read an owner/member-scoped UTF-8 workspace file with integrity verification."""
+        if not workspace_id:
+            raise RuntimeError("persistent_workspace_requires_workspace_id")
+        path = self._safe_path(arguments.get("path"))
+        bucket = await self.client.client.get(
+            f"{self.client.settings.supabase_url.rstrip('/')}/storage/v1/bucket/{quote(self.bucket, safe='')}",
+            headers=self._headers(),
+            timeout=8.0,
+        )
+        if (
+            bucket.status_code >= 400
+            or not isinstance(bucket.json(), dict)
+            or bucket.json().get("public") is not False
+        ):
+            raise RuntimeError("workspace_bucket_must_exist_and_be_private")
+
+        metadata = await self.client.workspace_get_file(user_id, workspace_id, path)
+        storage_path = metadata.get("storage_path")
+        expected_sha = metadata.get("sha256")
+        expected_size = metadata.get("size_bytes")
+        version = metadata.get("version")
+        if not isinstance(storage_path, str) or not storage_path:
+            raise ValueError("workspace_file_not_found")
+        if (
+            not isinstance(expected_sha, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", expected_sha)
+            or isinstance(expected_size, bool)
+            or not isinstance(expected_size, int)
+            or expected_size < 0
+            or expected_size > 2_000_000
+            or isinstance(version, bool)
+            or not isinstance(version, int)
+            or version < 1
+        ):
+            raise RuntimeError("workspace_file_metadata_invalid")
+
+        response = await self.client.client.get(
+            self._object_url(storage_path),
+            headers=self._headers(),
+            timeout=20.0,
+        )
+        response.raise_for_status()
+        raw = response.content
+        if len(raw) != expected_size or hashlib.sha256(raw).hexdigest() != expected_sha:
+            raise RuntimeError("workspace_file_integrity_mismatch")
+        try:
+            content = raw.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValueError("workspace_read_only_supports_utf8_text") from exc
+        return json.dumps(
+            {
+                "workspace_id": workspace_id,
+                "path": path,
+                "version": version,
+                "content": content,
+                "bytes": len(raw),
+                "sha256": expected_sha,
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+
