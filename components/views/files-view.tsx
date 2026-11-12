@@ -97,13 +97,15 @@ export const FilesView: React.FC = () => {
     let active = true;
     workspaceApi.list()
       .then(async ({ items }) => {
-        const groups = await Promise.all(items.map(async (workspace) => {
+        const groups = await Promise.allSettled(items.map(async (workspace) => {
           const result = await workspaceApi.files(workspace.id);
           return result.items.map((file) => ({ ...file, workspaceId: workspace.id, workspaceName: workspace.name }));
         }));
         if (active) {
-          setWorkspaceFiles(groups.flat());
-          setWorkspaceError(null);
+          setWorkspaceFiles(groups.flatMap((group) => group.status === 'fulfilled' ? group.value : []));
+          setWorkspaceError(groups.some((group) => group.status === 'rejected')
+            ? 'Sebagian file workspace gagal dimuat. File dari workspace lain yang berhasil tetap ditampilkan.'
+            : null);
         }
       })
       .catch((cause) => {
