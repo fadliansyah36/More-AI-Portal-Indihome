@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle2, FileText, Image as ImageIcon, FileSpreadsheet, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, FileText, Image as ImageIcon, FileSpreadsheet, ArrowRight, Loader2, AlertCircle, Download } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { moreAiApi } from '@/lib/api/client';
+import { artifactApi } from '@/lib/api/client';
 
 type ArtifactRecord = {
   id: string;
@@ -32,10 +32,11 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
   const [files, setFiles] = useState<ArtifactRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    moreAiApi<ArtifactRecord[]>('/api/v1/artifacts')
+    artifactApi.list()
       .then((rows) => { if (active) setFiles(rows); })
       .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Artefak tidak dapat dimuat.'); })
       .finally(() => { if (active) setLoading(false); });
@@ -47,6 +48,20 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
   const nameOf = (file: ArtifactRecord) => typeof file.metadata?.filename === 'string'
     ? file.metadata.filename
     : file.storage_path.split('/').pop() || file.storage_path;
+  const downloadArtifact = async (artifactId: string) => {
+    if (downloadingFile) return;
+    setDownloadingFile(artifactId);
+    try {
+      const result = await artifactApi.signedDownload(artifactId);
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Tautan unduhan artefak tidak dapat dibuat.');
+    } finally {
+      setDownloadingFile(null);
+    }
+  };
+
   const sizeOf = (file: ArtifactRecord) => file.size_bytes == null
     ? 'Ukuran tidak tersedia'
     : file.size_bytes < 1024 * 1024
@@ -98,7 +113,10 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
                   <p className="text-[10px] text-slate-500 mt-0.5">{sizeOf(file)} · {new Date(file.created_at).toLocaleString('id-ID')}</p>
                 </div>
               </div>
-              <span className="text-[10px] text-slate-400">Tersimpan</span>
+              <button type="button" onClick={() => void downloadArtifact(file.id)} disabled={downloadingFile === file.id} className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
+                {downloadingFile === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                Unduh
+              </button>
             </div>
           );
         })}
