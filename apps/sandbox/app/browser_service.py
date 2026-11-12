@@ -49,8 +49,23 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
 
     _authorize(authorization)
     parsed = urlsplit(body.url)
-    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+    if (
+        parsed.scheme != "https" or not parsed.hostname
+        or parsed.username or parsed.password or parsed.port not in (None, 443)
+    ):
         raise HTTPException(400, "browser_url_invalid")
+    from .browser_security import BrowserPolicy
+    allowed_domains = tuple(
+        item.strip().lower().rstrip(".")
+        for item in os.getenv("MOREAI_BROWSER_ALLOWED_DOMAINS", "").split(",")
+        if item.strip()
+    )
+    if not allowed_domains:
+        raise HTTPException(503, "browser_domain_allowlist_not_configured")
+    policy = BrowserPolicy(allowed_domains=allowed_domains)
+    initial_host = parsed.hostname.encode("idna").decode("ascii").lower()
+    if not policy.allows_host(initial_host):
+        raise HTTPException(403, "browser_navigation_target_not_allowlisted")
     proxy_url = os.getenv("MOREAI_BROWSER_PROXY_URL", "")
     proxy_token = os.getenv("MOREAI_BROWSER_PROXY_TOKEN", "")
     if not proxy_url.startswith("http://") or len(proxy_token) < 32:
@@ -85,7 +100,18 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
                 nonlocal request_count
                 request_count += 1
                 request = urlsplit(route.request.url)
-                if request_count > max_requests or request.scheme != "https" or not request.hostname or request.username or request.password:
+                request_host = (
+                    request.hostname.encode("idna").decode("ascii").lower()
+                    if request.hostname else ""
+                )
+                if (
+                    request_count > max_requests
+                    or request.scheme != "https"
+                    or not request_host
+                    or request.username or request.password
+                    or request.port not in (None, 443)
+                    or not policy.allows_host(request_host)
+                ):
                     await route.abort("blockedbyclient")
                     return
                 await route.continue_()
@@ -99,7 +125,16 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
             await page.route_web_socket("**/*", deny_websocket)
             try:
                 await page.goto(body.url, wait_until="domcontentloaded", timeout=20_000)
-                if blocked_navigation_hosts:
+                final_url = urlsplit(page.url)
+                final_host = (
+                    final_url.hostname.encode("idna").decode("ascii").lower()
+                    if final_url.hostname else ""
+                )
+                if (
+                    final_url.scheme != "https"
+                    or final_url.port not in (None, 443)
+                    or not policy.allows_host(final_host)
+                ):
                     raise HTTPException(403, "browser_navigation_target_not_allowlisted")
             except HTTPException:
                 raise
