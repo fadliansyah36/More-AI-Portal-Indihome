@@ -961,3 +961,5 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Phase 09: Customer Tasks view now renders persisted prompt text and loads additional Agent Run pages; Home view reads recent runs, wallet balance and Partner entitlement from authenticated APIs. Removed fabricated quota/task metrics and unsupported fixed capability claims. Existing UI layout/navigation retained; no screenshot regression evidence because browser/runtime testing was explicitly prohibited.
 - Report: [Session, Workspace Atomicity & Customer Dashboard Integration](./PHASE-04-06-09-SESSION-WORKSPACE-CUSTOMER-DASHBOARD-20261113.md).
 - No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment, provider calls or Supabase live migration/write. Phases 04/06/09 remain IN PROGRESS.
+
+- Home view now differentiates an unavailable Agent Run API from a valid empty history state; no backend failure is presented as “no tasks”. Commit `9b5f59c10dafdeffdb16d95d11892ef9459bfe4b`.
