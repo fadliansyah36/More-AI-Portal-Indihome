@@ -36,7 +36,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
-            Simulasi Captive Portal (Sheet 3)
+            Pratinjau Captive Portal · Gateway belum terhubung
           </span>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
             Wi-Fi & AI Customer Portal
@@ -84,7 +84,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
             currentStep === 4 ? 'bg-red-600 text-white shadow-xs' : 'hover:bg-slate-50'
           }`}
         >
-          4. Terhubung
+          4. Status Akses
         </button>
         <button
           onClick={() => setCurrentStep(5)}
@@ -102,7 +102,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
           <div className="pt-4 flex flex-col items-center">
             <MoreAiLogo className="justify-center" />
             <p className="text-xs text-slate-500 font-medium mt-3">
-              Internet Terhubung · AI Memberdayakan
+              Akses Wi-Fi & AI menunggu integrasi gateway
             </p>
           </div>
 
@@ -115,7 +115,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
               Akses Wi-Fi Global Partner ISP & Nikmati AI Terbaik
             </h3>
             <p className="text-xs text-slate-500 max-w-xs mt-1">
-              Dapatkan akses internet kecepatan tinggi dan kuota pemrosesan kecerdasan buatan gratis di venue ini.
+              Aktivasi akses dan benefit hanya dapat dikonfirmasi setelah layanan gateway dan entitlement backend terintegrasi.
             </p>
           </div>
 
@@ -231,7 +231,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Terhubung!</h3>
+            <h3 className="text-lg font-bold text-slate-900">Pratinjau Status Akses</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
               Selamat! Anda sudah terkoneksi ke jaringan Wi-Fi Global Partner ISP/Network dengan performa optimal.
             </p>
@@ -244,11 +244,11 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Kecepatan:</span>
-              <span className="font-semibold text-slate-800">100 Mbps Simetris</span>
+              <span className="font-semibold text-slate-800">Belum dilaporkan gateway</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Bonus Kuota:</span>
-              <span className="font-bold text-red-600">+100.000 Poin AI</span>
+              <span className="font-bold text-red-600">Menunggu entitlement backend</span>
             </div>
           </div>
 
