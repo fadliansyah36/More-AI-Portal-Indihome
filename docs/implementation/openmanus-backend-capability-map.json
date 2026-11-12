@@ -738,6 +738,30 @@
       "817aa2011f713e17571714ca0ae63c02c40e24fd",
       "53ad5f50455d21add45b11df3792468660fbbf73",
       "b7db9fcec321457edcd50232d4645c493cbd5f63"
-    ]
+    ],
+    "atomic_writeback": {
+      "status": "SOURCE IMPLEMENTED — migration not applied; runtime acceptance not performed",
+      "migration": "supabase/migrations/20261113120000_moreai_workspace_atomic_execution_commit.sql",
+      "semantics": [
+        "All changed/new/deleted workspace metadata for one execution commits in one PostgreSQL transaction.",
+        "Immutable Storage objects are uploaded before metadata transaction; RPC validates private bucket and object existence.",
+        "Worker lease, user/run/workspace binding, active membership, unique safe paths, expected versions, SHA-256, file sizes and operation key are validated.",
+        "Existing version-history trigger and explicit delete history writes are preserved in the transaction.",
+        "A deterministic SHA-256 operation key and server-only commit ledger make retries idempotent."
+      ],
+      "remaining": [
+        "Uploaded Storage objects can be orphaned when metadata transaction fails; garbage collection is not implemented.",
+        "Migration is committed but has not been applied to Supabase.",
+        "No test, lint, typecheck, build, deployment or runtime verification performed."
+      ]
+    }
+  },
+  "session_lifecycle_followup": {
+    "implemented": [
+      "Conversation-scoped durable session cancellation endpoint verifies conversation and run ownership before calling the existing cancellation RPC.",
+      "WebSocket/SSE replay cursors reject malformed, negative and out-of-range values and are bounded to PostgreSQL bigint.",
+      "Session event query parameters use the same bigint upper bound."
+    ],
+    "status": "Source implementation only; no runtime acceptance."
   }
 }
