@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import os
 
-from apps.sandbox.app.browser_proxy import PinnedConnectProxy
-from apps.sandbox.app.browser_security import BrowserPolicy, BrowserRequestGuard
+from app.browser_proxy import PinnedConnectProxy
+from app.browser_security import BrowserPolicy, BrowserRequestGuard
 
 
 async def main() -> None:
