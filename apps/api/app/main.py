@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 from uuid import uuid4
 from typing import Any
 
@@ -10,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+
+logger = logging.getLogger("moreai.api")
 
 from app.config import Settings
 from app.dependencies import current_user
@@ -125,6 +128,40 @@ async def http_error(request: Request, exc: HTTPException):
     )
 
 
+@app.exception_handler(httpx.TimeoutException)
+async def upstream_timeout_error(request: Request, exc: httpx.TimeoutException):
+    logger.warning(
+        "Upstream dependency timeout",
+        extra={
+            "correlation_id": getattr(request.state, "correlation_id", None),
+            "path": request.url.path,
+            "method": request.method,
+            "exception_type": type(exc).__name__,
+        },
+    )
+    return _error_response(
+        request, status_code=504, code="upstream_timeout",
+        message="A required upstream service did not respond in time",
+    )
+
+
+@app.exception_handler(httpx.HTTPError)
+async def upstream_transport_error(request: Request, exc: httpx.HTTPError):
+    logger.warning(
+        "Upstream dependency transport failure",
+        extra={
+            "correlation_id": getattr(request.state, "correlation_id", None),
+            "path": request.url.path,
+            "method": request.method,
+            "exception_type": type(exc).__name__,
+        },
+    )
+    return _error_response(
+        request, status_code=503, code="upstream_unavailable",
+        message="A required upstream service is temporarily unavailable",
+    )
+
+
 @app.exception_handler(RequestValidationError)
 async def request_validation_error(request: Request, exc: RequestValidationError):
     safe_errors = [
@@ -144,6 +181,17 @@ async def request_validation_error(request: Request, exc: RequestValidationError
 
 @app.exception_handler(Exception)
 async def unhandled_exception(request: Request, exc: Exception):
+    # Log correlation and classification metadata only. Exception messages and
+    # tracebacks may contain prompts, credentials, provider payloads or user data.
+    logger.error(
+        "Unhandled API exception",
+        extra={
+            "correlation_id": getattr(request.state, "correlation_id", None),
+            "path": request.url.path,
+            "method": request.method,
+            "exception_type": type(exc).__name__,
+        },
+    )
     return _error_response(
         request, status_code=500, code="internal_error",
         message="An unexpected server error occurred",
