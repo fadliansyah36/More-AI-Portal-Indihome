@@ -31,7 +31,11 @@ export const KnowledgeLibraryView: React.FC = () => {
     }
   }, [status]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(() => { if (active) void load(); });
+    return () => { active = false; };
+  }, [load]);
 
   const archive = async (document: CustomerKnowledgeDocument) => {
     if (document.status !== 'ready' && document.status !== 'failed') return;
