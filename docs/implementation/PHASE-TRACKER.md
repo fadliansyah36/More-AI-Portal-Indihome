@@ -889,3 +889,11 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Report: [Customer Keyset Pagination](./PHASE-06-CUSTOMER-KEYSET-PAGINATION-20261113.md).
 - Commits: `8836057b`, `21d2b70d`, `9fd7414b`, `959e0729`, `262f6957`.
 - No tests, lint, typecheck, build, runtime API calls, staging, migration apply or deployment were run. Phase 06 remains IN PROGRESS.
+
+
+## 2026-11-13 — WebSocket replay cursor correction
+
+- Corrected the Agent Run WebSocket initial replay batch to query only events with sequence strictly greater than the caller's cursor, in ascending order. This prevents replaying acknowledged events and skipping gaps on reconnect.
+- Conversation session WebSocket delegates to the same run stream after validating conversation ownership and run association.
+- Commit: `66a374c6`. Capability map and [WebSocket replay report](./PHASE-04-WEBSOCKET-REPLAY-CURSOR-20261113.md) updated.
+- No tests, lint, typecheck, build, runtime API/browser calls, staging, migration apply or deployment performed. Phase 04 remains IN PROGRESS.
