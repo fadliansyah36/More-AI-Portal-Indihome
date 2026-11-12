@@ -106,7 +106,7 @@ def _safe_run_activity(row: dict[str, Any]) -> dict[str, Any]:
         "timestamp": row.get("created_at"),
         "event_type": event_type,
     }
-    for key in ("tool", "round", "index", "status", "phase", "progress", "tool_count", "next_round", "timeout_seconds"):
+    for key in ("tool", "round", "index", "status", "phase", "progress", "tool_count", "next_round", "timeout_seconds", "checkpoint_key"):
         value = payload.get(key)
         if isinstance(value, (str, int, float, bool)) and not isinstance(value, str) or (
             isinstance(value, str) and len(value) <= 100
@@ -130,6 +130,15 @@ def _thinking_message(activity: dict[str, Any]) -> dict[str, Any]:
         "run.timed_out": "Agent run timed out",
         "worker.checkpoint": "Execution checkpoint saved",
     }
+    if event_type == "worker.checkpoint":
+        checkpoint_key = activity.get("checkpoint_key")
+        if checkpoint_key == "planning.manifest":
+            labels[event_type] = "Execution plan persisted"
+        elif isinstance(checkpoint_key, str) and checkpoint_key.startswith("planning.step."):
+            parts = checkpoint_key.split(".")
+            step_number = parts[2] if len(parts) > 2 else "?"
+            phase = parts[3] if len(parts) > 3 else "checkpointed"
+            labels[event_type] = f"Planning step {step_number} {phase}"
     return {
         "message": labels.get(event_type, "Agent activity"),
         "type": "error" if event_type in {"run.failed", "run.timed_out"} else (
