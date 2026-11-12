@@ -11,10 +11,7 @@ interface SpeedtestViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
 }
 
-export const SpeedtestView: React.FC<SpeedtestViewProps> = ({
-  onBack,
-  onNavigateTab,
-}) => {
+export const SpeedtestView: React.FC<SpeedtestViewProps> = ({ onBack }) => {
   const { showToast } = useToast();
   const [isRunning, setIsRunning] = useState(false);
   const [downloadSpeed, setDownloadSpeed] = useState<number | null>(null);
