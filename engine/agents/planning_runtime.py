@@ -74,7 +74,7 @@ class PlanningAgentRuntime(AgentRuntime):
             task_type="planning",workspace_id=context.workspace_id,
             messages=[
                 {"role":"system","content":"Create a concise executable plan. Return only JSON {title:string,steps:[{objective:string,agent_key:string,dependencies:number[],expected_output:string,tool_requirement:string,risk:low|medium|high|critical,estimated_usage:{input_tokens:number,output_tokens:number}}]}. agent_key must be one of the enabled execution agent keys provided in the user context. Dependencies must reference earlier step indexes. Do not execute the task."},
-                {"role":"user","content":prompt[:50000] + "\\nEnabled execution agent keys: " + ", ".join(sorted(self.step_executors))},
+                {"role":"user","content":prompt[:50000] + "\nEnabled execution agent keys: " + ", ".join(sorted(self.step_executors))},
             ],
         )
         try:
