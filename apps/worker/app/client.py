@@ -9,8 +9,7 @@ from typing import Any
 import httpx
 
 
-class RunPausedForApproval(Exception):
-    """Durable pause committed and worker lease released."""
+from engine.agents.errors import RunPausedForApproval
 
 
 @dataclass(frozen=True)
