@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Clock, Star, Play, CheckCircle2, BookOpen } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
+import { learningApi } from '@/lib/api/client';
 
 interface EdutechLessonViewProps {
   onBack: () => void;
@@ -15,12 +16,40 @@ export const EdutechLessonView: React.FC<EdutechLessonViewProps> = ({
   onNavigateTab,
 }) => {
   const { showToast } = useToast();
-  const [completed, setCompleted] = useState<number[]>([]);
+  const [completed, setCompleted] = useState<string[]>([]);
+  const [loadingProgress, setLoadingProgress] = useState(true);
+  const [savingLesson, setSavingLesson] = useState<string | null>(null);
+  const lessons = [
+    { key: 'apa-itu-ai', title: '1. Apa itu AI?', desc: 'Konsep dasar kecerdasan buatan dan model bahasa besar.' },
+    { key: 'manfaat-ai', title: '2. Manfaat AI', desc: 'Penerapan AI untuk menghemat waktu kerja & belajar sehari-hari.' },
+    { key: 'etika-praktik-prompting', title: '3. Etika & Praktik Prompting', desc: 'Menulis instruksi jelas tanpa halusinasi informasi.' },
+  ];
 
-  const toggleLesson = (idx: number) => {
-    setCompleted((prev) =>
-      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
-    );
+  useEffect(() => {
+    let active = true;
+    learningApi.progress()
+      .then(({ items }) => {
+        if (active) setCompleted(items.filter((item) => item.module_key === 'edu-1').map((item) => item.lesson_key));
+      })
+      .catch((error) => {
+        if (active) showToast(error instanceof Error ? error.message : 'Progress belajar gagal dimuat.', 'error');
+      })
+      .finally(() => { if (active) setLoadingProgress(false); });
+    return () => { active = false; };
+  }, [showToast]);
+
+  const toggleLesson = async (lessonKey: string) => {
+    if (savingLesson || loadingProgress) return;
+    const nextCompleted = !completed.includes(lessonKey);
+    setSavingLesson(lessonKey);
+    try {
+      await learningApi.setProgress('edu-1', lessonKey, nextCompleted);
+      setCompleted((prev) => nextCompleted ? [...prev, lessonKey] : prev.filter((key) => key !== lessonKey));
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Progress belajar gagal disimpan.', 'error');
+    } finally {
+      setSavingLesson(null);
+    }
   };
 
   return (
@@ -59,7 +88,7 @@ export const EdutechLessonView: React.FC<EdutechLessonViewProps> = ({
         </p>
 
         <button
-          onClick={() => showToast('Memulai video pengantar modul EduTech AI...', 'info')}
+          onClick={() => showToast('Konten video belum tersedia dari layanan EduTech.', 'info')}
           className="w-full py-2.5 rounded-xl bg-white text-red-600 font-bold text-xs hover:bg-red-50 transition shadow-xs flex items-center justify-center gap-1.5"
         >
           <Play className="w-3.5 h-3.5 fill-current" />
@@ -74,16 +103,13 @@ export const EdutechLessonView: React.FC<EdutechLessonViewProps> = ({
         </h3>
 
         <div className="space-y-2">
-          {[
-            { title: '1. Apa itu AI?', desc: 'Konsep dasar kecerdasan buatan dan model bahasa besar.' },
-            { title: '2. Manfaat AI', desc: 'Penerapan AI untuk menghemat waktu kerja & belajar sehari-hari.' },
-            { title: '3. Etika & Praktik Prompting', desc: 'Menulis instruksi jelas tanpa halusinasi informasi.' },
-          ].map((lesson, idx) => {
-            const isDone = completed.includes(idx);
+          {loadingProgress && <p className="text-[10px] text-slate-400">Memuat progress tersimpan…</p>}
+          {lessons.map((lesson) => {
+            const isDone = completed.includes(lesson.key);
             return (
               <div
-                key={idx}
-                onClick={() => toggleLesson(idx)}
+                key={lesson.key}
+                onClick={() => void toggleLesson(lesson.key)}
                 className={`cursor-pointer p-3.5 rounded-2xl border transition flex items-center justify-between ${
                   isDone
                     ? 'bg-emerald-50/70 border-emerald-200'
@@ -99,6 +125,7 @@ export const EdutechLessonView: React.FC<EdutechLessonViewProps> = ({
                     isDone ? 'text-emerald-600' : 'text-slate-300'
                   }`}
                 />
+                {savingLesson === lesson.key && <span className="text-[9px] text-slate-400 ml-1">Menyimpan…</span>}
               </div>
             );
           })}
