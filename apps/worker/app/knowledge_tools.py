@@ -213,18 +213,21 @@ class SupabaseKnowledgeTools:
             finally:
                 pdf_document.close()
         elif mime in {"image/jpeg", "image/png", "image/webp"}:
-            image = Image.open(BytesIO(raw))
-            image.verify()
-            image = Image.open(BytesIO(raw)).convert("RGB")
-            if image.width * image.height > 40_000_000:
-                raise ValueError("knowledge_image_pixel_limit_exceeded")
-            text = await asyncio.to_thread(pytesseract.image_to_string, image)
+            probe = Image.open(BytesIO(raw))
+            probe.verify()
+            with Image.open(BytesIO(raw)) as source_image:
+                if source_image.width < 1 or source_image.height < 1 or source_image.width * source_image.height > 40_000_000:
+                    raise ValueError("knowledge_image_pixel_limit_exceeded")
+                image = source_image.convert("RGB")
+            try:
+                text = await asyncio.to_thread(pytesseract.image_to_string, image, lang="eng+ind")
+            finally:
+                image.close()
             ocr_status = "completed" if text.strip() else "no_text_detected"
             if text.strip():
                 ocr_pages.append(1)
-            page_count = 1
-            if text.strip():
                 pages.append((1, text))
+            page_count = 1
         else:
             raise ValueError("knowledge_file_type_unsupported")
 
