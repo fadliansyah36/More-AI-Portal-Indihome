@@ -92,7 +92,11 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
                 await websocket.close(code=1008)
 
             await page.route_web_socket("**/*", deny_websocket)
-            await page.goto(body.url, wait_until="domcontentloaded", timeout=20_000)
+            try:
+                await page.goto(body.url, wait_until="domcontentloaded", timeout=20_000)
+            except Exception as exc:
+                # Do not expose Playwright internals, request URLs, or proxy details.
+                raise HTTPException(502, "browser_navigation_blocked_or_failed") from exc
             if body.action == "navigate":
                 return {"status": "navigated", "url": page.url, "title": await page.title(), "requests": request_count}
             content = (await page.locator("body").inner_text(timeout=5_000))[:30_000]
