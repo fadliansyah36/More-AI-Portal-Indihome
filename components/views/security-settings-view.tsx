@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Shield, Lock, Smartphone, Key, LogOut, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface SecuritySettingsViewProps {
   onBack: () => void;
@@ -49,20 +50,40 @@ export const SecuritySettingsView: React.FC<SecuritySettingsViewProps> = ({
     );
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPassword || newPassword.length < 8) {
       showToast('Kata sandi baru minimal 8 karakter.', 'error');
       return;
     }
-    showToast('Kata sandi akun MoreAI berhasil diperbarui!', 'success');
-    setOldPassword('');
-    setNewPassword('');
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user?.email) throw new Error('Sesi pengguna tidak valid. Silakan login kembali.');
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: userData.user.email,
+        password: oldPassword,
+      });
+      if (reauthError) throw new Error('Kata sandi saat ini tidak benar.');
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+      showToast('Kata sandi akun berhasil diperbarui.', 'success');
+      setOldPassword('');
+      setNewPassword('');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Kata sandi gagal diperbarui.', 'error');
+    }
   };
 
-  const handleRevokeOtherSessions = () => {
-    setActiveSessions(activeSessions.filter((s) => s.isCurrent));
-    showToast('Seluruh sesi perangkat lain berhasil diputuskan demi keamanan.', 'success');
+  const handleRevokeOtherSessions = async () => {
+    try {
+      const { error } = await createSupabaseBrowserClient().auth.signOut({ scope: 'global' });
+      if (error) throw error;
+      setActiveSessions([]);
+      showToast('Semua sesi telah dicabut. Silakan login kembali.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Sesi perangkat gagal dicabut.', 'error');
+    }
   };
 
   return (
