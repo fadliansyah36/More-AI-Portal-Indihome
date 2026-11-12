@@ -4,7 +4,7 @@ Date: 2026-11-12
 Repository: `fadliansyah36/More-AI-Portal-Indihome`  
 Branch: `main`  
 Baseline commit: `b06ffd183d6ce7ba28dd3491c65c36272d09af56`  
-Implementation commit at report creation: `11a6cef0db1a7773550343305e9f4b09b723e2c5`
+Implementation/source commit before this report refresh: `91f1c575f5682a447c2a979af6ada1da5dbcfa57`
 
 ## Scope delivered in this increment
 
@@ -44,6 +44,7 @@ This is a dependency-ordered integration increment, not completion of all reques
 
 - Existing Knowledge Library route, typed client and API-backed list/detail/archive flow from the previous increment remain connected.
 - Adjusted data-fetch loading state transitions in the following existing views to avoid synchronous state updates inside effects: analytics, benefit-credit, devices-connected, knowledge-library, notifications, partner-live-sessions, partner-promo, partner-staff, partner-vouchers, super-admin and Wi-Fi management.
+- Consolidated duplicate `CustomerWorkspace` TypeScript declarations in `lib/api/client.ts`; the two typed API clients now reuse one shared contract.
 - Analytics time-window reference is captured when usage data returns, rather than calling `Date.now()` during render.
 - These changes are state/data-flow only; no intended changes to layout, spacing, color, typography, component hierarchy or navigation design.
 - This is not full Customer screen-to-API integration. Remaining unsupported workflows must continue to show explicit unavailable/empty/error states, not fake data.
@@ -75,7 +76,9 @@ This is a dependency-ordered integration increment, not completion of all reques
 - `engine/tests/test_workspace_tool.py` (new)
 - `apps/worker/tests/test_client.py`
 - `apps/api/tests/test_domain_contracts.py`
+- `lib/api/client.ts` (consolidated duplicate CustomerWorkspace contract)
 - `docs/implementation/PHASE-TRACKER.md`
+- `docs/implementation/openmanus-backend-capability-map.json`
 
 ## Supabase state
 
@@ -87,8 +90,9 @@ This is a dependency-ordered integration increment, not completion of all reques
 
 - Engine Contract Tests: [run 43167699004](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43167699004) — PASS.
 - Phase 04 Sandbox Security Tests: [run 43167699075](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43167699075) — API contract, worker contract, engine policy and sandbox policy jobs all PASS.
-- Phase 00 frontend baseline: [run 43167699018](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43167699018) — was pending at the time this report was authored. Earlier baseline revealed lint errors across data-fetch effects and impure render-time clock access; those affected files have since been adjusted. Final lint/build/browser evidence must be taken from a new run after this report commit.
+- Phase 00 frontend baseline: [run 43168282282](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43168282282) — PASS: lint, build, server start and browser smoke; responsive screenshots captured at 360, 390, 768, 1024 and 1440 px. The earlier failing run exposed data-fetch effect lint violations and duplicate `CustomerWorkspace`; those were fixed before the passing run.
 - No production deploy, staging environment, worker activation, real provider call, authenticated live API session or complete browser-to-provider E2E run was performed.
+- Visual comparison note: the historical 2026-11-11 screenshot showed a dashboard with demo-looking “Andi Pratama” and “Partner ISP 100M” values; the current unauthenticated route shows the MoreAI splash/entry screen. The difference predates this increment and is not caused by the data-loading-only edits documented here. No root route, splash, navigation or layout file was changed in this increment. The current behavior avoids exposing demo-looking dashboard content to an unauthenticated visitor.
 
 ## Phase status
 
@@ -97,8 +101,8 @@ This is a dependency-ordered integration increment, not completion of all reques
 - Phase 08: IN PROGRESS.
 - Phase 06: IN PROGRESS.
 - Phase 09: IN PROGRESS.
-- Phase 10: PARTIAL — targeted CI contract/unit suites pass; full end-to-end proof is outstanding.
-- Phase 11: BLOCKED — final frontend lint/build/browser screenshots, real provider/worker integration, full backend parity and security/release evidence remain outstanding.
+- Phase 10: PARTIAL — engine/worker/sandbox/API contract suites and frontend baseline browser smoke at five viewports pass; full real-provider authenticated E2E remains outstanding.
+- Phase 11: BLOCKED — frontend lint/build/browser smoke pass, but full backend parity, deployed worker/sandbox, real provider integration, live RLS/cross-tenant proof and release security evidence remain outstanding.
 
 ## Next dependency-ordered work
 
