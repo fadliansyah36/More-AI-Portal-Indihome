@@ -12,8 +12,8 @@ PRIVATE_TEST_IP="${PRIVATE_TEST_IP:-127.0.0.1}"
 METADATA_TEST_IP="${METADATA_TEST_IP:-169.254.169.254}"
 FAIL=0
 
-pass(){ printf 'PASS %s\\n' "$1"; }
-fail(){ printf 'FAIL %s\\n' "$1"; FAIL=1; }
+pass(){ printf 'PASS %s\n' "$1"; }
+fail(){ printf 'FAIL %s\n' "$1"; FAIL=1; }
 need(){ command -v "$1" >/dev/null 2>&1 || { echo "Missing dependency: $1" >&2; exit 2; }; }
 need docker; need curl; need python3; need jq
 
@@ -23,8 +23,8 @@ proxy_id="$(docker compose -f "$COMPOSE_FILE" ps -q "$PROXY_SERVICE")"
 
 browser_networks="$(docker inspect "$browser_id" | jq -r '.[0].NetworkSettings.Networks | keys[]' | sort)"
 proxy_networks="$(docker inspect "$proxy_id" | jq -r '.[0].NetworkSettings.Networks | keys[]' | sort)"
-browser_network_count="$(printf '%s\\n' "$browser_networks" | wc -l | tr -d ' ')"
-proxy_network_count="$(printf '%s\\n' "$proxy_networks" | wc -l | tr -d ' ')"
+browser_network_count="$(printf '%s\n' "$browser_networks" | wc -l | tr -d ' ')"
+proxy_network_count="$(printf '%s\n' "$proxy_networks" | wc -l | tr -d ' ')"
 if [[ "$browser_network_count" == "1" ]] && grep -q 'browser_isolated' <<<"$browser_networks"; then pass "browser is attached only to internal browser_isolated network"; else fail "browser network attachment is not isolated: $browser_networks"; fi
 if [[ "$proxy_network_count" == "2" ]] && grep -q 'browser_isolated' <<<"$proxy_networks" && grep -q 'browser_egress' <<<"$proxy_networks"; then pass "proxy is the only service bridging isolated and egress networks"; else fail "proxy network topology unexpected: $proxy_networks"; fi
 
