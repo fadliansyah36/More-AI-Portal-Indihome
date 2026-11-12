@@ -54,7 +54,7 @@ navigate_json="$(docker exec "$proxy_id" curl --fail --silent --show-error \
   -H 'Content-Type: application/json' \
   -d '{"url":"https://example.com/","action":"navigate","run_id":"ci-browser-acceptance","user_id":"ci-browser-acceptance"}' \
   http://browser-supervisor:8080/v1/browser/actions)"
-if jq -e '.status == "navigated" and .url | startswith("https://example.com")' <<<"$navigate_json" >/dev/null; then
+if jq -e '(.status == "navigated") and (.url | startswith("https://example.com"))' <<<"$navigate_json" >/dev/null; then
   pass "Playwright navigation succeeds through the enforced allowlist proxy"
 else
   fail "Playwright allowlisted navigation failed"
