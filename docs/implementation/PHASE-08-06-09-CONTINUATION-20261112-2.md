@@ -102,3 +102,13 @@
 - The lesson video action no longer displays a fabricated “starting video” success; it states that video content is not yet available from the EduTech service.
 - This is partial Phase 09 integration, not full EduTech catalog/content delivery. Module/lesson definitions still come from the existing frontend catalog, and video playback/content APIs are not yet implemented.
 - No tests, lint, typecheck, build, browser/API probes, provider calls, DB writes, migrations, staging or deployment were run. The provider breaker is still process-local; durable shared state/health telemetry remains open.
+
+
+## 2026-11-12 direct-main continuation #5 — Customer account security truthfulness
+
+- Password change in the existing Security Settings screen now re-authenticates the current Supabase Auth user with the entered current password before calling `auth.updateUser({ password })`. The UI reports actual Auth errors rather than showing local-only success.
+- “Revoke other sessions” now calls Supabase Auth global sign-out (`scope: global`), which revokes the user's sessions and also ends the current session; the success message explicitly asks the user to log in again.
+- Removed fabricated sample device/session inventory. The screen now reports that device-session inventory is unavailable from the current Auth contract instead of displaying invented devices and locations.
+- MFA toggle is disabled and defaults to unconfigured; no success state is simulated. TOTP enrollment/challenge/verification and MFA assurance policy remain unimplemented and are still Phase 09 blockers.
+- Commits: `18dd4645d1c16582367d8c83365cff7dd1db408c`, `0d3f24d0576cbe54a63678a87847a4ad09e031f0`, `2acf97ac81629533c1a499e6ed7ed38a4e9abc9d`.
+- No tests, lint, typecheck, build, browser/API probes, DB writes, migrations, staging or deployment were run. These UI changes have no regression evidence under the current constraint.
