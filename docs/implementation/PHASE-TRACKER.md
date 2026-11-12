@@ -905,3 +905,13 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Uses the shared opaque cursor and emits `X-Next-Cursor` only when a further page exists. Commit `e93eea09`.
 - Report: [Conversation Session Pagination](./PHASE-06-CONVERSATION-SESSION-PAGINATION-20261113.md). Customer screens still need Phase 09 incremental-loading integration.
 - No tests, lint, typecheck, build, runtime API/browser calls, staging, migration apply or deployment. Phase 06 remains IN PROGRESS.
+
+
+## 2026-11-13 — Phase 04 remote sandbox supervisor increment
+- Branch: `main`; baseline `9ea16f90bccd406d4ea799ba091817c46168c8e2`; increment commits: `308c95b7e605ee5f8c92c5f3489704729ea47f62`, `338f1251dd841032d2ec20ab12475bd781524ac7`, `5521721fef7af1983dcf0365255f5eb680ca63fe`, `c63261a4c4071788b1d4044c0cbe3f1450ac6c3f`, `5a7df92bb239bebd9ae5f30bf3ac64525f365a11`, `897fe2f5aab51d05eec529676e51a7ab732177d8`, `fa822a601b25346a434e7460cb80efad791817a8`, `7af75ae9d47ea57c3edfe793c04ad26d1b9e5b02`, `60e701f514e46941c7e3e3e82110c8bea1bd1f27`.
+- Added a separate authenticated FastAPI execution supervisor and image; worker now calls it over HTTPS or the exact private Compose endpoint rather than invoking Docker locally.
+- Wired readiness preflight into worker startup and dispatcher; SWE requires the supervisor; sandbox tool invocations recheck readiness.
+- Added run-scoped remote cancellation and documented private network / restricted Docker socket proxy prerequisites.
+- Sandbox remains disabled unless both runtime and release-gate flags are explicitly enabled. No tests, lint, typecheck, build, Docker build, staging, deployment, migration or live probes were run.
+- Report: `docs/implementation/PHASE-04-REMOTE-SANDBOX-SUPERVISOR-20261113.md`.
+- Phase 04 remains IN PROGRESS; server/session parity, workspace lifecycle binding, browser download scanning and exception taxonomy remain open. Next: complete those Phase 04 areas, then Phase 06.
