@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from app.runtime import AgentDispatcher, Checkpoint
+from app.client import RunPausedForApproval
 from engine.agents.errors import AgentExecutionError, classify_agent_exception
 from engine.agents.protocol import AgentRunContext
 from engine.orchestration.registry import AgentRegistry
@@ -64,7 +65,8 @@ class RegisteredAgentDispatcher(AgentDispatcher):
             raise asyncio.CancelledError()
         try:
             result = await runtime.execute(context, payload, checkpoint, cancelled)
-        except asyncio.CancelledError:
+        except (asyncio.CancelledError, RunPausedForApproval):
+            # Approval pauses are durable control flow, not agent failures.
             raise
         except Exception as exc:
             classified = classify_agent_exception(exc)
