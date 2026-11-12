@@ -7,25 +7,26 @@ import { Activity, ArrowUpRight } from 'lucide-react';
 export const AnalyticsView: React.FC = () => {
   const [timeFilter, setTimeFilter] = useState<'minggu' | 'bulan' | 'tahun'>('minggu');
   const [usage, setUsage] = useState<CustomerUsageRecord[]>([]);
+  const [referenceTime, setReferenceTime] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    customerApi.usage(100).then((rows) => { if (active) setUsage(rows); })
+    customerApi.usage(100).then((rows) => { if (active) { setUsage(rows); setReferenceTime(Date.now()); } })
       .catch((err) => { if (active) setError(err instanceof Error ? err.message : 'Data analytics tidak tersedia.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
 
   const periodUsage = useMemo(() => {
-    const now = Date.now();
+    const now = referenceTime;
     const duration = timeFilter === 'minggu' ? 7 : timeFilter === 'bulan' ? 30 : 365;
     return usage.filter((row) => {
       const created = new Date(row.created_at).getTime();
       return Number.isFinite(created) && created >= now - duration * 86400000;
     });
-  }, [usage, timeFilter]);
+  }, [usage, timeFilter, referenceTime]);
   const modelBreakdown = useMemo(() => {
     const grouped = new Map<string, { requests: number; tokens: number }>();
     for (const row of periodUsage) {
