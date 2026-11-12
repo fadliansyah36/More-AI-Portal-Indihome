@@ -9,7 +9,6 @@ from app.authorization import customer_principal
 from app.routers.conversations import repository
 
 import hashlib
-import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
