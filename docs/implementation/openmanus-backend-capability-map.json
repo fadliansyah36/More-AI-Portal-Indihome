@@ -292,7 +292,7 @@
     "classification": "upstream templates/static assets archived only",
     "active_product_use": false
   },
-  "parity_status": "PARTIAL — workspace editor is CAS/version-fenced and run-scoped approval-gated; workspace_read_file is owner/member-scoped, private-bucket-only, bounded to 2 MB, UTF-8-only and SHA-256/version verified. Worker now enforces bounded wall-clock run deadlines with cancellation and retryable durable failure. Browser supervisor readiness verifies a live egress proxy connection; deployed network-isolation proof is still missing. PlanningFlow now passes persisted predecessor outputs to dependent steps with a bounded context; full upstream Flow/server/session/SWE parity, browser socket-level deployment enforcement, provider capability parity and complete Customer screen integration remain open.",
+  "parity_status": "PARTIAL — PlanningFlow now passes durable dependency outputs, stores bounded manifest steps, repairs missing/partial step rows on recovery and dispatches via allowlisted agent keys. Run logs/thinking/progress and authenticated replayable WebSocket status/log/thinking/result envelopes are backed by persisted events. SWE workspace create/edit/delete/rename/restore-deleted are versioned and worker-lease fenced. Browser supervisor readiness is authenticated and fail-closed; private worker connectivity and Docker egress acceptance are being verified. Full upstream server/session and production deployment parity remain open.",
   "implemented_target_files": [
     "engine/agents/types.py",
     "engine/agents/runtime.py",
@@ -305,7 +305,6 @@
     "engine/prompts/toolcall.py",
     "engine/orchestration/registry.py",
     "engine/orchestration/flows.py",
-    "engine/agents/planning_runtime.py",
     "engine/orchestration/planning.py",
     "engine/tools/catalog.py",
     "engine/tools/registry.py",
@@ -338,7 +337,16 @@
     "apps/sandbox/app/browser_readiness.py",
     "apps/sandbox/app/browser_service.py",
     "apps/sandbox/Dockerfile.browser",
-    "apps/sandbox/tests/test_browser_readiness.py"
+    "apps/sandbox/tests/test_browser_readiness.py",
+    "apps/api/app/routers/workspaces.py",
+    "apps/sandbox/app/browser_proxy.py",
+    "apps/sandbox/app/browser_proxy_server.py",
+    "apps/sandbox/app/proxy_main.py",
+    "apps/sandbox/app/browser_supervisor.py",
+    "apps/sandbox/app/browser_security.py",
+    "apps/sandbox/scripts/verify-browser-network-isolation.sh",
+    "supabase/migrations/20261112073357_moreai_workspace_delete_rename_lease_fencing.sql",
+    "supabase/migrations/20261112073831_moreai_workspace_restore_deleted_file.sql"
   ],
   "runtime_safety_gates": {
     "agent_execution_default": "disabled",
@@ -547,6 +555,50 @@
       "No worker deployment/activation",
       "No browser/proxy container deployment or network-isolation acceptance script",
       "No authenticated provider E2E"
+    ]
+  },
+  "workspace_file_lifecycle": {
+    "status": "IMPLEMENTED IN CODE / MIGRATIONS APPLIED — worker-lease fenced and versioned",
+    "operations": [
+      "create",
+      "edit",
+      "delete (soft-delete tombstone)",
+      "rename (version increment)",
+      "restore_deleted (version increment)",
+      "restore_version"
+    ],
+    "migrations": [
+      "20261112073357",
+      "20261112073831"
+    ],
+    "safety": "service_role-only invoker RPCs; active run lease, workspace membership, path validation, expected-version CAS; deleted files hidden by default and available through include_deleted=true"
+  },
+  "server_session_parity": {
+    "status": "PARTIAL — durable owner-scoped activity projections and authenticated WebSocket replay envelope implemented",
+    "operations": [
+      "GET run logs",
+      "GET thinking/progress",
+      "WebSocket status/log/thinking/result replay"
+    ],
+    "limitations": [
+      "upstream legacy file log parser not ported as a separate parser; durable structured events are source of truth",
+      "full server/session route parity and deployed websocket runtime acceptance remain open"
+    ]
+  },
+  "browser_runtime": {
+    "status": "INTEGRATION CODE COMPLETE / DOCKER ACCEPTANCE IN PROGRESS",
+    "transport": "HTTPS by default; optional exact private Compose HTTP endpoint http://browser-supervisor:8080 only",
+    "readiness": "authenticated /ready requires configured, enforced and reachable proxy; worker startup fails closed",
+    "controls": [
+      "browser isolated internal network",
+      "authenticated CONNECT proxy",
+      "public DNS answer pinning per socket",
+      "private/reserved/metadata IP rejection",
+      "redirect to non-allowlisted host denial",
+      "downloads denied until scanner-backed handling"
+    ],
+    "limitations": [
+      "no production deployment; Docker CI does not prove target-platform networking; download scanning remains unimplemented"
     ]
   }
 }
