@@ -505,7 +505,7 @@ export type CustomerToolApproval = {
 
 export const customerToolApprovalApi = {
   list: () => moreAiCustomerApi<CustomerToolApproval[]>('/api/v1/customer/tool-approvals'),
-  request: (input: { run_id: string; tool_key: 'bash' | 'python_execute' | 'browser' | 'file_read' | 'file_write' | 'file_edit'; arguments_hash: string; summary: string }) =>
+  request: (input: { run_id: string; tool_key: 'bash' | 'python_execute' | 'browser_use' | 'planning_step' | 'browser' | 'file_read' | 'file_write' | 'file_edit'; arguments_hash: string; summary: string }) =>
     moreAiCustomerApi<{ id: string; status: 'pending' }>('/api/v1/customer/tool-approvals', {
       method: 'POST', body: JSON.stringify(input),
     }),
