@@ -100,7 +100,7 @@ export const SpeedtestView: React.FC<SpeedtestViewProps> = ({
           </span>
           <span className="text-emerald-400 font-bold flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Data aktual
+            {downloadSpeed === null ? 'Belum diuji' : 'Hasil pengukuran'}
           </span>
         </div>
 
