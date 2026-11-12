@@ -926,3 +926,5 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Commits: `2c62bc79f808420926a7dc79206c72c52781e7b1`, `91fa8128462a72f5826061df5316cdf61fdf4285`, `7a681f504935a7c7278300849f627c6dcdbc2d4d`, `c3de455c0da2c06955dde3b3aea4e938fc8c1220`, `c507d6930f41f25ef463b8e4691ab6d2b60e11c7`.
 - Report: [Phase 04 remote sandbox supervisor](./PHASE-04-REMOTE-SANDBOX-SUPERVISOR-20261113.md).
 - No tests, lint, typecheck, build, Docker build, browser/API probes, staging, deployment, migration or Supabase mutation were run. Phase 04 remains IN PROGRESS; upstream server/session lifecycle, complete workspace-to-runner binding and exception taxonomy remain open.
+
+- Follow-up cancellation hardening: Docker runner now records each container ID and requests daemon-side forced removal from the cleanup finalizer after timeout, cancellation, output-limit termination or normal completion. Commits: `b32cb13e97c855872f44b001b607b2b0d60452e7`, `2b45715f89f647d4194e1e76ecc5506b59a9db3b`. No Docker runtime was invoked.
