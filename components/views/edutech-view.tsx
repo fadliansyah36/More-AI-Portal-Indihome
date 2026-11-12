@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import {
   GraduationCap,
   PlayCircle,
-  Star,
   Clock,
   BookOpen,
   CheckCircle2,
@@ -68,7 +67,7 @@ export const EdutechView: React.FC = () => {
         <div className="space-y-1.5 max-w-[70%]">
           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold">
             <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
-            <span>EduTech Global Partner</span>
+            <span>Materi Pengantar MoreAI</span>
           </div>
           <h3 className="text-sm sm:text-base font-bold leading-tight">
             Belajar Lebih Mudah dengan AI
@@ -124,10 +123,7 @@ export const EdutechView: React.FC = () => {
                 <span>·</span>
                 <span>Level {mod.level}</span>
                 <span>·</span>
-                <span className="flex items-center gap-0.5 text-amber-500 font-semibold">
-                  <Star className="w-3 h-3 fill-current" />
-                  <span>{mod.rating} ({mod.reviewsCount})</span>
-                </span>
+
               </div>
             </div>
           </div>
