@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, ShieldCheck, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
-import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
 
 interface CaptiveTermsViewProps {
   onBack: () => void;
@@ -13,7 +12,6 @@ interface CaptiveTermsViewProps {
 
 export const CaptiveTermsView: React.FC<CaptiveTermsViewProps> = ({
   onBack,
-  onNavigateTab,
 }) => {
   const { showToast } = useToast();
   const [agreedTerms, setAgreedTerms] = useState(false);
