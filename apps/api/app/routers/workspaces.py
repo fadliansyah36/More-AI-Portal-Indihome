@@ -251,3 +251,51 @@ async def archive_customer_workspace(
     if not rows:
         raise HTTPException(409, "Workspace is not active or cannot be archived")
     return {"workspace": rows[0], "archived": True}
+
+
+@router.get("/{workspace_id}/members")
+async def list_customer_workspace_members(
+    workspace_id: UUID, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    await _workspace_access(repo, workspace_id, user["id"])
+    rows = await repo.select("workspace_members", {
+        "workspace_id": f"eq.{workspace_id}",
+        "status": "in.(invited,active,suspended)",
+        "select": "id,workspace_id,user_id,role_id,status,invited_by,joined_at,created_at",
+        "order": "created_at.asc",
+        "limit": "200",
+    })
+    return {"items": rows, "count": len(rows)}
+
+
+@router.delete("/{workspace_id}/members/{member_id}")
+async def remove_customer_workspace_member(
+    workspace_id: UUID, member_id: UUID, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Owner-only membership revocation; historical workspace artifacts remain untouched."""
+    repo = repository(request)
+    workspace = await _workspace_access(repo, workspace_id, user["id"])
+    if workspace.get("owner_user_id") != user["id"]:
+        raise HTTPException(403, "Only the workspace owner can remove members")
+    member = await repo.select("workspace_members", {
+        "id": f"eq.{member_id}",
+        "workspace_id": f"eq.{workspace_id}",
+        "status": "in.(invited,active,suspended)",
+        "select": "id,user_id,status",
+        "limit": "1",
+    })
+    if not member:
+        raise HTTPException(404, "Workspace member not found")
+    if str(member[0].get("user_id")) == str(user["id"]):
+        raise HTTPException(409, "Workspace owner cannot remove their own membership")
+    rows = await repo.update(
+        "workspace_members",
+        {"id": f"eq.{member_id}", "workspace_id": f"eq.{workspace_id}", "status": "in.(invited,active,suspended)"},
+        {"status": "removed"},
+    )
+    if not rows:
+        raise HTTPException(409, "Workspace membership changed; refresh and retry")
+    return {"member_id": str(member_id), "status": "removed"}
