@@ -798,3 +798,13 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - API runtime keeps `MOREAI_AGENT_EXECUTION_ENABLED=false`. Worker source and Docker profile exist, but no deployed always-on worker service was found in the connected Vercel project inventory. Provider routing, worker secrets/configuration, credit conversion, wallet currency, entitlement/quota keys and runtime health are not established by this deployment.
 - No real endpoint/browser/provider/worker/SQL/E2E test, staging deployment, migration or worker activation was performed.
 - Phases 04, 06, 07, 08 and 09 remain IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED. See continuation report for dependency-ordered next actions.
+
+
+## 2026-11-12 — Phase 07 worker poll recovery increment
+
+- Report: [PHASE-07-WORKER-POLL-RECOVERY-20261112.md](./PHASE-07-WORKER-POLL-RECOVERY-20261112.md).
+- Updated `apps/worker/app/main.py`: transient errors during steady-state run claiming/polling no longer terminate the long-lived worker process; they are logged and retried with bounded exponential backoff (maximum 30 seconds).
+- Startup configuration remains fail-fast. This does not activate or deploy the worker and does not enable agent execution.
+- Commit: `58c921054274722797967276363d442b6939189f`; report commit: `5bce1b1e32fa79df336ca3b2b64108081eef2326`.
+- No tests, lint, typecheck, build, runtime probe or deployment were run, following the current instruction.
+- Phase 07 remains IN PROGRESS; Phase 04 backend parity remains the upstream dependency. Continue Phase 04 before declaring Phase 07/08/06/09 complete.
