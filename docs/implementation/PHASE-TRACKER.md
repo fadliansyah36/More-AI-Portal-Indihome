@@ -945,3 +945,11 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment, migration or Supabase live mutation were run. Sandbox remains disabled behind both explicit activation gates. Phase 04 remains IN PROGRESS.
 
 - Runner output buffering was further bounded through temporary files on the runner's 16 MiB tmpfs, with only the first 64 KiB per stdout/stderr stream returned. Source fix: `b7db9fcec321457edcd50232d4645c493cbd5f63`; report includes the complete source commit list.
+
+
+## 2026-11-13 — Phase 04 session lifecycle and atomic workspace commit
+- Added conversation-scoped session cancellation with conversation + run ownership checks, delegated to durable cancellation RPC. WebSocket/SSE replay cursors and event query parameters are bounded to PostgreSQL bigint and malformed/negative values are rejected.
+- Replaced per-file workspace metadata write-back with one atomic, lease-fenced PostgreSQL RPC transaction. Changed/new immutable Storage objects are uploaded first; a deterministic SHA-256 operation key makes commit retries idempotent. The RPC validates active workspace membership, private bucket, object existence, path safety, version preconditions, size limits and duplicates; updates and soft deletes commit together and existing version-history metadata is retained.
+- Added migration `20261113120000_moreai_workspace_atomic_execution_commit.sql` (source committed only; not applied). Failed metadata transactions can leave unreferenced uploaded Storage objects; object garbage collection remains open.
+- Report: [Phase 04 Persistent Workspace Snapshot Bridge](./PHASE-04-PERSISTENT-WORKSPACE-SNAPSHOT-BRIDGE-20261113.md).
+- No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment or Supabase live migration/write. Phase 04 remains IN PROGRESS.
