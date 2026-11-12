@@ -4,6 +4,8 @@ import asyncio
 import os
 import re
 import signal
+import tempfile
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Literal
 
@@ -88,6 +90,32 @@ class DockerSandbox:
         except ProcessLookupError:
             pass
 
+    async def _remove_container(self, cidfile: str) -> None:
+        """Remove the daemon-side container even if the docker CLI was cancelled."""
+        try:
+            container_id = Path(cidfile).read_text(encoding="ascii").strip()
+        except (OSError, UnicodeError):
+            container_id = ""
+        finally:
+            try:
+                Path(cidfile).unlink(missing_ok=True)
+            except OSError:
+                pass
+        if not re.fullmatch(r"[0-9a-fA-F]{12,64}", container_id):
+            return
+        cleanup = await asyncio.create_subprocess_exec(
+            self.docker_binary, "rm", "--force", container_id,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+            start_new_session=True,
+            env={"PATH": os.getenv("PATH", "/usr/bin:/bin"), "DOCKER_HOST": os.getenv("DOCKER_HOST", "")},
+        )
+        try:
+            await asyncio.wait_for(cleanup.wait(), timeout=4.0)
+        except TimeoutError:
+            self._terminate(cleanup)
+            await cleanup.wait()
+
     async def execute(
         self, source: str, *,
         language: Literal["python", "bash"],
@@ -108,8 +136,12 @@ class DockerSandbox:
         ):
             raise ValueError("sandbox_limits_out_of_range")
 
+        cid_handle = tempfile.NamedTemporaryFile(prefix="moreai-sandbox-", suffix=".cid", delete=False)
+        cidfile = cid_handle.name
+        cid_handle.close()
+        Path(cidfile).unlink(missing_ok=True)
         command = [
-            self.docker_binary, "run", "--rm", "-i",
+            self.docker_binary, "run", "--rm", "-i", "--cidfile", cidfile,
             "--network=none", "--read-only",
             "--cap-drop=ALL", "--security-opt=no-new-privileges:true",
             "--security-opt=seccomp=default",
@@ -152,15 +184,20 @@ class DockerSandbox:
         except _OutputLimitExceeded:
             self._terminate(process)
             await process.wait()
+            await self._remove_container(cidfile)
             await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
             return SandboxResult(-1, "", "output_limit_exceeded", False)
         except TimeoutError:
             self._terminate(process)
             await process.wait()
+            await self._remove_container(cidfile)
             await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
             return SandboxResult(-1, "", "execution_timeout", True)
         except BaseException:
             self._terminate(process)
             await process.wait()
+            await self._remove_container(cidfile)
             await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
             raise
+        else:
+            await self._remove_container(cidfile)
