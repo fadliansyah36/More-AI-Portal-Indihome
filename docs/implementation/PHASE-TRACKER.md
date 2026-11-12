@@ -612,3 +612,13 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Added typed Customer API client methods `workspaceApi.members()` and `workspaceApi.removeMember()`.
 - Commits: `8705c19ea6b0e0993d1cc46a049c5171952e2089` (FastAPI), `ca68fc75e6b1f275e4c99fa9dedbda967b7dbb03` (typed client).
 - This advances workspace membership lifecycle but does not yet implement invitation creation/acceptance, role assignment, file CRUD, or UI management. Phase 04 remains active.
+
+
+## Active implementation increment — Workspace durable run/session listing (2026-11-12)
+
+- Added `GET /api/v1/customer/workspaces/{workspace_id}/runs?limit=50`, validating limit 1–100 and workspace membership before reading.
+- Run visibility is additionally constrained to the authenticated caller's `user_id`; shared workspace members cannot enumerate another member's private run records.
+- Returns persisted run lifecycle metadata only (status, attempt bounds, timestamps, heartbeat, cancellation request, checkpoint key); prompt/input/output/tool payloads are not exposed by this endpoint.
+- Added typed `workspaceApi.runs(workspaceId, limit)`.
+- Commits: `0cb9a0bc3c288315184dc8866fdcf91f619caa89` (FastAPI), `5d123d879f387f4177f26b1957b5fe35d9053e33` (typed client).
+- This is a read-side workspace/session integration seam; it does not claim parity with upstream server-side session creation, websocket, logs, thinking tracker, or Flow lifecycle. Phase 04 remains active.
