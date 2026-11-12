@@ -308,13 +308,16 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
             return
         await websocket.accept()
 
+        # Replay strictly after the caller cursor. Fetching the newest events first
+        # and then advancing to their maximum sequence silently skipped older gaps
+        # and duplicated already-acknowledged events on reconnect.
         initial_rows = await repo.select("agent_run_events", {
             "run_id": f"eq.{run_id}",
+            "sequence": f"gt.{cursor}",
             "select": "id,event_type,sequence,payload,created_at",
-            "order": "sequence.desc",
+            "order": "sequence.asc",
             "limit": "200",
         })
-        initial_rows = list(reversed(initial_rows))
         initial_activities = [_safe_run_activity(row) for row in initial_rows]
         initial_thinking = [
             _thinking_message(item) for item in initial_activities
