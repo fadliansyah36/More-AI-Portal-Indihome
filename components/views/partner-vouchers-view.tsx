@@ -40,11 +40,10 @@ export const PartnerVouchersView: React.FC<PartnerVouchersViewProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const rows = await partnerApi.accessCodes();
       setCodes(rows as AccessCode[]);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Data kode akses tidak dapat dimuat.');
     } finally {
@@ -112,7 +111,7 @@ export const PartnerVouchersView: React.FC<PartnerVouchersViewProps> = ({
           <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">Partner Operations</span>
           <h1 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">Voucher &amp; Kode Akses</h1>
         </div>
-        <button onClick={() => void load()} disabled={loading} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 disabled:opacity-50" aria-label="Segarkan">
+        <button onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 disabled:opacity-50" aria-label="Segarkan">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
