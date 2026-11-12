@@ -627,15 +627,6 @@ export const workspaceApi = {
 };
 
 
-export type CustomerWorkspace = {
-  id: string;
-  name: string;
-  slug: string;
-  owner_user_id: string;
-  status: 'active' | 'archived';
-  created_at: string;
-  updated_at: string;
-};
 
 export const customerWorkspaceApi = {
   list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces'),
