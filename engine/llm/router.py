@@ -232,6 +232,8 @@ class MeteredGateway:
         usage: dict[str, Any] | None = None
         selected: ResolvedModelRoute | None = None
         provider_activity = False
+        import time
+        started = time.monotonic()
         try:
             reservation_id = await self._reserve_maximum(
                 candidates, messages=messages, request_id=str(claim["id"]),
@@ -272,7 +274,10 @@ class MeteredGateway:
                 "output_tokens": int(usage["output_tokens"]), "actual_cost": float(usage["actual_cost"]),
                 "provider_response_id": usage.get("provider_response_id"),
             }
-            await self.accounting.record_provider_result(request_id=str(claim["id"]), result=result, latency_ms=0)
+            latency_ms = max(0, int((time.monotonic() - started) * 1000))
+            await self.accounting.record_provider_result(
+                request_id=str(claim["id"]), result=result, latency_ms=latency_ms,
+            )
             actual_credits = await self.estimator.actual_credits(route=selected, result=result)
             await self.accounting.finalize(
                 request_id=str(claim["id"]), actual_credits=actual_credits,
