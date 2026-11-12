@@ -28,7 +28,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
   onNavigateTab,
 }) => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-  const [agreedTerms, setAgreedTerms] = useState(true);
+  const [agreedTerms, setAgreedTerms] = useState(false);
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -152,7 +152,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
               Selamat Datang di MoreAI Wi-Fi
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Silakan masuk atau daftar untuk melanjutkan akses internet dan bonus AI Credit.
+              Login, pendaftaran, dan aktivasi benefit belum tersedia karena adapter gateway belum terhubung. Tombol berikutnya hanya membuka pratinjau alur.
             </p>
           </div>
 
@@ -161,7 +161,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
               onClick={() => setCurrentStep(3)}
               className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2"
             >
-              <span>Masuk Akun Tamu / Partner</span>
+              <span>Lihat pratinjau syarat</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -198,9 +198,9 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
           </div>
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2 max-h-40 overflow-y-auto">
-            <p>1. Akses Wi-Fi disediakan secara cuma-cuma oleh venue mitra bekerjasama dengan Global Partner ISP/Network.</p>
-            <p>2. Pengguna mendapatkan kuota sponsor AI Credit Free selama berada di jangkauan lokasi Wi-Fi.</p>
-            <p>3. Keamanan privasi data dan perlindungan informasi pribadi dipantau oleh MoreAI Guard Protocol.</p>
+            <p>1. Akses jaringan hanya dapat diberikan setelah identitas jaringan, lokasi partner, dan hasil verifikasi gateway dikonfirmasi backend.</p>
+            <p>2. Benefit dan kuota sponsor hanya berlaku jika entitlement aktif dikembalikan oleh backend. Tidak ada kuota yang dijanjikan pada pratinjau ini.</p>
+            <p>3. Kebijakan privasi dan pemrosesan data resmi harus ditampilkan dari konfigurasi layanan sebelum aktivasi jaringan.</p>
           </div>
 
           <label className="flex items-center gap-2.5 p-2 cursor-pointer text-xs font-semibold text-slate-800">
@@ -210,7 +210,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
               onChange={(e) => setAgreedTerms(e.target.checked)}
               className="w-4 h-4 rounded text-red-600 focus:ring-red-500"
             />
-            <span>Saya setuju dengan Syarat dan Ketentuan</span>
+            <span>Saya membaca pratinjau Syarat dan Ketentuan (persetujuan belum dikirim atau disimpan)</span>
           </label>
 
           <button
@@ -227,20 +227,20 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
       {currentStep === 4 && (
         <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-xs text-center space-y-5">
           <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-10 h-10" />
+            <Wifi className="w-8 h-8" />
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Pratinjau Status Akses</h3>
+            <h3 className="text-lg font-bold text-slate-900">Gateway Belum Terhubung</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-              Selamat! Anda sudah terkoneksi ke jaringan Wi-Fi Global Partner ISP/Network dengan performa optimal.
+              Belum ada sesi jaringan aktif yang diverifikasi. Status koneksi hanya dapat ditampilkan setelah gateway mengirimkan hasil verifikasi ke backend.
             </p>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-1">
             <div className="flex justify-between">
               <span className="text-slate-400">Info Koneksi:</span>
-              <span className="font-bold text-emerald-600">● Global Partner Wi-Fi Aktif</span>
+              <span className="font-bold text-amber-700">Belum diverifikasi</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Kecepatan:</span>
@@ -248,7 +248,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Bonus Kuota:</span>
-              <span className="font-bold text-red-600">Menunggu entitlement backend</span>
+              <span className="font-bold text-slate-700">Belum tersedia</span>
             </div>
           </div>
 
@@ -256,7 +256,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
             onClick={() => setCurrentStep(5)}
             className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs"
           >
-            Lanjut ke MoreAI
+            Lihat pratinjau portal
           </button>
         </div>
       )}
@@ -270,8 +270,8 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
                 M
               </div>
               <div>
-                <h3 className="text-xs font-bold text-slate-900">Halo, Pengguna!</h3>
-                <p className="text-[11px] text-slate-500">Selamat menikmati layanan MoreAI di jaringan Global Partner ISP/Network</p>
+                <h3 className="text-xs font-bold text-slate-900">Pratinjau Customer Portal</h3>
+                <p className="text-[11px] text-slate-500">Tampilan contoh saja · tidak menunjukkan sesi Wi-Fi aktif</p>
               </div>
             </div>
           </div>
@@ -279,9 +279,9 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
           {/* Akses AI Premium Gratis banner */}
           <div className="p-4 rounded-3xl bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-xs flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-bold text-amber-300 uppercase block">Benefit Venue Terverifikasi</span>
-              <h4 className="text-sm font-bold mt-0.5">Akses AI Premium Gratis untuk Anda</h4>
-              <p className="text-[11px] text-red-100 mt-0.5">Kredit 100K poin aktif selama berada di jaringan ini.</p>
+              <span className="text-[10px] font-bold text-amber-300 uppercase block">Status Benefit Partner</span>
+              <h4 className="text-sm font-bold mt-0.5">Benefit menunggu verifikasi</h4>
+              <p className="text-[11px] text-red-100 mt-0.5">Kredit dan entitlement belum tersedia sebelum gateway dan backend mengonfirmasi akses.</p>
             </div>
             <button
               onClick={() => onNavigateTab && onNavigateTab('benefits')}
