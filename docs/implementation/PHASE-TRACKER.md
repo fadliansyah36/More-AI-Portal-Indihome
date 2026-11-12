@@ -1,4 +1,4 @@
-| 09 | Existing Frontend API Integration | IN PROGRESS — Speedtest uses authenticated device↔API path; Analyse uses Knowledge ingestion; Research reads persisted Agent Run history; Tools Catalog reads OpenManus registry; Account Upgrade reads entitlements; Notifications and profile preferences use FastAPI; profile locale/name persist; security TOTP uses Supabase Auth; unsupported device/Wi-Fi controls and captive OTP fail closed; Create/Code hand off to Customer Chat; Home/Tasks/Files/Artifacts/Wallet/Chat use persisted API data; Benefit screen now combines wallet ledger, usage, entitlement, quota remaining and real Wi-Fi session history. Remaining: complete screen/action inventory, gateway verification, session controls, EduTech/video delivery and full agent workflow coverage. No tests/staging/runtime checks in this increment | [Continuation 2026-11-12 #2](./PHASE-08-06-09-CONTINUATION-20261112-2.md); source commits `1d0fbc36`, `c2a15a7d`, `c4c89f52`, `3cb5830a`, `7c21f996`, `3d2910a9`, `3a435e09`; no tests/staging/runtime checks |
+| 09 | Existing Frontend API Integration | IN PROGRESS — Customer profile/preferences, notifications, wallet/ledger/entitlements, persisted workspace/artifacts, Agent Chat/Research/Create/Analyse/Code, Wi-Fi session history and EduTech learning progress now use existing authenticated contracts where available. Benefit screen separates remaining quota from limit and includes persisted Wi-Fi sessions. EduTech unverified ratings/partner claims/video action removed. Remaining: full screen/action inventory, captive gateway verification, real device/session controls, managed EduTech catalog/video delivery and remaining agent/runtime workflows. No tests/staging/runtime checks in this increment |
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -983,3 +983,11 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Separated quota limit, used amount and remaining amount in the benefit summary; wallet balance remains distinct.
 - Report: [PHASE-09-CUSTOMER-BENEFIT-WIFI-HISTORY-20261113.md](./PHASE-09-CUSTOMER-BENEFIT-WIFI-HISTORY-20261113.md).
 - Commits: `3f329d71`, `2fa22e5b`. Source-only increment; no tests, staging, deployment or Supabase writes. Phase 09 remains IN PROGRESS.
+
+
+## 2026-11-13 direct-main continuation — Benefit and EduTech customer surfaces
+
+- Benefit & AI Credit now combines persisted wallet, immutable ledger, LLM usage, entitlements, quota usage and Customer network-session history. Wi-Fi filter is populated from real network sessions; quota remaining is distinguished from quota limit.
+- EduTech no longer shows unverified star ratings, review counts or partner affiliation. The video action is replaced with a truthful unavailable state while persisted learning progress remains active.
+- Reports: [Benefit and Wi-Fi history](./PHASE-09-CUSTOMER-BENEFIT-WIFI-HISTORY-20261113.md); [EduTech truthfulness](./PHASE-09-CUSTOMER-EDUTECH-TRUTHFULNESS-20261113.md).
+- Source commits: `3f329d71`, `2fa22e5b`, `b3e629ba`, `aa3b8ac0`. Documentation is source evidence only; Phase 09 remains IN PROGRESS.
