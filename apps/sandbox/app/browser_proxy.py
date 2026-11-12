@@ -40,6 +40,8 @@ class PinnedConnectProxy:
         request_method = "unknown"
         try:
             raw = await asyncio.wait_for(reader.readline(), timeout=3)
+            if not raw:
+                return
             if len(raw) > self.limits.header_bytes:
                 raise BrowserPolicyError("browser_proxy_request_too_large")
             line = raw.decode("ascii", "strict").strip().split()
@@ -74,6 +76,7 @@ class PinnedConnectProxy:
                 writer.write(
                     b"HTTP/1.1 407 Proxy Authentication Required\r\n"
                     b'Proxy-Authenticate: Basic realm="MoreAI"\r\n'
+                    b"Content-Length: 0\r\n"
                     b"Connection: close\r\n\r\n"
                 )
                 await writer.drain()
