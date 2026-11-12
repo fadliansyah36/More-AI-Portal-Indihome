@@ -33,3 +33,15 @@
 
 ## Next implementation
 Continue Phase 04: finish OpenManus server/session and agent lifecycle parity, workspace lifecycle/runner binding, exception taxonomy and browser supervisor controls. Then proceed to Phase 06 route-wide schemas/auth/idempotency/OpenAPI, Phase 07 durable lifecycle, Phase 08 full AI runtime and Phase 09 existing Customer Dashboard integration.
+
+
+## Follow-up hardening — browser policy and runnable topology
+
+- Fixed the undefined `blocked_navigation_hosts` reference in `apps/sandbox/app/browser_service.py`.
+- Browser supervisor now loads the configured exact domain allowlist, rejects an unapproved initial host before navigation, and applies HTTPS/port/credential/domain checks to every intercepted subresource and the final navigation URL. The CONNECT proxy remains responsible for DNS resolution, public-IP enforcement and pinned upstream sockets.
+- Added `apps/sandbox/compose.execution.yml`: private-only supervisor + Docker socket proxy on an internal network; worker is expected to attach to that private network without receiving the Docker socket.
+- Socket-proxy image must be supplied as a digest-pinned reference. No floating tag is selected.
+- Added `apps/sandbox/Dockerfile.runner`: minimal Python/Bash runner, UID/GID 65534, source passed over stdin.
+- Documented the immutable runner image publication/digest requirement and the private Compose topology in `apps/sandbox/README.md`.
+- Commits: `2c62bc79f808420926a7dc79206c72c52781e7b1`, `91fa8128462a72f5826061df5316cdf61fdf4285`, `7a681f504935a7c7278300849f627c6dcdbc2d4d`, `c3de455c0da2c06955dde3b3aea4e938fc8c1220`, `c507d6930f41f25ef463b8e4691ab6d2b60e11c7`.
+- Not run: tests, lint, typecheck, build, Docker build, browser/API probes, staging, deployment or Supabase mutation. The execution and browser supervisors remain release-gated and have not been runtime-accepted.
