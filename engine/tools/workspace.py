@@ -377,7 +377,7 @@ class SupabaseWorkspaceTool:
             current_version = current.get("version")
             if isinstance(current_version, bool) or not isinstance(current_version, int):
                 raise RuntimeError("workspace_version_invalid")
-            expected = baseline.get(path, {}).get("version", current_version)
+            expected = baseline.get(path, {}).get("version", 0)
             if current_version != expected:
                 raise ValueError("workspace_execution_version_conflict")
             reservation = await self.client.workspace_begin_write(
