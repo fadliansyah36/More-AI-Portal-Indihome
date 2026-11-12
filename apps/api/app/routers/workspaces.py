@@ -183,11 +183,11 @@ async def create_workspace_file_download(
     base_url = settings.supabase_url.rstrip("/")
     headers = {"apikey": settings.supabase_service_role_key, "Authorization": "Bearer " + settings.supabase_service_role_key}
     bucket = os.getenv("MOREAI_WORKSPACE_BUCKET", "moreai-artifacts")
-    bucket_response = await request.app.state.http.get(base_url + "/storage/v1/bucket/" + bucket, headers=headers, timeout=8.0)
+    bucket_response = await request.app.state.http.get(base_url + "/storage/v1/bucket/" + quote(bucket, safe=""), headers=headers, timeout=8.0)
     if bucket_response.status_code >= 400 or not isinstance(bucket_response.json(), dict) or bucket_response.json().get("public") is not False:
         raise HTTPException(503, "Workspace Storage bucket must exist and be private")
     response = await request.app.state.http.post(
-        base_url + "/storage/v1/object/sign/" + bucket + "/" + quote(storage_path, safe="/"),
+        base_url + "/storage/v1/object/sign/" + quote(bucket, safe="") + "/" + quote(storage_path, safe="/"),
         json={"expiresIn": 60}, headers={**headers, "Content-Type": "application/json"}, timeout=12.0,
     )
     if response.status_code >= 400:
@@ -214,7 +214,7 @@ async def create_workspace_file_download(
         if (
             not signed_path.startswith("/")
             or signed_path.startswith("//")
-            or "\\\\" in signed_path
+            or "\\" in signed_path
             or any(ord(char) < 32 for char in signed_path)
         ):
             raise HTTPException(502, "Storage returned an invalid signed download path")
