@@ -44,7 +44,11 @@ export const PartnerStaffView: React.FC<PartnerStaffViewProps> = ({
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(() => { if (active) void load(); });
+    return () => { active = false; };
+  }, [load]);
 
   const invite = async () => {
     const normalizedUserId = userId.trim();
