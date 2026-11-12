@@ -75,6 +75,7 @@ class BrowserRequestGuard:
         self.policy = policy
         self.resolver = resolver
         self._pinned: dict[str, frozenset[str]] = {}
+        self._current: dict[str, frozenset[str]] = {}
 
     async def validate_request(self, url: str) -> str:
         parsed = urlsplit(url)
@@ -107,10 +108,12 @@ class BrowserRequestGuard:
             ip = ipaddress.ip_address(address)
             if not ip.is_global or ip.is_multicast or ip.is_unspecified:
                 raise BrowserPolicyError("browser_private_or_reserved_address_denied")
-        pinned = self._pinned.get(host)
-        if pinned is not None and pinned != addresses:
-            raise BrowserPolicyError("browser_dns_rebinding_detected")
-        self._pinned.setdefault(host, addresses)
+        # Reject every private/reserved answer above, then pin this request's
+        # globally-routable DNS result for the socket. Public CDN answer rotation
+        # is not SSRF and must not be mistaken for DNS rebinding.
+        previous = self._pinned.get(host, frozenset())
+        self._pinned[host] = previous | addresses
+        self._current[host] = addresses
         return url
 
     async def resolve_pinned(self, url: str) -> tuple[str, int, tuple[str, ...]]:
@@ -118,10 +121,10 @@ class BrowserRequestGuard:
         parsed = urlsplit(url)
         host = parsed.hostname.rstrip(".").encode("idna").decode("ascii").lower()
         port = parsed.port or 443
-        pinned = self._pinned.get(host)
-        if not pinned:
+        current = self._current.get(host)
+        if not current:
             raise BrowserPolicyError("browser_dns_pin_missing")
-        return host, port, tuple(sorted(pinned))
+        return host, port, tuple(sorted(current))
 
     async def open_pinned_tls_connection(self, url: str):
         """Open TLS directly to a pinned IP; never let the socket layer resolve the hostname again.
