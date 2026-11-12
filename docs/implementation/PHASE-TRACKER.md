@@ -917,3 +917,12 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Phase 04 remains IN PROGRESS; server/session parity, workspace lifecycle binding, browser download scanning and exception taxonomy remain open. Next: complete those Phase 04 areas, then Phase 06.
 
 - Follow-up hardening: execution supervisor readiness now calls the configured Docker daemon/socket proxy and requires a successful server-version response; configuration-only readiness is not accepted. Commits: `2b3598a4c0f1e9c811044d670b14bb80d1aba285`, `068553a012b95412fd39a3e83d38b96684a74262`.
+
+
+## 2026-11-13 — Phase 04 browser and execution topology hardening
+- Fixed the undefined browser navigation variable and enforce the configured domain allowlist for initial navigation, every intercepted HTTPS subresource, and the final navigation URL. The CONNECT proxy remains the DNS/IP pinning boundary.
+- Added a private execution Compose topology with an isolated supervisor and Docker socket proxy; the worker must join the internal network but never receives the Docker socket.
+- Added a minimal non-root Python/Bash runner image definition. Both runner and socket-proxy images must be published/resolved to immutable SHA-256 digests before activation.
+- Commits: `2c62bc79f808420926a7dc79206c72c52781e7b1`, `91fa8128462a72f5826061df5316cdf61fdf4285`, `7a681f504935a7c7278300849f627c6dcdbc2d4d`, `c3de455c0da2c06955dde3b3aea4e938fc8c1220`, `c507d6930f41f25ef463b8e4691ab6d2b60e11c7`.
+- Report: [Phase 04 remote sandbox supervisor](./PHASE-04-REMOTE-SANDBOX-SUPERVISOR-20261113.md).
+- No tests, lint, typecheck, build, Docker build, browser/API probes, staging, deployment, migration or Supabase mutation were run. Phase 04 remains IN PROGRESS; upstream server/session lifecycle, complete workspace-to-runner binding and exception taxonomy remain open.
