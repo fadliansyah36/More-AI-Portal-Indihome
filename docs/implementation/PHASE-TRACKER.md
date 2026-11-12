@@ -869,3 +869,13 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Report: [Phase 09 Create Studio Agent Handoff](./PHASE-09-CREATE-STUDIO-AGENT-HANDOFF-20261113.md).
 - Commit: `cf1f9f5c5a51e0f65a0bf85c1195cb869e36ae1a`.
 - No tests/runtime/staging/deployment executed per instruction; Phase 09 remains IN PROGRESS.
+
+
+## 2026-11-13 — concrete OpenManus ToolCall agent registration
+
+- Inspected upstream concrete agent classes; ReActAgent is abstract, while ToolCallAgent is concrete. Registered ToolCallAgent as a distinct durable MoreAI runtime using the adapted upstream prompt and the existing policy-enforced, approval-gated tool adapters.
+- Added `toolcall` to the Customer conversation request contract and runtime-backed agent catalog allowlist.
+- Added migration `20261113100000_moreai_enable_toolcall_agent.sql` to allow `toolcall` in the service-role-only enqueue RPC while preserving ownership and idempotency behavior. Source committed only; NOT applied to Supabase.
+- Capability map and report updated: [ToolCall agent registration](./PHASE-04-06-08-TOOLCALL-AGENT-REGISTRATION-20261113.md).
+- Commits: worker `caf98089`, API `da1381b9`, catalog `53a658ec`, migration `ac369092`, capability map `1d72c3c2`, report `5002c851`.
+- No tests, build, typecheck, runtime calls, migration apply, staging or deployment performed. Phase 04/06/07/08/09 remain IN PROGRESS.
