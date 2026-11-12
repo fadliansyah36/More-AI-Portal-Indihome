@@ -42,7 +42,7 @@ if _cors_origins:
         allow_credentials=False,
         allow_methods=['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
         allow_headers=['Authorization', 'Content-Type', 'Accept', 'Idempotency-Key', 'X-Correlation-ID'],
-        expose_headers=['X-Correlation-ID'],
+        expose_headers=['X-Correlation-ID', 'X-Next-Cursor', 'X-Pagination-Mode'],
         max_age=600,
     )
 
