@@ -54,3 +54,21 @@ Continue Phase 04: finish OpenManus server/session and agent lifecycle parity, w
 - The cleanup uses the same restricted supervisor-only Docker API path; it does not grant Docker access to the worker.
 - Commits: `b32cb13e97c855872f44b001b607b2b0d60452e7`, `2b45715f89f647d4194e1e76ecc5506b59a9db3b`.
 - This is source-level hardening only. No Docker daemon, runtime or test was invoked.
+
+
+## Follow-up — agent exception taxonomy and worker persistence
+
+- Added `AgentExecutionError` with validated stable error codes and an explicit retryable flag in `engine/agents/errors.py`.
+- Added a conservative classifier at the dispatcher boundary:
+  - permission failures → `agent_action_not_permitted`;
+  - unavailable capabilities → `agent_capability_unavailable`;
+  - invalid request/tool contracts → `agent_request_invalid`;
+  - timeouts → `agent_execution_timeout` (retryable);
+  - unknown implementation faults → `agent_internal_error` (not automatically retryable).
+- Worker runtime persists the safe classification code and retryability metadata in the durable `run.failed` event and terminal error payload; it never persists raw exception messages, prompts or provider payloads.
+- Commits: `df7adb4e4635517e1d3d9e30be2e6643bc6c41bd`, `f389b12ad4a490b15588be0c5f044c6fd9c63569`, `a61c0eb130d69b3facdea0fc0bad2a0e258843ac`.
+
+## Remaining Phase 04 gaps
+- Workspace metadata and file tools are scoped through `AgentRunContext.workspace_id` and lease-fenced workspace RPCs. However, a persistent filesystem view is not mounted into the isolated Python/Bash runner; file operations remain mediated through workspace tools. Do not claim shell-level workspace parity until a safe, ephemeral workspace bridge is implemented.
+- Complete upstream server/session parity and browser download scanning remain open.
+- No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment or Supabase mutation were performed.
