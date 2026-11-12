@@ -199,6 +199,16 @@ class WorkerRpcClient:
         if not isinstance(result,dict): raise RuntimeError("workspace_write_commit_invalid")
         return result
 
+    async def workspace_restore_deleted_file(self, run_id: str, user_id: str, workspace_id: str, path: str, expected_version: int) -> dict[str, Any]:
+        result = await self.rpc("moreai_workspace_restore_deleted_file", {
+            "p_run_id": run_id, "p_worker_id": self.settings.worker_id,
+            "p_user_id": user_id, "p_workspace_id": workspace_id,
+            "p_path": path, "p_expected_version": expected_version,
+        })
+        if not isinstance(result, dict) or result.get("restored") is not True:
+            raise RuntimeError("workspace_restore_deleted_commit_invalid")
+        return result
+
     async def workspace_delete_file(self, run_id: str, user_id: str, workspace_id: str, path: str, expected_version: int) -> dict[str, Any]:
         result = await self.rpc("moreai_workspace_delete_file", {
             "p_run_id": run_id, "p_worker_id": self.settings.worker_id,
