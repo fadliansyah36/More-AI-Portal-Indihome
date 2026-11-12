@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+import os
 
 from fastapi import APIRouter, Depends, Request
 
@@ -20,6 +21,13 @@ async def list_agents(request: Request, user: dict[str, Any] = Depends(current_u
     })
     # Do not advertise DB definitions that have no registered production runtime.
     supported = {"manus", "planning"}
+    sandbox_image = os.getenv("MOREAI_SANDBOX_IMAGE", "")
+    if (
+        os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
+        and os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
+        and "@sha256:" in sandbox_image
+    ):
+        supported.add("swe")
     return [row for row in rows if str(row.get("key", "")).lower() in supported]
 
 
