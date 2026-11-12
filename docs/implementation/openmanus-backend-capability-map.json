@@ -617,5 +617,32 @@
       "Phase 06 full route-wide contract and authorization acceptance remains in progress",
       "Phase 09 complete Customer Dashboard screen/action coverage remains in progress"
     ]
+  },
+  "integration_increment_20261113_remote_sandbox_supervisor": {
+    "branch": "main",
+    "commits": [
+      "308c95b7e605ee5f8c92c5f3489704729ea47f62",
+      "338f1251dd841032d2ec20ab12475bd781524ac7",
+      "5521721fef7af1983dcf0365255f5eb680ca63fe",
+      "c63261a4c4071788b1d4044c0cbe3f1450ac6c3f",
+      "5a7df92bb239bebd9ae5f30bf3ac64525f365a11",
+      "897fe2f5aab51d05eec529676e51a7ab732177d8",
+      "fa822a601b25346a434e7460cb80efad791817a8",
+      "7af75ae9d47ea57c3edfe793c04ad26d1b9e5b02",
+      "60e701f514e46941c7e3e3e82110c8bea1bd1f27"
+    ],
+    "implemented": [
+      "Added authenticated FastAPI execution supervisor for isolated Python/Bash runs and a dedicated Dockerfile.",
+      "Worker sandbox adapter now calls the supervisor over HTTPS or the exact private Compose hostname; worker no longer invokes Docker CLI or requires a Docker socket.",
+      "Worker startup performs authenticated readiness preflight before claiming runs; dispatcher requires the supervisor for SWE; each invocation rechecks readiness.",
+      "Added run-scoped cancellation API and worker cancellation propagation."
+    ],
+    "gates": [
+      "MOREAI_SANDBOX_ENABLED and MOREAI_SANDBOX_RELEASE_GATE_PASSED must both be true.",
+      "Supervisor requires digest-pinned runner image and private authenticated service endpoint.",
+      "Deployment still requires a restricted Docker socket proxy and private network; supervisor is not deployed or runtime-accepted."
+    ],
+    "verification": "No tests, lint, typecheck, build, Docker build, staging, deployment, migration, Supabase write or live runtime/API probe performed per user instruction.",
+    "status": "PARTIAL — source integration completed for remote supervisor and dispatcher boundary; sandbox activation remains fail-closed; Phase 04 parity remains in progress."
   }
 }
