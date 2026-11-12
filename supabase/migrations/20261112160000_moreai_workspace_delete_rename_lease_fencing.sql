@@ -11,7 +11,7 @@ create or replace function public.moreai_workspace_delete_file(
   p_run_id uuid, p_worker_id text, p_user_id uuid, p_workspace_id uuid,
   p_path text, p_expected_version bigint
 ) returns jsonb
-language plpgsql security definer set search_path='' as $$
+language plpgsql security invoker set search_path='' as $
 declare
   r public.agent_runs%rowtype;
   f public.agent_workspace_files%rowtype;
@@ -72,7 +72,7 @@ create or replace function public.moreai_workspace_rename_file(
   p_run_id uuid, p_worker_id text, p_user_id uuid, p_workspace_id uuid,
   p_path text, p_new_path text, p_expected_version bigint
 ) returns jsonb
-language plpgsql security definer set search_path='' as $$
+language plpgsql security invoker set search_path='' as $
 declare
   r public.agent_runs%rowtype;
   f public.agent_workspace_files%rowtype;
