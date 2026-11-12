@@ -1,179 +1,121 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ArrowLeft, History, ArrowDownRight, ArrowUpRight, Filter, Search, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { useToast } from '@/components/ui/toast-context';
+import { customerApi, CustomerLedgerEntry, CustomerWallet } from '@/lib/api/client';
 
 interface TokenLedgerViewProps {
   onBack: () => void;
   onNavigateTab: (tab: NavigationTab) => void;
 }
 
-export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({
-  onBack,
-  onNavigateTab,
-}) => {
-  const { showToast } = useToast();
+export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
   const [filterType, setFilterType] = useState<'semua' | 'debit' | 'kredit'>('semua');
+  const [wallets, setWallets] = useState<CustomerWallet[]>([]);
+  const [transactions, setTransactions] = useState<CustomerLedgerEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const transactions = [
-    {
-      id: 'tx-101',
-      title: 'Aktivasi Global Partner Free ISP',
-      type: 'kredit',
-      amount: '+100.000 Poin',
-      date: '01 Nov 2026, 08:00 WIB',
-      category: 'Kuota Bulanan',
-      refHash: '0x8f2a...c4b1',
-    },
-    {
-      id: 'tx-102',
-      title: 'Research Agent Run (Analisis Pasar)',
-      type: 'debit',
-      amount: '-500 Poin',
-      date: '02 Nov 2026, 14:20 WIB',
-      category: 'Eksekusi Agent',
-      refHash: '0x3e1d...99fa',
-    },
-    {
-      id: 'tx-103',
-      title: 'Generator Gambar Konten Medsos',
-      type: 'debit',
-      amount: '-300 Poin',
-      date: '03 Nov 2026, 10:15 WIB',
-      category: 'Kreativitas AI',
-      refHash: '0x1b4c...72d8',
-    },
-    {
-      id: 'tx-104',
-      title: 'Top Up Kredit Mandiri Promo',
-      type: 'kredit',
-      amount: '+5.000 Poin',
-      date: '05 Nov 2026, 19:40 WIB',
-      category: 'Top Up Wallet',
-      refHash: '0x7c2f...aa14',
-    },
-    {
-      id: 'tx-105',
-      title: 'Ringkasan Laporan Finansial PDF',
-      type: 'debit',
-      amount: '-150 Poin',
-      date: '07 Nov 2026, 11:30 WIB',
-      category: 'Pengolahan Dokumen',
-      refHash: '0x99dd...01ce',
-    },
-  ];
+  useEffect(() => {
+    let active = true;
+    Promise.all([customerApi.wallets(), customerApi.ledger(100)])
+      .then(([walletResult, ledgerResult]) => {
+        if (!active) return;
+        setWallets(walletResult.wallets);
+        setTransactions(ledgerResult);
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : 'Data wallet tidak tersedia.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-  const filtered = transactions.filter((tx) => {
-    if (filterType === 'debit') return tx.type === 'debit';
-    if (filterType === 'kredit') return tx.type === 'kredit';
+  const filtered = useMemo(() => transactions.filter((tx) => {
+    const amount = Number(tx.amount);
+    const credit = amount > 0 || /credit|refund|top.?up|grant|release/i.test(tx.entry_type);
+    const debit = amount < 0 || /debit|spend|usage|reserve/i.test(tx.entry_type);
+    if (filterType === 'debit') return debit;
+    if (filterType === 'kredit') return credit;
     return true;
+  }), [transactions, filterType]);
+
+  const primaryWallet = wallets[0];
+  const formatAmount = (value: string | number, currency: string) =>
+    new Intl.NumberFormat('id-ID', { maximumFractionDigits: 4 }).format(Number(value)) + ' ' + currency;
+  const formatDate = (value: string) => new Date(value).toLocaleString('id-ID', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
-      {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-        <button onClick={onBack} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">
+        <button onClick={onBack} className="p-1 rounded-lg text-slate-400 hover:text-slate-700" aria-label="Kembali">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="text-center">
-          <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">
-            Sheet 5 Screen 13
-          </span>
-          <h1 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
-            Riwayat Transaksi &amp; Ledger Token
-          </h1>
+          <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">Sheet 5 Screen 13</span>
+          <h1 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">Riwayat Transaksi &amp; Ledger Token</h1>
         </div>
         <div className="w-5" />
       </div>
 
-      {/* Balance Summary Banner */}
       <div className="p-5 rounded-3xl bg-slate-900 text-white shadow-xs space-y-2">
         <span className="text-[10px] uppercase font-bold text-slate-400">Saldo Dompet AI</span>
         <div className="flex items-baseline justify-between">
           <div>
-            <span className="text-3xl font-black tracking-tight text-white font-mono">104.050</span>
-            <span className="text-xs font-bold text-red-400 ml-1.5">Poin AI</span>
+            <span className="text-3xl font-black tracking-tight text-white font-mono">
+              {loading ? '—' : primaryWallet ? formatAmount(primaryWallet.balance, primaryWallet.currency) : '0'}
+            </span>
+            <span className="text-xs font-bold text-red-400 ml-1.5">{primaryWallet?.status ?? 'Wallet'}</span>
           </div>
           <span className="text-xs text-emerald-400 font-semibold bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-500/30">
-            ≈ 2.6M Token
+            {wallets.length} dompet
           </span>
         </div>
       </div>
 
-      {/* Filter Tabs */}
       <div className="flex items-center gap-1 p-1 bg-white rounded-2xl border border-slate-200 shadow-2xs text-xs font-semibold">
-        <button
-          onClick={() => setFilterType('semua')}
-          className={`flex-1 py-1.5 rounded-xl transition ${
-            filterType === 'semua' ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          Semua
-        </button>
-        <button
-          onClick={() => setFilterType('kredit')}
-          className={`flex-1 py-1.5 rounded-xl transition ${
-            filterType === 'kredit' ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          Pemasukan (+)
-        </button>
-        <button
-          onClick={() => setFilterType('debit')}
-          className={`flex-1 py-1.5 rounded-xl transition ${
-            filterType === 'debit' ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          Pengeluaran (-)
-        </button>
+        {(['semua', 'kredit', 'debit'] as const).map((type) => (
+          <button key={type} onClick={() => setFilterType(type)}
+            className={'flex-1 py-1.5 rounded-xl transition ' + (filterType === type ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50')}>
+            {type === 'semua' ? 'Semua' : type === 'kredit' ? 'Pemasukan (+)' : 'Pengeluaran (-)'}
+          </button>
+        ))}
       </div>
 
-      {/* Transactions List */}
       <div className="space-y-2.5">
-        {filtered.map((tx) => (
-          <div
-            key={tx.id}
-            className="p-3.5 rounded-2xl bg-white border border-slate-100 shadow-2xs flex items-center justify-between gap-3 text-xs"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  tx.type === 'kredit'
-                    ? 'bg-emerald-50 text-emerald-600'
-                    : 'bg-red-50 text-red-600'
-                }`}
-              >
-                {tx.type === 'kredit' ? (
-                  <ArrowDownRight className="w-5 h-5" />
-                ) : (
-                  <ArrowUpRight className="w-5 h-5" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-bold text-slate-900 truncate">{tx.title}</h3>
-                <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                  <span>{tx.date}</span>
-                  <span>•</span>
-                  <span className="font-mono">{tx.refHash}</span>
+        {error && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{error}</p>}
+        {loading && <p className="p-3 text-xs text-slate-500">Memuat saldo dan ledger dari server…</p>}
+        {!loading && !error && filtered.length === 0 && (
+          <p className="rounded-xl border border-slate-100 bg-white p-4 text-xs text-slate-500">Belum ada transaksi pada dompet ini.</p>
+        )}
+        {filtered.map((tx) => {
+          const isCredit = Number(tx.amount) > 0 || /credit|refund|top.?up|grant|release/i.test(tx.entry_type);
+          const amount = Number(tx.amount);
+          const signedAmount = (amount > 0 ? '+' : '') + formatAmount(tx.amount, primaryWallet?.currency ?? '');
+          return (
+            <div key={tx.id} className="p-3.5 rounded-2xl bg-white border border-slate-100 shadow-2xs flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ' + (isCredit ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600')}>
+                  {isCredit ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-slate-900 truncate">{tx.description || tx.entry_type}</h3>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                    <span>{formatDate(tx.created_at)}</span>
+                    {tx.reference_id && <><span>•</span><span className="font-mono">{tx.reference_id.slice(0, 12)}</span></>}
+                  </div>
                 </div>
               </div>
+              <div className="text-right shrink-0">
+                <span className={'font-mono font-bold text-xs ' + (isCredit ? 'text-emerald-600' : 'text-red-600')}>{signedAmount}</span>
+                <span className="text-[9px] text-slate-400 block mt-0.5">{tx.entry_type}</span>
+              </div>
             </div>
-
-            <div className="text-right shrink-0">
-              <span
-                className={`font-mono font-bold text-xs ${
-                  tx.type === 'kredit' ? 'text-emerald-600' : 'text-red-600'
-                }`}
-              >
-                {tx.amount}
-              </span>
-              <span className="text-[9px] text-slate-400 block mt-0.5">{tx.category}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
