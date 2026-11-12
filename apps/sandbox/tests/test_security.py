@@ -155,3 +155,11 @@ async def test_browser_request_guard_allows_global_cdn_rotation_but_pins_current
     answer[0] = "1.1.1.1"
     _, _, pinned = await guard.resolve_pinned("https://trusted.example/two")
     assert pinned == ("1.1.1.1",)
+
+
+def test_browser_policy_host_allowlist_blocks_redirect_hosts_and_suffix_lookalikes():
+    policy = BrowserPolicy(("example.com",))
+    assert policy.allows_host("example.com")
+    assert policy.allows_host("sub.example.com")
+    assert not policy.allows_host("not-allowlisted.invalid")
+    assert not policy.allows_host("example.com.attacker.invalid")
