@@ -19,7 +19,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { moreAiApi } from '@/lib/api/client';
+import { profileApi } from '@/lib/api/client';
 
 interface HomeViewProps {
   onNavigate: (tab: NavigationTab) => void;
@@ -37,12 +37,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [displayName, setDisplayName] = useState(userName);
   useEffect(() => {
     let active = true;
-    moreAiApi<{ user: { email?: string }; profile: { display_name?: string | null } | null }>('/api/v1/me')
+    profileApi.get()
       .then((identity) => {
         if (!active) return;
-        setDisplayName(identity.profile?.display_name?.trim() || identity.user.email || 'Pengguna MoreAI');
+        const registeredName = identity.profile?.display_name?.trim()
+          || identity.user.display_name?.trim()
+          || identity.user.email?.split('@')[0]?.trim()
+          || userName;
+        setDisplayName(registeredName);
       })
-      .catch(() => { if (active) setDisplayName('Pengguna MoreAI'); });
+      .catch(() => {
+        // Preserve the authenticated route's supplied identity instead of
+        // replacing a known name with a generic greeting on transient API errors.
+        if (active) setDisplayName(userName);
+      });
     return () => { active = false; };
   }, [userName]);
 
