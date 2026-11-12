@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import Settings
 from app.dependencies import current_user
-from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, notifications, partner, tool_approvals
+from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, notifications, partner, tool_approvals, workspaces
 
 
 @asynccontextmanager
@@ -42,6 +42,7 @@ if _cors_origins:
 
 app.include_router(conversations.router)
 app.include_router(customer.router)
+app.include_router(workspaces.router)
 app.include_router(partner.router)
 app.include_router(admin.router)
 app.include_router(tool_approvals.router)
