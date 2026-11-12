@@ -915,3 +915,5 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Sandbox remains disabled unless both runtime and release-gate flags are explicitly enabled. No tests, lint, typecheck, build, Docker build, staging, deployment, migration or live probes were run.
 - Report: `docs/implementation/PHASE-04-REMOTE-SANDBOX-SUPERVISOR-20261113.md`.
 - Phase 04 remains IN PROGRESS; server/session parity, workspace lifecycle binding, browser download scanning and exception taxonomy remain open. Next: complete those Phase 04 areas, then Phase 06.
+
+- Follow-up hardening: execution supervisor readiness now calls the configured Docker daemon/socket proxy and requires a successful server-version response; configuration-only readiness is not accepted. Commits: `2b3598a4c0f1e9c811044d670b14bb80d1aba285`, `068553a012b95412fd39a3e83d38b96684a74262`.
