@@ -69,3 +69,25 @@ async def send_message(
         "p_agent_key": body.agent_key,
         "p_idempotency_key": idempotency_key,
     })
+
+
+@router.get("/{conversation_id}/sessions")
+async def list_conversation_sessions(
+    conversation_id: UUID,
+    request: Request,
+    limit: int = 50,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Return durable OpenManus run sessions for a conversation without exposing private execution payloads."""
+    if limit < 1 or limit > 100:
+        raise HTTPException(422, "limit must be between 1 and 100")
+    repo = repository(request)
+    await repo.owned_record("conversations", conversation_id, user["id"])
+    rows = await repo.select("agent_runs", {
+        "conversation_id": f"eq.{conversation_id}",
+        "user_id": f"eq.{user['id']}",
+        "select": "id,conversation_id,status,attempt,max_attempts,created_at,started_at,finished_at,available_at,heartbeat_at,cancel_requested_at,last_checkpoint_key",
+        "order": "created_at.desc",
+        "limit": str(limit),
+    })
+    return {"items": rows, "count": len(rows)}
