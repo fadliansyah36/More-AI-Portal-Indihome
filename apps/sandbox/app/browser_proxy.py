@@ -67,7 +67,8 @@ class PinnedConnectProxy:
             host, port_text = authority.rsplit(":", 1)
             host = host.strip("[]")
             port = int(port_text)
-            await self.guard.validate_request(f"https://{host}:{port}/")
+            # resolve_pinned performs the validation and DNS lookup exactly once.
+            # A second validation here could trigger false rebinding alarms on rotating DNS.
             pinned_host, _, addresses = await self.guard.resolve_pinned(f"https://{host}:{port}/")
             last_error = None
             for address in addresses:
