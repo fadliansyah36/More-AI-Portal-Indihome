@@ -42,13 +42,13 @@ export const PartnerAccessBannerView: React.FC<PartnerAccessBannerViewProps> = (
             <Wifi className="w-10 h-10 animate-pulse" />
           </div>
           <span className="text-xs font-black uppercase tracking-wider text-amber-300">
-            Wi-Fi Partner ISP Terhubung
+            Status jaringan menunggu verifikasi
           </span>
           <span className="text-sm font-bold text-white mt-1">
-            CoffeeHouse Semarang
+            Jaringan partner
           </span>
           <span className="text-[10px] text-white/80 mt-0.5">
-            Kecepatan 100 Mbps Simetris
+            Kecepatan belum dilaporkan gateway
           </span>
         </div>
 
@@ -57,27 +57,27 @@ export const PartnerAccessBannerView: React.FC<PartnerAccessBannerViewProps> = (
             AI Credit Free via Global Partner ISP
           </h2>
           <p className="text-xs text-red-100 leading-relaxed font-medium">
-            Nikmati akses AI canggih tanpa biaya dengan jaringan Global Partner ISP &amp; Network di seluruh mitra resmi.
+            Benefit jaringan dan AI ditampilkan setelah lokasi partner serta sesi gateway berhasil diverifikasi.
           </p>
         </div>
 
         <div className="p-3 rounded-2xl bg-black/20 border border-white/10 text-left text-xs space-y-1.5 max-w-xs mx-auto">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
-            <span>Bonus 100.000 Poin AI setiap bulan</span>
+            <span>Kuota sponsor mengikuti entitlement aktif dari backend</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
-            <span>Tanpa kartu kredit atau biaya langganan</span>
+            <span>Kelayakan dan ketentuan mengikuti program partner</span>
           </div>
         </div>
       </div>
 
-      {/* Button Aktifkan Sekarang */}
+      {/* Button Lihat Status Benefit */}
       <div className="pb-2">
         <button
           onClick={() => {
-            showToast('Selamat! AI Credit Free Global Partner ISP Anda telah aktif.', 'success');
+            showToast('Status benefit akan ditampilkan setelah entitlement partner diverifikasi oleh backend.', 'info');
             onNavigateTab('benefits');
           }}
           className="w-full py-3.5 rounded-2xl bg-white text-red-600 hover:bg-red-50 active:scale-95 text-xs sm:text-sm font-bold transition shadow-lg"
