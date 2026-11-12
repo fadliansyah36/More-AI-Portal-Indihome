@@ -1,4 +1,4 @@
-| 09 | Existing Frontend API Integration | IN PROGRESS — Customer profile/preferences, notifications, wallet/ledger/entitlements, persisted workspace/artifacts, Agent Chat/Research/Create/Analyse/Code, Wi-Fi session history and EduTech learning progress now use existing authenticated contracts where available. Benefit screen separates remaining quota from limit and includes persisted Wi-Fi sessions. EduTech unverified ratings/partner claims/video action removed. Remaining: full screen/action inventory, captive gateway verification, real device/session controls, managed EduTech catalog/video delivery and remaining agent/runtime workflows. No tests/staging/runtime checks in this increment |
+| 09 | Existing Frontend API Integration | IN PROGRESS — Source-level Customer screen/action audit continued. Profile/preferences, notifications, wallet/ledger/entitlements, usage, learning progress, Agent Chat/Research/Create/Analyse and workflow APIs remain connected where supported. Files screen now uploads private artifacts (2 MB cap), lists/downloads artifacts, and displays workspace file history/downloads with partial-workspace resilience; Artifact Results has signed download; Code Assistant persists code snapshots as private artifacts. Captive Portal/terms now fail closed without gateway; false 100K-credit/100-Mbps/connected/consent claims removed from welcome, onboarding, FAQ and partner-access surfaces; local-only device controls removed. Remaining: direct versioned workspace upload contract, Chat attachment/resume lifecycle, gateway verification/consent/OTP, image/video generation, EduTech catalog/video, payment/top-up and support integrations. No tests/staging/runtime checks in this increment |
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -993,3 +993,11 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Source commits: `3f329d71`, `2fa22e5b`, `b3e629ba`, `aa3b8ac0`. Documentation is source evidence only; Phase 09 remains IN PROGRESS.
 
 - EduTech follow-up source correction: removed the remaining selected-module star/review claim. Commit `7c89b04f`; report updated.
+
+## 2026-11-13 direct-main continuation — Customer files, code and captive flow
+
+- Report: [PHASE-09-CUSTOMER-DASHBOARD-FILES-CODE-CAPTIVE-CONTINUATION-20261113.md](./PHASE-09-CUSTOMER-DASHBOARD-FILES-CODE-CAPTIVE-CONTINUATION-20261113.md).
+- Added private artifact upload in Files, signed download in Artifact Results, persisted Code Assistant snapshots, and resilient per-workspace file listing.
+- Removed false captive connection/consent/credit/speed claims, disabled unsupported registration/device controls, and corrected onboarding/help/welcome/partner benefit copy.
+- Customer screen/action source inventory documented. Workspace direct upload, Chat attachment/resume, gateway verification, payment, EduTech catalog/video and support integrations remain open. Phase 09 remains IN PROGRESS.
+- Source commits include `ebc2fd6b`, `6a5d5afc`, `da375eda`, `fb358e25`, `89c80599`, `a908baf5`, `29127edc`, `7d2fb99c`. No tests, staging, deployment, or Supabase live writes.
