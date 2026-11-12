@@ -600,6 +600,14 @@ export const workspaceApi = {
   files: (workspaceId: string) => moreAiCustomerApi<{ items: CustomerWorkspaceFile[]; count: number }>(
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files',
   ),
+  runs: (workspaceId: string, limit = 50) => moreAiCustomerApi<{ items: Array<{
+    id: string; conversation_id: string | null; status: string; attempt: number;
+    max_attempts: number; created_at: string; started_at: string | null;
+    finished_at: string | null; available_at: string | null; heartbeat_at: string | null;
+    cancel_requested_at: string | null; last_checkpoint_key: string | null;
+  }>; count: number }>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/runs?limit=' + encodeURIComponent(String(limit)),
+  ),
   versions: (workspaceId: string, fileId: string) => moreAiCustomerApi<{
     items: CustomerWorkspaceFileVersion[]; count: number; current_version: number;
   }>('/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId) + '/versions'),
