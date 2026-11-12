@@ -76,10 +76,14 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       }]);
 
       await moreAiApiStream(customerApi.streamRun(queued.run.id), ({ event, data }) => {
-        if (event === 'worker.checkpoint') {
+        // FastAPI streams the durable agent_run_events.event_type value. Worker
+        // checkpoints are published as run.progress (not worker.checkpoint).
+        if (event === 'run.progress' || event === 'worker.checkpoint') {
           const checkpoint = data.checkpoint as Record<string, unknown> | undefined;
           if (typeof checkpoint?.text === 'string') {
-            streamedText += checkpoint.text;
+            // Checkpoint text is a persisted snapshot; replace rather than append
+            // so Last-Event-ID replay cannot duplicate already-rendered content.
+            streamedText = checkpoint.text;
             setMessages((previous) => previous.map((message) =>
               message.id === assistantId ? { ...message, text: streamedText } : message,
             ));
