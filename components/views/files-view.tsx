@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, FileText, Image as ImageIcon, FileSpreadsheet, FileCode, ChevronRight, X, Loader2, FolderOpen } from 'lucide-react';
-import { moreAiApi } from '@/lib/api/client';
+import { moreAiApi, workspaceApi, type CustomerWorkspaceFile } from '@/lib/api/client';
 
 type ArtifactRecord = {
   id: string;
@@ -50,6 +50,10 @@ export const FilesView: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<ArtifactFile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [workspaceFiles, setWorkspaceFiles] = useState<Array<CustomerWorkspaceFile & { workspaceId: string; workspaceName: string }>>([]);
+  const [workspaceLoading, setWorkspaceLoading] = useState(true);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -78,6 +82,39 @@ export const FilesView: React.FC = () => {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
+
+  useEffect(() => {
+    let active = true;
+    workspaceApi.list()
+      .then(async ({ items }) => {
+        const groups = await Promise.all(items.map(async (workspace) => {
+          const result = await workspaceApi.files(workspace.id);
+          return result.items.map((file) => ({ ...file, workspaceId: workspace.id, workspaceName: workspace.name }));
+        }));
+        if (active) {
+          setWorkspaceFiles(groups.flat());
+          setWorkspaceError(null);
+        }
+      })
+      .catch((cause) => {
+        if (active) setWorkspaceError(cause instanceof Error ? cause.message : 'Gagal memuat file workspace.');
+      })
+      .finally(() => { if (active) setWorkspaceLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const downloadWorkspaceFile = async (file: CustomerWorkspaceFile & { workspaceId: string }) => {
+    setDownloadingFile(file.id);
+    try {
+      const result = await workspaceApi.signedDownload(file.workspaceId, file.id);
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+    } catch (cause) {
+      setWorkspaceError(cause instanceof Error ? cause.message : 'Gagal membuat tautan unduhan.');
+    } finally {
+      setDownloadingFile(null);
+    }
+  };
 
   const filteredFiles = useMemo(() => files.filter((file) => {
     const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -144,6 +181,36 @@ export const FilesView: React.FC = () => {
           </button>
         ))}
       </div>
+
+
+      <section className="space-y-3 pt-3">
+        <div>
+          <h2 className="text-sm font-bold text-slate-900">File Workspace Agent</h2>
+          <p className="text-xs text-slate-500">File kerja yang tersimpan pada workspace aktif dan dibagikan melalui keanggotaan workspace.</p>
+        </div>
+        {workspaceLoading ? (
+          <div className="rounded-2xl border border-slate-100 bg-white p-5 text-xs text-slate-500">Memuat file workspace…</div>
+        ) : workspaceError ? (
+          <div role="alert" className="rounded-2xl border border-red-100 bg-white p-4 text-xs text-red-600">{workspaceError}</div>
+        ) : workspaceFiles.length === 0 ? (
+          <div className="rounded-2xl border border-slate-100 bg-white p-5 text-xs text-slate-500">Belum ada file pada workspace yang dapat diakses.</div>
+        ) : workspaceFiles.map((file) => (
+          <div key={file.workspaceId + ':' + file.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white p-3">
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-slate-900">{file.path}</p>
+              <p className="mt-1 truncate text-[10px] text-slate-500">{file.workspaceName} · v{file.version} · {formatSize(file.size_bytes)}</p>
+            </div>
+            <button
+              type="button"
+              disabled={!file.storage_path || downloadingFile === file.id}
+              onClick={() => void downloadWorkspaceFile(file)}
+              className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {downloadingFile === file.id ? 'Menyiapkan…' : 'Unduh'}
+            </button>
+          </div>
+        ))}
+      </section>
 
       {selectedFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
