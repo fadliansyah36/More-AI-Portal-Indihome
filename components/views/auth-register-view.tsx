@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
-import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -18,7 +18,7 @@ export const AuthRegisterView: React.FC<AuthRegisterViewProps> = ({
 }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(true);
@@ -26,27 +26,51 @@ export const AuthRegisterView: React.FC<AuthRegisterViewProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreed) return;
+    if (!agreed || isSubmitting) return;
+    const normalizedName = fullName.trim().replace(/\s+/g, ' ');
+    const normalizedEmail = email.trim().toLowerCase();
+    if (normalizedName.length < 2 || normalizedName.length > 80) {
+      showToast('Nama lengkap harus terdiri dari 2–80 karakter.', 'error');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      showToast('Format email tidak valid.', 'error');
+      return;
+    }
+    if (password.length < 12 || password.length > 128 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      showToast('Password minimal 12 karakter dan harus memuat huruf besar, huruf kecil, angka, serta simbol.', 'error');
+      return;
+    }
+    setIsSubmitting(true);
     try {
       const supabase = createSupabaseBrowserClient();
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: normalizedEmail,
         password,
-        options: {
-          data: { full_name: fullName.trim(), phone: phone.trim() },
-          emailRedirectTo: window.location.origin,
-        },
+        options: { data: { full_name: normalizedName } },
       });
-      if (error) throw error;
-      if (data.session) {
-        onRegisterSuccess();
-        onNavigate('welcome_success');
-      } else {
-        showToast('Pendaftaran diterima. Silakan verifikasi email untuk mengaktifkan akun.', 'success');
-        onNavigate('login');
+      if (error) {
+        const message = error.message.toLowerCase();
+        if (message.includes('already registered') || message.includes('already exists')) {
+          throw new Error('Email sudah terdaftar. Silakan masuk atau gunakan fitur lupa password.');
+        }
+        if (message.includes('password')) throw new Error('Password belum memenuhi kebijakan keamanan.');
+        if (message.includes('rate limit') || message.includes('too many')) {
+          throw new Error('Terlalu banyak percobaan. Silakan tunggu beberapa saat sebelum mencoba kembali.');
+        }
+        throw new Error('Pendaftaran gagal. Periksa email dan password, lalu coba kembali.');
       }
+      if (!data.user) throw new Error('Akun belum berhasil dibuat. Silakan coba kembali.');
+      if (!data.session) {
+        showToast('Akun berhasil dibuat, tetapi login otomatis belum aktif. Admin perlu menonaktifkan Confirm Email di Supabase Auth.', 'error');
+        return;
+      }
+      onRegisterSuccess();
+      onNavigate('welcome_success');
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Pendaftaran gagal. Periksa kembali data Anda.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -110,23 +134,6 @@ export const AuthRegisterView: React.FC<AuthRegisterViewProps> = ({
 
           <div>
             <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-              Nomor HP (WhatsApp) *
-            </label>
-            <div className="relative">
-              <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0812 3456 7890"
-                required
-                className="w-full text-xs pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-semibold text-slate-700 block mb-1">
               Buat Password *
             </label>
             <div className="relative">
@@ -135,7 +142,7 @@ export const AuthRegisterView: React.FC<AuthRegisterViewProps> = ({
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimal 8 karakter..."
+                placeholder="Minimal 12 karakter, huruf/angka/simbol..."
                 required
                 className="w-full text-xs pl-10 pr-10 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition"
               />
@@ -163,10 +170,10 @@ export const AuthRegisterView: React.FC<AuthRegisterViewProps> = ({
 
           <button
             type="submit"
-            disabled={!agreed}
+            disabled={!agreed || isSubmitting}
             className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-xs font-bold transition shadow-xs mt-2"
           >
-            Daftar Sekarang
+            {isSubmitting ? 'Memproses...' : 'Daftar Sekarang'}
           </button>
         </form>
       </div>
