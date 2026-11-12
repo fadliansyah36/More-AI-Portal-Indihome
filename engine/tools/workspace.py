@@ -364,6 +364,15 @@ class SupabaseWorkspaceTool:
         # Each file is independently committed with compare-and-swap version fencing.
         # A conflict stops the remaining writes; already committed files remain valid versions.
         for path in changed:
+            # A soft-deleted path is not a new file; require the explicit restore workflow.
+            existing = await self.client.select("agent_workspace_files", {
+                "workspace_id": f"eq.{workspace_id}",
+                "path": f"eq.{path}",
+                "select": "deleted_at",
+                "limit": "1",
+            })
+            if existing and existing[0].get("deleted_at") is not None:
+                raise ValueError("workspace_execution_cannot_overwrite_deleted_path")
             current = await self.client.workspace_get_file(user_id, workspace_id, path)
             current_version = current.get("version")
             if isinstance(current_version, bool) or not isinstance(current_version, int):
