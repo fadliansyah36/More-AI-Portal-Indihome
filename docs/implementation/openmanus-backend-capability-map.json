@@ -682,5 +682,21 @@
     ],
     "verification": "No tests, lint, typecheck, build, Docker build, runtime probes, staging, deployment or Supabase mutation performed.",
     "status": "PARTIAL — Phase 04 exception taxonomy source integration added; Phase 04 remains in progress."
+  },
+  "integration_increment_20261113_browser_download_denial": {
+    "branch": "main",
+    "commit": "845b9e7d5ae5cff9676b06218324126fbaa6eca4",
+    "implemented": [
+      "Browser context rejects downloads using accept_downloads=false.",
+      "Explicit Playwright download event handler cancels download attempts.",
+      "Navigation and extraction responses expose blocked_downloads count.",
+      "No untrusted download is persisted or returned as a user artifact."
+    ],
+    "remaining": [
+      "Controlled downloads require content scanning, MIME/size policy, quarantine storage, tenant ownership and audit before enabling persistence.",
+      "Persistent workspace snapshot/write-back bridge to Python/Bash runner remains unimplemented."
+    ],
+    "verification": "No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment or Supabase mutation performed.",
+    "status": "PARTIAL — browser download denial implemented; Phase 04 remains in progress."
   }
 }
