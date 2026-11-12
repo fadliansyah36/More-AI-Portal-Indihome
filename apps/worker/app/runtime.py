@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
 from app.client import RunPausedForApproval, WorkerRpcClient
+from engine.agents.errors import AgentExecutionError
 
 
 Checkpoint = Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]]
@@ -138,6 +139,21 @@ class WorkerRuntime:
             # Pause RPC committed the checkpoint and released the lease atomically.
             # Owner decision will enqueue a continuation; do not finish this run.
             pass
+        except AgentExecutionError as exc:
+            if lease_lost.is_set():
+                pass
+            elif cancelled.is_set():
+                await self.rpc.append_run_event(run_id, "worker:run.cancelled", "run.cancelled", {})
+                await self.rpc.finish(run_id, "cancelled")
+            else:
+                await self.rpc.append_run_event(
+                    run_id, f"worker:run.failed:{exc.code}", "run.failed",
+                    {"code": exc.code, "retryable": exc.retryable},
+                )
+                await self.rpc.finish(
+                    run_id, "failed", error={"code": exc.code},
+                    retry_delay_seconds=30 if exc.retryable else 0,
+                )
         except asyncio.CancelledError:
             # A user-requested cancellation is terminal. A process shutdown is not:
             # leave its lease/checkpoints intact so another worker can recover it.
