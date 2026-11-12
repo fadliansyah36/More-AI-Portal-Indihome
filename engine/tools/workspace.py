@@ -283,3 +283,133 @@ class SupabaseWorkspaceTool:
             separators=(",", ":"),
         )
 
+
+
+    async def export_execution_snapshot(
+        self, *, user_id: str, workspace_id: str,
+        max_files: int = 200, max_bytes: int = 2_000_000,
+    ) -> tuple[dict[str, bytes], dict[str, dict[str, Any]]]:
+        """Build a bounded, integrity-checked snapshot for one authorized run workspace."""
+        rows = await self.client.select("agent_workspace_files", {
+            "workspace_id": f"eq.{workspace_id}",
+            "deleted_at": "is.null",
+            "select": "path,version,storage_path,sha256,size_bytes",
+            "order": "path.asc",
+            "limit": str(max_files + 1),
+        })
+        if len(rows) > max_files:
+            raise ValueError("workspace_execution_file_count_exceeded")
+        snapshot: dict[str, bytes] = {}
+        baseline: dict[str, dict[str, Any]] = {}
+        total = 0
+        prefix = f"/workspaces/{workspace_id}/versions/"
+        for row in rows:
+            path = self._safe_path(row.get("path"))
+            # Re-check membership and current metadata through the owner-scoped RPC.
+            metadata = await self.client.workspace_get_file(user_id, workspace_id, path)
+            storage_path = metadata.get("storage_path")
+            expected_sha = metadata.get("sha256")
+            expected_size = metadata.get("size_bytes")
+            version = metadata.get("version")
+            if (
+                not isinstance(storage_path, str) or not storage_path.startswith(prefix)
+                or storage_path.startswith("/") or ".." in storage_path.split("/")
+                or not isinstance(expected_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_sha)
+                or isinstance(expected_size, bool) or not isinstance(expected_size, int)
+                or expected_size < 0 or expected_size > max_bytes
+                or isinstance(version, bool) or not isinstance(version, int) or version < 1
+            ):
+                raise RuntimeError("workspace_execution_metadata_invalid")
+            response = await self.client.client.get(
+                self._object_url(storage_path), headers=self._headers(), timeout=20.0,
+            )
+            response.raise_for_status()
+            raw = response.content
+            if len(raw) != expected_size or hashlib.sha256(raw).hexdigest() != expected_sha:
+                raise RuntimeError("workspace_execution_integrity_mismatch")
+            total += len(raw)
+            if total > max_bytes:
+                raise ValueError("workspace_execution_snapshot_too_large")
+            snapshot[path] = raw
+            baseline[path] = {
+                "version": version, "sha256": expected_sha, "size_bytes": expected_size,
+            }
+        return snapshot, baseline
+
+    async def apply_execution_snapshot(
+        self, *, run_id: str, user_id: str, workspace_id: str,
+        before: dict[str, bytes], baseline: dict[str, dict[str, Any]],
+        after: dict[str, bytes], max_bytes: int = 2_000_000,
+    ) -> dict[str, Any]:
+        """Persist successful sandbox changes as immutable, lease-fenced workspace versions."""
+        if len(after) > 200:
+            raise ValueError("workspace_execution_file_count_exceeded")
+        total = 0
+        for path, raw in after.items():
+            self._safe_path(path)
+            if not isinstance(raw, bytes):
+                raise ValueError("workspace_execution_file_invalid")
+            total += len(raw)
+            if total > max_bytes:
+                raise ValueError("workspace_execution_result_too_large")
+
+        changed = [
+            path for path, raw in after.items()
+            if path not in before or hashlib.sha256(raw).hexdigest() != hashlib.sha256(before[path]).hexdigest()
+        ]
+        deleted = [path for path in before if path not in after]
+        saved: list[dict[str, Any]] = []
+        removed: list[str] = []
+
+        # Each file is independently committed with compare-and-swap version fencing.
+        # A conflict stops the remaining writes; already committed files remain valid versions.
+        for path in changed:
+            current = await self.client.workspace_get_file(user_id, workspace_id, path)
+            current_version = current.get("version")
+            if isinstance(current_version, bool) or not isinstance(current_version, int):
+                raise RuntimeError("workspace_version_invalid")
+            expected = baseline.get(path, {}).get("version", current_version)
+            if current_version != expected:
+                raise ValueError("workspace_execution_version_conflict")
+            reservation = await self.client.workspace_begin_write(
+                run_id, user_id, workspace_id, path, current_version,
+            )
+            token = reservation.get("token")
+            version = reservation.get("version")
+            storage_path = reservation.get("storage_path")
+            if not isinstance(token, str) or not isinstance(version, int) or not isinstance(storage_path, str):
+                raise RuntimeError("workspace_write_reservation_invalid")
+            raw = after[path]
+            digest = hashlib.sha256(raw).hexdigest()
+            committed = False
+            try:
+                upload = await self.client.client.post(
+                    self._object_url(storage_path), content=raw,
+                    headers=self._headers("application/octet-stream", False), timeout=25.0,
+                )
+                upload.raise_for_status()
+                result = await self.client.workspace_commit_write(
+                    run_id, user_id, workspace_id, path, token, version,
+                    storage_path, digest, len(raw),
+                )
+                committed = True
+                saved.append({"path": path, "version": result.get("version"), "sha256": digest})
+            finally:
+                if not committed:
+                    await self.client.workspace_abort_write(
+                        run_id, user_id, workspace_id, path, token,
+                    )
+
+        for path in deleted:
+            current = await self.client.workspace_get_file(user_id, workspace_id, path)
+            expected = baseline[path]["version"]
+            if current.get("version") != expected:
+                raise ValueError("workspace_execution_version_conflict")
+            result = await self.client.workspace_delete_file(
+                run_id, user_id, workspace_id, path, expected,
+            )
+            if result.get("deleted") is not True:
+                raise RuntimeError("workspace_execution_delete_failed")
+            removed.append(path)
+
+        return {"saved": saved, "deleted": removed, "saved_count": len(saved), "deleted_count": len(removed)}
