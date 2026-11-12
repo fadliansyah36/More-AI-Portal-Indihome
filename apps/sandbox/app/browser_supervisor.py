@@ -25,6 +25,8 @@ class BrowserSupervisor:
         secure_https = (
             parsed.scheme == "https" and bool(parsed.hostname)
             and not parsed.username and not parsed.password
+            and parsed.path in ("", "/")
+            and parsed.port in (None, 443)
             and not parsed.query and not parsed.fragment
         )
         if not (secure_https or private_http):
