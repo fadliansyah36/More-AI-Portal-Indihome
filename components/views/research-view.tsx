@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, TrendingUp, Sparkles, BookOpen, Clock, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Search, TrendingUp, BookOpen, ChevronRight, ArrowLeft } from 'lucide-react';
 import { customerApi, type CustomerAgentRun } from '@/lib/api/client';
-import { useToast } from '@/components/ui/toast-context';
 
 interface ResearchViewProps {
   onBack?: () => void;
@@ -11,7 +10,6 @@ interface ResearchViewProps {
 }
 
 export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopic }) => {
-  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'populer' | 'riwayat'>('populer');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<CustomerAgentRun | null>(null);
@@ -136,7 +134,7 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
             </div>
 
             <h3 className="text-base font-bold text-slate-900 leading-tight">
-              {selectedTopic.title}
+              {runTitle(selectedTopic)}
             </h3>
 
             <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100">
