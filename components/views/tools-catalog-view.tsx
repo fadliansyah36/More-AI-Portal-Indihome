@@ -1,24 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Search,
-  FileSpreadsheet,
-  FileText,
-  Network,
-  Calendar,
-  Image as ImageIcon,
-  Edit3,
-  Video,
-  Lightbulb,
-  Languages,
-  Mic,
+  Wrench,
+  ShieldCheck,
+  Code,
+  Search as SearchIcon,
+  Database,
+  Brain,
   ChevronRight,
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { useToast } from '@/components/ui/toast-context';
+import { platformCatalogApi, type CustomerToolCatalogItem } from '@/lib/api/client';
 
 interface ToolsCatalogViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -29,118 +25,41 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({
   onNavigateTab,
   onSelectToolForPrompt,
 }) => {
-  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCat, setFilterCat] = useState<'semua' | 'produktivitas' | 'kreatif'>('semua');
+  const [toolsList, setToolsList] = useState<CustomerToolCatalogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const toolsList = [
-    // Produktivitas
-    {
-      id: 'analisis-data',
-      name: 'Analisis Data',
-      desc: 'Analisis data spreadsheet & KPI bisnis secara terstruktur.',
-      category: 'produktivitas',
-      icon: FileSpreadsheet,
-      color: 'bg-blue-50 text-blue-600',
-      action: () => onNavigateTab('analyse'),
-    },
-    {
-      id: 'ringkasan-pdf',
-      name: 'Ringkasan PDF',
-      desc: 'Pahami dokumen panjang dan laporan riset lebih cepat.',
-      category: 'produktivitas',
-      icon: FileText,
-      color: 'bg-indigo-50 text-indigo-600',
-      action: () => onNavigateTab('create'),
-    },
-    {
-      id: 'mind-map',
-      name: 'Mind Map',
-      desc: 'Pemetaan konsep dan ide bisnis dalam struktur pohon visual.',
-      category: 'produktivitas',
-      icon: Network,
-      color: 'bg-purple-50 text-purple-600',
-      action: () => {
-        if (onSelectToolForPrompt) onSelectToolForPrompt('Buatkan mind map terstruktur untuk rencana bisnis kafe');
-        onNavigateTab('chat');
-      },
-    },
-    {
-      id: 'planner',
-      name: 'Planner',
-      desc: 'Penjadwalan tugas dan manajemen deadline otomatis.',
-      category: 'produktivitas',
-      icon: Calendar,
-      color: 'bg-emerald-50 text-emerald-600',
-      action: () => onNavigateTab('tasks'),
-    },
-    // Kreativitas
-    {
-      id: 'desain-gambar',
-      name: 'Desain Gambar',
-      desc: 'Ubah ide jadi visual menarik dan mockup produk tajam.',
-      category: 'kreatif',
-      icon: ImageIcon,
-      color: 'bg-amber-50 text-amber-600',
-      action: () => onNavigateTab('create'),
-    },
-    {
-      id: 'edit-konten',
-      name: 'Edit Konten',
-      desc: 'Perbaiki tata bahasa, nada bicara, dan gaya penulisan copy.',
-      category: 'kreatif',
-      icon: Edit3,
-      color: 'bg-rose-50 text-rose-600',
-      action: () => onNavigateTab('create'),
-    },
-    {
-      id: 'generate-video',
-      name: 'Generate Video',
-      desc: 'Buat storyboard, script video pendek, dan narasi promosi.',
-      category: 'kreatif',
-      icon: Video,
-      color: 'bg-red-50 text-red-600',
-      action: () => onNavigateTab('create'),
-    },
-    {
-      id: 'ide-kreatif',
-      name: 'Ide Kreatif',
-      desc: 'Brainstorming kampanye pemasaran dan solusi pemecahan masalah.',
-      category: 'kreatif',
-      icon: Lightbulb,
-      color: 'bg-yellow-50 text-yellow-600',
-      action: () => {
-        if (onSelectToolForPrompt) onSelectToolForPrompt('Berikan 10 ide promosi kreatif untuk UMKM kuliner');
-        onNavigateTab('chat');
-      },
-    },
-    {
-      id: 'translator',
-      name: 'Translator',
-      desc: 'Terjemahkan berbagai bahasa asing dengan akurasi tata bahasa tinggi.',
-      category: 'produktivitas',
-      icon: Languages,
-      color: 'bg-cyan-50 text-cyan-600',
-      action: () => onNavigateTab('create'),
-    },
-    {
-      id: 'voice-generator',
-      name: 'Voice Generator',
-      desc: 'Ubah teks jadi suara natural audio dalam bahasa Indonesia.',
-      category: 'kreatif',
-      icon: Mic,
-      color: 'bg-fuchsia-50 text-fuchsia-600',
-      action: () => {
-        showToast('Fitur Voice Generator: Siap menghasilkan sulih suara AI.', 'info');
-      },
-    },
-  ];
+  useEffect(() => {
+    let active = true;
+    platformCatalogApi.tools().then((items) => { if (active) setToolsList(items); })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Katalog tools tidak dapat dimuat.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-  const filtered = toolsList.filter((tool) => {
-    const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = filterCat === 'semua' ? true : tool.category === filterCat;
+  const iconFor = (item: CustomerToolCatalogItem) => {
+    const tags = item.capability_tags || [];
+    if (tags.includes('knowledge')) return Brain;
+    if (tags.includes('search') || tags.includes('web')) return SearchIcon;
+    if (tags.includes('filesystem') || tags.includes('workspace')) return Code;
+    if (tags.includes('storage') || tags.includes('artifact')) return Database;
+    if (item.risk === 'critical' || item.approval_mode !== 'none') return ShieldCheck;
+    return Wrench;
+  };
+  const categoryFor = (item: CustomerToolCatalogItem) => {
+    const tags = item.capability_tags || [];
+    return tags.some((tag) => ['image', 'video', 'audio', 'creative'].includes(tag)) ? 'kreatif' : 'produktivitas';
+  };
+
+
+
+  const filtered = useMemo(() => toolsList.filter((tool) => {
+    const matchesSearch = (tool.key + ' ' + tool.description).toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = filterCat === 'semua' || categoryFor(tool) === filterCat;
     return matchesSearch && matchesCategory;
-  });
+  }), [toolsList, searchQuery, filterCat]);
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -148,7 +67,7 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({
       <div>
         <h1 className="text-xl font-bold text-slate-900 tracking-tight">MoreAI Tools Catalog</h1>
         <p className="text-xs text-slate-500">
-          Akses berbagai tools AI populer untuk produktivitas &amp; kreativitas (Sheet 1 &amp; 3 &amp; 5)
+          Katalog tool dari registry OpenManus dan kebijakan runtime MoreAI
         </p>
       </div>
 
@@ -182,36 +101,28 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({
       </div>
 
       {/* Tools List */}
-      <div className="space-y-2.5">
-        {filtered.map((tool) => {
-          const Icon = tool.icon;
-          return (
-            <div
-              key={tool.id}
-              onClick={tool.action}
-              className="cursor-pointer p-3.5 rounded-2xl bg-white border border-slate-100 hover:border-red-200 shadow-2xs hover:shadow-xs transition flex items-center justify-between group"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform ${tool.color}`}
-                >
-                  <Icon className="w-5 h-5" />
+      {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{error}</div>}
+      {loading ? <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center text-xs text-slate-500">Memuat registry tools…</div> : (
+        <div className="space-y-2.5">
+          {filtered.map((tool) => {
+            const Icon = iconFor(tool);
+            return (
+              <article key={tool.key} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white p-3.5 shadow-2xs">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-600 shadow-2xs"><Icon className="h-5 w-5" /></div>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-xs font-bold text-slate-900">{tool.key}</h3>
+                    <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-500">{tool.description}</p>
+                    <p className="mt-1 text-[10px] text-slate-400">Risiko: {tool.risk} · Approval: {tool.approval_mode} · {tool.execution_environment}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-red-600 transition truncate">
-                    {tool.name}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
-                    {tool.desc}
-                  </p>
-                </div>
-              </div>
-
-              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-red-600 group-hover:translate-x-0.5 transition shrink-0 ml-2" />
-            </div>
-          );
-        })}
-      </div>
+                <span className="shrink-0 rounded-full border border-slate-200 px-2 py-1 text-[9px] font-semibold text-slate-500">{tool.enabled_by_default ? 'Default aktif' : 'Default nonaktif'}</span>
+              </article>
+            );
+          })}
+          {filtered.length === 0 && <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center text-xs text-slate-500">Tidak ada tool dari registry yang cocok.</div>}
+        </div>
+      )}
     </div>
   );
 };
