@@ -5,10 +5,13 @@ import ipaddress
 import re
 import base64
 import socket
+import logging
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 from app.browser_security import BrowserPolicyError, BrowserRequestGuard
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -101,7 +104,8 @@ class PinnedConnectProxy:
             )
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception as exc:
+            logger.warning("browser proxy request failed (%s)", type(exc).__name__)
             if not writer.is_closing():
                 try:
                     writer.write(b"HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n")
