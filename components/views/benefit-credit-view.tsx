@@ -64,6 +64,11 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
   );
   const activeEntitlements = entitlements.filter((item) => item.status === 'active');
   const monthlyQuota = quotas.find((item) => /month|monthly|llm|token|credit/i.test(item.metric_key)) || quotas[0];
+  const monthlyQuotaLimit = monthlyQuota ? Number(monthlyQuota.limit_value) : null;
+  const monthlyQuotaUsed = monthlyQuota ? Number(monthlyQuota.usage?.used_value || 0) : 0;
+  const monthlyQuotaRemaining = monthlyQuotaLimit !== null && Number.isFinite(monthlyQuotaLimit) && Number.isFinite(monthlyQuotaUsed)
+    ? Math.max(0, monthlyQuotaLimit - monthlyQuotaUsed)
+    : null;
   const history = [
     ...usage.map((item) => ({
       id: `usage:${item.id}`,
@@ -122,11 +127,11 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
           <div>
             <span className="text-xs text-red-100 font-medium block">AI Credit &amp; Entitlement</span>
             <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight">{monthlyQuota ? Number(monthlyQuota.limit_value).toLocaleString('id-ID') : '—'}</span>
-              <span className="text-xs font-bold text-red-200">{monthlyQuota?.metric_key || 'Kuota belum tersedia'}</span>
+              <span className="text-2xl sm:text-3xl font-black tracking-tight">{monthlyQuotaRemaining === null ? '—' : monthlyQuotaRemaining.toLocaleString('id-ID')}</span>
+              <span className="text-xs font-bold text-red-200">{monthlyQuota ? `sisa ${monthlyQuota.metric_key}` : 'Kuota belum tersedia'}</span>
             </div>
             <span className="text-[11px] text-white/80 block mt-0.5">
-              Saldo wallet aktif: <strong>{loading ? 'Memuat…' : `${balance.toLocaleString('id-ID')} ${wallets[0]?.currency || 'CREDIT'}`}</strong>
+              Saldo wallet aktif: <strong>{loading ? 'Memuat…' : `${balance.toLocaleString('id-ID')} ${wallets[0]?.currency || 'CREDIT'}`}</strong>{monthlyQuota && monthlyQuotaRemaining !== null ? <span className="ml-1 text-white/75">· terpakai {monthlyQuotaUsed.toLocaleString('id-ID')} dari {monthlyQuotaLimit?.toLocaleString('id-ID')}</span> : null}
             </span>
           </div>
 
