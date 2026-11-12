@@ -841,3 +841,14 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Migration `20261112170000_moreai_durable_knowledge_file_ingestion.sql` is committed only; it has not been applied. Worker dependencies/container and API changes have not been deployed.
 - Report: [PHASE-08-KNOWLEDGE-FILE-INGESTION-20261112.md](./PHASE-08-KNOWLEDGE-FILE-INGESTION-20261112.md).
 - No tests, lint, typecheck, build, API calls, uploads, OCR run, DB mutation, staging or deployment were performed. Phase 08 and Phase 09 remain IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-13 direct-main Customer integration increment
+
+- Phase 09: Supabase Auth TOTP factor inventory/enrollment/challenge/verification/unenrollment is now connected in the existing Security Settings view. Local-only 2FA success toggles were removed.
+- Removed fabricated device inventory and local pause/filter actions from Customer Device Access Control; it now clearly reports that a real partner/gateway device API is not yet connected.
+- Removed fabricated captive Wi-Fi countdown, venue identity, throughput metrics, AI quota numbers and local extend/disconnect success actions. Unsupported operations remain disabled until a real gateway contract is available.
+- Existing screen structure and styling were retained; no broad UI redesign.
+- Report: [Phase 09 Customer Security, Device & Wi-Fi Correctness](./PHASE-09-CUSTOMER-SECURITY-DEVICE-WIFI-CORRECTNESS-20261113.md).
+- Commits: `083bef75`, `0a0675c2`, `b0b54e37`, `477f590e`, `55138bc0`, `d7f7cd6f`.
+- No tests, lint, typecheck, build, screenshots, browser/API probes, staging, deployment, provider calls or database mutations were run per instruction. Phase 09 remains IN PROGRESS; TOTP login-time challenge/AAL enforcement and real gateway APIs are outstanding.
