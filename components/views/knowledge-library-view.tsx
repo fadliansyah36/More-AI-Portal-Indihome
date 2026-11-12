@@ -18,6 +18,8 @@ export const KnowledgeLibraryView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -36,6 +38,25 @@ export const KnowledgeLibraryView: React.FC = () => {
     void Promise.resolve().then(() => { if (active) void load(); });
     return () => { active = false; };
   }, [load]);
+
+  const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      await knowledgeApi.upload(file);
+      setStatus('all');
+      setLoading(true);
+      await knowledgeApi.list({ limit: 100 }).then((result) => setDocuments(result.items));
+    } catch (cause) {
+      setUploadError(cause instanceof Error ? cause.message : 'File tidak dapat diunggah.');
+    } finally {
+      setUploading(false);
+      setLoading(false);
+    }
+  };
 
   const archive = async (document: CustomerKnowledgeDocument) => {
     if (document.status !== 'ready' && document.status !== 'failed') return;
@@ -59,9 +80,15 @@ export const KnowledgeLibraryView: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight text-slate-900">Knowledge Library</h1>
           <p className="mt-1 text-xs text-slate-500">Dokumen tenant-scoped yang dapat digunakan Agent Runtime melalui semantic retrieval.</p>
         </div>
-        <button type="button" onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50">
-          <RefreshCw className={loading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700">
+            <FileText className="h-4 w-4" /> {uploading ? 'Mengunggah…' : 'Upload file'}
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => void upload(event)} disabled={uploading} className="sr-only" />
+          </label>
+          <button type="button" onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50">
+            <RefreshCw className={loading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} /> Refresh
+          </button>
+        </div>
       </header>
 
       <div className="relative">
@@ -77,7 +104,8 @@ export const KnowledgeLibraryView: React.FC = () => {
         ))}
       </div>
 
-      {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{error}</div>}
+      {(error || uploadError) && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{uploadError || error}</div>}
+      <p className="text-[11px] text-slate-500">Pilih PDF atau gambar langsung dari file manager perangkat. Maksimum 25 MiB per file.</p>
       {loading ? (
         <div className="flex items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-white p-10 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Memuat Knowledge Library…</div>
       ) : visible.length === 0 ? (
