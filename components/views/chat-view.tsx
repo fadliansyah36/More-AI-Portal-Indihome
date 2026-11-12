@@ -6,12 +6,21 @@ import { useToast } from '@/components/ui/toast-context';
 import { NavigationTab } from '@/types/moreai';
 import { customerApi, moreAiApiStream } from '@/lib/api/client';
 
+interface ChatCitation {
+  id: string;
+  document_id: string;
+  title: string;
+  similarity?: number;
+  marker: string;
+}
+
 interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
   time: string;
   source?: string;
+  citations?: ChatCitation[];
 }
 
 interface ChatViewProps {
@@ -120,8 +129,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
           : streamedText;
 
       if (terminalStatus === 'succeeded') {
+        const citations = Array.isArray(finalOutput?.citations)
+          ? finalOutput.citations.filter((item): item is ChatCitation =>
+              !!item && typeof item === 'object'
+              && typeof (item as ChatCitation).id === 'string'
+              && typeof (item as ChatCitation).document_id === 'string'
+              && typeof (item as ChatCitation).title === 'string'
+              && typeof (item as ChatCitation).marker === 'string',
+            )
+          : [];
         setMessages((previous) => previous.map((message) =>
-          message.id === assistantId ? { ...message, text: outputText } : message,
+          message.id === assistantId ? { ...message, text: outputText, citations } : message,
         ));
       } else if (terminalStatus === 'cancelled') {
         setMessages((previous) => previous.map((message) =>
@@ -217,6 +235,19 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
                 <span>{message.source ?? (message.sender === 'user' ? 'Anda' : 'MoreAI')}</span>
                 <span>{message.time}</span>
               </div>
+              {message.sender === 'assistant' && message.citations && message.citations.length > 0 && (
+                <div className="mt-3 border-t border-slate-100 pt-2">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Sumber pengetahuan</p>
+                  <ul className="space-y-1">
+                    {message.citations.map((citation) => (
+                      <li key={citation.id} className="text-xs text-slate-600">
+                        <span className="font-medium">{citation.title}</span>
+                        <span className="ml-1 font-mono text-[10px] text-slate-400">{citation.marker}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {message.sender === 'assistant' && message.text && (
                 <button type="button" onClick={() => navigator.clipboard.writeText(message.text)} className="mt-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800">
                   <Copy className="h-3 w-3" /> Salin
