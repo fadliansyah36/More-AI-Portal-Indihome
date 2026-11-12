@@ -72,6 +72,44 @@ export function moreAiPartnerApi<T>(path: string, init: RequestInit = {}): Promi
   return moreAiApiAt(PARTNER_API_BASE_URL, path, init);
 }
 
+/** Authenticated raw response for binary transfer and streaming contracts. */
+export async function moreAiCustomerFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  if (!CUSTOMER_API_BASE_URL) {
+    throw new Error('Customer API belum dikonfigurasi. Isi NEXT_PUBLIC_MOREAI_CUSTOMER_API_URL atau NEXT_PUBLIC_MOREAI_API_URL.');
+  }
+  const supabase = createSupabaseBrowserClient();
+  const headers = new Headers(init.headers);
+  const session = await supabase.auth.getSession();
+  if (session.error || !session.data.session?.access_token) {
+    throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
+  }
+  let token = session.data.session.access_token;
+  const send = () => {
+    const requestHeaders = new Headers(headers);
+    requestHeaders.set('Authorization', 'Bearer ' + token);
+    return fetch(CUSTOMER_API_BASE_URL + path, { ...init, headers: requestHeaders, cache: 'no-store' });
+  };
+  let response = await send();
+  if (response.status === 401) {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.error || !refreshed.data.session?.access_token) {
+      await supabase.auth.signOut({ scope: 'local' });
+      throw new Error('Sesi login telah berakhir. Silakan masuk kembali.');
+    }
+    token = refreshed.data.session.access_token;
+    response = await send();
+  }
+  if (response.status === 401) {
+    await supabase.auth.signOut({ scope: 'local' });
+    throw new Error('Sesi login tidak valid. Silakan masuk kembali.');
+  }
+  if (!response.ok) {
+    const payload = await response.clone().json().catch(() => null);
+    throw new Error(payload?.error?.message || payload?.detail || ('MoreAI API error (' + response.status + ')'));
+  }
+  return response;
+}
+
 export type MoreAiStreamEvent = {
   id?: string;
   event: string;
