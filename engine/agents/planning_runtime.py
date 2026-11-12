@@ -68,6 +68,19 @@ class PlanningAgentRuntime(AgentRuntime):
             raise RuntimeError("planning_manifest_too_large")
         return validated
 
+    def _validate_persisted_rows(self, rows: list[dict[str, Any]], steps: list[dict[str, Any]]) -> None:
+        if len(rows) != len(steps):
+            raise RuntimeError("planning_persisted_manifest_mismatch")
+        for index, (row, step) in enumerate(zip(rows, steps), start=1):
+            if row.get("sequence") != index or row.get("step_key") != f"planning.step.{index}":
+                raise RuntimeError("planning_persisted_step_key_mismatch")
+            persisted_input = row.get("input")
+            if not isinstance(persisted_input, dict):
+                raise RuntimeError("planning_persisted_step_invalid")
+            normalized = self._validate_steps([persisted_input])[0]
+            if normalized != step:
+                raise RuntimeError("planning_persisted_step_input_mismatch")
+
     def _validate_executor_keys(self, steps: list[dict[str, Any]]) -> None:
         missing = sorted({step["agent_key"] for step in steps if step["agent_key"] not in self.step_executors})
         if missing:
@@ -113,14 +126,18 @@ class PlanningAgentRuntime(AgentRuntime):
                 self._validate_executor_keys(steps)
                 if len(steps)!=manifest.get("step_count"):
                     raise RuntimeError("planning_manifest_mismatch")
-                if len(rows)!=len(steps):
+                if len(rows)!=len(steps) or any(
+                    row.get("sequence") != index or row.get("step_key") != f"planning.step.{index}"
+                    for index, row in enumerate(rows, start=1)
+                ):
                     # Recover a crash between writing the manifest and inserting all
                     # durable step rows. Store.create is idempotent by run/sequence.
                     await self.store.create(run_id=context.run_id,title=title,steps=steps)
                     persisted=await self.store.get(run_id=context.run_id)
                     rows=persisted.get("steps") if isinstance(persisted,dict) else None
-                if not isinstance(rows,list) or len(rows)!=len(steps):
+                if not isinstance(rows,list):
                     raise RuntimeError("planning_persisted_manifest_mismatch")
+                self._validate_persisted_rows(rows, steps)
             else:
                 if len(rows)!=manifest.get("step_count"):
                     raise RuntimeError("planning_persisted_manifest_mismatch")
