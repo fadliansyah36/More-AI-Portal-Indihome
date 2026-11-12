@@ -42,6 +42,7 @@ async def run_worker() -> None:
         service_role_key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
         worker_id=os.getenv("WORKER_ID", "moreai-worker-main-01"),
         lease_seconds=int(os.getenv("WORKER_LEASE_SECONDS", "90")),
+        run_timeout_seconds=int(os.getenv("MOREAI_RUN_TIMEOUT_SECONDS", "1800")),
     )
     required_billing = (
         "MOREAI_CREDITS_PER_USD",
