@@ -458,5 +458,18 @@
       "No tests, lint, typecheck, build, browser QA, authenticated stream, SSE reconnect, or worker runtime was run.",
       "Phase 07 event replay and Phase 09 live workflow UI remain unaccepted until explicit test authorization."
     ]
+  },
+  "integration_increment_20261112_stream_latency": {
+    "branch": "main",
+    "commits": [
+      "157b110a14d456dad6751a22f34983a26c2df19e"
+    ],
+    "implemented": [
+      "MeteredGateway.stream now measures elapsed provider streaming time with a monotonic clock and persists the measured latency in provider usage accounting instead of hardcoding zero."
+    ],
+    "limitations": [
+      "No provider call, usage row, credit settlement, fallback, retry, test or runtime verification was performed.",
+      "No pricing, accounting schema or credit policy was changed."
+    ]
   }
 }
