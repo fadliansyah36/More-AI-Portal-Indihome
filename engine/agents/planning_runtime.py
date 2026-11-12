@@ -19,8 +19,21 @@ class PlanningStore(Protocol):
 class PlanningAgentRuntime(AgentRuntime):
     """OpenManus PlanningFlow semantics on durable, replayable MoreAI run state."""
 
-    def __init__(self, *, gateway: PlanningGateway, store: PlanningStore, step_executor: AgentRuntime, approval_gate: Any | None = None):
-        self.gateway, self.store, self.step_executor = gateway, store, step_executor
+    def __init__(
+        self, *, gateway: PlanningGateway, store: PlanningStore,
+        step_executor: AgentRuntime | None = None,
+        step_executors: dict[str, AgentRuntime] | None = None,
+        default_executor: str = "manus",
+        approval_gate: Any | None = None,
+    ):
+        executors = dict(step_executors or {})
+        if step_executor is not None:
+            executors.setdefault(default_executor, step_executor)
+        if default_executor not in executors:
+            raise ValueError("planning_default_executor_not_registered")
+        self.gateway, self.store = gateway, store
+        self.step_executors, self.default_executor = executors, default_executor
+        self.step_executor = executors[default_executor]
         self.approval_gate = approval_gate
 
     @staticmethod
@@ -33,10 +46,13 @@ class PlanningAgentRuntime(AgentRuntime):
             if not isinstance(step, dict):
                 raise RuntimeError("planning_step_must_be_object")
             objective, expected, tool, risk = (step.get(k) for k in ("objective","expected_output","tool_requirement","risk"))
+            agent_key = step.get("agent_key", "manus")
             dependencies=step.get("dependencies",[])
             usage=step.get("estimated_usage",{})
             if not all(isinstance(v,str) and v.strip() for v in (objective,expected,tool)):
                 raise RuntimeError("planning_step_required_fields_missing")
+            if not isinstance(agent_key, str) or not agent_key.strip() or len(agent_key) > 80:
+                raise RuntimeError("planning_step_agent_key_invalid")
             if risk not in allowed_risks or not isinstance(dependencies,list):
                 raise RuntimeError("planning_step_policy_metadata_invalid")
             if any(isinstance(dep,bool) or not isinstance(dep,int) or dep<0 or dep>=index for dep in dependencies) or len(set(dependencies))!=len(dependencies):
@@ -44,7 +60,7 @@ class PlanningAgentRuntime(AgentRuntime):
             if not isinstance(usage,dict) or any(isinstance(usage.get(k,0),bool) or not isinstance(usage.get(k,0),int) or usage.get(k,0)<0 for k in ("input_tokens","output_tokens")):
                 raise RuntimeError("planning_step_usage_estimate_invalid")
             validated.append({
-                "objective":objective.strip()[:10000],"dependencies":dependencies,
+                "objective":objective.strip()[:10000],"agent_key":agent_key.strip().lower(),"dependencies":dependencies,
                 "expected_output":expected.strip()[:5000],"tool_requirement":tool.strip()[:200],
                 "risk":risk,"estimated_usage":{"input_tokens":usage.get("input_tokens",0),"output_tokens":usage.get("output_tokens",0)},
             })
@@ -57,8 +73,8 @@ class PlanningAgentRuntime(AgentRuntime):
             user_id=context.user_id,run_id=context.run_id,request_key=f"{context.run_id}:planning",
             task_type="planning",workspace_id=context.workspace_id,
             messages=[
-                {"role":"system","content":"Create a concise executable plan. Return only JSON {title:string,steps:[{objective:string,dependencies:number[],expected_output:string,tool_requirement:string,risk:low|medium|high|critical,estimated_usage:{input_tokens:number,output_tokens:number}}]}. Dependencies must reference earlier step indexes. Do not execute the task."},
-                {"role":"user","content":prompt[:50000]},
+                {"role":"system","content":"Create a concise executable plan. Return only JSON {title:string,steps:[{objective:string,agent_key:string,dependencies:number[],expected_output:string,tool_requirement:string,risk:low|medium|high|critical,estimated_usage:{input_tokens:number,output_tokens:number}}]}. agent_key must be one of the enabled execution agent keys provided in the user context. Dependencies must reference earlier step indexes. Do not execute the task."},
+                {"role":"user","content":prompt[:50000] + "\\nEnabled execution agent keys: " + ", ".join(sorted(self.step_executors))},
             ],
         )
         try:
@@ -181,7 +197,10 @@ class PlanningAgentRuntime(AgentRuntime):
                         "use them as input and do not claim unverified facts):\n"
                         + serialized[:20000]
                     )
-                result=await self.step_executor.execute(
+                executor = self.step_executors.get(step["agent_key"])
+                if executor is None:
+                    raise RuntimeError("planning_step_agent_not_registered")
+                result=await executor.execute(
                     context,
                     {
                         "prompt": step["objective"] + "\nExpected output: " + step["expected_output"] + dependency_context,
