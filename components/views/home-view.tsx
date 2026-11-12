@@ -7,19 +7,17 @@ import {
   Sparkles,
   FileSpreadsheet,
   Code2,
-  ArrowRight,
   Wifi,
   ChevronRight,
   Bot,
   Zap,
   Gift,
   Clock,
-  CheckCircle2,
   Send,
   Layers,
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { profileApi } from '@/lib/api/client';
+import { customerApi, profileApi } from '@/lib/api/client';
 
 interface HomeViewProps {
   onNavigate: (tab: NavigationTab) => void;
@@ -35,6 +33,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
 }) => {
   const [promptInput, setPromptInput] = useState('');
   const [displayName, setDisplayName] = useState(userName);
+  const [recentRuns, setRecentRuns] = useState<Array<{ id: string; status: string; created_at?: string; input?: Record<string, unknown> }>>([]);
+  const [recentRunsLoading, setRecentRunsLoading] = useState(true);
+  const [walletSummary, setWalletSummary] = useState('—');
+  const [partnerBenefitActive, setPartnerBenefitActive] = useState<boolean | null>(null);
   useEffect(() => {
     let active = true;
     profileApi.get()
@@ -53,6 +55,34 @@ export const HomeView: React.FC<HomeViewProps> = ({
       });
     return () => { active = false; };
   }, [userName]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([
+      customerApi.agentRunsPage(3),
+      customerApi.wallets(),
+      customerApi.entitlements(),
+    ]).then(([runsResult, walletResult, entitlementResult]) => {
+      if (!active) return;
+      if (runsResult.status === 'fulfilled') setRecentRuns(runsResult.value.items);
+      if (walletResult.status === 'fulfilled') {
+        const wallet = walletResult.value.wallets[0];
+        if (wallet) {
+          const amount = Number(wallet.balance);
+          setWalletSummary(Number.isFinite(amount)
+            ? new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(amount) + ' ' + wallet.currency
+            : '—');
+        }
+      }
+      if (entitlementResult.status === 'fulfilled') {
+        setPartnerBenefitActive(entitlementResult.value.some((item) =>
+          item.status === 'active' && item.source_type === 'partner',
+        ));
+      }
+      setRecentRunsLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
   const handleSendPrompt = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -183,10 +213,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <span>Benefit Global Partner</span>
             </div>
             <h3 className="text-sm sm:text-base font-bold leading-tight">
-              AI Credit Free dari Partner ISP
+              {partnerBenefitActive === true ? 'Benefit Partner Aktif' : partnerBenefitActive === false ? 'Benefit Partner' : 'Status Benefit'}
             </h3>
             <p className="mt-1 text-xs text-red-100 leading-snug">
-              Nikmati akses AI lebih luas tanpa batas dengan koneksi Wi-Fi Global Partner ISP/Network.
+              {partnerBenefitActive === true
+                ? 'Akun ini memiliki entitlement yang diterbitkan melalui program partner.'
+                : partnerBenefitActive === false
+                  ? 'Belum ada entitlement partner aktif yang tercatat pada akun ini.'
+                  : 'Status benefit partner belum dapat dimuat dari backend.'}
             </p>
             <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-red-600 font-bold text-xs group-hover:bg-red-50 transition shadow-xs">
               <span>Cek Benefit</span>
@@ -198,9 +232,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div className="w-20 h-20 sm:w-24 sm:h-24 relative flex items-center justify-center">
             <div className="absolute inset-0 rounded-full bg-white/10 blur-md animate-pulse" />
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/15 border border-white/30 backdrop-blur-sm flex flex-col items-center justify-center p-2 text-center shadow-inner">
-              <span className="text-[10px] font-bold text-amber-300 uppercase">Quota</span>
-              <span className="text-base sm:text-lg font-black text-white leading-none">100K</span>
-              <span className="text-[9px] text-white/80 font-medium mt-0.5">Poin AI</span>
+              <span className="text-[10px] font-bold text-amber-300 uppercase">Saldo AI</span>
+              <span className="text-xs sm:text-sm font-black text-white leading-none break-all">{walletSummary}</span>
+              <span className="text-[9px] text-white/80 font-medium mt-0.5">Wallet Backend</span>
             </div>
           </div>
         </div>
@@ -226,36 +260,49 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </button>
         </div>
 
-        {/* Task Card: Strategi Marketing Coffee Shop */}
-        <div
-          onClick={() => onNavigate('tasks')}
-          className="cursor-pointer p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 transition flex items-center gap-3 group"
-        >
-          <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
-            <Bot className="w-6 h-6" />
+        {recentRunsLoading ? (
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-500">
+            Memuat riwayat Agent Run…
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-900 truncate group-hover:text-red-600 transition">
-                Strategi Marketing Coffee Shop
-              </h3>
-              <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                Dalam Proses
-              </span>
-            </div>
-            <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
-              <span>4 dari 6 langkah</span>
-              <span className="font-semibold text-slate-700">67%</span>
-            </div>
-            <div className="mt-1.5 w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+        ) : recentRuns.length === 0 ? (
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-500">
+            Belum ada Agent Run tersimpan pada akun ini.
+          </div>
+        ) : (
+          recentRuns.slice(0, 1).map((run) => {
+            const prompt = typeof run.input?.prompt === 'string' ? run.input.prompt.trim() : '';
+            const statusLabel: Record<string, string> = {
+              queued: 'Menunggu', running: 'Berjalan', waiting_approval: 'Menunggu Persetujuan',
+              succeeded: 'Selesai', failed: 'Gagal', cancelled: 'Dibatalkan', expired: 'Kedaluwarsa',
+            };
+            const completed = run.status === 'succeeded';
+            return (
               <div
-                className="bg-gradient-to-r from-amber-500 to-red-500 h-1.5 rounded-full transition-all duration-500"
-                style={{ width: '67%' }}
-              />
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700 group-hover:translate-x-0.5 transition" />
-        </div>
+                key={run.id}
+                onClick={() => onNavigate('tasks')}
+                className="cursor-pointer p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 transition flex items-center gap-3 group"
+              >
+                <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-bold text-slate-900 truncate group-hover:text-red-600 transition">
+                      {prompt ? prompt.slice(0, 90) : 'Agent Run ' + run.id.slice(0, 8)}
+                    </h3>
+                    <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-full border border-slate-200 shrink-0">
+                      {statusLabel[run.status] ?? run.status}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-[11px] text-slate-500">
+                    {run.created_at ? new Date(run.created_at).toLocaleString('id-ID') : 'Waktu tidak tersedia'}
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700 group-hover:translate-x-0.5 transition" />
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Grid of Key Platforms & Portals (Complete ecosystem showcase) */}
@@ -271,7 +318,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             AI Agent Studio
           </h4>
           <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">
-            5 Agent spesialis: Research, Marketing, Writer, Designer & Analyst.
+            Jalankan pekerjaan melalui agent yang tersedia pada backend MoreAI.
           </p>
         </button>
 
@@ -286,7 +333,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             Wi-Fi Management
           </h4>
           <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">
-            Kelola router Partner ISP 100 Mbps & 5 perangkat terhubung.
+            Lihat informasi akses jaringan yang tersedia untuk akun ini.
           </p>
         </button>
 
@@ -301,7 +348,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             Captive Portal
           </h4>
           <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">
-            Simulasi login Wi-Fi venue & akses AI bersponsor (Sheet 3).
+            Verifikasi akses AI bersponsor melalui jaringan partner yang didukung.
           </p>
         </button>
 
