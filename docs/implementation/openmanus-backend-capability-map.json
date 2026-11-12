@@ -441,5 +441,22 @@
       "Read-only schema inspection confirmed no notification/captive-portal/Wi-Fi-specific tables in public schema.",
       "No tests, lint, build, provider calls, Storage writes, database migrations, live runtime checks or deployments were run per user instruction."
     ]
+  },
+  "integration_increment_20261112_sse_replay": {
+    "branch": "main",
+    "commits": [
+      "500510bbb041dc235d3b7a832d3dc314a6d86fc6"
+    ],
+    "implemented": [
+      "The typed frontend API client now reconnects durable run SSE streams from the last delivered numeric event ID using the FastAPI Last-Event-ID contract.",
+      "Supabase Auth session is refreshed on each reconnect; bearer credentials are never included in cursor metadata or event payloads.",
+      "Transient network/5xx failures and server stream.timeout boundaries use bounded exponential backoff; 400/401/403/404/422 remain terminal errors.",
+      "Callers may provide initial cursor, AbortSignal, bounded reconnect count and reconnect delay; terminal run events stop the stream."
+    ],
+    "limitations": [
+      "No component currently calls moreAiApiStream; this increment supplies the durable client transport contract but does not claim UI wiring or runtime acceptance.",
+      "No tests, lint, typecheck, build, browser QA, authenticated stream, SSE reconnect, or worker runtime was run.",
+      "Phase 07 event replay and Phase 09 live workflow UI remain unaccepted until explicit test authorization."
+    ]
   }
 }
