@@ -112,6 +112,8 @@ class PlanningAgentRuntime(AgentRuntime):
         states=dict(context.recovery_checkpoints or {})
         manifest=states.get("planning.manifest")
         persisted=await self.store.get(run_id=context.run_id)
+        if not isinstance(manifest, dict) and isinstance(persisted, dict):
+            manifest = persisted.get("manifest")
         rows=persisted.get("steps") if isinstance(persisted,dict) else None
         if not isinstance(rows,list):
             raise RuntimeError("planning_persisted_steps_invalid")
