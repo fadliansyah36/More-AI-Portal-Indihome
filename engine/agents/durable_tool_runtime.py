@@ -8,6 +8,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
 from engine.agents.memory import ConversationMemoryStore
+from engine.agents.errors import RunPausedForApproval
 from engine.agents.protocol import AgentRunContext, AgentRunResult, CheckpointWriter
 from engine.agents.types import Message, ToolCall, ToolFunction
 from engine.tools.policy import ToolPolicy
@@ -387,6 +388,10 @@ class DurableOpenManusRuntime:
                             timeout_seconds=effective_timeout_seconds,
                         )
                         outcome = "succeeded"
+                    except RunPausedForApproval:
+                        # Approval pause is a durable control-flow transition, not a tool failure.
+                        # Let WorkerRuntime release the lease and await the owner decision.
+                        raise
                     except asyncio.CancelledError:
                         if self.event_publisher is not None:
                             await self.event_publisher(
