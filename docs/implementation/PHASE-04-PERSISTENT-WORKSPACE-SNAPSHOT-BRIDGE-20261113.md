@@ -78,3 +78,10 @@ No schema migration or live Supabase mutation was required for this source incre
 3. Phase 07: complete worker recovery, retry, heartbeat, cancellation, checkpoints, lease fencing and outbox.
 4. Phase 08: complete all agent types, provider/model routing, tool adapters, planning/orchestration, memory and RAG.
 5. Phase 09: connect all existing Customer Dashboard screens/actions through the typed FastAPI client without redesign.
+
+
+## Commit evidence
+
+- Source commits: 7849e00fa23ef259c7349aad75d43278fafde194, a7022638fba6b6944e00e0aea2c54c16ee130460, 96081b36e78d08ba92d3f74157d77c880343ed23, e6f2a3303698d6665bedab9bdf95423522cafb68, 76f46b91626581a3d7f66d86152650df0293260e, 3457aeeda21469385ce4d534589580cf5f7c8298, c841c708a098d0349fd5b066ece2cc69cb226599, 7890e8a21972e01511566dcc50997bf8565236e6, 33cc0e105f423e981e66c3a11eebeff0517ee179, 7ae5ad0389660278e713587e34fedd7f7efe5edd, 1fe50efa6302c0ca77fa25c8144bdce69416a98e, 5162fe2b470b5f8db34d60c6736a4e5ab6e5d18f, 817aa2011f713e17571714ca0ae63c02c40e24fd, 53ad5f50455d21add45b11df3792468660fbbf73, b7db9fcec321457edcd50232d4645c493cbd5f63.
+- Documentation commits follow in the tracker, capability map and README. Target source HEAD before the documentation-only updates: b7db9fcec321457edcd50232d4645c493cbd5f63.
+- The runner buffers child stdout/stderr to temporary files on its bounded 16 MiB tmpfs and returns only the first 64 KiB per stream; this avoids unbounded in-memory capture. The workspace result remains capped at 200 files / 2 MiB.
