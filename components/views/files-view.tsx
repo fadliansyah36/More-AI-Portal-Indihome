@@ -2,8 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, FileText, Image as ImageIcon, FileSpreadsheet, FileCode, ChevronRight, X, Loader2, FolderOpen } from 'lucide-react';
-import { artifactApi, moreAiApi, workspaceApi, type CustomerWorkspaceFile, type CustomerWorkspaceFileVersion } from '@/lib/api/client';
+import { Search, FileText, Image as ImageIcon, FileSpreadsheet, FileCode, ChevronRight, X, Loader2, FolderOpen, UploadCloud } from 'lucide-react';
+import { artifactApi, workspaceApi, type CustomerWorkspaceFile, type CustomerWorkspaceFileVersion } from '@/lib/api/client';
 
 type ArtifactRecord = {
   id: string;
@@ -56,6 +56,8 @@ export const FilesView: React.FC = () => {
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   const [downloadingArtifact, setDownloadingArtifact] = useState<string | null>(null);
+  const [uploadingArtifact, setUploadingArtifact] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [historyFile, setHistoryFile] = useState<(CustomerWorkspaceFile & { workspaceId: string; workspaceName: string }) | null>(null);
   const [fileVersions, setFileVersions] = useState<CustomerWorkspaceFileVersion[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -64,7 +66,7 @@ export const FilesView: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    moreAiApi<ArtifactRecord[]>('/api/v1/artifacts')
+    artifactApi.list()
       .then((rows) => {
         if (!active) return;
         setFiles(rows.map((row) => {
@@ -137,6 +139,43 @@ export const FilesView: React.FC = () => {
     catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Gagal mengunduh versi file.'); }
     finally { setDownloadingVersion(null); }
   };
+  const uploadArtifactFile = async (file: File) => {
+    if (file.size < 1 || file.size > 2_000_000) {
+      setError('File artefak harus berukuran 1 byte hingga 2 MB.');
+      return;
+    }
+    if (!/^[A-Za-z0-9][A-Za-z0-9._ -]{0,179}$/.test(file.name) || file.name === '.' || file.name === '..') {
+      setError('Nama file harus menggunakan huruf Latin, angka, titik, garis bawah, spasi, atau tanda hubung.');
+      return;
+    }
+    setUploadingArtifact(true);
+    setUploadMessage(null);
+    setError(null);
+    try {
+      await artifactApi.upload(file.name, file, file.type || 'application/octet-stream');
+      const rows = await artifactApi.list();
+      setFiles(rows.map((row) => {
+        const metadata = row.metadata || {};
+        const name = typeof metadata.filename === 'string'
+          ? metadata.filename
+          : row.storage_path.split('/').pop() || row.storage_path;
+        return {
+          id: row.id,
+          name,
+          size: formatSize(row.size_bytes),
+          date: new Date(row.created_at).toLocaleString('id-ID'),
+          type: categoryFor(row.mime_type, row.storage_path),
+          checksum: row.checksum_sha256,
+        };
+      }));
+      setUploadMessage('File berhasil disimpan sebagai artefak privat pada akun Anda.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Upload artefak gagal diproses oleh server.');
+    } finally {
+      setUploadingArtifact(false);
+    }
+  };
+
   const downloadArtifact = async (file: ArtifactFile) => {
     setDownloadingArtifact(file.id);
     try {
@@ -174,10 +213,29 @@ export const FilesView: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight text-slate-900">File Saya & Library</h1>
           <p className="text-xs text-slate-500">Metadata artefak yang tersimpan pada workspace MoreAI.</p>
         </div>
-        <Link href="/customer/knowledge" className="shrink-0 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100">
-          Knowledge Library
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700">
+            <UploadCloud className="h-3.5 w-3.5" />
+            {uploadingArtifact ? 'Mengunggah…' : 'Unggah file'}
+            <input
+              type="file"
+              className="hidden"
+              disabled={uploadingArtifact}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void uploadArtifactFile(file);
+                event.currentTarget.value = '';
+              }}
+            />
+          </label>
+          <Link href="/customer/knowledge" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100">
+            Knowledge Library
+          </Link>
+        </div>
       </div>
+
+      {uploadMessage && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">{uploadMessage}</div>}
+      {uploadingArtifact && <div role="status" className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">Mengirim file ke private Artifact Storage…</div>}
 
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
