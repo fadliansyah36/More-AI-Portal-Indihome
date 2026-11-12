@@ -34,7 +34,7 @@ create or replace function public.moreai_worker_claim_knowledge_ingestion(
 )
 returns setof public.knowledge_documents
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $$
 begin
@@ -74,7 +74,7 @@ create or replace function public.moreai_worker_finish_knowledge_ingestion(
 )
 returns boolean
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $$
 begin
