@@ -53,7 +53,7 @@ async def health():
 async def ready(authorization: str | None = Header(default=None)):
     _authorize(authorization)
     sandbox = _sandbox()
-    sandbox._validate()
+    await sandbox.check_ready()
     return {
         "status": "ready",
         "isolated_runner": True,
