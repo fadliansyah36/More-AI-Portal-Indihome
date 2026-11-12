@@ -155,10 +155,6 @@ export const EdutechView: React.FC = () => {
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
                 <span>{selectedModule.duration}</span>
               </span>
-              <span className="flex items-center gap-1 text-amber-500">
-                <Star className="w-3.5 h-3.5 fill-current" />
-                <span>{selectedModule.rating} ({selectedModule.reviewsCount})</span>
-              </span>
               <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] text-slate-700 font-semibold">
                 {selectedModule.level}
               </span>
