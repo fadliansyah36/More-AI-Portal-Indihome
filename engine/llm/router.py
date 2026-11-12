@@ -221,6 +221,7 @@ class MeteredGateway:
         self.estimator = estimator
         self.accounting = accounting
         self.adapter = adapter
+        self.breaker = ProviderCircuitBreaker()
 
     async def _candidates(self, task_type: str, *, user_id: str, workspace_id: str | None, partner_id: str | None, required_capabilities: set[str] | None = None):
         resolver = getattr(self.router, "resolve_candidates", None)
