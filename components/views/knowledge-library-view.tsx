@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Archive, BookOpen, RefreshCw, Search, FileText, Loader2 } from 'lucide-react';
+import { Archive, BookOpen, RefreshCw, Search, FileText, Loader2, RotateCcw } from 'lucide-react';
 import { knowledgeApi, type CustomerKnowledgeDocument } from '@/lib/api/knowledge';
 
 const statusLabel: Record<CustomerKnowledgeDocument['status'], string> = {
@@ -55,6 +55,19 @@ export const KnowledgeLibraryView: React.FC = () => {
     } finally {
       setUploading(false);
       setLoading(false);
+    }
+  };
+
+  const retry = async (document: CustomerKnowledgeDocument) => {
+    setBusyId(document.id);
+    setError(null);
+    try {
+      await knowledgeApi.retry(document.id);
+      setDocuments((items) => items.map((item) => item.id === document.id ? { ...item, status: 'processing' } : item));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Dokumen tidak dapat dimasukkan kembali ke antrean.');
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -122,6 +135,11 @@ export const KnowledgeLibraryView: React.FC = () => {
             <p className="mt-1 text-[11px] text-slate-500">{statusLabel[document.status]} · {document.source_type} · {new Date(document.created_at).toLocaleString('id-ID')}</p>
             <p className="mt-1 truncate text-[10px] text-slate-400">SHA-256 {document.content_sha256}</p>
           </div>
+          {document.status === 'failed' && (
+            <button type="button" onClick={() => void retry(document)} disabled={busyId === document.id} aria-label="Proses ulang dokumen" title="Proses ulang" className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 disabled:opacity-50">
+              {busyId === document.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+            </button>
+          )}
           {(document.status === 'ready' || document.status === 'failed') && (
             <button type="button" onClick={() => void archive(document)} disabled={busyId === document.id} aria-label="Arsipkan dokumen" className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 disabled:opacity-50">
               {busyId === document.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
