@@ -559,3 +559,53 @@ export const platformAdminApi = {
       { method: 'PATCH', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ status }) },
     ),
 };
+
+
+export type CustomerWorkspace = {
+  id: string;
+  name: string;
+  slug: string;
+  owner_user_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CustomerWorkspaceFile = {
+  id: string;
+  path: string;
+  version: number;
+  storage_path: string | null;
+  sha256: string | null;
+  size_bytes: number | null;
+  updated_at: string;
+};
+
+export type CustomerWorkspaceFileVersion = {
+  id: string;
+  path: string;
+  version: number;
+  storage_path: string;
+  sha256: string;
+  size_bytes: number;
+  committed_at: string;
+  current?: boolean;
+};
+
+export const workspaceApi = {
+  list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces'),
+  create: (name: string) => moreAiCustomerApi<CustomerWorkspace>('/api/v1/customer/workspaces', {
+    method: 'POST', body: JSON.stringify({ name }),
+  }),
+  files: (workspaceId: string) => moreAiCustomerApi<{ items: CustomerWorkspaceFile[]; count: number }>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files',
+  ),
+  versions: (workspaceId: string, fileId: string) => moreAiCustomerApi<{
+    items: CustomerWorkspaceFileVersion[]; count: number; current_version: number;
+  }>('/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId) + '/versions'),
+  signedDownload: (workspaceId: string, fileId: string, version?: number) => moreAiCustomerApi<{
+    file_id: string; version: number; url: string; expires_in: number;
+  }>('/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId) + '/signed-download' + (version === undefined ? '' : '?version=' + version), {
+    method: 'POST',
+  }),
+};
