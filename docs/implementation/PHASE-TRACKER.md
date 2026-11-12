@@ -692,6 +692,6 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Added typed browser API client `lib/api/knowledge.ts`.
 - Added authenticated Customer route `/customer/knowledge` and a Knowledge Library view with real API listing, status filters, title search, refresh and soft archive.
 - Added navigation from the existing Files screen. Existing UI design and the single Customer application are retained.
-- Source commits: `2f3e1cf6`, `135ceae4`, `5a10013d`, `7f4a54cd`, `5939b92d`, `8034aea4`, report `6c3978b2`.
-- The existing RAG migration was not applied to production Supabase. Worker embedding secrets were not configured or invoked.
+- Source commits: `2f3e1cf6`, `135ceae4`, `5a10013d`, `7f4a54cd`, `5939b92d`, `8034aea4`, RAG operator fix `3b388d4c`, report `6c3978b2` and update `b63834d1`. Supabase migration version `20261112060109` applied.
+- Applied the additive RAG migration to canonical Supabase after fixing the pgvector operator schema qualification; migration history version `20261112060109` is present. Schema inventory confirms both knowledge tables exist with RLS enabled. No document data, embedding provider, or worker was invoked.
 - Per owner instruction, no tests, lint, typecheck, build, real API/browser request, staging, migration apply, provider call, worker activation or deployment was performed. This increment is source-committed but not runtime-verified and does not close Phase 08/09.
