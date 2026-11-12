@@ -653,3 +653,12 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Fixed single-backslash rejection in relative signed paths and URL-encoded Storage bucket path segments for bucket lookup and signed URL creation.
 - Report: `docs/implementation/PHASE-04-WORKSPACE-STORAGE-PATH-VALIDATION-20261112.md`.
 - Source-only; no tests/lint/typecheck/build/runtime/browser QA/staging/migration/deployment. Phase 04 remains IN PROGRESS.
+
+
+## 2026-11-12 — Browser Compose and isolation verifier alignment
+- Updated legacy `apps/sandbox/docker-compose.browser.yml` to match the canonical isolated runtime contract in `apps/sandbox/compose.browser.yml` (service names, Dockerfile, proxy URL, network names and no published browser port).
+- Updated `apps/sandbox/scripts/verify-browser-network-isolation.sh` to use the canonical Compose file and assert `browser_isolated` + `browser_egress`, including direct IPv4/IPv6 egress denial and proxy allowlist checks.
+- Commits: `d3b02c3d16d10cbcbfe3bc5cc9b8252f80ad7b9f` (Compose compatibility), `85073f812422aaa29f0fc144ed2f8adbeebd5283` (verifier).
+- Report: [PHASE-04-BROWSER-COMPOSE-VERIFIER-ALIGNMENT-20261112.md](./PHASE-04-BROWSER-COMPOSE-VERIFIER-ALIGNMENT-20261112.md).
+- Source-only alignment. No Docker, shell verifier, tests, lint, typecheck, build, staging, migration or deployment was run; browser runtime remains inactive and no network acceptance is claimed.
+- Phase 04/06/07/08/09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
