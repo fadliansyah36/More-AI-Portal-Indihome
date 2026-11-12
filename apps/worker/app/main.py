@@ -130,13 +130,14 @@ async def run_worker() -> None:
                                             logger.exception("knowledge_ingestion_heartbeat_error document_id=%s", document_id)
                                             # A transient heartbeat error is retried once before fail-closed cancellation.
                                             await asyncio.sleep(5)
-                                            renewed = await rpc.heartbeat_knowledge_ingestion(
-                                                document_id, owner_id, lease_until, lease_seconds=900,
-                                            )
-                                        except Exception:
-                                            lease_lost.set()
-                                            logger.exception("knowledge_ingestion_heartbeat_unavailable document_id=%s", document_id)
-                                            return
+                                            try:
+                                                renewed = await rpc.heartbeat_knowledge_ingestion(
+                                                    document_id, owner_id, lease_until, lease_seconds=900,
+                                                )
+                                            except Exception:
+                                                lease_lost.set()
+                                                logger.exception("knowledge_ingestion_heartbeat_unavailable document_id=%s", document_id)
+                                                return
                                         if not renewed:
                                             lease_lost.set()
                                             logger.warning("knowledge_ingestion_lease_lost document_id=%s", document_id)
