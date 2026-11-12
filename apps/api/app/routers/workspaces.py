@@ -219,7 +219,7 @@ async def update_customer_workspace(
     rows = await repo.update(
         "workspaces",
         {"id": f"eq.{workspace_id}", "owner_user_id": f"eq.{user['id']}", "status": "eq.active"},
-        {"name": name, "updated_at": "now()"},
+        {"name": name},
     )
     if not rows:
         raise HTTPException(404, "Workspace not found")
