@@ -373,6 +373,10 @@ class DurableOpenManusRuntime:
                         citations.append({
                             "id": chunk_id, "document_id": document_id,
                             "title": title, "similarity": item.get("similarity"),
+                            "metadata": item.get("metadata") if isinstance(item.get("metadata"), dict) else {},
+                            "source_page": (item.get("metadata") or {}).get("source_page") if isinstance(item.get("metadata"), dict) else None,
+                            "char_start": (item.get("metadata") or {}).get("char_start") if isinstance(item.get("metadata"), dict) else None,
+                            "char_end": (item.get("metadata") or {}).get("char_end") if isinstance(item.get("metadata"), dict) else None,
                             "marker": f"[source:{chunk_id}]",
                         })
                 output = {
