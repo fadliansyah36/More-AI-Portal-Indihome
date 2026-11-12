@@ -120,8 +120,6 @@ def test_planning_runtime_repairs_partial_rows_from_checkpoint_manifest():
         ]
         executor = FakeExecutor()
         runtime = PlanningAgentRuntime(gateway=FakeGateway(), store=store, step_executor=executor)
-        steps = FakeGateway()
-        manifest = json.loads((await steps.complete())["text"]) if False else None
         async def checkpoint(key, state):
             return {"ok": True}
         recovered_manifest = {
