@@ -292,7 +292,7 @@
     "classification": "upstream templates/static assets archived only",
     "active_product_use": false
   },
-  "parity_status": "PARTIAL — workspace editor now uses persistent CAS and run-scoped approval; workspace_read_file is owner/member-scoped, private-bucket-only, bounded to 2 MB, UTF-8-only and SHA-256/version verified. Full upstream Flow/server/session/SWE parity, deployed sandbox supervisor, browser socket-level egress enforcement, provider capability parity and complete Customer screen integration remain open.",
+  "parity_status": "PARTIAL — workspace editor is CAS/version-fenced and run-scoped approval-gated; workspace_read_file is owner/member-scoped, private-bucket-only, bounded to 2 MB, UTF-8-only and SHA-256/version verified. Worker now enforces bounded wall-clock run deadlines with cancellation and retryable durable failure. Browser supervisor readiness verifies a live egress proxy connection; deployed network-isolation proof is still missing. Full upstream Flow/server/session/SWE parity, browser socket-level deployment enforcement, provider capability parity and complete Customer screen integration remain open.",
   "implemented_target_files": [
     "engine/agents/types.py",
     "engine/agents/runtime.py",
@@ -330,7 +330,13 @@
     "lib/api/client.ts",
     "engine/tools/workspace.py",
     "engine/agents/durable_tool_runtime.py",
-    "engine/tests/test_workspace_tool.py"
+    "engine/tests/test_workspace_tool.py",
+    "apps/worker/app/runtime.py",
+    "apps/worker/app/client.py",
+    "apps/worker/tests/test_run_timeout.py",
+    "apps/sandbox/app/browser_readiness.py",
+    "apps/sandbox/app/browser_service.py",
+    "apps/sandbox/tests/test_browser_readiness.py"
   ],
   "runtime_safety_gates": {
     "agent_execution_default": "disabled",
@@ -344,7 +350,9 @@
     "browser_use": "blocked_until_ssrf_and_browser_isolation",
     "str_replace_editor": "approval_gated_file_edit; workspace CAS/path validation; requires private bucket and run-scoped file_edit approval; not enabled by default",
     "provider_calls": "blocked_until_provider_route_secret_entitlement_quota_wallet_and_credit_conversion_are_configured",
-    "workspace_read_file": "default_deny; workspace membership RPC; private bucket; 2 MB maximum; UTF-8 only; SHA-256 + version integrity check"
+    "workspace_read_file": "default_deny; workspace membership RPC; private bucket; 2 MB maximum; UTF-8 only; SHA-256 + version integrity check",
+    "run_timeout": "configured MOREAI_RUN_TIMEOUT_SECONDS (30..7200, default 1800); timeout cancels dispatch, records run.timed_out and delegates retry/max-attempt to durable finish RPC",
+    "browser_readiness": "degraded unless HTTPS-authenticated service configuration, egress-enforced flag, private proxy URL/token and live proxy TCP reachability are all present"
   },
   "approval_lifecycle": {
     "persistence": "Applied to canonical Supabase project uunfgimtokhucegqbpce; agent_tool_approvals exists with RLS enabled; migration history version 20261111061443; source: supabase/migrations/20261111050000_moreai_tool_approval_lifecycle.sql",
@@ -483,6 +491,20 @@
       "capability": "read existing owner/member-scoped workspace files for SWE/Manus",
       "status": "IMPLEMENTED — private Storage + workspace membership RPC + 2 MB UTF-8 bound + persisted version/SHA-256 integrity verification; disabled by default",
       "source_commit": "MoreAI extension; not a separate upstream OpenManus tool"
+    },
+    {
+      "key": "durable_run_timeout",
+      "target": "apps/worker/app/runtime.py",
+      "capability": "bound the total wall-clock execution time of each durable run",
+      "status": "IMPLEMENTED — cancellation-safe dispatch race, idempotent run.timed_out event, retryable finish transition, 30..7200 seconds configurable",
+      "source_commit": "MoreAI durable worker lifecycle extension"
+    },
+    {
+      "key": "browser_proxy_readiness",
+      "target": "apps/sandbox/app/browser_readiness.py",
+      "capability": "prevent false-positive browser supervisor readiness when egress proxy is unavailable",
+      "status": "IMPLEMENTED — fail-closed config validation and bounded live TCP reachability check; deployment isolation still requires network acceptance",
+      "source_commit": "MoreAI sandbox hardening extension"
     }
   ],
   "integration_increment_20261112_workspace_reader": {
@@ -513,6 +535,16 @@
       "No deployed worker runtime or production sandbox/browser supervisor was activated.",
       "No live provider call or authenticated Customer-to-provider E2E was performed.",
       "No full OpenManus backend parity claim is made."
+    ]
+  },
+  "integration_increment_20261112_worker_timeout_browser_readiness": {
+    "branch": "main",
+    "ci_run": "https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43170133933",
+    "status": "PASS — worker-contract, api-contract, engine-policy, sandbox-policy",
+    "limits": [
+      "No worker deployment/activation",
+      "No browser/proxy container deployment or network-isolation acceptance script",
+      "No authenticated provider E2E"
     ]
   }
 }
