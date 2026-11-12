@@ -991,3 +991,5 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - EduTech no longer shows unverified star ratings, review counts or partner affiliation. The video action is replaced with a truthful unavailable state while persisted learning progress remains active.
 - Reports: [Benefit and Wi-Fi history](./PHASE-09-CUSTOMER-BENEFIT-WIFI-HISTORY-20261113.md); [EduTech truthfulness](./PHASE-09-CUSTOMER-EDUTECH-TRUTHFULNESS-20261113.md).
 - Source commits: `3f329d71`, `2fa22e5b`, `b3e629ba`, `aa3b8ac0`. Documentation is source evidence only; Phase 09 remains IN PROGRESS.
+
+- EduTech follow-up source correction: removed the remaining selected-module star/review claim. Commit `7c89b04f`; report updated.
