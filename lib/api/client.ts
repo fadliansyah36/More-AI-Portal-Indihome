@@ -416,13 +416,13 @@ export const customerApi = {
       headers: { 'Idempotency-Key': idempotencyKey },
       body: JSON.stringify({ content, agent_key: agentKey }),
     }),
-  agentRuns: () => moreAiApi<CustomerAgentRun[]>('/api/v1/agent-runs'),
-  getRun: (runId: string) => moreAiApi<CustomerAgentRun>(`/api/v1/agent-runs/${runId}`),
+  agentRuns: () => moreAiCustomerApi<CustomerAgentRun[]>('/api/v1/agent-runs'),
+  getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/agent-runs/${runId}`),
   cancelRun: (runId: string) => moreAiCustomerApi<{ run_id: string; status: string }>(`/api/v1/agent-runs/${runId}/cancel`, {
     method: 'POST',
   }),
-  getRunSteps: (runId: string) => moreAiApi<CustomerWorkflowStep[]>(`/api/v1/agent-runs/${runId}/steps`),
-  getRunEvents: (runId: string, after = 0) => moreAiApi<Array<{
+  getRunSteps: (runId: string) => moreAiCustomerApi<CustomerWorkflowStep[]>(`/api/v1/agent-runs/${runId}/steps`),
+  getRunEvents: (runId: string, after = 0) => moreAiCustomerApi<Array<{
     id: string; event_type: string; sequence: number; payload: Record<string, unknown>; created_at: string;
   }>>(`/api/v1/agent-runs/${runId}/events?after=${Math.max(0, after)}`),
   streamRun: (runId: string, after = 0) => `/api/v1/agent-runs/${runId}/stream?after=${Math.max(0, after)}&wait_seconds=30`,
