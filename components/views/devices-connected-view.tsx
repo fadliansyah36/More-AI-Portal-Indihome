@@ -14,10 +14,9 @@ export const DevicesConnectedView: React.FC<DevicesConnectedViewProps> = ({ onBa
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       setSessions(await customerApi.networkSessions(100));
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Riwayat jaringan tidak dapat dimuat.');
     } finally {
@@ -32,7 +31,7 @@ export const DevicesConnectedView: React.FC<DevicesConnectedViewProps> = ({ onBa
       <div className="flex items-center justify-between border-b border-slate-100 pb-2">
         <button onClick={onBack} className="rounded-lg p-1 text-slate-400 hover:text-slate-700" aria-label="Kembali"><ArrowLeft className="h-5 w-5" /></button>
         <div className="text-center"><h1 className="text-base font-bold leading-tight text-slate-900">Perangkat &amp; Sesi Wi-Fi</h1><span className="text-[10px] font-medium text-slate-500">Data sesi akun dari FastAPI</span></div>
-        <button onClick={() => void load()} disabled={loading} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 disabled:opacity-50" aria-label="Segarkan"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
+        <button onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 disabled:opacity-50" aria-label="Segarkan"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
       </div>
 
       <div className="flex items-start gap-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-xs">
