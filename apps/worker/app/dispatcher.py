@@ -4,6 +4,8 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+import httpx
+
 from app.runtime import AgentDispatcher, Checkpoint
 from app.client import RunPausedForApproval
 from engine.agents.errors import AgentExecutionError, classify_agent_exception
@@ -68,6 +70,16 @@ class RegisteredAgentDispatcher(AgentDispatcher):
         except (asyncio.CancelledError, RunPausedForApproval):
             # Approval pauses are durable control flow, not agent failures.
             raise
+        except httpx.TimeoutException as exc:
+            raise AgentExecutionError("upstream_timeout", retryable=True) from exc
+        except httpx.TransportError as exc:
+            raise AgentExecutionError("upstream_unavailable", retryable=True) from exc
+        except httpx.HTTPStatusError as exc:
+            retryable = exc.response.status_code >= 500 or exc.response.status_code == 429
+            raise AgentExecutionError(
+                "upstream_rejected_request" if not retryable else "upstream_service_error",
+                retryable=retryable,
+            ) from exc
         except Exception as exc:
             classified = classify_agent_exception(exc)
             if classified is exc:
