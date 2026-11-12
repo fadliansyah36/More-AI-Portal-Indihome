@@ -51,7 +51,11 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(() => { if (active) void load(); });
+    return () => { active = false; };
+  }, [load]);
 
   const markAllRead = async () => {
     setBusy(true);
