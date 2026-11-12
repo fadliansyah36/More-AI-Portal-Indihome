@@ -11,18 +11,39 @@ async function moreAiApiAt<T>(baseUrl: string, path: string, init: RequestInit =
     throw new Error('MoreAI API belum dikonfigurasi. Isi NEXT_PUBLIC_MOREAI_API_URL.');
   }
   const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase.auth.getSession();
-  if (error || !data.session?.access_token) {
+  const headers = new Headers(init.headers);
+  if (init.body && !(init.body instanceof Blob) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  // Supabase may return a locally cached token while its refresh is racing
+  // an API request. Retry once after an API 401; never retry 403 or business
+  // errors, so mutations cannot be duplicated by this recovery path.
+  const sessionResult = await supabase.auth.getSession();
+  if (sessionResult.error || !sessionResult.data.session?.access_token) {
     throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
   }
-  const headers = new Headers(init.headers);
-  headers.set('Authorization', 'Bearer ' + data.session.access_token);
-  if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  const response = await fetch(baseUrl + path, {
-    ...init,
-    headers,
-    cache: 'no-store',
-  });
+  let accessToken = sessionResult.data.session.access_token;
+  const send = () => {
+    const requestHeaders = new Headers(headers);
+    requestHeaders.set('Authorization', 'Bearer ' + accessToken);
+    return fetch(baseUrl + path, { ...init, headers: requestHeaders, cache: 'no-store' });
+  };
+
+  let response = await send();
+  if (response.status === 401) {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.error || !refreshed.data.session?.access_token) {
+      await supabase.auth.signOut({ scope: 'local' });
+      throw new Error('Sesi login telah berakhir. Silakan masuk kembali.');
+    }
+    accessToken = refreshed.data.session.access_token;
+    response = await send();
+  }
+  if (response.status === 401) {
+    await supabase.auth.signOut({ scope: 'local' });
+    throw new Error('Sesi login tidak valid. Silakan masuk kembali.');
+  }
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     const message = payload?.detail || payload?.error?.message || ('MoreAI API error (' + response.status + ')');
