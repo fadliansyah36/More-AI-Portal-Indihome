@@ -1,0 +1,68 @@
+services:
+  execution-supervisor:
+    build:
+      context: .
+      dockerfile: Dockerfile.execution
+    environment:
+      MOREAI_SANDBOX_SUPERVISOR_ENABLED: "true"
+      MOREAI_SANDBOX_SERVICE_TOKEN: ${MOREAI_SANDBOX_SERVICE_TOKEN:?set 32+ character service token}
+      MOREAI_SANDBOX_IMAGE: ${MOREAI_SANDBOX_IMAGE:?set digest-pinned runner image}
+      DOCKER_HOST: tcp://execution-docker-proxy:2375
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 96
+    mem_limit: 512m
+    cpus: 1.0
+    restart: unless-stopped
+    networks: [execution_private]
+    depends_on: [execution-docker-proxy]
+    # No published port. Attach the trusted worker to execution_private and use
+    # http://execution-supervisor:8080 over that private network.
+
+  execution-docker-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0
+    environment:
+      CONTAINERS: "1"
+      IMAGES: "1"
+      INFO: "1"
+      PING: "1"
+      VERSION: "1"
+      POST: "1"
+      AUTH: "0"
+      BUILD: "0"
+      COMMIT: "0"
+      CONFIGS: "0"
+      DISTRIBUTION: "0"
+      EXEC: "0"
+      NETWORKS: "0"
+      NODES: "0"
+      PLUGINS: "0"
+      SECRETS: "0"
+      SERVICES: "0"
+      SWARM: "0"
+      SYSTEM: "0"
+      TASKS: "0"
+      VOLUMES: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid,nodev
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 32
+    mem_limit: 128m
+    cpus: 0.25
+    restart: unless-stopped
+    networks: [execution_private]
+    # This proxy is not published and must never join a public/egress network.
+
+networks:
+  execution_private:
+    name: moreai_execution_private
+    internal: true
