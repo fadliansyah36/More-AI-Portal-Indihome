@@ -43,14 +43,22 @@ async def create_customer_conversation(
 
 @router.get("/conversations")
 async def customer_conversations(
-    request: Request, user: dict[str, Any] = Depends(current_user),
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=100),
+    before: datetime | None = Query(default=None),
+    user: dict[str, Any] = Depends(current_user),
 ):
     principal = await require_customer_context(request, user)
-    return await repository(request).select("conversations", {
+    filters = {
         "user_id": f"eq.{principal['id']}",
         "select": "id,title,status,created_at,updated_at",
-        "order": "updated_at.desc", "limit": "100",
-    })
+        "order": "updated_at.desc", "limit": str(limit),
+    }
+    if before:
+        if before.tzinfo is None:
+            raise HTTPException(422, "before must include a timezone")
+        filters["updated_at"] = f"lt.{before.isoformat()}"
+    return await repository(request).select("conversations", filters)
 
 
 @router.get("/conversations/{conversation_id}")
@@ -89,14 +97,22 @@ async def send_customer_message(
 
 @router.get("/agent-runs")
 async def customer_agent_runs(
-    request: Request, user: dict[str, Any] = Depends(current_user),
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=100),
+    before: datetime | None = Query(default=None),
+    user: dict[str, Any] = Depends(current_user),
 ):
     principal = await require_customer_context(request, user)
-    return await repository(request).select("agent_runs", {
+    filters = {
         "user_id": f"eq.{principal['id']}",
         "select": "id,conversation_id,status,input,output,error,attempt,max_attempts,created_at,started_at,finished_at",
-        "order": "created_at.desc", "limit": "100",
-    })
+        "order": "created_at.desc", "limit": str(limit),
+    }
+    if before:
+        if before.tzinfo is None:
+            raise HTTPException(422, "before must include a timezone")
+        filters["created_at"] = f"lt.{before.isoformat()}"
+    return await repository(request).select("agent_runs", filters)
 
 
 @router.get("/agent-runs/{run_id}")
