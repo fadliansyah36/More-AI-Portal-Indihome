@@ -168,6 +168,25 @@ async def get_conversation_session(
     }
 
 
+@router.post("/{conversation_id}/sessions/{run_id}/cancel")
+async def cancel_conversation_session(
+    conversation_id: UUID,
+    run_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Cancel a durable OpenManus session only after verifying both conversation and run ownership."""
+    repo = repository(request)
+    await repo.owned_record("conversations", conversation_id, user["id"])
+    run = await repo.owned_record("agent_runs", run_id, user["id"])
+    if str(run.get("conversation_id")) != str(conversation_id):
+        raise HTTPException(404, "session_not_found")
+    return await repo.rpc("moreai_worker_request_cancel", {
+        "p_run_id": str(run_id),
+        "p_user_id": user["id"],
+    })
+
+
 @router.get("/{conversation_id}/sessions/{run_id}/events")
 async def get_conversation_session_events(
     conversation_id: UUID,
