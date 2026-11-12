@@ -469,3 +469,14 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - The owner-scoped FastAPI run event list and SSE stream now accept the standard `Last-Event-ID` header. It is validated as a non-negative integer and combined with the optional `after` query cursor, enabling browser EventSource reconnects to resume after the last delivered sequence. Commit: `3b592151022d4425dbf9081dad34dcd607944814`.
 - These are source changes only. No tests, lint, typecheck, build, OpenAPI generation, migration apply, worker runtime, browser QA, staging or deployment were run. Race safety and replay continuity remain unaccepted until tests are authorized and executed.
 - Phase 04/07/06 remain IN PROGRESS. Phase 08 and 05/09 remain IN PROGRESS; Phase 10 remains BLOCKED and Phase 11 NOT STARTED.
+
+
+## 2026-11-12 — Phase 07 frontend durable SSE reconnect contract
+
+- Commit: `500510bbb041dc235d3b7a832d3dc314a6d86fc6`.
+- Extended `moreAiApiStream` with bounded reconnect, numeric durable event cursor, `Last-Event-ID` header, refreshed Supabase Auth session per reconnect, AbortSignal cancellation, and exponential backoff for transient transport/5xx failures.
+- Terminal auth/authorization/contract errors are not retried. Terminal run events stop reconnect. Server `stream.timeout` is treated as a long-poll boundary and resumes from the last delivered sequence.
+- This is transport-layer implementation only. No current UI component invokes this stream helper, and no tests, lint, typecheck, build, browser, API, SSE, worker/runtime or staging checks were run. Phase 07/09 acceptance remains open.
+- Capability map updated: `openmanus-backend-capability-map.json`.
+- Report: [PHASE-07-FRONTEND-SSE-RECONNECT-20261112.md](./PHASE-07-FRONTEND-SSE-RECONNECT-20261112.md).
+
