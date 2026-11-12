@@ -15,6 +15,7 @@ from engine.tools.workspace import SupabaseWorkspaceTool
 from apps.sandbox.app.browser_supervisor import BrowserSupervisor
 from engine.orchestration.registry import AgentRegistry
 from engine.orchestration.flows import FlowFactory
+from engine.prompts.toolcall import SYSTEM_PROMPT as TOOLCALL_SYSTEM_PROMPT
 
 
 def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
@@ -77,6 +78,19 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     registry = AgentRegistry()
     registry.register("manus", manus)
     registry.register("planning", planning)
+    # OpenManus ToolCallAgent is a concrete upstream agent (ReActAgent itself is abstract).
+    # Reuse the durable, policy-enforced tool loop with the upstream ToolCall prompt;
+    # this preserves MoreAI approval, metering, checkpoint and tenant boundaries.
+    toolcall = DurableOpenManusRuntime(
+        gateway, memory_store=memory_store, knowledge_tools=knowledge_tools,
+        plan_store=plan_store, search_tools=search_tools, storage_tools=storage_tools,
+        workspace_tools=workspace_tools, browser_tools=browser_tools,
+        event_publisher=client.append_run_event, sandbox_tools=sandbox_tools,
+        approval_gate=client.wait_for_tool_approval,
+        tool_timeout_seconds=float(os.getenv("MOREAI_TOOL_TIMEOUT_SECONDS", "120")),
+        system_prompt=TOOLCALL_SYSTEM_PROMPT,
+    )
+    registry.register("toolcall", toolcall)
     # The OpenManus SWE role is exposed only when the isolated sandbox adapter
     # has passed both independent activation gates. It shares durable storage,
     # provider metering and policy-enforced tools, but uses a code-focused prompt.
