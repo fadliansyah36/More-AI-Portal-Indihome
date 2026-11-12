@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 from typing import Literal
@@ -10,14 +11,22 @@ from pydantic import BaseModel, Field
 from .runner import DockerSandbox, SandboxLimits
 
 app = FastAPI(title="MoreAI Isolated Execution Supervisor", version="0.1.0")
+_active: dict[str, tuple[asyncio.Task, str, str]] = {}
 
 
 class ExecutionRequest(BaseModel):
+    request_id: str = Field(min_length=16, max_length=128)
     run_id: str = Field(min_length=1, max_length=128)
     user_id: str = Field(min_length=1, max_length=128)
     language: Literal["python", "bash"]
     source: str = Field(min_length=1, max_length=8_000_000)
     timeout_seconds: int = Field(default=30, ge=1, le=120)
+
+
+class CancellationRequest(BaseModel):
+    request_id: str = Field(min_length=16, max_length=128)
+    run_id: str = Field(min_length=1, max_length=128)
+    user_id: str = Field(min_length=1, max_length=128)
 
 
 def _authorize(value: str | None) -> None:
@@ -59,21 +68,47 @@ async def execute(
     authorization: str | None = Header(default=None),
 ):
     _authorize(authorization)
+    if body.request_id in _active:
+        raise HTTPException(409, "sandbox_request_already_active")
     sandbox = _sandbox()
+    task = asyncio.current_task()
+    if task is None:
+        raise HTTPException(503, "sandbox_task_context_unavailable")
+    _active[body.request_id] = (task, body.run_id, body.user_id)
     try:
         result = await sandbox.execute(
             body.source,
             language=body.language,
             limits=SandboxLimits(timeout_seconds=body.timeout_seconds),
         )
+        return {
+            "request_id": body.request_id,
+            "run_id": body.run_id,
+            "exit_code": result.exit_code,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "timed_out": result.timed_out,
+            "isolated": True,
+        }
+    except asyncio.CancelledError:
+        raise
     except (ValueError, RuntimeError) as exc:
-        # Do not return runtime details, image references or host configuration.
         raise HTTPException(503, "sandbox_execution_unavailable") from exc
-    return {
-        "run_id": body.run_id,
-        "exit_code": result.exit_code,
-        "stdout": result.stdout,
-        "stderr": result.stderr,
-        "timed_out": result.timed_out,
-        "isolated": True,
-    }
+    finally:
+        _active.pop(body.request_id, None)
+
+
+@app.post("/v1/cancel")
+async def cancel(
+    body: CancellationRequest,
+    authorization: str | None = Header(default=None),
+):
+    _authorize(authorization)
+    active = _active.get(body.request_id)
+    if active is None:
+        return {"cancelled": False, "status": "not_active"}
+    task, run_id, user_id = active
+    if run_id != body.run_id or user_id != body.user_id:
+        raise HTTPException(404, "sandbox_execution_not_found")
+    task.cancel()
+    return {"cancelled": True, "status": "cancellation_requested"}
