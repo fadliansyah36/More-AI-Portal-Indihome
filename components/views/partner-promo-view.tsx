@@ -23,10 +23,9 @@ export const PartnerPromoView: React.FC<PartnerPromoViewProps> = ({ onBack }) =>
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       setCampaigns(await partnerApi.campaigns() as PartnerCampaign[]);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kampanye tidak dapat dimuat.');
     } finally {
@@ -89,7 +88,7 @@ export const PartnerPromoView: React.FC<PartnerPromoViewProps> = ({ onBack }) =>
       <div className="flex items-center justify-between pb-2 border-b border-slate-100">
         <button onClick={onBack} className="p-1 rounded-lg text-slate-400 hover:text-slate-700" aria-label="Kembali"><ArrowLeft className="w-5 h-5" /></button>
         <div className="text-center"><h1 className="text-base font-bold text-slate-900 leading-tight">Promo &amp; Kampanye Partner</h1><span className="text-[10px] text-slate-500 font-medium">Data kampanye dari tenant aktif</span></div>
-        <button onClick={() => void load()} disabled={loading} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 disabled:opacity-50" aria-label="Segarkan"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
+        <button onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 disabled:opacity-50" aria-label="Segarkan"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
       </div>
 
       <div className="rounded-3xl bg-gradient-to-r from-red-600 to-rose-600 p-4 text-white shadow-xs">
