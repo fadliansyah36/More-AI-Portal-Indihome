@@ -12,6 +12,7 @@ from app.dispatcher import RegisteredAgentDispatcher
 from app.registry_factory import build_agent_registry
 from app.runtime import WorkerRuntime
 from app.outbox import DurableEventOutboxPublisher
+from app.knowledge_tools import SupabaseKnowledgeTools
 from apps.sandbox.app.browser_supervisor import BrowserSupervisor
 
 
@@ -86,6 +87,7 @@ async def run_worker() -> None:
             await browser_client.check_ready()
         registry = build_agent_registry(rpc, http)
         runtime = WorkerRuntime(rpc, RegisteredAgentDispatcher(registry, checkpoint_loader=rpc.list_checkpoints))
+        knowledge_ingestion = SupabaseKnowledgeTools(rpc, http)
         health_server = await asyncio.start_server(
             _health_handler,
             host=os.getenv("WORKER_HEALTH_HOST", "0.0.0.0"),
@@ -107,6 +109,28 @@ async def run_worker() -> None:
                 while True:
                     try:
                         processed = await runtime.run_once()
+                        if not processed:
+                            ingestion_job = await rpc.claim_knowledge_ingestion()
+                            if ingestion_job:
+                                try:
+                                    await knowledge_ingestion.process_uploaded_document(ingestion_job)
+                                    finished = await rpc.finish_knowledge_ingestion(
+                                        str(ingestion_job["id"]), str(ingestion_job["owner_user_id"]),
+                                        True, page_count=int(ingestion_job.get("page_count") or 0),
+                                    )
+                                    if not finished:
+                                        logger.warning("knowledge_ingestion_lease_lost document_id=%s", ingestion_job.get("id"))
+                                except asyncio.CancelledError:
+                                    raise
+                                except Exception as ingestion_error:
+                                    attempt = int(ingestion_job.get("ingestion_attempt") or 1)
+                                    code = str(ingestion_error)[:80] or "knowledge_ingestion_failed"
+                                    await rpc.finish_knowledge_ingestion(
+                                        str(ingestion_job["id"]), str(ingestion_job["owner_user_id"]),
+                                        False, error_code=code,
+                                    )
+                                    logger.exception("knowledge_ingestion_failed document_id=%s attempt=%s", ingestion_job.get("id"), attempt)
+                                processed = True
                     except asyncio.CancelledError:
                         raise
                     except Exception:
