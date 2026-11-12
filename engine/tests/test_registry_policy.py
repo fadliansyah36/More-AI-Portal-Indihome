@@ -119,3 +119,12 @@ async def test_workspace_editor_requires_owner_approval_before_handler():
 
 async def _deny_approval():
     return False
+
+def test_workspace_reader_is_enabled_only_by_workspace_runtime_and_needs_no_write_approval():
+    disabled = ToolPolicy().evaluate("workspace_read_file")
+    assert disabled.allowed is False
+
+    enabled = ToolPolicy(enabled_tools={"workspace_read_file"}).evaluate("workspace_read_file")
+    assert enabled.allowed is True
+    assert enabled.requires_approval is False
+
