@@ -34,8 +34,9 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
 
   const filtered = useMemo(() => transactions.filter((tx) => {
     const amount = Number(tx.amount);
-    const credit = amount > 0 || /credit|refund|top.?up|grant|release/i.test(tx.entry_type);
-    const debit = amount < 0 || /debit|spend|usage|reserve/i.test(tx.entry_type);
+    const entryType = tx.entry_type.toLowerCase();
+    const debit = /debit|spend|usage|reserve|charge/i.test(entryType);
+    const credit = /credit|refund|top.?up|grant|release/i.test(entryType) || (!debit && amount > 0);
     if (filterType === 'debit') return debit;
     if (filterType === 'kredit') return credit;
     return true;
@@ -92,9 +93,10 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
           <p className="rounded-xl border border-slate-100 bg-white p-4 text-xs text-slate-500">Belum ada transaksi pada dompet ini.</p>
         )}
         {filtered.map((tx) => {
-          const isCredit = Number(tx.amount) > 0 || /credit|refund|top.?up|grant|release/i.test(tx.entry_type);
           const amount = Number(tx.amount);
-          const signedAmount = (amount > 0 ? '+' : '') + formatAmount(tx.amount, primaryWallet?.currency ?? '');
+          const isDebit = /debit|spend|usage|reserve|charge/i.test(tx.entry_type);
+          const isCredit = /credit|refund|top.?up|grant|release/i.test(tx.entry_type) || (!isDebit && amount > 0);
+          const signedAmount = (isDebit && amount > 0 ? '−' : amount > 0 ? '+' : '') + formatAmount(Math.abs(amount), primaryWallet?.currency ?? '');
           return (
             <div key={tx.id} className="p-3.5 rounded-2xl bg-white border border-slate-100 shadow-2xs flex items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-3 min-w-0">
