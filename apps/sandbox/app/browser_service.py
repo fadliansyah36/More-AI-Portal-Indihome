@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from urllib.parse import urlsplit
 from typing import Literal
 
@@ -9,6 +10,7 @@ from pydantic import BaseModel, Field
 from playwright.async_api import async_playwright
 
 app = FastAPI(title="MoreAI Isolated Browser Supervisor", version="0.1.0")
+logger = logging.getLogger(__name__)
 
 
 class BrowserAction(BaseModel):
@@ -95,7 +97,8 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
             try:
                 await page.goto(body.url, wait_until="domcontentloaded", timeout=20_000)
             except Exception as exc:
-                # Do not expose Playwright internals, request URLs, or proxy details.
+                # Log only exception class; never include URL, page content or proxy credentials.
+                logger.warning("browser navigation failed (%s)", type(exc).__name__)
                 raise HTTPException(502, "browser_navigation_blocked_or_failed") from exc
             if body.action == "navigate":
                 return {"status": "navigated", "url": page.url, "title": await page.title(), "requests": request_count}
