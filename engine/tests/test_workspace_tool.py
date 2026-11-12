@@ -119,6 +119,10 @@ class FakeLifecycleClient(FakeWorkspaceClient):
         self.lifecycle_calls.append(("delete", path, expected_version))
         return {"path": path, "version": expected_version, "deleted": True}
 
+    async def workspace_restore_deleted_file(self, run_id, user_id, workspace_id, path, expected_version):
+        self.lifecycle_calls.append(("restore_deleted", path, expected_version))
+        return {"path": path, "version": expected_version + 1, "restored": True}
+
     async def workspace_rename_file(self, run_id, user_id, workspace_id, path, new_path, expected_version):
         self.lifecycle_calls.append(("rename", path, new_path, expected_version))
         return {"old_path": path, "path": new_path, "version": expected_version + 1, "renamed": True}
@@ -166,4 +170,29 @@ def test_workspace_rename_uses_expected_version_and_rejects_existing_target():
         "version": 1, "storage_path": "user/workspaces/ws/versions/1/src/new.py",
     }
     with pytest.raises(ValueError, match="workspace_rename_target_exists"):
+        asyncio.run(run())
+
+
+def test_workspace_restore_deleted_requires_deleted_state_and_expected_version():
+    client = FakeLifecycleClient({
+        "src/deleted.py": {
+            "version": 5,
+            "storage_path": "user/workspaces/ws/versions/5/src/deleted.py",
+            "deleted_at": "2026-11-12T07:00:00Z",
+        },
+    })
+    tool = SupabaseWorkspaceTool(client)
+
+    async def run():
+        return json.loads(await tool.str_replace_editor(
+            {"operation": "restore_deleted", "path": "src/deleted.py", "expected_version": 5},
+            run_id="run-restore", user_id="user-1", workspace_id="workspace-1",
+        ))
+
+    result = asyncio.run(run())
+    assert result["restored"] is True
+    assert client.lifecycle_calls == [("restore_deleted", "src/deleted.py", 5)]
+
+    client.metadata_by_path["src/deleted.py"]["deleted_at"] = None
+    with pytest.raises(ValueError, match="workspace_deleted_file_not_found"):
         asyncio.run(run())
