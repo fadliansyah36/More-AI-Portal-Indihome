@@ -72,6 +72,21 @@ async def execute(
     _authorize(authorization)
     if body.request_id in _active:
         raise HTTPException(409, "sandbox_request_already_active")
+    if len(body.workspace_files) > 200:
+        raise HTTPException(413, "sandbox_workspace_file_count_exceeded")
+    snapshot = {}
+    snapshot_bytes = 0
+    for path, encoded in body.workspace_files.items():
+        if not isinstance(path, str) or not isinstance(encoded, str):
+            raise HTTPException(422, "sandbox_workspace_snapshot_invalid")
+        try:
+            raw = base64.b64decode(encoded, validate=True)
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(422, "sandbox_workspace_snapshot_invalid") from exc
+        snapshot_bytes += len(raw)
+        if snapshot_bytes > 2_000_000:
+            raise HTTPException(413, "sandbox_workspace_snapshot_too_large")
+        snapshot[path] = raw
     sandbox = _sandbox()
     task = asyncio.current_task()
     if task is None:
@@ -81,6 +96,7 @@ async def execute(
         result = await sandbox.execute(
             body.source,
             language=body.language,
+            workspace_files=snapshot,
             limits=SandboxLimits(timeout_seconds=body.timeout_seconds),
         )
         return {
@@ -91,6 +107,10 @@ async def execute(
             "stderr": result.stderr,
             "timed_out": result.timed_out,
             "isolated": True,
+            "workspace_files": {
+                path: base64.b64encode(raw).decode("ascii")
+                for path, raw in result.workspace_files.items()
+            },
         }
     except asyncio.CancelledError:
         raise
