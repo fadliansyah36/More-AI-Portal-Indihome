@@ -6,7 +6,7 @@ from typing import Any
 from uuid import UUID, uuid4
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from pydantic import BaseModel, Field
 
 from app.authorization import customer_principal
