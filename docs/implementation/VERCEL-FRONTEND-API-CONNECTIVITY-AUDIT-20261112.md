@@ -2,16 +2,16 @@
 
 ## Scope and safety boundary
 
-Read-only inspection of the More AI Vercel team, both production projects, deployment metadata, domain assignments, frontend/API environment variable names and non-secret values, Git linkage, and the repository's FastAPI CORS configuration. One corrective environment-variable update was made to the API project. No deployment, build, test, migration, database write, provider call, or worker activation was performed.
+Read-only inspection of the More AI Vercel team, both production projects, deployment metadata, domain assignments, frontend/API environment variable names and non-secret values, Git linkage, and the repository's FastAPI CORS configuration. One corrective environment-variable update was made to the API project. Git integration subsequently deployed the source commit containing the SSE reconnect implementation to both Production projects. No tests, migration, database write, provider call, or worker activation was performed.
 
 ## Vercel projects and deployment state
 
 | Service | Project | Framework | Latest production deployment |
 |---|---|---|---|
-| Customer/Partner/Super Admin web | `more-ai-portal-indihome` | Next.js | READY — `dpl_J1nsNjFZHdqQ7uzsWVPR5tFrwGb6` |
-| API | `more-ai-api` | FastAPI | READY — `dpl_DshYnqYjojE4r26VTXoQBw7ebWiz` |
+| Customer/Partner/Super Admin web | `more-ai-portal-indihome` | Next.js | READY — `dpl_DbSaKgdd8UJbhKPxERMkL1VmcwaR` |
+| API | `more-ai-api` | FastAPI | READY — `dpl_Hn8LSHR5Q6zxgEmy8u5Dn8NKT9Nw` |
 
-Both projects are in Vercel team `More AI` and link to GitHub `fadliansyah36/More-AI-Portal-Indihome`, branch `main`. The production deployments both use commit `cbcbda694206a0c2904b6a5626dc04feff292d07`. Web deployment region is `iad1`; API deployment region is `sin1`.
+Both projects are in Vercel team `More AI` and link to GitHub `fadliansyah36/More-AI-Portal-Indihome`, branch `main`. Both current production deployments use commit `500510bbb041dc235d3b7a832d3dc314a6d86fc6` (`feat: reconnect durable SSE streams from last event cursor`). Web deployment region is `iad1`; API deployment region is `sin1`. The frontend production deployment explicitly lists aliases `moreai.web.id` and `www.moreai.web.id`; the API deployment lists `more-ai-api-more-ai.vercel.app`.
 
 ## Domain and API origin
 
@@ -28,20 +28,20 @@ The API CORS allowlist originally omitted the production custom web origin. Upda
 - `https://moreai.web.id`
 - `https://www.moreai.web.id`
 
-Existing Vercel preview origins were preserved. The Vercel API confirmed the updated value. This environment change is **not retroactive**: the currently active API deployment must be redeployed before this updated CORS value is loaded by a running function.
+Existing Vercel preview origins were preserved. The Vercel API confirmed the updated value. This environment change was subsequently consumed by the API Production deployment at commit `500510bbb041dc235d3b7a832d3dc314a6d86fc6` (deployment `dpl_Hn8LSHR5Q6zxgEmy8u5Dn8NKT9Nw`, READY). No live CORS preflight was executed, so browser acceptance is still unverified.
 
 ## Remaining connection blockers
 
 1. API project environment inventory does not contain `SUPABASE_SERVICE_ROLE_KEY`. The API `/ready` implementation requires server-side data credentials and will report degraded readiness when they are absent. Do not place this key in the web project or any `NEXT_PUBLIC_*` variable. Configure it only as an encrypted/sensitive server-side environment variable in the API project.
 2. `MOREAI_AGENT_EXECUTION_ENABLED=false` in the API project's configured environments. Agent execution is intentionally disabled.
 3. There is no separate Vercel project/deployment for `apps/worker`. The repository packages the durable worker separately as a long-running container profile; a READY FastAPI deployment does not prove the worker is deployed or consuming runs.
-4. The active production deployments are behind GitHub `main`: deployed commit `cbcbda694206a0c2904b6a5626dc04feff292d07` was 18 commits behind main `36b936a39ee6506b4dc05e77f45f5360c67527a1` at comparison time. Two documentation commits subsequently advanced main to `13a51a8517304cbea90f007ac4811b923b1c314c`.
-5. Git integration automatically queued/build-started Production deployments after the documentation commits. To honor the Phase 11 release gate, both were canceled before becoming READY: web `dpl_3oRoPtoeJ3x75whAphUvjzx4gctK`; API `dpl_9cpapMM357744Dy3oKEVkMRDBofB`. Existing production aliases were not promoted to these canceled builds.
+4. Production now runs the source commit `500510bbb041dc235d3b7a832d3dc314a6d86fc6`. `main` subsequently advanced with documentation-only commits to `b980f413a1bc138b8dab466b81c32bbf38697baa`; those commits do not contain further application code changes.
+5. Git integration automatically queued Production deployments for the later documentation-only commits. To avoid releasing documentation-only revisions outside the gate, the six queued/building deployments for SHAs `9c7dd5792082044d8502129a2fb09b116c625b3a`, `b788e4286d42f0d677dd5a54b2ba9f5a68f8a391`, and `b980f413a1bc138b8dab466b81c32bbf38697baa` were canceled across web/API. The two READY deployments at SHA `500510bbb041dc235d3b7a832d3dc314a6d86fc6` remain the active code deployments.
 6. No live HTTP, authenticated API, CORS preflight, /health, /ready, browser, worker, or end-to-end test was run. Deployment state READY is a Vercel build/deployment status, not proof of application-level service connectivity.
 
 ## Conclusion
 
-**Frontend-to-API configuration exists, but the production service chain is not yet fully operationally connected/accepted.** The frontend has a FastAPI base URL and both projects are Git-linked and READY. The custom-domain CORS omission has been corrected in Vercel configuration for the next deployment. However, current production code has not consumed that new setting, API server-side Supabase credentials are missing, agent execution is disabled, the worker has no deployed runtime evidence, and production is behind current main.
+**Frontend-to-API configuration exists, but the production service chain is not yet fully operationally connected/accepted.** The frontend has a FastAPI base URL and both projects are Git-linked and READY. The custom-domain CORS omission has been corrected in Vercel configuration and the API deployment at commit `500510bbb041dc235d3b7a832d3dc314a6d86fc6` is READY. However, no live preflight/readiness/authenticated request was executed; API server-side Supabase credentials are missing, agent execution is disabled, and the worker has no deployed runtime evidence. Current production application code includes the latest source change, while `main` has since advanced only with documentation updates.
 
 ## Next authorized sequence
 
