@@ -33,7 +33,12 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
         egress_enforced = os.getenv("MOREAI_BROWSER_EGRESS_ENFORCED", "false").lower() == "true"
         if not service_url or not service_token or not egress_enforced:
             raise RuntimeError("browser_activation_requires_isolated_supervisor_and_network_egress_enforcement")
-        browser_tools = BrowserSupervisor(service_url=service_url, service_token=service_token, egress_enforced=egress_enforced, http=http_client)
+        allow_private_http = os.getenv("MOREAI_BROWSER_PRIVATE_NETWORK_HTTP", "false").lower() == "true"
+        browser_tools = BrowserSupervisor(
+            service_url=service_url, service_token=service_token,
+            egress_enforced=egress_enforced, http=http_client,
+            allow_private_http=allow_private_http,
+        )
     sandbox_tools = None
     sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
     sandbox_gate_passed = os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
