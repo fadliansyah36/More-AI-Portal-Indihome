@@ -11,15 +11,11 @@ import httpx
 
 
 class IsolatedSandboxToolAdapter:
-    """Worker client for the separately deployed execution supervisor.
-
-    The worker never receives a Docker socket or starts a host-side Docker CLI.
-    Approval is enforced centrally by the policy-enforced tool dispatcher.
-    """
+    """Authenticated client for disposable, network-disabled workspace execution."""
 
     def __init__(
         self, *, service_url: str, service_token: str, http: httpx.AsyncClient,
-        allow_private_http: bool = False,
+        allow_private_http: bool = False, workspace_tools=None,
     ):
         parsed = urlsplit(service_url)
         private_http = (
@@ -40,7 +36,8 @@ class IsolatedSandboxToolAdapter:
             raise ValueError("sandbox_supervisor_service_token_invalid")
         self.service_url = service_url.rstrip("/")
         self.service_token = service_token
-        self.http = http\n        self.workspace_tools = workspace_tools
+        self.http = http
+        self.workspace_tools = workspace_tools
 
     async def check_ready(self) -> dict[str, Any]:
         response = await self.http.get(
@@ -69,33 +66,33 @@ class IsolatedSandboxToolAdapter:
                 timeout=httpx.Timeout(5.0, connect=2.0),
             ))
         except Exception:
-            # The remote supervisor has its own hard execution deadline. Never
-            # convert a local cancellation into an apparent successful execution.
             return
 
     async def _execute(
         self, *, source: str, language: str, run_id: str, user_id: str,
-        timeout_seconds: int = 30, workspace_id: str | None = None,
-        user_id: str | None = None,
+        workspace_id: str | None, timeout_seconds: int = 30,
     ) -> str:
         if not isinstance(run_id, str) or not run_id or not isinstance(user_id, str) or not user_id:
             raise PermissionError("sandbox_run_identity_required")
-        if not isinstance(source, str) or not source or len(source.encode("utf-8")) > 8_000_000:
-            raise ValueError("sandbox_source_size_invalid")
         if not workspace_id or self.workspace_tools is None:
             raise PermissionError("sandbox_workspace_binding_required")
+        if not isinstance(source, str) or not source or len(source.encode("utf-8")) > 8_000_000:
+            raise ValueError("sandbox_source_size_invalid")
+
         snapshot, baseline = await self.workspace_tools.export_execution_snapshot(
             user_id=user_id, workspace_id=workspace_id,
         )
-        encoded_snapshot = {path: base64.b64encode(raw).decode("ascii") for path, raw in snapshot.items()}
+        encoded_snapshot = {
+            path: base64.b64encode(raw).decode("ascii")
+            for path, raw in snapshot.items()
+        }
         await self.check_ready()
         request_id = uuid4().hex
         try:
             response = await self.http.post(
                 f"{self.service_url}/v1/execute",
                 json={
-                    "request_id": request_id,
-                    "run_id": run_id, "user_id": user_id,
+                    "request_id": request_id, "run_id": run_id, "user_id": user_id,
                     "language": language, "source": source,
                     "timeout_seconds": timeout_seconds,
                     "workspace_files": encoded_snapshot,
@@ -121,7 +118,8 @@ class IsolatedSandboxToolAdapter:
             or not isinstance(result.get("workspace_files"), dict)
         ):
             raise RuntimeError("sandbox_supervisor_response_invalid")
-        returned_files = {}
+
+        returned_files: dict[str, bytes] = {}
         returned_total = 0
         for path, encoded in result["workspace_files"].items():
             if not isinstance(path, str) or not isinstance(encoded, str):
@@ -131,26 +129,35 @@ class IsolatedSandboxToolAdapter:
             if returned_total > 2_000_000:
                 raise RuntimeError("sandbox_supervisor_workspace_response_too_large")
             returned_files[path] = raw
+
         changes = {"saved": [], "deleted": [], "saved_count": 0, "deleted_count": 0}
-        if result["exit_code"] == 0 and not result["timed_out"]:
+        success = result["exit_code"] == 0 and not result["timed_out"]
+        if success:
             changes = await self.workspace_tools.apply_execution_snapshot(
                 run_id=run_id, user_id=user_id, workspace_id=workspace_id,
                 before=snapshot, baseline=baseline, after=returned_files,
             )
         result.pop("workspace_files", None)
         result["workspace_changes"] = changes
-        result["workspace_writeback"] = "committed" if result["exit_code"] == 0 and not result["timed_out"] else "discarded_execution_failed"
+        result["workspace_writeback"] = "committed" if success else "discarded_execution_failed"
         return json.dumps(result, ensure_ascii=False, separators=(",", ":"))
 
-    async def python_execute(self, arguments: dict[str, Any], *, run_id: str, user_id: str, workspace_id: str | None = None) -> str:
+    async def python_execute(
+        self, arguments: dict[str, Any], *, run_id: str, user_id: str,
+        workspace_id: str | None = None,
+    ) -> str:
         return await self._execute(
             source=arguments["code"], language="python",
             run_id=run_id, user_id=user_id, workspace_id=workspace_id,
             timeout_seconds=int(arguments.get("timeout_seconds", 30)),
         )
 
-    async def bash(self, arguments: dict[str, Any], *, run_id: str, user_id: str, workspace_id: str | None = None) -> str:
+    async def bash(
+        self, arguments: dict[str, Any], *, run_id: str, user_id: str,
+        workspace_id: str | None = None,
+    ) -> str:
         return await self._execute(
             source=arguments["command"], language="bash",
-            run_id=run_id, user_id=user_id, workspace_id=workspace_id, timeout_seconds=30,
+            run_id=run_id, user_id=user_id, workspace_id=workspace_id,
+            timeout_seconds=30,
         )
