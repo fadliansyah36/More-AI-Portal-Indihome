@@ -13,6 +13,7 @@ from app.registry_factory import build_agent_registry
 from app.runtime import WorkerRuntime
 from app.outbox import DurableEventOutboxPublisher
 from app.knowledge_tools import SupabaseKnowledgeTools
+from app.sandbox_tools import IsolatedSandboxToolAdapter
 from apps.sandbox.app.browser_supervisor import BrowserSupervisor
 
 
@@ -85,8 +86,26 @@ async def run_worker() -> None:
                 http=http,
             )
             await browser_client.check_ready()
-        registry = build_agent_registry(rpc, http)
-        runtime = WorkerRuntime(rpc, RegisteredAgentDispatcher(registry, checkpoint_loader=rpc.list_checkpoints))
+        sandbox_tools = None
+        sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
+        sandbox_gate_passed = os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
+        if sandbox_enabled and sandbox_gate_passed:
+            sandbox_tools = IsolatedSandboxToolAdapter(
+                service_url=os.getenv("MOREAI_SANDBOX_SERVICE_URL", ""),
+                service_token=os.getenv("MOREAI_SANDBOX_SERVICE_TOKEN", ""),
+                allow_private_http=os.getenv("MOREAI_SANDBOX_PRIVATE_NETWORK_HTTP", "false").lower() == "true",
+                http=http,
+            )
+            # Readiness is checked before the worker can claim runs. The worker
+            # itself has no Docker socket and cannot launch host-side containers.
+            await sandbox_tools.check_ready()
+        registry = build_agent_registry(rpc, http, sandbox_tools=sandbox_tools)
+        dispatcher = RegisteredAgentDispatcher(
+            registry,
+            checkpoint_loader=rpc.list_checkpoints,
+            sandbox_supervisor=sandbox_tools,
+        )
+        runtime = WorkerRuntime(rpc, dispatcher)
         knowledge_ingestion = SupabaseKnowledgeTools(rpc, http)
         health_server = await asyncio.start_server(
             _health_handler,
