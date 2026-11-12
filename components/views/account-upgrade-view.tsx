@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Crown, Check, Sparkles, Shield, HardDrive, Zap } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
+import { customerApi, type CustomerEntitlement } from '@/lib/api/client';
 
 interface AccountUpgradeViewProps {
   onBack: () => void;
@@ -15,12 +16,18 @@ export const AccountUpgradeView: React.FC<AccountUpgradeViewProps> = ({
   onNavigateTab,
 }) => {
   const { showToast } = useToast();
-  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'enterprise'>('pro');
+  const [entitlements, setEntitlements] = useState<CustomerEntitlement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleUpgrade = (planName: string) => {
-    showToast(`Akun berhasil ditingkatkan ke paket ${planName}! Fitur penuh telah aktif.`, 'success');
-    onNavigateTab('profile');
-  };
+  useEffect(() => {
+    let active = true;
+    customerApi.entitlements().then((rows) => { if (active) setEntitlements(rows); })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Entitlement akun tidak dapat dimuat.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+  const activeEntitlements = entitlements.filter((item) => item.status === 'active');
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -53,74 +60,21 @@ export const AccountUpgradeView: React.FC<AccountUpgradeViewProps> = ({
         </div>
       </div>
 
-      {/* Comparison: Akun Tamu vs Akun Penuh */}
       <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3">
-        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-          Perbandingan Fitur:
-        </h3>
-
-        <div className="space-y-2 text-xs">
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <span className="text-slate-600 font-medium">Penyimpanan Berkas Permanen Cloud</span>
-            <span className="font-bold text-emerald-600 flex items-center gap-1">
-              <Check className="w-3.5 h-3.5" /> 50 GB
-            </span>
+        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Entitlement Akun Saat Ini</h3>
+        {loading ? <p className="text-xs text-slate-500">Memuat status paket dari backend…</p> : error ? (
+          <p role="alert" className="text-xs text-red-600">{error}</p>
+        ) : activeEntitlements.length ? activeEntitlements.map((item) => (
+          <div key={item.id} className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
+            <p className="text-xs font-semibold text-slate-900">{item.entitlement_key}</p>
+            <p className="mt-1 text-[10px] text-slate-500">Sumber: {item.source_type}{item.expires_at ? ' · Berlaku sampai ' + new Date(item.expires_at).toLocaleString('id-ID') : ''}</p>
           </div>
-
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <span className="text-slate-600 font-medium">Riwayat Percakapan &amp; Dokumen</span>
-            <span className="font-bold text-emerald-600 flex items-center gap-1">
-              <Check className="w-3.5 h-3.5" /> Tanpa Batas
-            </span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <span className="text-slate-600 font-medium">Akses Autonomous AI Agent</span>
-            <span className="font-bold text-emerald-600 flex items-center gap-1">
-              <Check className="w-3.5 h-3.5" /> 5 Agent Aktif
-            </span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <span className="text-slate-600 font-medium">Sinkronisasi Multi-Perangkat (HP/Laptop)</span>
-            <span className="font-bold text-emerald-600 flex items-center gap-1">
-              <Check className="w-3.5 h-3.5" /> Otomatis
-            </span>
-          </div>
-        </div>
+        )) : <p className="text-xs text-slate-500">Belum ada entitlement aktif yang tercatat pada akun ini.</p>}
       </div>
-
-      {/* Pricing Option Cards */}
-      <div className="space-y-2.5">
-        <div
-          onClick={() => setSelectedPlan('pro')}
-          className={`p-4 rounded-3xl border-2 cursor-pointer transition flex items-center justify-between ${
-            selectedPlan === 'pro'
-              ? 'border-red-500 bg-red-50/50 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
-          }`}
-        >
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-slate-900">MoreAI Pro Personal</h4>
-              <span className="text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
-                Terpopuler
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">500.000 Poin / Bulan + 50 GB Storage</p>
-          </div>
-          <div className="text-right">
-            <span className="text-sm font-black text-slate-900">Rp 49.000</span>
-            <span className="text-[10px] text-slate-400 block">/ bulan</span>
-          </div>
-        </div>
-
-        <button
-          onClick={() => handleUpgrade('Pro Personal')}
-          className="w-full py-3.5 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs transition shadow-xs"
-        >
-          Konfirmasi &amp; Upgrade Sekarang
-        </button>
+      <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+        <h3 className="text-xs font-bold text-amber-900">Upgrade dan pembayaran belum tersedia</h3>
+        <p className="text-xs leading-relaxed text-amber-800">Harga paket, checkout, dan aktivasi subscription belum terhubung ke backend pembayaran. Tidak ada upgrade yang akan diklaim berhasil sebelum transaksi dan entitlement dikonfirmasi oleh server.</p>
+        <button type="button" disabled className="w-full py-3.5 rounded-2xl bg-slate-300 text-slate-600 font-bold text-xs cursor-not-allowed">Upgrade belum dapat dilakukan</button>
       </div>
     </div>
   );
