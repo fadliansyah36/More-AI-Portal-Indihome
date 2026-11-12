@@ -611,6 +611,27 @@ export const workspaceApi = {
 };
 
 
+export type CustomerWorkspace = {
+  id: string;
+  name: string;
+  slug: string;
+  owner_user_id: string;
+  status: 'active' | 'archived';
+  created_at: string;
+  updated_at: string;
+};
+
+export const customerWorkspaceApi = {
+  list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces'),
+  create: (name: string) => moreAiCustomerApi<CustomerWorkspace>('/api/v1/customer/workspaces', {
+    method: 'POST', body: JSON.stringify({ name }),
+  }),
+  rename: (workspaceId: string, name: string) => moreAiCustomerApi<CustomerWorkspace>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId),
+    { method: 'PATCH', body: JSON.stringify({ name }) },
+  ),
+};
+
 export type CustomerLearningProgress = {
   module_key: string;
   lesson_key: string;
