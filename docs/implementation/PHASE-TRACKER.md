@@ -786,3 +786,15 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 2. Verify every existing Customer screen against the real FastAPI route/schema and Supabase-backed records; fix mismatches without changing visual design.
 3. Complete Customer chat/run lifecycle only after worker/provider readiness; prove enqueue → worker → engine → persistence → events → UI.
 4. Keep Phase 09 IN PROGRESS and Phase 10/11 NOT ACCEPTED until authenticated production E2E is evidenced.
+
+
+## 2026-11-12 direct-main Customer Workspace continuation
+
+- Report: [CUSTOMER-WORKSPACE-DIRECT-MAIN-CONTINUATION-20261112.md](./CUSTOMER-WORKSPACE-DIRECT-MAIN-CONTINUATION-20261112.md).
+- Repository HEAD at reconciliation: `e309fd093cde6e34b98a69d235098f6cebada833`.
+- Direct production FastAPI deployment from that exact `main` SHA is READY: deployment `dpl_5fpYzDFuqcB9Xzt4nNnj2UhHHykk`, alias `more-ai-api.vercel.app`, root `apps/api`, source files outside root enabled. This is deployment/build status only; no runtime endpoint was invoked.
+- Existing frontend API origin is configured as `https://more-ai-api-more-ai.vercel.app`; API CORS origins include the production frontend domains.
+- A direct production frontend deployment from the same SHA was rejected by Vercel with HTTP 402 `api-deployments-free-per-day` and retry-after 86400 seconds. Current frontend production therefore still serves an earlier commit.
+- API runtime keeps `MOREAI_AGENT_EXECUTION_ENABLED=false`. Worker source and Docker profile exist, but no deployed always-on worker service was found in the connected Vercel project inventory. Provider routing, worker secrets/configuration, credit conversion, wallet currency, entitlement/quota keys and runtime health are not established by this deployment.
+- No real endpoint/browser/provider/worker/SQL/E2E test, staging deployment, migration or worker activation was performed.
+- Phases 04, 06, 07, 08 and 09 remain IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED. See continuation report for dependency-ordered next actions.
