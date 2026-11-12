@@ -39,6 +39,39 @@ class CreditEstimate:
 class ModelRouter:
     """Resolve ordered primary/fallback candidates from canonical MoreAI routing policies."""
 
+    _CAPABILITY_ALIASES = {
+        "tools": "tool_calling",
+        "tool_calls": "tool_calling",
+        "function_calling": "tool_calling",
+        "functions": "tool_calling",
+        "json": "structured_output",
+        "json_mode": "structured_output",
+        "json_schema": "structured_output",
+        "vision": "image_input",
+        "image": "image_input",
+        "image_understanding": "image_input",
+        "audio": "audio_input",
+        "speech_to_text": "audio_input",
+        "transcription": "audio_input",
+        "text_to_speech": "audio_output",
+        "tts": "audio_output",
+        "embedding": "embeddings",
+        "vector_embedding": "embeddings",
+    }
+
+    @classmethod
+    def normalize_capabilities(cls, values: Any) -> set[str]:
+        if not isinstance(values, (list, tuple, set)):
+            return set()
+        normalized: set[str] = set()
+        for value in values:
+            if not isinstance(value, str):
+                continue
+            key = value.strip().lower().replace("-", "_").replace(" ", "_")
+            if key:
+                normalized.add(cls._CAPABILITY_ALIASES.get(key, key))
+        return normalized
+
     def __init__(self, repository: RouteRepository):
         self.repository = repository
 
@@ -47,7 +80,7 @@ class ModelRouter:
         user_id: str | None = None, workspace_id: str | None = None,
         partner_id: str | None = None,
     ) -> list[ResolvedModelRoute]:
-        required = required_capabilities or set()
+        required = self.normalize_capabilities(required_capabilities or set())
         policies = await self.repository.list_enabled_routes(
             task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id,
         )
@@ -60,7 +93,7 @@ class ModelRouter:
                 model = await self.repository.get_enabled_model(str(model_id))
                 if not model:
                     continue
-                capabilities = set(model.get("capabilities") or [])
+                capabilities = self.normalize_capabilities(model.get("capabilities"))
                 if not required.issubset(capabilities):
                     continue
                 provider = await self.repository.get_enabled_provider(str(model["provider_id"]))
