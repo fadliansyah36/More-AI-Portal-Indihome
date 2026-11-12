@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from typing import Any
 from uuid import UUID, uuid4
@@ -180,7 +181,7 @@ async def create_workspace_file_download(
         raise HTTPException(503, "Workspace Storage is not configured")
     base_url = settings.supabase_url.rstrip("/")
     headers = {"apikey": settings.supabase_service_role_key, "Authorization": "Bearer " + settings.supabase_service_role_key}
-    bucket = "moreai-artifacts"
+    bucket = os.getenv("MOREAI_WORKSPACE_BUCKET", "moreai-artifacts")
     bucket_response = await request.app.state.http.get(base_url + "/storage/v1/bucket/" + bucket, headers=headers, timeout=8.0)
     if bucket_response.status_code >= 400 or not isinstance(bucket_response.json(), dict) or bucket_response.json().get("public") is not False:
         raise HTTPException(503, "Workspace Storage bucket must exist and be private")
