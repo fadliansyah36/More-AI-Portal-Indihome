@@ -36,6 +36,8 @@ def test_supervisor_accepts_compose_http_only_with_explicit_private_network_opt_
         ("http://attacker.example:8080", True),
         ("http://browser-supervisor:8081", True),
         ("http://browser-supervisor:8080/path?token=leak", True),
+        ("http://browser-supervisor:8080/other", True),
+        ("https://browser.internal.example:8443", False),
         ("https://user:pass@browser.internal.example", False),
     ],
 )
