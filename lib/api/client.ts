@@ -386,15 +386,15 @@ export type CustomerArtifact = {
 };
 
 export const artifactApi = {
-  list: () => moreAiApi<CustomerArtifact[]>('/api/v1/artifacts'),
+  list: () => moreAiCustomerApi<CustomerArtifact[]>('/api/v1/artifacts'),
   upload: (filename: string, content: Blob, mimeType = content.type || 'application/octet-stream') =>
-    moreAiApi<CustomerArtifact>('/api/v1/artifacts', {
+    moreAiCustomerApi<CustomerArtifact>('/api/v1/artifacts', {
       method: 'POST',
       headers: { 'X-Filename': filename, 'Content-Type': mimeType },
       body: content,
     }),
   signedDownload: (artifactId: string) =>
-    moreAiApi<{ artifact_id: string; url: string; expires_in: number }>(
+    moreAiCustomerApi<{ artifact_id: string; url: string; expires_in: number }>(
       `/api/v1/artifacts/${artifactId}/signed-download`,
       { method: 'POST' },
     ),
