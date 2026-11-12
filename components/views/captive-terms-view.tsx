@@ -20,12 +20,7 @@ export const CaptiveTermsView: React.FC<CaptiveTermsViewProps> = ({
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
 
   const handleProceed = () => {
-    if (!agreedTerms || !agreedPrivacy) {
-      showToast('Harap setujui Syarat & Ketentuan serta Kebijakan Privasi untuk melanjutkan.', 'error');
-      return;
-    }
-    showToast('Persetujuan berhasil dicatat. Melanjutkan ke verifikasi OTP...', 'success');
-    onNavigateTab('captive_otp');
+    showToast('Gateway belum terhubung. Persetujuan belum disimpan, OTP belum dikirim, dan akses belum diaktifkan.', 'info');
   };
 
   return (
@@ -123,7 +118,7 @@ export const CaptiveTermsView: React.FC<CaptiveTermsViewProps> = ({
           onClick={handleProceed}
           className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs transition shadow-xs mt-2"
         >
-Lihat Status Integrasi
+Gateway belum terhubung
         </button>
       </div>
     </div>
