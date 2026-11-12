@@ -513,3 +513,11 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - No tests, lint, typecheck, build, runtime, staging, migration or deployment were run. This is not phase acceptance.
 - Read-only Supabase inventory found no dedicated EduTech/course/lesson/progress/certificate tables among the inspected public tables; EduTech requires a product-approved data model before real persistence endpoints can be implemented.
 - Phase 04, 06, 07, 08 and 09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
+
+
+## 2026-11-12 — Worker lease heartbeat interval correction
+- `apps/worker/app/runtime.py` now renews leases at `max(1s, min(30s, lease_seconds / 3))`, avoiding a fixed 30-second heartbeat that could exceed short configured leases.
+- Source commit: `5dcfda51dfa69b4c321348959ff00e58cf2585e0`.
+- Report: [PHASE-04-07-WORKER-LEASE-HEARTBEAT-CORRECTION-20261112.md](./PHASE-04-07-WORKER-LEASE-HEARTBEAT-CORRECTION-20261112.md).
+- No tests, build, runtime, staging, migration or deployment run; no phase acceptance is claimed.
+- Phase 04, 06, 07, 08 and 09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
