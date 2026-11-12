@@ -634,6 +634,18 @@ export const customerWorkspaceApi = {
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/archive',
     { method: 'POST' },
   ),
+  members: (workspaceId: string) => moreAiCustomerApi<{ items: Array<{
+    id: string; workspace_id: string; user_id: string; role_id: string | null;
+    status: string; invited_by: string | null; joined_at: string | null; created_at: string;
+  }>; count: number }>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/members',
+  ),
+  removeMember: (workspaceId: string, memberId: string) => moreAiCustomerApi<{
+    member_id: string; status: 'removed';
+  }>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/members/' + encodeURIComponent(memberId),
+    { method: 'DELETE' },
+  ),
 };
 
 export type CustomerLearningProgress = {
