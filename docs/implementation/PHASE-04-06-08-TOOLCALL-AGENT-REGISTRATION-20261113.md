@@ -29,7 +29,7 @@ Scope: expose the concrete upstream OpenManus ToolCallAgent through the durable 
 - API contract: `da1381b964826df23cc0ebec500b9db9946bc989`
 - Catalog: `53a658ec0026ec09c64989ca6a0038a65bcb3a07`
 - Migration: `ac369092d63a284a9b3fed25820ff01e34849d7e`
-- Capability map: \`1d72c3c27373137d79c64128d20841b1744c5410\`.
+- Capability map: `1d72c3c27373137d79c64128d20841b1744c5410`.
 
 ## Safety / limitations
 - No live database mutation, migration apply, provider calls, worker activation, staging, deployment, tests, lint, typecheck, build or browser/API runtime probes were performed.
