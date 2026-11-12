@@ -19,7 +19,9 @@ Focused only on restoring and completing the existing Customer frontend integrat
 
 - Updated `apps/api/api/index.py` to locate the API workspace and monorepo engine root before importing `app.main`, independent of whether the Vercel runtime preserves the monorepo path or uses the API workspace as root.
 - Vercel API project settings updated: root directory `apps/api`, framework `fastapi`, and source files outside root enabled.
-- No frontend visual changes. Existing typed client already points at the FastAPI origin; Tasks & Workflow calls the persisted run API rather than local demo data.
+- Fixed Customer run API contract drift: the client now lists/gets/streams/reads steps through `/api/v1/customer/agent-runs/*`; added owner-authenticated customer cancellation endpoint and aligned the client path. Added an API route-registration contract test for the full customer run lifecycle.
+- Wired the existing Tasks “Tambah Tugas” action to the existing authenticated Chat → FastAPI → durable Agent Run flow. No local-only task or fake record is created; the existing screen and visual design are preserved.
+- No frontend visual redesign. Tasks & Workflow continues to display persisted Agent Run records from FastAPI/Supabase.
 
 ## Verification
 
