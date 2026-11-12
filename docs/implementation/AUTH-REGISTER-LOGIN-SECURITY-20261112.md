@@ -39,7 +39,8 @@ When Confirm Email is disabled, Supabase Auth implicitly confirms new email addr
 
 ## Verification status
 - Live migration apply successful; trigger metadata query successful; migration version 20261112084047 present.
-- Frontend CI/build and browser login/register E2E pending latest commit.
+- API unit tests: 27 passed (GitHub Actions run 43185507782). Worker unit tests also passed in the same run. The API contract, worker contract, engine policy and sandbox policy jobs passed in Phase 04 run 43185332570.
+- Added browser smoke assertions for /customer/register and /customer/login: expected fields must exist and no phone input may appear. Responsive browser baseline/build is still running in run 43185507782.
 - Real signup/login smoke test pending because Confirm Email must first be disabled in the Supabase Dashboard. No production user account was created as part of this change.
 
 ## Next
