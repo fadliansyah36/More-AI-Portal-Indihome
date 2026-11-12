@@ -326,6 +326,9 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
             "sequence": cursor,
             **({"result": run.get("output")} if run.get("status") in {"succeeded", "failed", "cancelled", "expired"} else {}),
         })
+        if run.get("status") in {"succeeded", "failed", "cancelled", "expired"}:
+            await websocket.close(code=1000)
+            return
 
         idle_rounds = 0
         while idle_rounds < 300:
