@@ -162,7 +162,11 @@ class PlanningAgentRuntime(AgentRuntime):
             self._validate_executor_keys(steps)
             title=prompt.strip()[:500]
             manifest={"title":title,"step_count":len(steps),"steps":steps}
-            await self.store.create(run_id=context.run_id,title=title,steps=steps)
+            persisted = await self.store.create(run_id=context.run_id,title=title,steps=steps)
+            rows = persisted.get("steps") if isinstance(persisted,dict) else None
+            if not isinstance(rows,list):
+                raise RuntimeError("planning_persisted_steps_invalid")
+            self._validate_persisted_rows(rows, steps)
             await checkpoint("planning.manifest",manifest)
         else:
             title,steps=await self._new_plan(context,prompt)
