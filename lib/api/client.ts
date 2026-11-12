@@ -123,19 +123,36 @@ export async function moreAiApiStream(
       throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
     }
 
-    const headers = new Headers({
-      Authorization: 'Bearer ' + data.session.access_token,
-      Accept: 'text/event-stream',
-    });
-    if (cursor > 0) headers.set('Last-Event-ID', String(cursor));
+    let accessToken = data.session.access_token;
+    const buildHeaders = () => {
+      const headers = new Headers({
+        Authorization: 'Bearer ' + accessToken,
+        Accept: 'text/event-stream',
+      });
+      if (cursor > 0) headers.set('Last-Event-ID', String(cursor));
+      return headers;
+    };
 
     let response: Response;
     try {
       response = await fetch(CUSTOMER_API_BASE_URL + path, {
-        headers,
+        headers: buildHeaders(),
         cache: 'no-store',
         signal: options.signal,
       });
+      if (response.status === 401) {
+        const refreshed = await supabase.auth.refreshSession();
+        if (refreshed.error || !refreshed.data.session?.access_token) {
+          await supabase.auth.signOut({ scope: 'local' });
+          throw new Error('Sesi login telah berakhir. Silakan masuk kembali.');
+        }
+        accessToken = refreshed.data.session.access_token;
+        response = await fetch(CUSTOMER_API_BASE_URL + path, {
+          headers: buildHeaders(),
+          cache: 'no-store',
+          signal: options.signal,
+        });
+      }
     } catch (error) {
       if (options.signal?.aborted) throw error;
       if (reconnects >= maxReconnects) throw error;
@@ -148,6 +165,7 @@ export async function moreAiApiStream(
       const payload = await response.json().catch(() => null);
       // Authentication/authorization and contract errors are not transient.
       if ([400, 401, 403, 404, 422].includes(response.status)) {
+        if (response.status === 401) await supabase.auth.signOut({ scope: 'local' });
         throw new Error(payload?.detail || ('MoreAI stream error (' + response.status + ')'));
       }
       if (reconnects >= maxReconnects) {
@@ -183,7 +201,7 @@ export async function moreAiApiStream(
         }
         receivedEvent = true;
         onEvent({ id, event, data: parsed as Record<string, unknown> });
-        if (['run.completed', 'run.failed', 'run.cancelled'].includes(event)) terminal = true;
+        if (['run.completed', 'run.failed', 'run.cancelled', 'run.expired'].includes(event)) terminal = true;
       } catch {
         // Malformed frames are ignored; durable run/event retrieval remains authoritative.
       }
