@@ -99,6 +99,10 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
             await page.route_web_socket("**/*", deny_websocket)
             try:
                 await page.goto(body.url, wait_until="domcontentloaded", timeout=20_000)
+                if blocked_navigation_hosts:
+                    raise HTTPException(403, "browser_navigation_target_not_allowlisted")
+            except HTTPException:
+                raise
             except Exception as exc:
                 # Log only exception class; never include URL, page content or proxy credentials.
                 logger.warning("browser navigation failed (%s)", type(exc).__name__)
