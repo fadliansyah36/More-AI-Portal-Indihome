@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 
 import httpx
@@ -34,6 +35,9 @@ async def _health_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWr
     finally:
         writer.close()
         await writer.wait_closed()
+
+logger = logging.getLogger(__name__)
+
 
 async def run_worker() -> None:
     if os.getenv("MOREAI_AGENT_RUNTIME_ENABLED", "false").lower() != "true":
@@ -95,10 +99,29 @@ async def run_worker() -> None:
             outbox_task = asyncio.create_task(publisher.run(stop_outbox), name="moreai-event-outbox")
             poll_seconds = max(1, min(30, int(os.getenv("WORKER_POLL_SECONDS", "3"))))
             try:
+                # A transient Supabase/PostgREST failure while claiming the next run
+                # must not terminate the long-lived worker process. Startup remains
+                # fail-fast (credentials, routes, quota and registry are validated
+                # above); only the steady-state claim/poll loop uses bounded backoff.
+                consecutive_poll_failures = 0
                 while True:
-                    processed = await runtime.run_once()
-                    if not processed:
-                        await asyncio.sleep(poll_seconds)
+                    try:
+                        processed = await runtime.run_once()
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception:
+                        consecutive_poll_failures = min(consecutive_poll_failures + 1, 5)
+                        logger.exception("worker_run_poll_failed")
+                        delay = min(30.0, poll_seconds * (2 ** (consecutive_poll_failures - 1)))
+                        await asyncio.sleep(delay)
+                        continue
+
+                    if processed:
+                        consecutive_poll_failures = 0
+                        continue
+
+                    consecutive_poll_failures = 0
+                    await asyncio.sleep(poll_seconds)
             finally:
                 stop_outbox.set()
                 outbox_task.cancel()
