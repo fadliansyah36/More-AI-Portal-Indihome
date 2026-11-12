@@ -19,7 +19,8 @@
 
 ## Commits
 - `b3e629badec6f2a98589283c65b01e8620cccf89` — remove unverified EduTech partner and review claims.
-- `aa3b8ac0088b1d4f50c8616ecfe8b78d880089ef` — remove unverified EduTech ratings and video action.
+- `aa3b8ac0088b1d4f50c8616ecfe8b78d880089ef` — remove unverified lesson ratings and video action.
+- `7c89b04f9a3acc8d2fcbd229c163d4aa1b192935` — remove the remaining module-detail rating.
 
 ## Restrictions and verification
 - Source changes only; no tests, lint, typecheck, build, browser/API probes, screenshots, staging, deployment, provider calls or Supabase live mutations were performed.
