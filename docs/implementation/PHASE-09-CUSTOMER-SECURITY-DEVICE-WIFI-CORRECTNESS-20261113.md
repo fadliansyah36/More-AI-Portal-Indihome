@@ -65,3 +65,11 @@ Execution mode: direct-main source implementation only; no staging, production d
 4. Phase 08: close complete OpenManus agent/tool/provider/orchestration parity, distributed provider health state, memory/RAG and metering.
 5. Phase 09: add login-time MFA challenge enforcement, real customer device/session and Wi-Fi gateway contracts, then finish remaining Customer screens/actions.
 6. Phase 10 and 11 remain blocked until the product owner authorizes the verification/release work; no deployment is authorized by this increment.
+
+## Additional Phase 04 / Phase 06 API error-contract increment
+
+- `apps/api/app/main.py` now classifies upstream HTTP client timeouts as HTTP 504 / `upstream_timeout` and other HTTP transport failures as HTTP 503 / `upstream_unavailable`.
+- Unhandled API exceptions now emit correlation ID, path, method and exception class through the API logger. Exception messages and tracebacks are intentionally omitted to avoid leaking prompts, credentials, provider payloads or user data.
+- Error responses retain the existing stable `error.code`, `error.message` and `error.correlation_id` contract.
+- Capability map updated to mark only this transport-level portion partial; upstream domain exception taxonomy and durable engine/worker log projections remain open.
+- Commit: `e76f7ccebeca21ee6b4ac0a57488eef547c8ceea`; capability map commit: `7ac60192b8e32d11f2a060edc1d62382a61801fd`.
