@@ -35,6 +35,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [displayName, setDisplayName] = useState(userName);
   const [recentRuns, setRecentRuns] = useState<Array<{ id: string; status: string; created_at?: string; input?: Record<string, unknown> }>>([]);
   const [recentRunsLoading, setRecentRunsLoading] = useState(true);
+  const [recentRunsError, setRecentRunsError] = useState(false);
   const [walletSummary, setWalletSummary] = useState('—');
   const [partnerBenefitActive, setPartnerBenefitActive] = useState<boolean | null>(null);
   useEffect(() => {
@@ -65,6 +66,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     ]).then(([runsResult, walletResult, entitlementResult]) => {
       if (!active) return;
       if (runsResult.status === 'fulfilled') setRecentRuns(runsResult.value.items);
+      else setRecentRunsError(true);
       if (walletResult.status === 'fulfilled') {
         const wallet = walletResult.value.wallets[0];
         if (wallet) {
@@ -263,6 +265,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {recentRunsLoading ? (
           <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-500">
             Memuat riwayat Agent Run…
+          </div>
+        ) : recentRunsError ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+            Riwayat Agent Run belum dapat dimuat dari backend.
           </div>
         ) : recentRuns.length === 0 ? (
           <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-500">
