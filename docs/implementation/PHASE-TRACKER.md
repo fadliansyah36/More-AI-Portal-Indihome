@@ -879,3 +879,13 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Capability map and report updated: [ToolCall agent registration](./PHASE-04-06-08-TOOLCALL-AGENT-REGISTRATION-20261113.md).
 - Commits: worker `caf98089`, API `da1381b9`, catalog `53a658ec`, migration `ac369092`, capability map `1d72c3c2`, report `5002c851`.
 - No tests, build, typecheck, runtime calls, migration apply, staging or deployment performed. Phase 04/06/07/08/09 remain IN PROGRESS.
+
+
+## 2026-11-13 — Customer conversation and run keyset pagination
+
+- Added a shared opaque cursor helper over stable `(created_at,id)` ordering with timezone-aware cursor validation.
+- Customer conversation and agent-run list endpoints now support bounded `limit` and optional `cursor` while preserving the existing JSON array response. Next cursor is returned in `X-Next-Cursor`; CORS exposes it.
+- Added typed `moreAiCustomerApiPage<T>` helper. Existing screens are not yet migrated to incremental loading; that remains Phase 09 work.
+- Report: [Customer Keyset Pagination](./PHASE-06-CUSTOMER-KEYSET-PAGINATION-20261113.md).
+- Commits: `8836057b`, `21d2b70d`, `9fd7414b`, `959e0729`, `262f6957`.
+- No tests, lint, typecheck, build, runtime API calls, staging, migration apply or deployment were run. Phase 06 remains IN PROGRESS.
