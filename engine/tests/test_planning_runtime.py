@@ -23,10 +23,16 @@ class FakeStore:
 
     async def create(self, **kwargs):
         self.plan_steps = [
-            {"sequence": index + 1, "input": step, "status": "pending", "output": None}
+            {
+                "sequence": index + 1,
+                "step_key": f"planning.step.{index + 1}",
+                "input": {**step, "agent_key": step.get("agent_key", "manus")},
+                "status": "pending",
+                "output": None,
+            }
             for index, step in enumerate(kwargs["steps"])
         ]
-        return {"run_id": kwargs["run_id"]}
+        return await self.get(run_id=kwargs["run_id"])
 
     async def get(self, *, run_id):
         return {"run_id": run_id, "steps": [dict(row) for row in self.plan_steps]}
