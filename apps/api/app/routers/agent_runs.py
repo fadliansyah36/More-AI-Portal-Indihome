@@ -17,17 +17,33 @@ from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cur
 router = APIRouter(prefix="/api/v1/agent-runs", tags=["agent-runs"])
 
 
+_MAX_EVENT_SEQUENCE = 9_223_372_036_854_775_807
+
+
+def _validated_event_sequence(value: Any) -> int:
+    if isinstance(value, bool):
+        raise ValueError("event_sequence_invalid")
+    if isinstance(value, int):
+        parsed = value
+    elif isinstance(value, str) and value.isascii() and value.isdecimal() and len(value) <= 19:
+        parsed = int(value, 10)
+    else:
+        raise ValueError("event_sequence_invalid")
+    if parsed < 0 or parsed > _MAX_EVENT_SEQUENCE:
+        raise ValueError("event_sequence_out_of_range")
+    return parsed
+
+
 def _event_cursor(after: int, last_event_id: str | None) -> int:
     """Honor EventSource reconnection cursors without accepting malformed IDs."""
-    if last_event_id is None or not last_event_id.strip():
-        return max(after, 0)
     try:
-        header_cursor = int(last_event_id.strip(), 10)
+        query_cursor = _validated_event_sequence(after)
+        if last_event_id is None or not last_event_id.strip():
+            return query_cursor
+        header_cursor = _validated_event_sequence(last_event_id.strip())
     except ValueError as exc:
-        raise HTTPException(400, "Last-Event-ID must be a non-negative integer") from exc
-    if header_cursor < 0:
-        raise HTTPException(400, "Last-Event-ID must be a non-negative integer")
-    return max(after, header_cursor)
+        raise HTTPException(400, "Event cursor must be a non-negative 64-bit integer") from exc
+    return max(query_cursor, header_cursor)
 
 
 async def _event_with_checkpoint_state(repo, run_id: UUID, row: dict[str, Any]) -> dict[str, Any]:
@@ -302,7 +318,7 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
     try:
         cursor_text = websocket.query_params.get("after", "0")
         try:
-            cursor = max(0, int(cursor_text))
+            cursor = _validated_event_sequence(cursor_text)
         except ValueError:
             await websocket.close(code=4400)
             return
