@@ -194,9 +194,9 @@ class SupabaseKnowledgeTools:
                     try:
                         width_pt, height_pt = pdf_page.get_size()
                         scale = min(1.5, (40_000_000 / max(1.0, width_pt * height_pt)) ** 0.5)
-                        if width_pt * height_pt * scale * scale > 40_000_000:
+                        if scale < 0.25:
                             raise ValueError("knowledge_pdf_page_pixel_limit_exceeded")
-                        bitmap = pdf_page.render(scale=max(0.5, scale))
+                        bitmap = pdf_page.render(scale=scale)
                         image = bitmap.to_pil().convert("RGB")
                         try:
                             ocr_text = await asyncio.to_thread(
