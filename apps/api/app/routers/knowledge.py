@@ -38,12 +38,14 @@ def _storage_headers(request: Request) -> dict[str, str]:
 async def _validate_workspace_access(request: Request, workspace_id: UUID, user_id: str) -> None:
     rows = await repository(request).select("workspaces", {
         "id": f"eq.{workspace_id}",
-        "owner_user_id": f"eq.{user_id}",
-        "select": "id",
+        "status": "eq.active",
+        "select": "id,owner_user_id",
         "limit": "1",
     })
     if not rows:
-        # Workspace membership may grant access even when the user is not its owner.
+        raise HTTPException(404, "Workspace not found")
+    if rows[0].get("owner_user_id") != user_id:
+        # Active membership is required for non-owner workspace access.
         memberships = await repository(request).select("workspace_members", {
             "workspace_id": f"eq.{workspace_id}",
             "user_id": f"eq.{user_id}",
