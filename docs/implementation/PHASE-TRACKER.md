@@ -1,4 +1,4 @@
-| 09 | Existing Frontend API Integration | IN PROGRESS — Speedtest now measures authenticated device↔API path instead of simulated ISP metrics; Analyse uploads selected PDF/image into Knowledge ingestion; Research reads persisted Agent Run history; Tools Catalog reads OpenManus registry; Account Upgrade reads real entitlements and no longer simulates checkout; Knowledge Library retains native picker/retry. Security MFA/session, device control, Wi-Fi session, EduTech lesson completion now persists through the existing authenticated learning API; video/catalog delivery, MFA/session, device control, Wi-Fi session, creative generation and remaining Customer actions still need backend integration | [Continuation 2026-11-12 #2](./PHASE-08-06-09-CONTINUATION-20261112-2.md); source commits `1d0fbc36`, `c2a15a7d`, `c4c89f52`, `3cb5830a`, `7c21f996`, `3d2910a9`, `3a435e09`; no tests/staging/runtime checks |
+| 09 | Existing Frontend API Integration | IN PROGRESS — Speedtest uses authenticated device↔API path; Analyse uses Knowledge ingestion; Research reads persisted Agent Run history; Tools Catalog reads OpenManus registry; Account Upgrade reads entitlements; Notifications and profile preferences use FastAPI; profile locale/name persist; security TOTP uses Supabase Auth; unsupported device/Wi-Fi controls and captive OTP fail closed; Create/Code hand off to Customer Chat; Home/Tasks/Files/Artifacts/Wallet/Chat use persisted API data; Benefit screen now combines wallet ledger, usage, entitlement, quota remaining and real Wi-Fi session history. Remaining: complete screen/action inventory, gateway verification, session controls, EduTech/video delivery and full agent workflow coverage. No tests/staging/runtime checks in this increment | [Continuation 2026-11-12 #2](./PHASE-08-06-09-CONTINUATION-20261112-2.md); source commits `1d0fbc36`, `c2a15a7d`, `c4c89f52`, `3cb5830a`, `7c21f996`, `3d2910a9`, `3a435e09`; no tests/staging/runtime checks |
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -974,3 +974,12 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 
 
 - Customer integration continuation: Profile Settings persists display name and locale through FastAPI; Wi-Fi Session reads active network session, wallet and quota APIs; Code Assistant routes review requests to Customer Agent Chat instead of simulating Python execution; captive OTP success is disabled until a real gateway verification contract exists; captive success/preview surfaces no longer claim fabricated Wi-Fi speed, session duration or bonus credits and read actual network session/wallet/entitlement state. See [Phase 09 Customer Profile & Wi-Fi Session Integration](./PHASE-09-CUSTOMER-PROFILE-WIFI-SESSION-INTEGRATION-20261113.md). Source commits include `a7282fa7`, `4bd3ca15`, `2d74e9d0`, `cb205850`, `7d1d599b`, `e5b558bf`, `a0c9770b`, `61493b3c`, `26465c54`, `11cdde9f`. No tests/build/lint/typecheck/browser/API probes/staging/deployment/Supabase writes were run; Phase 09 remains IN PROGRESS.
+
+
+## 2026-11-13 direct-main continuation — Benefit and Wi-Fi history
+
+- Added persisted Customer network-session history to the existing Benefit & AI Credit screen.
+- Wired the Wi-Fi filter to real network-session rows; sorted combined usage, ledger and session records by source timestamps.
+- Separated quota limit, used amount and remaining amount in the benefit summary; wallet balance remains distinct.
+- Report: [PHASE-09-CUSTOMER-BENEFIT-WIFI-HISTORY-20261113.md](./PHASE-09-CUSTOMER-BENEFIT-WIFI-HISTORY-20261113.md).
+- Commits: `3f329d71`, `2fa22e5b`. Source-only increment; no tests, staging, deployment or Supabase writes. Phase 09 remains IN PROGRESS.
