@@ -51,3 +51,9 @@ No tests, lint, typecheck, build, provider calls, database migration, worker sta
 - Add durable ingestion jobs for file artifacts and document extraction.
 - Connect retrieval context to planning and specialized agents with citations and source attribution.
 - Verify all provider/tool/agent workflows after explicit authorization to run verification.
+
+## Follow-up hardening
+- Added a unique owner/scope/content-digest index to prevent duplicate knowledge documents under concurrent ingestion.
+- Ingestion now reuses ready documents and fails closed for same-content documents that are still processing or failed, rather than creating another copy.
+- Workspace semantic search now includes the same user's personal knowledge plus knowledge indexed to that exact workspace; it never crosses owner identity or workspace scope.
+- Follow-up commits: `20f4331682a3b65f06265be2b3798387d1c27b8e` (migration hardening), `b8b961f6d2a8b7bcb267ab022761e32bf07005f2` (ingestion deduplication).
