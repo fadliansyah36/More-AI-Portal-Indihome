@@ -42,18 +42,46 @@ class SupabaseWorkspaceTool:
     async def str_replace_editor(self, arguments: dict[str,Any], *, run_id: str, user_id: str, workspace_id: str|None=None) -> str:
         if not workspace_id: raise RuntimeError("persistent_workspace_requires_workspace_id")
         path=self._safe_path(arguments.get("path"))
+        operation = arguments.get("operation")
+        if operation not in {None, "create", "edit", "delete", "rename"}:
+            raise ValueError("workspace_operation_invalid")
+        current=await self.client.workspace_get_file(user_id,workspace_id,path)
+        version=current.get("version")
+        if isinstance(version,bool) or not isinstance(version,int):
+            raise RuntimeError("workspace_version_invalid")
+        expected=arguments.get("expected_version",version)
+        if isinstance(expected,bool) or not isinstance(expected,int) or expected!=version:
+            raise ValueError("workspace_version_conflict")
+        storage_path=current.get("storage_path")
+        if operation == "delete":
+            if not storage_path:
+                raise ValueError("workspace_file_not_found")
+            result = await self.client.workspace_delete_file(
+                run_id,user_id,workspace_id,path,version,
+            )
+            return json.dumps(result,separators=(",",":"))
+        if operation == "rename":
+            if not storage_path:
+                raise ValueError("workspace_file_not_found")
+            new_path = self._safe_path(arguments.get("new_path"))
+            if await self.client.workspace_get_file(user_id,workspace_id,new_path) | {}:
+                target = await self.client.workspace_get_file(user_id,workspace_id,new_path)
+                if target.get("storage_path") or target.get("version", 0) > 0:
+                    raise ValueError("workspace_rename_target_exists")
+            result = await self.client.workspace_rename_file(
+                run_id,user_id,workspace_id,path,new_path,version,
+            )
+            return json.dumps(result,separators=(",",":"))
+        if operation == "create" and storage_path:
+            raise ValueError("workspace_create_cannot_overwrite_existing_file")
+        if operation == "edit" and not storage_path:
+            raise ValueError("workspace_file_not_found")
         old,new=arguments.get("old_str"),arguments.get("new_str")
         if not isinstance(old,str) or not isinstance(new,str): raise ValueError("workspace_editor_text_required")
         if len(old.encode())>50000 or len(new.encode())>50000: raise ValueError("workspace_editor_patch_too_large")
         bucket=await self.client.client.get(f"{self.client.settings.supabase_url.rstrip('/')}/storage/v1/bucket/{quote(self.bucket,safe='')}",headers=self._headers(),timeout=8.0)
         if bucket.status_code>=400 or bucket.json().get("public") is not False: raise RuntimeError("workspace_bucket_must_exist_and_be_private")
 
-        current=await self.client.workspace_get_file(user_id,workspace_id,path)
-        version=current.get("version")
-        if isinstance(version,bool) or not isinstance(version,int): raise RuntimeError("workspace_version_invalid")
-        expected=arguments.get("expected_version",version)
-        if isinstance(expected,bool) or not isinstance(expected,int) or expected!=version: raise ValueError("workspace_version_conflict")
-        storage_path=current.get("storage_path")
         if storage_path:
             response=await self.client.client.get(self._object_url(storage_path),headers=self._headers(),timeout=15.0)
             response.raise_for_status()
@@ -62,8 +90,6 @@ class SupabaseWorkspaceTool:
             except UnicodeDecodeError as exc: raise ValueError("workspace_editor_only_supports_utf8_text") from exc
         else:
             source=""
-        if storage_path and not old: raise ValueError("workspace_create_cannot_overwrite_existing_file")
-        if not storage_path and old: raise ValueError("workspace_file_not_found")
         if old:
             if source.count(old)!=1: raise ValueError("workspace_edit_match_must_be_unique")
             updated=source.replace(old,new,1)
