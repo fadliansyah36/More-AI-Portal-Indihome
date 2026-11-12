@@ -33,7 +33,11 @@ export const PartnerPromoView: React.FC<PartnerPromoViewProps> = ({ onBack }) =>
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(() => { if (active) void load(); });
+    return () => { active = false; };
+  }, [load]);
 
   const create = async () => {
     if (name.trim().length < 2) {
