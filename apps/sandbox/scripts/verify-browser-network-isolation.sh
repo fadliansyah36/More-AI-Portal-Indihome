@@ -48,6 +48,12 @@ else
   fail "browser supervisor readiness did not confirm enforced egress"
 fi
 
+if docker exec "$browser_id" sh -lc 'command -v curl >/dev/null 2>&1'; then
+  if docker exec "$browser_id" sh -lc 'curl --fail --silent --show-error --max-time 15 --proxy "$MOREAI_BROWSER_PROXY_URL" --proxy-user "moreai:$MOREAI_BROWSER_PROXY_TOKEN" "$1" >/dev/null' sh "$ALLOWLIST_TEST_URL" 2>/dev/null; then pass "allowlisted HTTPS egress works through proxy"; else fail "allowlisted HTTPS proxy request failed"; fi
+else
+  fail "curl is unavailable in browser image; cannot verify proxy success"
+fi
+
 # Exercise the browser process itself, not just curl through the proxy.
 if navigate_json="$(docker exec "$proxy_id" curl --fail --silent --show-error \
   -H "Authorization: Bearer $MOREAI_BROWSER_SERVICE_TOKEN" \
@@ -55,7 +61,10 @@ if navigate_json="$(docker exec "$proxy_id" curl --fail --silent --show-error \
   -d '{"url":"https://example.com/","action":"navigate","run_id":"ci-browser-acceptance","user_id":"ci-browser-acceptance"}' \
   http://browser-supervisor:8080/v1/browser/actions)"; then
   if jq -e '(.status == "navigated") and (.url | startswith("https://example.com"))' <<<"$navigate_json" >/dev/null; then
-  pass "Playwright navigation succeeds through the enforced allowlist proxy"
+    pass "Playwright navigation succeeds through the enforced allowlist proxy"
+  else
+    fail "Playwright allowlisted navigation returned an unexpected payload"
+  fi
 else
   fail "Playwright allowlisted navigation failed"
 fi
@@ -105,12 +114,6 @@ done
 host_mode="$(docker inspect "$browser_id" | jq -r '.[0].HostConfig.NetworkMode')"
 privileged="$(docker inspect "$browser_id" | jq -r '.[0].HostConfig.Privileged')"
 [[ "$host_mode" != "host" && "$privileged" == "false" ]] && pass "browser is not host-networked or privileged" || fail "browser container has unsafe host/privileged mode"
-
-if docker exec "$browser_id" sh -lc 'command -v curl >/dev/null 2>&1'; then
-  if docker exec "$browser_id" sh -lc 'curl --fail --silent --show-error --max-time 15 --proxy "$MOREAI_BROWSER_PROXY_URL" --proxy-user "moreai:$MOREAI_BROWSER_PROXY_TOKEN" "$1" >/dev/null' sh "$ALLOWLIST_TEST_URL" 2>/dev/null; then pass "allowlisted HTTPS egress works through proxy"; else fail "allowlisted HTTPS proxy request failed"; fi
-else
-  fail "curl is unavailable in browser image; cannot verify proxy success"
-fi
 
 if [[ "$FAIL" -ne 0 ]]; then
   echo "BROWSER NETWORK ACCEPTANCE: FAILED"
