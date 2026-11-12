@@ -3,16 +3,12 @@
 import React, { useState } from 'react';
 import {
   Wifi,
-  CheckCircle2,
   FileText,
   Sparkles,
   ArrowRight,
-  ShieldCheck,
-  ChevronRight,
   Bot,
   GraduationCap,
   Wrench,
-  Clock,
   RotateCcw,
 } from 'lucide-react';
 import { MoreAiLogo, GlobalPartnerLogo } from '@/components/branding/logos';
