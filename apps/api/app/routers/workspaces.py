@@ -104,8 +104,8 @@ async def list_workspace_files(
     await _workspace_access(repo, workspace_id, user["id"])
     rows = await repo.select("agent_workspace_files", {
         "workspace_id": f"eq.{workspace_id}",
-        "select": "id,path,version,storage_path,sha256,size_bytes,updated_at",
-        "deleted_at": "is.null",
+        "select": "id,path,version,storage_path,sha256,size_bytes,updated_at,deleted_at",
+        **({} if include_deleted else {"deleted_at": "is.null"}),
         "order": "updated_at.desc",
         "limit": "500",
     })
