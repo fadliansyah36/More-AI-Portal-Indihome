@@ -109,6 +109,21 @@ async def customer_agent_run(
 
 
 
+@router.post("/agent-runs/{run_id}/cancel")
+async def customer_cancel_agent_run(
+    run_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(current_user),
+):
+    principal = await require_customer_context(request, user)
+    repo = repository(request)
+    await repo.owned_record("agent_runs", run_id, principal["id"])
+    return await repo.rpc("moreai_worker_request_cancel", {
+        "p_run_id": str(run_id),
+        "p_user_id": principal["id"],
+    })
+
+
 @router.get("/agent-runs/{run_id}/steps")
 async def customer_agent_run_steps(
     run_id: UUID, request: Request,
