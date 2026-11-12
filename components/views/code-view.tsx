@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Play, RotateCcw, Copy, Check, Terminal, Code2, Sparkles, FolderGit2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Play, RotateCcw, Copy, Check, Terminal, Code2, Sparkles, FolderGit2, Save, Download, Loader2 } from 'lucide-react';
+import { artifactApi, type CustomerArtifact } from '@/lib/api/client';
 
 interface CodeViewProps { onNavigateToChat?: (prompt: string) => void; }
 
@@ -18,6 +19,11 @@ print(greet("MoreAI - Global Partner Network"))`
   const [output, setOutput] = useState<string>('Sandbox eksekusi belum diaktifkan. Kode tidak akan dijalankan pada browser.');
   const [isRunning, setIsRunning] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedProjects, setSavedProjects] = useState<CustomerArtifact[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [downloadingProject, setDownloadingProject] = useState<string | null>(null);
 
   const handleRunCode = () => {
     if (!code.trim() || isRunning) return;
@@ -30,6 +36,50 @@ print(greet("MoreAI - Global Partner Network"))`
     setOutput('Kode dikirim sebagai permintaan analisis ke Chat AI. Tidak ada proses Python yang dieksekusi pada sandbox.');
     setIsRunning(false);
   };
+
+  useEffect(() => {
+    if (activeSubTab !== 'projects') return;
+    let active = true;
+    setProjectsLoading(true);
+    artifactApi.list()
+      .then((items) => { if (active) { setSavedProjects(items); setProjectsError(null); } })
+      .catch((cause) => { if (active) setProjectsError(cause instanceof Error ? cause.message : 'Snapshot kode tidak dapat dimuat.'); })
+      .finally(() => { if (active) setProjectsLoading(false); });
+    return () => { active = false; };
+  }, [activeSubTab]);
+
+  const saveCodeSnapshot = async () => {
+    if (!code.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      await artifactApi.upload('main.py', new Blob([code], { type: 'text/x-python' }), 'text/x-python');
+      setSavedProjects(await artifactApi.list());
+      setProjectsError(null);
+      setOutput('Snapshot main.py berhasil disimpan sebagai artefak privat. Kode tidak dieksekusi.');
+    } catch (cause) {
+      setOutput(cause instanceof Error ? cause.message : 'Snapshot kode gagal disimpan.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const downloadCodeSnapshot = async (artifactId: string) => {
+    if (downloadingProject) return;
+    setDownloadingProject(artifactId);
+    try {
+      const result = await artifactApi.signedDownload(artifactId);
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+    } catch (cause) {
+      setProjectsError(cause instanceof Error ? cause.message : 'Snapshot kode gagal diunduh.');
+    } finally {
+      setDownloadingProject(null);
+    }
+  };
+
+  const codeProjects = savedProjects.filter((artifact) => {
+    const filename = typeof artifact.metadata?.filename === 'string' ? artifact.metadata.filename : '';
+    return /\.(py|js|jsx|ts|tsx|json|md|sql|sh|yaml|yml|toml)$/i.test(filename);
+  });
 
   const sampleSnippets = [
     {
@@ -52,7 +102,7 @@ print(greet("MoreAI - Global Partner Network"))`
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Code Assistant & Sandbox</h1>
-          <p className="text-xs text-slate-500">Minta bantuan coding, generate script, dan uji langsung</p>
+          <p className="text-xs text-slate-500">Bantuan coding, analisis AI, dan penyimpanan snapshot kode</p>
         </div>
       </div>
 
@@ -114,6 +164,16 @@ print(greet("MoreAI - Global Partner Network"))`
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void saveCodeSnapshot()}
+                  disabled={isSaving || !code.trim()}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white disabled:opacity-50"
+                  title="Simpan snapshot kode ke artefak privat"
+                >
+                  {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  Simpan
+                </button>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(code);
@@ -178,12 +238,38 @@ print(greet("MoreAI - Global Partner Network"))`
           </div>
         </div>
       ) : (
-        <div className="p-6 text-center bg-white rounded-3xl border border-slate-100 text-slate-500 space-y-2">
-          <FolderGit2 className="w-10 h-10 mx-auto text-slate-300" />
-          <h3 className="text-sm font-bold text-slate-800">Penyimpanan Proyek</h3>
-          <p className="text-xs text-slate-400 max-w-xs mx-auto">
-            Penyimpanan proyek belum terhubung ke API workspace. Tidak ada proyek yang disimpan otomatis.
-          </p>
+        <div className="rounded-3xl border border-slate-100 bg-white p-4 text-slate-600 shadow-2xs space-y-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Snapshot Kode Tersimpan</h3>
+            <p className="mt-1 text-xs text-slate-500">Snapshot disimpan sebagai artefak privat akun dan dapat diunduh kembali. Penyimpanan ini belum merupakan repository Git atau file workspace berversi.</p>
+          </div>
+          {projectsLoading ? (
+            <div className="flex items-center justify-center gap-2 py-6 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Memuat snapshot…</div>
+          ) : projectsError ? (
+            <div role="alert" className="rounded-xl border border-red-100 bg-red-50 p-3 text-xs text-red-700">{projectsError}</div>
+          ) : codeProjects.length === 0 ? (
+            <div className="rounded-2xl bg-slate-50 p-5 text-center text-xs text-slate-500">Belum ada snapshot kode yang tersimpan pada akun ini.</div>
+          ) : (
+            <div className="space-y-2">
+              {codeProjects.map((artifact) => {
+                const filename = typeof artifact.metadata?.filename === 'string' ? artifact.metadata.filename : 'File kode';
+                const size = artifact.size_bytes == null ? 'Ukuran tidak tersedia' : artifact.size_bytes < 1024 ? artifact.size_bytes + ' B' : (artifact.size_bytes / 1024).toFixed(1) + ' KB';
+                return (
+                  <div key={artifact.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 p-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-slate-900">{filename}</p>
+                      <p className="mt-1 text-[10px] text-slate-500">{size} · {new Date(artifact.created_at).toLocaleString('id-ID')}</p>
+                    </div>
+                    <button type="button" onClick={() => void downloadCodeSnapshot(artifact.id)} disabled={downloadingProject === artifact.id} className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
+                      {downloadingProject === artifact.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                      Unduh
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <button type="button" onClick={() => setActiveSubTab('editor')} className="text-xs font-semibold text-red-600 hover:text-red-700">Kembali ke editor</button>
         </div>
       )}
     </div>
