@@ -38,6 +38,42 @@ if docker exec "$browser_id" python -c 'import socket; s=socket.socket(socket.AF
 
 proxy_token_present="$(docker exec "$proxy_id" sh -lc 'test -n "$MOREAI_BROWSER_PROXY_TOKEN" && echo yes || echo no')"
 [[ "$proxy_token_present" == "yes" ]] || fail "proxy token is not configured"
+# Verify the worker-facing supervisor readiness contract over the isolated service network.
+ready_json="$(docker exec "$proxy_id" curl --fail --silent --show-error \
+  -H "Authorization: Bearer ${MOREAI_BROWSER_SERVICE_TOKEN:?service token required}" \
+  http://browser-supervisor:8080/ready)"
+if jq -e '.status == "ready" and .egress_enforced == true and .proxy_reachable == true' <<<"$ready_json" >/dev/null; then
+  pass "authenticated browser supervisor readiness confirms live proxy"
+else
+  fail "browser supervisor readiness did not confirm enforced egress"
+fi
+
+# Exercise the browser process itself, not just curl through the proxy.
+navigate_json="$(docker exec "$proxy_id" curl --fail --silent --show-error \
+  -H "Authorization: Bearer $MOREAI_BROWSER_SERVICE_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://example.com/","action":"navigate","run_id":"ci-browser-acceptance","user_id":"ci-browser-acceptance"}' \
+  http://browser-supervisor:8080/v1/browser/actions)"
+if jq -e '.status == "navigated" and .url | startswith("https://example.com")' <<<"$navigate_json" >/dev/null; then
+  pass "Playwright navigation succeeds through the enforced allowlist proxy"
+else
+  fail "Playwright allowlisted navigation failed"
+fi
+
+redirect_code="$(docker exec "$proxy_id" curl --silent --output /dev/null --write-out '%{http_code}' \
+  --max-time 30 -H "Authorization: Bearer $MOREAI_BROWSER_SERVICE_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://httpbin.org/redirect-to?url=https%3A%2F%2Fnot-allowlisted.invalid%2F","action":"navigate","run_id":"ci-browser-redirect","user_id":"ci-browser-acceptance"}' \
+  http://browser-supervisor:8080/v1/browser/actions)"
+if [[ "$redirect_code" != "200" ]]; then pass "redirect to a non-allowlisted host is denied"; else fail "redirect escaped the browser domain allowlist"; fi
+
+download_code="$(docker exec "$proxy_id" curl --silent --output /dev/null --write-out '%{http_code}' \
+  --max-time 30 -H "Authorization: Bearer $MOREAI_BROWSER_SERVICE_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://httpbin.org/response-headers?Content-Disposition=attachment%3Bfilename%3Dpayload.txt","action":"navigate","run_id":"ci-browser-download","user_id":"ci-browser-acceptance"}' \
+  http://browser-supervisor:8080/v1/browser/actions)"
+if [[ "$download_code" != "200" ]]; then pass "browser download is denied while scanner-backed download handling is disabled"; else fail "browser download was accepted without scanner approval"; fi
+
 if docker exec "$browser_id" sh -lc 'command -v curl >/dev/null 2>&1'; then
   if docker exec "$browser_id" sh -lc 'curl --fail --silent --show-error --max-time 15 --proxy "$MOREAI_BROWSER_PROXY_URL" --proxy-user "moreai:$MOREAI_BROWSER_PROXY_TOKEN" "$1" >/dev/null' sh "$ALLOWLIST_TEST_URL" 2>/dev/null; then pass "allowlisted HTTPS egress works through proxy"; else fail "allowlisted HTTPS proxy request failed"; fi
 else
