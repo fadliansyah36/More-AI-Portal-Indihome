@@ -44,7 +44,7 @@ async def test_browser_readiness_fails_closed_when_proxy_is_unreachable(monkeypa
     monkeypatch.setenv("MOREAI_BROWSER_PROXY_URL", "http://browser-egress-proxy:3128")
     monkeypatch.setenv("MOREAI_BROWSER_PROXY_TOKEN", "x" * 40)
     monkeypatch.setenv("MOREAI_BROWSER_EGRESS_ENFORCED", "true")
-    monkeypatch.setattr(browser_service.asyncio, "open_connection", open_connection)
+    monkeypatch.setattr(browser_readiness.asyncio, "open_connection", open_connection)
 
     result = await browser_readiness.browser_readiness()
     assert result["status"] == "degraded"
