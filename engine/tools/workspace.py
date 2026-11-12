@@ -341,8 +341,8 @@ class SupabaseWorkspaceTool:
         before: dict[str, bytes], baseline: dict[str, dict[str, Any]],
         after: dict[str, bytes], max_bytes: int = 2_000_000,
     ) -> dict[str, Any]:
-        """Persist successful sandbox changes as immutable, lease-fenced workspace versions."""
-        if len(after) > 200:
+        """Upload immutable objects, then atomically commit all workspace metadata in one RPC."""
+        if len(after) > 200 or len(before) > 200:
             raise ValueError("workspace_execution_file_count_exceeded")
         total = 0
         for path, raw in after.items():
@@ -350,21 +350,34 @@ class SupabaseWorkspaceTool:
             if not isinstance(raw, bytes):
                 raise ValueError("workspace_execution_file_invalid")
             total += len(raw)
-            if total > max_bytes:
+            if len(raw) > 2_000_000 or total > min(max_bytes, 2_000_000):
                 raise ValueError("workspace_execution_result_too_large")
 
-        changed = [
+        changed = sorted(
             path for path, raw in after.items()
             if path not in before or hashlib.sha256(raw).hexdigest() != hashlib.sha256(before[path]).hexdigest()
-        ]
-        deleted = [path for path in before if path not in after]
-        saved: list[dict[str, Any]] = []
-        removed: list[str] = []
+        )
+        deleted = sorted(path for path in before if path not in after)
+        if len(changed) + len(deleted) > 200:
+            raise ValueError("workspace_execution_change_count_exceeded")
+        if not changed and not deleted:
+            return {"saved": [], "deleted": [], "saved_count": 0, "deleted_count": 0, "atomic": True}
 
-        # Each file is independently committed with compare-and-swap version fencing.
-        # A conflict stops the remaining writes; already committed files remain valid versions.
+        bucket = await self.client.client.get(
+            f"{self.client.settings.supabase_url.rstrip('/')}/storage/v1/bucket/{quote(self.bucket, safe='')}",
+            headers=self._headers(), timeout=8.0,
+        )
+        if bucket.status_code >= 400 or not isinstance(bucket.json(), dict) or bucket.json().get("public") is not False:
+            raise RuntimeError("workspace_bucket_must_exist_and_be_private")
+
+        changes: list[dict[str, Any]] = []
+        deletes: list[dict[str, Any]] = []
+        operation_material: dict[str, Any] = {
+            "run_id": run_id, "user_id": user_id, "workspace_id": workspace_id,
+            "changes": [], "deletes": [],
+        }
+
         for path in changed:
-            # A soft-deleted path is not a new file; require the explicit restore workflow.
             existing = await self.client.select("agent_workspace_files", {
                 "workspace_id": f"eq.{workspace_id}",
                 "path": f"eq.{path}",
@@ -373,52 +386,46 @@ class SupabaseWorkspaceTool:
             })
             if existing and existing[0].get("deleted_at") is not None:
                 raise ValueError("workspace_execution_cannot_overwrite_deleted_path")
-            current = await self.client.workspace_get_file(user_id, workspace_id, path)
-            current_version = current.get("version")
-            if isinstance(current_version, bool) or not isinstance(current_version, int):
-                raise RuntimeError("workspace_version_invalid")
             expected = baseline.get(path, {}).get("version", 0)
-            if current_version != expected:
-                raise ValueError("workspace_execution_version_conflict")
-            reservation = await self.client.workspace_begin_write(
-                run_id, user_id, workspace_id, path, current_version,
-            )
-            token = reservation.get("token")
-            version = reservation.get("version")
-            storage_path = reservation.get("storage_path")
-            if not isinstance(token, str) or not isinstance(version, int) or not isinstance(storage_path, str):
-                raise RuntimeError("workspace_write_reservation_invalid")
+            if isinstance(expected, bool) or not isinstance(expected, int) or expected < 0:
+                raise RuntimeError("workspace_execution_baseline_invalid")
+            version = expected + 1
             raw = after[path]
             digest = hashlib.sha256(raw).hexdigest()
-            committed = False
-            try:
-                upload = await self.client.client.post(
-                    self._object_url(storage_path), content=raw,
-                    headers=self._headers("application/octet-stream", False), timeout=25.0,
+            storage_path = f"{user_id}/workspaces/{workspace_id}/versions/{version}/{path}"
+            object_url = self._object_url(storage_path)
+            upload = await self.client.client.post(
+                object_url, content=raw,
+                headers=self._headers("application/octet-stream", False), timeout=25.0,
+            )
+            if upload.status_code >= 400:
+                # Deterministic immutable paths make retries safe only if an existing
+                # object is byte-identical to the intended version.
+                existing_object = await self.client.client.get(
+                    object_url, headers=self._headers(), timeout=20.0,
                 )
-                upload.raise_for_status()
-                result = await self.client.workspace_commit_write(
-                    run_id, user_id, workspace_id, path, token, version,
-                    storage_path, digest, len(raw),
-                )
-                committed = True
-                saved.append({"path": path, "version": result.get("version"), "sha256": digest})
-            finally:
-                if not committed:
-                    await self.client.workspace_abort_write(
-                        run_id, user_id, workspace_id, path, token,
-                    )
+                if existing_object.status_code != 200 or hashlib.sha256(existing_object.content).hexdigest() != digest:
+                    upload.raise_for_status()
+                    raise RuntimeError("workspace_immutable_object_collision")
+            changes.append({
+                "path": path, "expected_version": expected,
+                "storage_path": storage_path, "sha256": digest, "size_bytes": len(raw),
+            })
+            operation_material["changes"].append({
+                "path": path, "expected_version": expected, "sha256": digest,
+            })
 
         for path in deleted:
-            current = await self.client.workspace_get_file(user_id, workspace_id, path)
-            expected = baseline[path]["version"]
-            if current.get("version") != expected:
-                raise ValueError("workspace_execution_version_conflict")
-            result = await self.client.workspace_delete_file(
-                run_id, user_id, workspace_id, path, expected,
-            )
-            if result.get("deleted") is not True:
-                raise RuntimeError("workspace_execution_delete_failed")
-            removed.append(path)
+            expected = baseline.get(path, {}).get("version")
+            if isinstance(expected, bool) or not isinstance(expected, int) or expected < 1:
+                raise RuntimeError("workspace_execution_delete_baseline_invalid")
+            deletes.append({"path": path, "expected_version": expected})
+            operation_material["deletes"].append({"path": path, "expected_version": expected})
 
-        return {"saved": saved, "deleted": removed, "saved_count": len(saved), "deleted_count": len(removed)}
+        operation_key = hashlib.sha256(
+            json.dumps(operation_material, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        result = await self.client.workspace_commit_execution_snapshot(
+            run_id, user_id, workspace_id, self.bucket, operation_key, changes, deletes,
+        )
+        return result
