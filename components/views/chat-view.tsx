@@ -11,6 +11,9 @@ interface ChatCitation {
   document_id: string;
   title: string;
   similarity?: number;
+  source_page?: number | null;
+  char_start?: number | null;
+  char_end?: number | null;
   marker: string;
 }
 
@@ -242,6 +245,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
                     {message.citations.map((citation) => (
                       <li key={citation.id} className="text-xs text-slate-600">
                         <span className="font-medium">{citation.title}</span>
+                        {citation.source_page ? <span className="ml-1 text-[10px] text-slate-500">hal. {citation.source_page}</span> : null}
                         <span className="ml-1 font-mono text-[10px] text-slate-400">{citation.marker}</span>
                       </li>
                     ))}
