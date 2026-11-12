@@ -659,5 +659,24 @@
     ],
     "verification": "No tests, lint, typecheck, build, Docker build, staging, deployment, migration, Supabase write or live runtime/API probe performed per user instruction.",
     "status": "PARTIAL — remote supervisor, browser allowlist and private topology source integration added; runtime activation remains fail-closed; Phase 04 parity remains in progress."
+  },
+  "integration_increment_20261113_agent_exception_taxonomy": {
+    "branch": "main",
+    "commits": [
+      "df7adb4e4635517e1d3d9e30be2e6643bc6c41bd",
+      "f389b12ad4a490b15588be0c5f044c6fd9c63569",
+      "a61c0eb130d69b3facdea0fc0bad2a0e258843ac"
+    ],
+    "implemented": [
+      "Introduced stable AgentExecutionError with validated error codes and explicit retryability.",
+      "Dispatcher classifies permission, missing capability, invalid request, timeout and internal exceptions without exposing raw messages.",
+      "Worker persists sanitized error code and retryability metadata in durable run.failed events and terminal error payload."
+    ],
+    "remaining": [
+      "No filesystem mount is exposed to Python/Bash runner; workspace file access remains mediated through persistent workspace tools.",
+      "Full upstream server/session parity and browser download scanning remain incomplete."
+    ],
+    "verification": "No tests, lint, typecheck, build, Docker build, runtime probes, staging, deployment or Supabase mutation performed.",
+    "status": "PARTIAL — Phase 04 exception taxonomy source integration added; Phase 04 remains in progress."
   }
 }
