@@ -129,3 +129,13 @@ async def test_browser_request_guard_detects_dns_rebinding():
     answer[0] = "1.1.1.1"
     with pytest.raises(BrowserPolicyError, match="rebinding"):
         await guard.validate_request("https://trusted.example/two")
+
+
+def test_browser_proxy_entrypoints_use_container_local_imports():
+    from app.browser_proxy import PinnedConnectProxy
+    from app.proxy_main import serve
+    from app.browser_proxy_server import main
+
+    assert PinnedConnectProxy is not None
+    assert callable(serve)
+    assert callable(main)
