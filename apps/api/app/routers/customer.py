@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel, Field
 
-from app.authorization import require_customer_context
+from app.authorization import customer_principal, require_customer_context
 from app.dependencies import current_user
 from app.routers.conversations import ConversationCreate, MessageCreate, repository
 
