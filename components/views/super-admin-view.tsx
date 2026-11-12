@@ -49,8 +49,6 @@ export default function SuperAdminPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const [context, summary, partnerRows, runRows, auditRows] = await Promise.all([
         adminRequest<{ principal: { roles: string[] } }>('/api/v1/admin/context'),
@@ -64,6 +62,7 @@ export default function SuperAdminPage() {
       setPartners(partnerRows.items);
       setRuns(runRows.items);
       setAudit(auditRows.items);
+      setError(null);
     } catch (err) {
       setOverview(null);
       setPartners([]);
@@ -92,7 +91,7 @@ export default function SuperAdminPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600 text-white"><ShieldCheck className="h-5 w-5" /></div>
             <div><p className="text-xs font-bold uppercase tracking-wider text-red-600">MoreAI Platform</p><h1 className="text-lg font-bold">Super Admin</h1></div>
           </div>
-          <button onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold hover:bg-slate-50 disabled:opacity-50">
+          <button onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold hover:bg-slate-50 disabled:opacity-50">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Segarkan
           </button>
         </div>
