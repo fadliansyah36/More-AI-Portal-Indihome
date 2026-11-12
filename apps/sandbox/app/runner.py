@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import json
 import os
 import re
 import signal
@@ -17,7 +19,7 @@ class SandboxLimits:
     cpu_count: float = 1.0
     pids_limit: int = 32
     output_bytes: int = 64_000
-    workspace_bytes: int = 8_000_000
+    workspace_bytes: int = 2_000_000
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,7 @@ class SandboxResult:
     stdout: str
     stderr: str
     timed_out: bool
+    workspace_files: dict[str, str]
 
 
 class _OutputLimitExceeded(RuntimeError):
@@ -34,19 +37,65 @@ class _OutputLimitExceeded(RuntimeError):
 
 async def _read_bounded(stream: asyncio.StreamReader, limit: int) -> bytes:
     output = bytearray()
-    total = 0
     while True:
         chunk = await stream.read(8192)
         if not chunk:
             return bytes(output)
-        total += len(chunk)
-        if total > limit:
+        if len(output) + len(chunk) > limit:
             raise _OutputLimitExceeded()
         output.extend(chunk)
 
 
+# The bootstrap runs outside the user process. User code receives only an ephemeral
+# /tmp/workspace tree; it cannot access the supervisor filesystem or network.
+_BOOTSTRAP = r"""
+import base64, contextlib, io, json, os, pathlib, re, subprocess, sys
+payload=json.loads(sys.stdin.read())
+root=pathlib.Path('/tmp/workspace')
+root.mkdir(mode=0o700, parents=True, exist_ok=True)
+files=payload.get('workspace_files') or {}
+total=0
+for name, encoded in files.items():
+    if not isinstance(name,str) or not re.fullmatch(r'[A-Za-z0-9._ -]+(?:/[A-Za-z0-9._ -]+)*',name) or any(x in ('','.','..') for x in name.split('/')):
+        raise SystemExit('workspace_snapshot_path_invalid')
+    raw=base64.b64decode(encoded, validate=True)
+    total += len(raw)
+    if total > 2000000: raise SystemExit('workspace_snapshot_limit_exceeded')
+    target=root.joinpath(*name.split('/'))
+    target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    target.write_bytes(raw)
+source=payload.get('source')
+language=payload.get('language')
+if not isinstance(source,str) or language not in ('python','bash'): raise SystemExit('sandbox_payload_invalid')
+try:
+    if language == 'python':
+        proc=subprocess.run([sys.executable,'-I','-c',source], cwd=str(root), capture_output=True, timeout=115)
+    else:
+        proc=subprocess.run(['bash','--noprofile','--norc','-c',source], cwd=str(root), capture_output=True, timeout=115)
+    exit_code=proc.returncode
+    stdout=proc.stdout[:65536].decode('utf-8','replace')
+    stderr=proc.stderr[:65536].decode('utf-8','replace')
+except subprocess.TimeoutExpired as exc:
+    exit_code=124
+    stdout=(exc.stdout or b'')[:65536].decode('utf-8','replace')
+    stderr='execution_timeout'
+changed={}
+total=0
+for item in root.rglob('*'):
+    if item.is_symlink() or not item.is_file(): continue
+    rel=item.relative_to(root).as_posix()
+    if not re.fullmatch(r'[A-Za-z0-9._ -]+(?:/[A-Za-z0-9._ -]+)*',rel) or any(x in ('','.','..') for x in rel.split('/')): continue
+    raw=item.read_bytes()
+    total += len(raw)
+    if total > 2000000: raise SystemExit('workspace_snapshot_limit_exceeded')
+    changed[rel]=base64.b64encode(raw).decode('ascii')
+sys.stdout.write(json.dumps({'exit_code':exit_code,'stdout':stdout,'stderr':stderr,'workspace_files':changed},separators=(',',':')))
+"""
+_PROTOCOL_BYTES = 4_000_000
+
+
 class DockerSandbox:
-    """Fail-closed disposable runner with immutable image and bounded process I/O."""
+    """Fail-closed disposable runner with an ephemeral, network-disabled workspace snapshot."""
 
     def __init__(self, *, image: str | None = None, docker_binary: str = "docker"):
         self.image = image or os.getenv("MOREAI_SANDBOX_IMAGE", "")
@@ -58,21 +107,16 @@ class DockerSandbox:
         image, digest = self.image.rsplit("@sha256:", 1)
         if not image or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
             raise RuntimeError("sandbox_image_digest_invalid")
-        if any(c in self.image for c in "\n\r\x00"):
+        if any(c in self.image for c in "\\n\\r\\x00"):
             raise RuntimeError("invalid_sandbox_image")
 
     async def check_ready(self) -> None:
-        """Require the configured Docker daemon/socket proxy to be reachable."""
         self._validate()
         process = await asyncio.create_subprocess_exec(
             self.docker_binary, "info", "--format", "{{.ServerVersion}}",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
             start_new_session=True,
-            env={
-                "PATH": os.getenv("PATH", "/usr/bin:/bin"),
-                "DOCKER_HOST": os.getenv("DOCKER_HOST", ""),
-            },
+            env={"PATH": os.getenv("PATH", "/usr/bin:/bin"), "DOCKER_HOST": os.getenv("DOCKER_HOST", "")},
         )
         try:
             stdout, _ = await asyncio.wait_for(process.communicate(), timeout=3.0)
@@ -91,106 +135,107 @@ class DockerSandbox:
             pass
 
     async def _remove_container(self, cidfile: str) -> None:
-        """Remove the daemon-side container even if the docker CLI was cancelled."""
         try:
             container_id = Path(cidfile).read_text(encoding="ascii").strip()
         except (OSError, UnicodeError):
             container_id = ""
         finally:
-            try:
-                Path(cidfile).unlink(missing_ok=True)
-            except OSError:
-                pass
-        if not re.fullmatch(r"[0-9a-fA-F]{12,64}", container_id):
-            return
+            try: Path(cidfile).unlink(missing_ok=True)
+            except OSError: pass
+        if not re.fullmatch(r"[0-9a-fA-F]{12,64}", container_id): return
         cleanup = await asyncio.create_subprocess_exec(
             self.docker_binary, "rm", "--force", container_id,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
             start_new_session=True,
             env={"PATH": os.getenv("PATH", "/usr/bin:/bin"), "DOCKER_HOST": os.getenv("DOCKER_HOST", "")},
         )
-        try:
-            await asyncio.wait_for(cleanup.wait(), timeout=4.0)
+        try: await asyncio.wait_for(cleanup.wait(), timeout=4.0)
         except TimeoutError:
             self._terminate(cleanup)
             await cleanup.wait()
 
     async def execute(
-        self, source: str, *,
-        language: Literal["python", "bash"],
+        self, source: str, *, language: Literal["python", "bash"],
+        workspace_files: dict[str, bytes] | None = None,
         limits: SandboxLimits = SandboxLimits(),
     ) -> SandboxResult:
         self._validate()
-        if not source or len(source.encode("utf-8")) > limits.workspace_bytes:
+        if not source or len(source.encode("utf-8")) > 8_000_000:
             raise ValueError("sandbox_source_size_invalid")
-        if language not in ("python", "bash"):
-            raise ValueError("sandbox_language_not_supported")
+        if language not in ("python", "bash"): raise ValueError("sandbox_language_not_supported")
+        workspace_files = workspace_files or {}
+        encoded_files = {}
+        total = 0
+        for name, raw in workspace_files.items():
+            if not re.fullmatch(r"[A-Za-z0-9._ -]+(?:/[A-Za-z0-9._ -]+)*", name) or any(x in ("", ".", "..") for x in name.split("/")):
+                raise ValueError("sandbox_workspace_path_invalid")
+            if not isinstance(raw, bytes): raise ValueError("sandbox_workspace_file_invalid")
+            total += len(raw)
+            if total > limits.workspace_bytes: raise ValueError("sandbox_workspace_snapshot_too_large")
+            encoded_files[name] = base64.b64encode(raw).decode("ascii")
         if (
-            not 1 <= limits.timeout_seconds <= 120
-            or not 64 <= limits.memory_mb <= 2048
-            or not 0 < limits.cpu_count <= 4
-            or not 1 <= limits.pids_limit <= 128
-            or not 1 <= limits.output_bytes <= 1_000_000
-            or not 1 <= limits.workspace_bytes <= 20_000_000
-        ):
-            raise ValueError("sandbox_limits_out_of_range")
+            not 1 <= limits.timeout_seconds <= 120 or not 64 <= limits.memory_mb <= 2048
+            or not 0 < limits.cpu_count <= 4 or not 1 <= limits.pids_limit <= 128
+            or not 1 <= limits.output_bytes <= 1_000_000 or not 1 <= limits.workspace_bytes <= 2_000_000
+        ): raise ValueError("sandbox_limits_out_of_range")
 
+        payload = json.dumps({"source": source, "language": language, "workspace_files": encoded_files}, separators=(",", ":")).encode()
         cid_handle = tempfile.NamedTemporaryFile(prefix="moreai-sandbox-", suffix=".cid", delete=False)
         cidfile = cid_handle.name
         cid_handle.close()
         Path(cidfile).unlink(missing_ok=True)
         command = [
             self.docker_binary, "run", "--rm", "-i", "--cidfile", cidfile,
-            "--network=none", "--read-only",
-            "--cap-drop=ALL", "--security-opt=no-new-privileges:true",
-            "--security-opt=seccomp=default",
-            "--pids-limit", str(limits.pids_limit),
-            "--memory", f"{limits.memory_mb}m",
-            "--cpus", str(limits.cpu_count),
-            "--user", "65534:65534",
+            "--network=none", "--read-only", "--cap-drop=ALL",
+            "--security-opt=no-new-privileges:true", "--security-opt=seccomp=default",
+            "--pids-limit", str(limits.pids_limit), "--memory", f"{limits.memory_mb}m",
+            "--cpus", str(limits.cpu_count), "--user", "65534:65534",
             "--tmpfs", "/tmp:rw,noexec,nosuid,nodev,size=16m",
-            "--workdir", "/tmp", self.image,
-            *( ["python", "-I", "-"] if language == "python" else ["bash", "--noprofile", "--norc"] ),
+            "--workdir", "/tmp", self.image, "python", "-I", "-c", _BOOTSTRAP,
         ]
         process = await asyncio.create_subprocess_exec(
-            *command,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            *command, stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
             start_new_session=True,
             env={"PATH": os.getenv("PATH", "/usr/bin:/bin"), "DOCKER_HOST": os.getenv("DOCKER_HOST", "")},
         )
-        stdout_task = asyncio.create_task(_read_bounded(process.stdout, limits.output_bytes))
+        stdout_task = asyncio.create_task(_read_bounded(process.stdout, _PROTOCOL_BYTES))
         stderr_task = asyncio.create_task(_read_bounded(process.stderr, limits.output_bytes))
         try:
-            if process.stdin is None:
-                raise RuntimeError("sandbox_stdin_unavailable")
-            process.stdin.write(source.encode("utf-8"))
+            if process.stdin is None: raise RuntimeError("sandbox_stdin_unavailable")
+            process.stdin.write(payload)
             await process.stdin.drain()
             process.stdin.close()
             await process.stdin.wait_closed()
             stdout, stderr = await asyncio.wait_for(
-                asyncio.gather(stdout_task, stderr_task),
-                timeout=limits.timeout_seconds,
+                asyncio.gather(stdout_task, stderr_task), timeout=limits.timeout_seconds,
             )
             await process.wait()
+            if process.returncode != 0: raise RuntimeError("sandbox_runner_protocol_failed")
+            try: envelope = json.loads(stdout)
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc: raise RuntimeError("sandbox_runner_protocol_invalid") from exc
+            if not isinstance(envelope, dict) or not isinstance(envelope.get("workspace_files"), dict):
+                raise RuntimeError("sandbox_runner_response_invalid")
+            files = {}
+            returned_total = 0
+            for name, encoded in envelope["workspace_files"].items():
+                if not isinstance(name, str) or not isinstance(encoded, str): raise RuntimeError("sandbox_runner_workspace_invalid")
+                raw = base64.b64decode(encoded, validate=True)
+                returned_total += len(raw)
+                if returned_total > limits.workspace_bytes: raise RuntimeError("sandbox_runner_workspace_limit_exceeded")
+                files[name] = raw
             return SandboxResult(
-                exit_code=process.returncode if process.returncode is not None else -1,
-                stdout=stdout.decode("utf-8", "replace"),
-                stderr=stderr.decode("utf-8", "replace"),
-                timed_out=False,
+                exit_code=int(envelope.get("exit_code", -1)),
+                stdout=str(envelope.get("stdout", ""))[:limits.output_bytes].__str__(),
+                stderr=str(envelope.get("stderr", ""))[:limits.output_bytes],
+                timed_out=int(envelope.get("exit_code", -1)) == 124,
+                workspace_files=files,
             )
-        except _OutputLimitExceeded:
+        except (_OutputLimitExceeded, TimeoutError):
             self._terminate(process)
             await process.wait()
             await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
-            return SandboxResult(-1, "", "output_limit_exceeded", False)
-        except TimeoutError:
-            self._terminate(process)
-            await process.wait()
-            await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
-            return SandboxResult(-1, "", "execution_timeout", True)
+            return SandboxResult(-1, "", "execution_timeout_or_output_limit", True, {})
         except BaseException:
             self._terminate(process)
             await process.wait()
