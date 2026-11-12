@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from app.runtime import AgentDispatcher, Checkpoint
+from engine.agents.errors import AgentExecutionError, classify_agent_exception
 from engine.agents.protocol import AgentRunContext
 from engine.orchestration.registry import AgentRegistry
 
@@ -61,5 +62,13 @@ class RegisteredAgentDispatcher(AgentDispatcher):
         )
         if cancelled.is_set():
             raise asyncio.CancelledError()
-        result = await runtime.execute(context, payload, checkpoint, cancelled)
+        try:
+            result = await runtime.execute(context, payload, checkpoint, cancelled)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            classified = classify_agent_exception(exc)
+            if classified is exc:
+                raise
+            raise classified from exc
         return result.output
