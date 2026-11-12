@@ -1,14 +1,159 @@
 from __future__ import annotations
 
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.authorization import customer_principal
 from app.routers.conversations import repository
 
+import hashlib
+import os
+import re
+from datetime import datetime, timezone
+from pathlib import PurePosixPath
+from fastapi import File, Form, UploadFile
+
 router = APIRouter(prefix="/api/v1/customer/knowledge", tags=["customer-knowledge"])
+
+
+
+
+MAX_KNOWLEDGE_UPLOAD_BYTES = 25 * 1024 * 1024
+ALLOWED_KNOWLEDGE_TYPES = {
+    "application/pdf": ".pdf",
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+KNOWLEDGE_BUCKET = "moreai-knowledge-private"
+
+
+def _storage_headers(request: Request) -> dict[str, str]:
+    settings = request.app.state.settings
+    key = settings.supabase_service_role_key
+    return {"apikey": key, "Authorization": f"Bearer {key}"}
+
+
+async def _validate_workspace_access(request: Request, workspace_id: UUID, user_id: str) -> None:
+    rows = await repository(request).select("workspaces", {
+        "id": f"eq.{workspace_id}",
+        "owner_user_id": f"eq.{user_id}",
+        "select": "id",
+        "limit": "1",
+    })
+    if not rows:
+        # Workspace membership may grant access even when the user is not its owner.
+        memberships = await repository(request).select("workspace_members", {
+            "workspace_id": f"eq.{workspace_id}",
+            "user_id": f"eq.{user_id}",
+            "status": "eq.active",
+            "select": "workspace_id",
+            "limit": "1",
+        })
+        if not memberships:
+            raise HTTPException(404, "Workspace not found")
+
+
+@router.post("/documents/upload", status_code=202)
+async def upload_knowledge_document(
+    request: Request,
+    file: UploadFile = File(...),
+    workspace_id: UUID | None = Form(default=None),
+    title: str | None = Form(default=None, max_length=500),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Accept native multipart file bytes; never accept a client-supplied Storage URL."""
+    settings = request.app.state.settings
+    if not settings.supabase_data_ready:
+        raise HTTPException(503, "Knowledge storage is not configured")
+    mime = (file.content_type or "").split(";", 1)[0].strip().lower()
+    if mime not in ALLOWED_KNOWLEDGE_TYPES:
+        raise HTTPException(415, "Only PDF, JPEG, PNG and WEBP files are supported")
+    filename = Path(file.filename or "upload").name
+    if not filename or len(filename) > 255 or filename in {".", ".."}:
+        raise HTTPException(422, "Invalid file name")
+    if workspace_id:
+        await _validate_workspace_access(request, workspace_id, user["id"])
+
+    content = await file.read(MAX_KNOWLEDGE_UPLOAD_BYTES + 1)
+    if not content:
+        raise HTTPException(422, "Uploaded file is empty")
+    if len(content) > MAX_KNOWLEDGE_UPLOAD_BYTES:
+        raise HTTPException(413, "Maximum upload size is 25 MiB")
+    if mime == "application/pdf" and not content.startswith(b"%PDF-"):
+        raise HTTPException(415, "File content does not match PDF type")
+    if mime == "image/jpeg" and not content.startswith(b"\xff\xd8\xff"):
+        raise HTTPException(415, "File content does not match JPEG type")
+    if mime == "image/png" and not content.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise HTTPException(415, "File content does not match PNG type")
+    if mime == "image/webp" and (len(content) < 12 or content[:4] != b"RIFF" or content[8:12] != b"WEBP"):
+        raise HTTPException(415, "File content does not match WEBP type")
+
+    document_id = str(uuid4())
+    digest = hashlib.sha256(content).hexdigest()
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", filename)[:180]
+    storage_path = f"{user['id']}/{document_id}/{safe_name}"
+    title_value = (title or Path(filename).stem).strip()
+    if not title_value:
+        raise HTTPException(422, "Document title cannot be empty")
+
+    repo = repository(request)
+    # Validate the workspace before creating metadata or uploading bytes.
+    metadata = {
+        "ingestion_state": "uploading",
+        "mime_type": mime,
+        "original_filename": filename,
+        "size_bytes": len(content),
+        "storage_bucket": KNOWLEDGE_BUCKET,
+        "storage_path": storage_path,
+        "sha256": digest,
+        "page_count": None,
+        "ocr_status": "pending" if mime.startswith("image/") else "not_applicable",
+    }
+    document = await repo.insert("knowledge_documents", {
+        "id": document_id,
+        "owner_user_id": user["id"],
+        "workspace_id": str(workspace_id) if workspace_id else None,
+        "title": title_value,
+        "source_type": "file",
+        "source_ref": storage_path,
+        "content_sha256": digest,
+        "status": "processing",
+        "metadata": metadata,
+    })
+    try:
+        response = await request.app.state.http.post(
+            f"{settings.supabase_url.rstrip('/')}/storage/v1/object/{KNOWLEDGE_BUCKET}/{storage_path}",
+            content=content,
+            headers={
+                **_storage_headers(request),
+                "Content-Type": mime,
+                "x-upsert": "false",
+            },
+            timeout=60.0,
+        )
+        if response.status_code >= 400:
+            raise HTTPException(502, "Private file storage rejected the upload")
+        await repo.update(
+            "knowledge_documents",
+            {"id": f"eq.{document_id}", "owner_user_id": f"eq.{user['id']}", "status": "eq.processing"},
+            {"metadata": {**metadata, "ingestion_state": "queued", "uploaded_at": datetime.now(timezone.utc).isoformat()}},
+        )
+    except Exception:
+        # Keep the durable row for diagnosis/retry; do not expose storage credentials or response bodies.
+        await repo.update(
+            "knowledge_documents",
+            {"id": f"eq.{document_id}", "owner_user_id": f"eq.{user['id']}"},
+            {"status": "failed", "metadata": {**metadata, "ingestion_state": "upload_failed", "error_code": "storage_upload_failed"}},
+        )
+        raise
+    return {
+        "document": document,
+        "status": "processing",
+        "upload": {"filename": filename, "size_bytes": len(content), "mime_type": mime},
+    }
 
 
 @router.get("/documents")
