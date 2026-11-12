@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Clock, Wifi, Activity, Sparkles, LogOut, Plus } from 'lucide-react';
+import { ArrowLeft, Activity, Sparkles, LogOut, Plus } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 
 interface WifiSessionViewProps {
