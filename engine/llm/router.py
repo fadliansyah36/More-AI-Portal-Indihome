@@ -135,6 +135,71 @@ class ModelRouter:
         ))[0]
 
 
+class ProviderCircuitOpen(RetryableProviderError):
+    """All configured candidates are temporarily unavailable behind open circuits."""
+
+
+class ProviderCircuitBreaker:
+    """Process-local provider/model breaker; durable/distributed state belongs in Supabase.
+
+    A single half-open probe is admitted after cooldown. Only retryable provider
+    failures trip the breaker; validation, policy and billing failures never do.
+    """
+
+    def __init__(self, *, threshold: int = 3, cooldown_seconds: float = 30.0):
+        import asyncio
+        import os
+
+        self.threshold = max(1, int(os.getenv("MOREAI_PROVIDER_BREAKER_THRESHOLD", threshold)))
+        self.cooldown_seconds = max(1.0, float(os.getenv("MOREAI_PROVIDER_BREAKER_COOLDOWN_SECONDS", cooldown_seconds)))
+        self._states: dict[str, dict[str, Any]] = {}
+        self._locks: dict[str, Any] = {}
+        self._asyncio = asyncio
+
+    def _key(self, route: ResolvedModelRoute) -> str:
+        return route.provider_key + ":" + route.model_key
+
+    async def allow(self, route: ResolvedModelRoute) -> bool:
+        key = self._key(route)
+        lock = self._locks.setdefault(key, self._asyncio.Lock())
+        async with lock:
+            state = self._states.get(key)
+            if not state or state.get("opened_at") is None:
+                return True
+            import time
+            if time.monotonic() - float(state["opened_at"]) < self.cooldown_seconds:
+                return False
+            if state.get("probe_in_flight"):
+                return False
+            state["probe_in_flight"] = True
+            return True
+
+    async def success(self, route: ResolvedModelRoute) -> None:
+        key = self._key(route)
+        lock = self._locks.setdefault(key, self._asyncio.Lock())
+        async with lock:
+            self._states.pop(key, None)
+
+    async def failure(self, route: ResolvedModelRoute) -> None:
+        key = self._key(route)
+        lock = self._locks.setdefault(key, self._asyncio.Lock())
+        async with lock:
+            state = self._states.setdefault(key, {"failures": 0, "opened_at": None, "probe_in_flight": False})
+            state["probe_in_flight"] = False
+            state["failures"] = int(state.get("failures", 0)) + 1
+            if state["failures"] >= self.threshold:
+                import time
+                state["opened_at"] = time.monotonic()
+
+    async def release_probe(self, route: ResolvedModelRoute) -> None:
+        key = self._key(route)
+        lock = self._locks.setdefault(key, self._asyncio.Lock())
+        async with lock:
+            state = self._states.get(key)
+            if state:
+                state["probe_in_flight"] = False
+
+
 class CreditEstimator(Protocol):
     async def estimate(self, *, route: ResolvedModelRoute, messages: list[dict[str, Any]]) -> CreditEstimate: ...
     async def actual_credits(self, *, route: ResolvedModelRoute, result: dict[str, Any]) -> float: ...
@@ -215,16 +280,23 @@ class MeteredGateway:
             selected: ResolvedModelRoute | None = None
             started = time.monotonic()
             for candidate in candidates:
+                if not await self.breaker.allow(candidate):
+                    continue
                 try:
                     result = await self.adapter.complete(route=candidate, messages=messages, tools=tools)
+                    await self.breaker.success(candidate)
                     provider_succeeded = True
                     selected = candidate
                     break
                 except RetryableProviderError as exc:
+                    await self.breaker.failure(candidate)
                     last_error = exc
                     continue
+                except Exception:
+                    await self.breaker.release_probe(candidate)
+                    raise
             if result is None or selected is None:
-                raise RetryableProviderError("provider_candidates_exhausted") from last_error
+                raise ProviderCircuitOpen("provider_candidates_exhausted_or_circuit_open") from last_error
             latency_ms = int((time.monotonic() - started) * 1000)
             await self.accounting.record_provider_result(request_id=str(claim["id"]), result=result, latency_ms=latency_ms)
             actual_credits = await self.estimator.actual_credits(route=selected, result=result)
@@ -276,6 +348,8 @@ class MeteredGateway:
             )
             last_error: Exception | None = None
             for candidate in candidates:
+                if not await self.breaker.allow(candidate):
+                    continue
                 candidate_parts: list[str] = []
                 candidate_usage: dict[str, Any] | None = None
                 try:
@@ -291,17 +365,23 @@ class MeteredGateway:
                             candidate_usage = item
                     if candidate_usage is None:
                         raise RetryableProviderError("provider_stream_usage_missing")
+                    await self.breaker.success(candidate)
                     text_parts = candidate_parts
                     usage = candidate_usage
                     selected = candidate
                     break
                 except RetryableProviderError as exc:
                     if candidate_parts:
+                        await self.breaker.release_probe(candidate)
                         raise
+                    await self.breaker.failure(candidate)
                     last_error = exc
                     continue
+                except Exception:
+                    await self.breaker.release_probe(candidate)
+                    raise
             if usage is None or selected is None:
-                raise RetryableProviderError("provider_stream_candidates_exhausted") from last_error
+                raise ProviderCircuitOpen("provider_stream_candidates_exhausted_or_circuit_open") from last_error
             result = {
                 "text": "".join(text_parts), "provider_key": usage["provider_key"],
                 "model_key": usage["model_key"], "input_tokens": int(usage["input_tokens"]),
