@@ -636,7 +636,9 @@
       "91fa8128462a72f5826061df5316cdf61fdf4285",
       "7a681f504935a7c7278300849f627c6dcdbc2d4d",
       "c3de455c0da2c06955dde3b3aea4e938fc8c1220",
-      "c507d6930f41f25ef463b8e4691ab6d2b60e11c7"
+      "c507d6930f41f25ef463b8e4691ab6d2b60e11c7",
+      "b32cb13e97c855872f44b001b607b2b0d60452e7",
+      "2b45715f89f647d4194e1e76ecc5506b59a9db3b"
     ],
     "implemented": [
       "Added authenticated FastAPI execution supervisor for isolated Python/Bash runs and a dedicated Dockerfile.",
@@ -646,7 +648,8 @@
       "Supervisor readiness now verifies that the configured Docker daemon/socket proxy is reachable, not only that configuration and image digest are present.",
       "Browser supervisor now enforces configured domain allowlist for initial navigation, intercepted subresources and final URL; removed undefined blocked_navigation_hosts reference.",
       "Added private execution Compose topology with Docker socket proxy isolated from worker host; added minimal UID/GID 65534 Python/Bash runner image definition.",
-      "Socket proxy and runner deployment image references must be immutable SHA-256 digests before activation."
+      "Socket proxy and runner deployment image references must be immutable SHA-256 digests before activation.",
+      "Runner tracks daemon container identity and requests forced container removal from the supervisor cleanup finalizer after timeout, cancellation, output-limit termination and normal completion."
     ],
     "gates": [
       "MOREAI_SANDBOX_ENABLED and MOREAI_SANDBOX_RELEASE_GATE_PASSED must both be true.",
