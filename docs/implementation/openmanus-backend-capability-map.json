@@ -44,7 +44,7 @@
       "module": "agents/swe",
       "target": "engine/agents/swe.py",
       "capability": "software engineering agent",
-      "status": "BLOCKED — SWE runtime requires isolated workspace and sandbox adapters"
+      "status": "PARTIAL — dedicated durable SWE runtime and code-focused system contract registered only when isolated sandbox activation, independent release gate and digest-pinned image are configured; not advertised by API unless its own gates are present; deployed supervisor and runtime acceptance remain pending"
     },
     {
       "source": "vendor/openmanusweb/app/agent/toolcall.py",
@@ -86,7 +86,7 @@
       "module": "flow/planning",
       "target": "engine/orchestration/planning.py",
       "capability": "planning flow",
-      "status": "PARTIAL — structured durable PlanningAgentRuntime and PlanningFlow backed by Supabase agent_run_steps; complete upstream planner prompt/approval/tool parity pending"
+      "status": "PARTIAL — structured durable PlanningAgentRuntime and PlanningFlow backed by Supabase agent_run_steps; FlowFactory is explicit and fail-closed; upstream's only declared FlowType is planning; planner prompt/approval/recovery parity acceptance remains pending"
     },
     {
       "source": "vendor/openmanusweb/app/flow/tracking_support.py",
@@ -100,7 +100,7 @@
       "module": "llm/client",
       "target": "engine/llm/providers/openai_compatible.py",
       "capability": "LLM provider client/retries/streaming",
-      "status": "PARTIAL — OpenAI-compatible completion and SSE streaming, DB-scoped primary/fallback model routing, idempotent request claim, provider usage/cost, atomic entitlement/quota/credit reservation and settlement; retries, circuit breakers, tool-call parity and live provider config pending"
+      "status": "PARTIAL — OpenAI-compatible completion and SSE streaming, DB-scoped primary/fallback model routing, idempotent request claim, provider usage/cost, atomic entitlement/quota/credit reservation and settlement; API exposes live enabled model capability matrix; provider retries/circuit breakers and live provider E2E remain pending"
     },
     {
       "source": "vendor/openmanusweb/app/logger.py",
@@ -170,7 +170,7 @@
       "module": "tools/chat-completion",
       "target": "engine/tools/chat_completion.py",
       "capability": "chat completion tool",
-      "status": "PARTIAL — metered gateway completion and streaming adapter; provider route, entitlement, quota and wallet required; tool-call normalization pending"
+      "status": "PARTIAL — metered gateway completion and streaming adapter with capability-filtered model routing, structured tool-call loop and idempotent request accounting; provider/tool E2E and retry/circuit breaker acceptance remain pending"
     },
     {
       "source": "vendor/openmanusweb/app/tool/file_saver.py",
@@ -205,7 +205,7 @@
       "module": "tools/run",
       "target": "engine/tools/run.py",
       "capability": "tool execution lifecycle",
-      "status": "PARTIAL — durable worker claim/heartbeat/checkpoint/finish lifecycle exists; complete tool audit/idempotency adapter pending"
+      "status": "ADAPTED — generic nested tool dispatch now routes through the same catalog schema validation, tenant context, policy enforcement, approval gate and bounded execution deadline; recursive run/terminate calls are rejected"
     },
     {
       "source": "vendor/openmanusweb/app/tool/str_replace_editor.py",
@@ -219,14 +219,14 @@
       "module": "tools/terminate",
       "target": "engine/tools/terminate.py",
       "capability": "run termination",
-      "status": "PARTIAL — owner-scoped cancellation API and worker cancellation propagation implemented; upstream tool-call handler not yet registered"
+      "status": "ADAPTED — status contract matches upstream success/failure enum; termination is persisted as final run checkpoint and does not continue another model round"
     },
     {
       "source": "vendor/openmanusweb/app/tool/tool_collection.py",
       "module": "tools/registry",
       "target": "engine/tools/registry.py",
       "capability": "tool registry/dispatch",
-      "status": "PARTIAL — full versioned tool schemas and security metadata catalogued; handlers remain default-deny until individually implemented and tested"
+      "status": "PARTIAL — full versioned tool schemas and security metadata catalogued; nested run dispatch and terminate handlers are now integrated; high-risk browser/sandbox handlers remain gated by independent security and release prerequisites"
     },
     {
       "source": "vendor/openmanusweb/app/utils/log_monitor.py",
@@ -240,14 +240,14 @@
       "module": "server/api",
       "target": "apps/api/app/routers/upstream_compat.py",
       "capability": "upstream API endpoints",
-      "status": "PARTIAL — authenticated identity, conversation, atomic enqueue, agent catalog, tool catalog, run lifecycle, cancellation and SSE routes implemented; full upstream route parity pending"
+      "status": "PARTIAL — authenticated identity, conversation, atomic enqueue, supported agent registry, tool catalog, enabled model capability matrix, run lifecycle, cancellation and SSE routes implemented; remaining upstream server/session compatibility pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/app.py",
       "module": "server/app",
       "target": "apps/api/app/routers/upstream_compat.py",
       "capability": "FastAPI server/session/task/WebSocket",
-      "status": "PARTIAL — Supabase JWT auth, durable conversation/run API and SSE replace in-memory session/task lifecycle; WebSocket and complete session compatibility pending"
+      "status": "PARTIAL — Supabase JWT auth, durable conversation/run API and SSE replace in-memory session/task lifecycle; replayable run event stream and websocket envelope exist; full upstream session compatibility remains pending"
     },
     {
       "source": "vendor/openmanusweb/app/web/llm_monitor.py",
@@ -599,6 +599,23 @@
     ],
     "limitations": [
       "no production deployment; Docker CI does not prove target-platform networking; download scanning remains unimplemented"
+    ]
+  },
+  "moreai_increment_20261112": {
+    "implemented": [
+      "PDFium-rendered OCR fallback for scanned/image-only PDF pages using English and Indonesian Tesseract packs",
+      "15-minute ingestion leases renewed every 45 seconds with compare-and-swap lease fencing; stale worker is cancelled",
+      "owner-scoped retry endpoint resets failed ingestion attempt state and requeues private source object",
+      "native multipart upload deduplicates identical owner/workspace SHA-256 content",
+      "enabled provider/model capability matrix exposed through authenticated API",
+      "SWE agent runtime registered only behind isolated sandbox gates",
+      "OpenManus run nested dispatcher and terminate finalization adapted through policy-enforced registry"
+    ],
+    "not_accepted": [
+      "No CI/test/lint/typecheck/build/browser/API/provider/DB/migration/deployment verification was run in this increment",
+      "Upstream full agent/flow/tool/server parity remains incomplete; sandbox/browser remain gated",
+      "Phase 06 full route-wide contract and authorization acceptance remains in progress",
+      "Phase 09 complete Customer Dashboard screen/action coverage remains in progress"
     ]
   }
 }
