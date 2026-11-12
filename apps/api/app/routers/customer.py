@@ -7,7 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel, Field
 
 from app.authorization import require_customer_context
@@ -196,6 +196,64 @@ async def customer_agent_run_stream(
     return StreamingResponse(events(), media_type="text/event-stream", headers={
         "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no",
     })
+
+
+@router.get("/network/speedtest/ping")
+async def customer_network_speedtest_ping(
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Measure authenticated device-to-MoreAI-API round-trip latency."""
+    return {"status": "ok", "service": "moreai-api", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@router.get("/network/speedtest/download")
+async def customer_network_speedtest_download(
+    size_bytes: int = Query(default=4 * 1024 * 1024, ge=65536, le=8 * 1024 * 1024),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Return bounded uncompressible bytes to measure the real client-to-API path."""
+    import secrets
+    payload = secrets.token_bytes(size_bytes)
+    return Response(
+        content=payload,
+        media_type="application/octet-stream",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Content-Length": str(size_bytes),
+            "X-MoreAI-Speedtest-Bytes": str(size_bytes),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.post("/network/speedtest/upload")
+async def customer_network_speedtest_upload(
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Consume a bounded upload stream and report bytes accepted by this API."""
+    import time
+    max_bytes = 4 * 1024 * 1024
+    declared = request.headers.get("content-length")
+    if declared:
+        try:
+            if int(declared) > max_bytes:
+                raise HTTPException(413, "Speed test upload is limited to 4 MiB")
+        except ValueError as exc:
+            raise HTTPException(400, "Invalid Content-Length") from exc
+    started = time.monotonic()
+    received = 0
+    async for chunk in request.stream():
+        received += len(chunk)
+        if received > max_bytes:
+            raise HTTPException(413, "Speed test upload is limited to 4 MiB")
+    if received == 0:
+        raise HTTPException(422, "Speed test upload body is empty")
+    return {
+        "status": "ok",
+        "received_bytes": received,
+        "server_receive_ms": round((time.monotonic() - started) * 1000, 2),
+    }
 
 
 @router.get("/network-sessions")
