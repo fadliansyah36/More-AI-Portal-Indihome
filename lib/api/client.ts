@@ -425,15 +425,15 @@ export const customerApi = {
   }>; count: number }>(
     '/api/v1/conversations/' + encodeURIComponent(conversationId) + '/sessions?limit=' + encodeURIComponent(String(limit)),
   ),
-  getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/agent-runs/${runId}`),
-  cancelRun: (runId: string) => moreAiCustomerApi<{ run_id: string; status: string }>(`/api/v1/agent-runs/${runId}/cancel`, {
+  getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/customer/agent-runs/${runId}`),
+  cancelRun: (runId: string) => moreAiCustomerApi<{ run_id: string; status: string }>(`/api/v1/customer/agent-runs/${runId}/cancel`, {
     method: 'POST',
   }),
-  getRunSteps: (runId: string) => moreAiCustomerApi<CustomerWorkflowStep[]>(`/api/v1/agent-runs/${runId}/steps`),
+  getRunSteps: (runId: string) => moreAiCustomerApi<CustomerWorkflowStep[]>(`/api/v1/customer/agent-runs/${runId}/steps`),
   getRunEvents: (runId: string, after = 0) => moreAiCustomerApi<Array<{
     id: string; event_type: string; sequence: number; payload: Record<string, unknown>; created_at: string;
   }>>(`/api/v1/agent-runs/${runId}/events?after=${Math.max(0, after)}`),
-  streamRun: (runId: string, after = 0) => `/api/v1/agent-runs/${runId}/stream?after=${Math.max(0, after)}&wait_seconds=30`,
+  streamRun: (runId: string, after = 0) => `/api/v1/customer/agent-runs/${runId}/stream?after=${Math.max(0, after)}&wait_seconds=30`,
   networkSessions: (limit = 50) => moreAiCustomerApi<CustomerNetworkSession[]>(
     `/api/v1/customer/network-sessions?limit=${Math.min(100, Math.max(1, limit))}`,
   ),
