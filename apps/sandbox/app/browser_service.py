@@ -30,10 +30,14 @@ async def health():
 
 
 @app.get("/ready")
-async def ready():
+async def ready(authorization: str | None = Header(default=None)):
+    _authorize(authorization)
     from .browser_readiness import browser_readiness
 
-    return await browser_readiness()
+    result = await browser_readiness()
+    if result["status"] != "ready":
+        raise HTTPException(503, "browser_egress_proxy_not_ready")
+    return result
 
 
 @app.post("/v1/browser/actions")
