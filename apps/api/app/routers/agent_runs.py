@@ -69,13 +69,15 @@ async def list_runs(
         "user_id": f"eq.{user['id']}",
         "select": "id,conversation_id,status,input,output,error,attempt,max_attempts,created_at,started_at,finished_at",
         "order": "created_at.desc,id.desc",
-        "limit": str(limit),
+        "limit": str(limit + 1),
     }
     cursor_filter = created_at_id_filter(decoded)
     if cursor_filter:
         params["or"] = cursor_filter
     rows = await repository(request).select("agent_runs", params)
-    if len(rows) == limit and rows:
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
         response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(rows[-1])
     response.headers["X-Pagination-Mode"] = "keyset"
     return rows
