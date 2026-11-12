@@ -291,6 +291,36 @@ export type CustomerProfile = {
   timezone: string;
 };
 
+export type CustomerToolCatalogItem = {
+  key: string;
+  version: string;
+  description: string;
+  input_schema: Record<string, unknown>;
+  capability_tags: string[];
+  permission_scope: string;
+  risk: string;
+  approval_mode: string;
+  execution_environment: string;
+  timeout_seconds: number;
+  enabled_by_default: boolean;
+  available_by_default: string[];
+};
+
+export type CustomerModelCapability = {
+  provider_key: string;
+  provider_name: string;
+  model_key: string;
+  model_name: string;
+  capabilities: string[];
+  max_input_tokens: number | null;
+  max_output_tokens: number | null;
+};
+
+export const platformCatalogApi = {
+  tools: () => moreAiApi<CustomerToolCatalogItem[]>('/api/v1/tools'),
+  modelCapabilities: () => moreAiApi<{ items: CustomerModelCapability[]; count: number; source: string }>('/api/v1/models/capabilities'),
+};
+
 export const profileApi = {
   get: () => moreAiApi<{ user: { id: string; email?: string; display_name?: string | null }; profile: CustomerProfile | null }>('/api/v1/me'),
   update: (payload: Partial<Pick<CustomerProfile, 'display_name' | 'avatar_path' | 'locale' | 'timezone'>>) =>
