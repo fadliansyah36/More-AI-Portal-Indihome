@@ -94,7 +94,20 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
             )
             page = await context.new_page()
             request_count = 0
+            blocked_downloads = 0
             max_requests = 200
+
+            # Browser actions currently expose navigation and text extraction only.
+            # Never persist untrusted downloads into the supervisor filesystem.
+            async def deny_download(download):
+                nonlocal blocked_downloads
+                blocked_downloads += 1
+                try:
+                    await download.cancel()
+                except Exception:
+                    logger.warning("browser download cancellation failed (%s)", type(download).__name__)
+
+            page.on("download", lambda download: asyncio.create_task(deny_download(download)))
 
             async def request_guard(route):
                 nonlocal request_count
@@ -143,8 +156,8 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
                 logger.warning("browser navigation failed (%s)", type(exc).__name__)
                 raise HTTPException(502, "browser_navigation_blocked_or_failed") from exc
             if body.action == "navigate":
-                return {"status": "navigated", "url": page.url, "title": await page.title(), "requests": request_count}
+                return {"status": "navigated", "url": page.url, "title": await page.title(), "requests": request_count, "blocked_downloads": blocked_downloads}
             content = (await page.locator("body").inner_text(timeout=5_000))[:30_000]
-            return {"status": "extracted", "url": page.url, "title": await page.title(), "text": content, "requests": request_count}
+            return {"status": "extracted", "url": page.url, "title": await page.title(), "text": content, "requests": request_count, "blocked_downloads": blocked_downloads}
         finally:
             await browser.close()
