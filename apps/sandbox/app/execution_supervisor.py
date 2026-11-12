@@ -79,6 +79,8 @@ async def execute(
     for path, encoded in body.workspace_files.items():
         if not isinstance(path, str) or not isinstance(encoded, str):
             raise HTTPException(422, "sandbox_workspace_snapshot_invalid")
+        if len(encoded) > 2_666_668:
+            raise HTTPException(413, "sandbox_workspace_file_too_large")
         try:
             raw = base64.b64decode(encoded, validate=True)
         except (ValueError, TypeError) as exc:
