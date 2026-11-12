@@ -49,7 +49,9 @@ export const PartnerLiveSessionsView: React.FC<PartnerLiveSessionsViewProps> = (
   }, []);
 
   useEffect(() => {
-    void loadSessions();
+    let active = true;
+    void Promise.resolve().then(() => { if (active) void loadSessions(); });
+    return () => { active = false; };
   }, [loadSessions]);
 
   const handleRefresh = () => {
