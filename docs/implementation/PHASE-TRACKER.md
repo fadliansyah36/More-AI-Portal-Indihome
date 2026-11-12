@@ -603,3 +603,12 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Added typed `customerWorkspaceApi.archive()` method to the existing Customer API client.
 - Commits: `70101b310847040f6af9be75f2846bd2a55b4cec` (FastAPI) and `e2af2140438ab7c20aa2848e3c0107f33b8feee8` (typed client).
 - This closes only the soft-archive slice of workspace lifecycle. It does not close Phase 04 or imply UI exposure; no existing UI file was changed.
+
+
+## Active implementation increment — Customer workspace membership lifecycle (2026-11-12)
+
+- Added owner-authorized `GET /api/v1/customer/workspaces/{workspace_id}/members` for invited, active, and suspended memberships.
+- Added owner-authorized `DELETE /api/v1/customer/workspaces/{workspace_id}/members/{member_id}` as a soft revocation (`status=removed`); it refuses self-removal of the workspace owner and preserves workspace files/version history.
+- Added typed Customer API client methods `workspaceApi.members()` and `workspaceApi.removeMember()`.
+- Commits: `8705c19ea6b0e0993d1cc46a049c5171952e2089` (FastAPI), `ca68fc75e6b1f275e4c99fa9dedbda967b7dbb03` (typed client).
+- This advances workspace membership lifecycle but does not yet implement invitation creation/acceptance, role assignment, file CRUD, or UI management. Phase 04 remains active.
