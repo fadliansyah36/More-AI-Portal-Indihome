@@ -197,7 +197,9 @@ class SupabaseKnowledgeTools:
                         if scale < 0.25:
                             raise ValueError("knowledge_pdf_page_pixel_limit_exceeded")
                         bitmap = pdf_page.render(scale=scale)
-                        image = bitmap.to_pil().convert("RGB")
+                        rendered_image = bitmap.to_pil()
+                        image = rendered_image.convert("RGB")
+                        rendered_image.close()
                         try:
                             ocr_text = await asyncio.to_thread(
                                 pytesseract.image_to_string, image, lang="eng+ind",
@@ -213,8 +215,8 @@ class SupabaseKnowledgeTools:
             finally:
                 pdf_document.close()
         elif mime in {"image/jpeg", "image/png", "image/webp"}:
-            probe = Image.open(BytesIO(raw))
-            probe.verify()
+            with Image.open(BytesIO(raw)) as probe:
+                probe.verify()
             with Image.open(BytesIO(raw)) as source_image:
                 if source_image.width < 1 or source_image.height < 1 or source_image.width * source_image.height > 40_000_000:
                     raise ValueError("knowledge_image_pixel_limit_exceeded")
