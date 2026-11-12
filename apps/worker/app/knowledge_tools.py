@@ -159,6 +159,7 @@ class SupabaseKnowledgeTools:
         from PIL import Image
         import pytesseract
         from pypdf import PdfReader
+        import pypdfium2 as pdfium
 
         document_id = str(document.get("id") or "")
         owner_id = str(document.get("owner_user_id") or "")
@@ -172,6 +173,7 @@ class SupabaseKnowledgeTools:
         pages: list[tuple[int, str]] = []
         page_count = 0
         ocr_status = "not_applicable"
+        ocr_pages: list[int] = []
         if mime == "application/pdf":
             reader = PdfReader(BytesIO(raw), strict=True)
             if getattr(reader, "is_encrypted", False):
@@ -179,10 +181,37 @@ class SupabaseKnowledgeTools:
             if len(reader.pages) > 500:
                 raise ValueError("knowledge_pdf_page_limit_exceeded")
             page_count = len(reader.pages)
-            for index, page in enumerate(reader.pages, start=1):
-                text = page.extract_text() or ""
-                if text.strip():
-                    pages.append((index, text))
+            # pypdf extracts embedded text; PDFium renders only pages without useful
+            # text so scanned PDFs are OCRed without rasterizing every page.
+            pdf_document = pdfium.PdfDocument(raw)
+            try:
+                for index, page in enumerate(reader.pages, start=1):
+                    text = page.extract_text() or ""
+                    if len(text.strip()) >= 30:
+                        pages.append((index, text))
+                        continue
+                    pdf_page = pdf_document[index - 1]
+                    try:
+                        width_pt, height_pt = pdf_page.get_size()
+                        scale = min(1.5, (40_000_000 / max(1.0, width_pt * height_pt)) ** 0.5)
+                        if width_pt * height_pt * scale * scale > 40_000_000:
+                            raise ValueError("knowledge_pdf_page_pixel_limit_exceeded")
+                        bitmap = pdf_page.render(scale=max(0.5, scale))
+                        image = bitmap.to_pil().convert("RGB")
+                        try:
+                            ocr_text = await asyncio.to_thread(
+                                pytesseract.image_to_string, image, lang="eng+ind",
+                            )
+                        finally:
+                            image.close()
+                            bitmap.close()
+                        if ocr_text.strip():
+                            pages.append((index, ocr_text))
+                            ocr_pages.append(index)
+                    finally:
+                        pdf_page.close()
+            finally:
+                pdf_document.close()
         elif mime in {"image/jpeg", "image/png", "image/webp"}:
             image = Image.open(BytesIO(raw))
             image.verify()
@@ -191,12 +220,16 @@ class SupabaseKnowledgeTools:
                 raise ValueError("knowledge_image_pixel_limit_exceeded")
             text = await asyncio.to_thread(pytesseract.image_to_string, image)
             ocr_status = "completed" if text.strip() else "no_text_detected"
+            if text.strip():
+                ocr_pages.append(1)
             page_count = 1
             if text.strip():
                 pages.append((1, text))
         else:
             raise ValueError("knowledge_file_type_unsupported")
 
+        if mime == "application/pdf":
+            ocr_status = "completed" if ocr_pages else "not_required"
         if not pages:
             raise ValueError("knowledge_extraction_empty_or_ocr_unavailable")
 
@@ -217,7 +250,7 @@ class SupabaseKnowledgeTools:
                         "source_page": page_number,
                         "char_start": start,
                         "char_end": end,
-                        "ocr": mime.startswith("image/"),
+                        "ocr": page_number in ocr_pages,
                     }))
                 if end >= len(normalized):
                     break
