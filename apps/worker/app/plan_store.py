@@ -45,7 +45,12 @@ class SupabasePlanStore:
             "select": "sequence,step_key,status,input,output,error,started_at,finished_at",
             "order": "sequence.asc", "limit": "200",
         })
-        return {"run_id": run_id, "steps": rows}
+        checkpoints = await self.client.select("agent_run_checkpoints", {
+            "run_id": f"eq.{run_id}", "checkpoint_key": "eq.planning.manifest",
+            "select": "state", "limit": "1",
+        })
+        manifest = checkpoints[0].get("state") if checkpoints and isinstance(checkpoints[0], dict) else None
+        return {"run_id": run_id, "steps": rows, "manifest": manifest}
 
     async def mark_step(self, *, run_id: str, step_index: int, status: str, notes: str | None = None, output: dict[str, Any] | None = None) -> dict[str, Any]:
         allowed = {"pending", "running", "waiting_approval", "succeeded", "failed", "skipped", "cancelled"}
