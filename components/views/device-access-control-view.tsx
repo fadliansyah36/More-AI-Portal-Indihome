@@ -16,48 +16,7 @@ export const DeviceAccessControlView: React.FC<DeviceAccessControlViewProps> = (
 }) => {
   const { showToast } = useToast();
 
-  const [devices, setDevices] = useState([
-    {
-      id: 'd-1',
-      name: 'iPhone 15 Pro Max',
-      owner: 'Andi Pratama (Utama)',
-      type: 'phone',
-      priority: 'Tinggi (Prioritas AI)',
-      bandwidthLimit: 'Uncapped (100 Mbps)',
-      status: 'active',
-      parentalFilter: false,
-    },
-    {
-      id: 'd-2',
-      name: 'Laptop ASUS ROG',
-      owner: 'Workstation Coding',
-      type: 'laptop',
-      priority: 'Tinggi',
-      bandwidthLimit: 'Uncapped (100 Mbps)',
-      status: 'active',
-      parentalFilter: false,
-    },
-    {
-      id: 'd-3',
-      name: 'Samsung Galaxy A54',
-      owner: 'Anak (Kamar)',
-      type: 'phone',
-      priority: 'Sedang',
-      bandwidthLimit: '20 Mbps',
-      status: 'active',
-      parentalFilter: true,
-    },
-    {
-      id: 'd-4',
-      name: 'Smart TV LG 4K',
-      owner: 'Ruang Keluarga',
-      type: 'tv',
-      priority: 'Standar',
-      bandwidthLimit: '30 Mbps',
-      status: 'active',
-      parentalFilter: false,
-    },
-  ]);
+  const [devices, setDevices] = useState<Array<{ id: string; name: string; owner: string; type: string; priority: string; bandwidthLimit: string; status: string; parentalFilter: boolean }>>([]);
 
   const togglePause = (name: string, id: string) => {
     setDevices((prev) =>
@@ -109,6 +68,11 @@ export const DeviceAccessControlView: React.FC<DeviceAccessControlViewProps> = (
 
       {/* Device Cards */}
       <div className="space-y-3">
+        {devices.length === 0 && (
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 text-center text-xs text-slate-500">
+            Data perangkat belum tersedia dari integrasi gateway/partner. Kontrol jeda akses, bandwidth, dan filter konten dinonaktifkan sampai perangkat nyata dapat dibaca dan diotorisasi oleh backend.
+          </div>
+        )}
         {devices.map((dev) => (
           <div
             key={dev.id}
