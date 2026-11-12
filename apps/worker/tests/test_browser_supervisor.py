@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 import httpx
 
@@ -62,8 +63,7 @@ def test_supervisor_refuses_missing_egress_enforcement():
         )
 
 
-@pytest.mark.asyncio
-async def test_supervisor_readiness_requires_live_proxy_and_enforcement():
+def test_supervisor_readiness_requires_live_proxy_and_enforcement():
     async def handler(request):
         assert request.url.path == "/ready"
         assert request.headers["authorization"] == "Bearer " + "s" * 40
@@ -80,11 +80,10 @@ async def test_supervisor_readiness_requires_live_proxy_and_enforcement():
         egress_enforced=True,
         http=client,
     )
-    assert (await supervisor.check_ready())["status"] == "ready"
+    assert asyncio.run(supervisor.check_ready())["status"] == "ready"
 
 
-@pytest.mark.asyncio
-async def test_supervisor_readiness_fails_closed_when_proxy_is_degraded():
+def test_supervisor_readiness_fails_closed_when_proxy_is_degraded():
     async def handler(request):
         return httpx.Response(503, json={"detail": "browser_egress_proxy_not_ready"})
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
@@ -95,4 +94,4 @@ async def test_supervisor_readiness_fails_closed_when_proxy_is_degraded():
         http=client,
     )
     with pytest.raises(httpx.HTTPStatusError):
-        await supervisor.check_ready()
+        asyncio.run(supervisor.check_ready())
