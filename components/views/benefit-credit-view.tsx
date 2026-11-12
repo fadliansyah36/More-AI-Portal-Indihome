@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 import { NavigationTab } from '@/types/moreai';
-import { customerApi, CustomerEntitlement, CustomerLedgerEntry, CustomerQuota, CustomerUsageRecord, CustomerWallet } from '@/lib/api/client';
+import { customerApi, CustomerEntitlement, CustomerLedgerEntry, CustomerQuota, CustomerUsageRecord, CustomerWallet, CustomerNetworkSession } from '@/lib/api/client';
 
 interface BenefitCreditViewProps {
   onNavigateTab?: (tab: NavigationTab) => void;
@@ -27,6 +27,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
   const [quotas, setQuotas] = useState<CustomerQuota[]>([]);
   const [usage, setUsage] = useState<CustomerUsageRecord[]>([]);
   const [ledger, setLedger] = useState<CustomerLedgerEntry[]>([]);
+  const [networkSessions, setNetworkSessions] = useState<CustomerNetworkSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,13 +39,15 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
       customerApi.quotas(),
       customerApi.usage(50),
       customerApi.ledger(50),
-    ]).then(([walletResult, entitlementResult, quotaResult, usageResult, ledgerResult]) => {
+      customerApi.networkSessions(50),
+    ]).then(([walletResult, entitlementResult, quotaResult, usageResult, ledgerResult, sessionResult]) => {
       if (!active) return;
       setWallets(walletResult.wallets || []);
       setEntitlements(entitlementResult || []);
       setQuotas(quotaResult || []);
       setUsage(usageResult || []);
       setLedger(ledgerResult || []);
+      setNetworkSessions(sessionResult || []);
       setError(null);
     }).catch((err: unknown) => {
       if (!active) return;
@@ -61,22 +64,36 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
   );
   const activeEntitlements = entitlements.filter((item) => item.status === 'active');
   const monthlyQuota = quotas.find((item) => /month|monthly|llm|token|credit/i.test(item.metric_key)) || quotas[0];
-  const history = usage.map((item) => ({
-    id: item.id,
-    title: item.model_key || item.provider_key || 'Penggunaan AI',
-    type: (item as CustomerUsageRecord).id ? 'ai' as const : 'ai' as const,
-    date: new Date(item.created_at).toLocaleString('id-ID'),
-    amount: item.actual_cost !== null ? String(item.actual_cost) : String(item.estimated_cost),
-    positive: false,
-  })).concat(ledger.map((item) => ({
-    id: item.id,
-    title: item.description || item.entry_type,
-    type: 'ai' as const,
-    date: new Date(item.created_at).toLocaleString('id-ID'),
-    amount: Number(item.amount).toLocaleString('id-ID'),
-    positive: Number(item.amount) > 0,
-  }))).sort((a, b) => b.date.localeCompare(a.date));
-  const filteredHistory = activeSubTab === 'wifi' ? [] : history;
+  const history = [
+    ...usage.map((item) => ({
+      id: `usage:${item.id}`,
+      title: item.model_key || item.provider_key || 'Penggunaan AI',
+      type: 'ai' as const,
+      date: item.created_at,
+      sortTime: new Date(item.created_at).getTime(),
+      amount: item.actual_cost !== null ? String(item.actual_cost) : String(item.estimated_cost),
+      positive: false,
+    })),
+    ...ledger.map((item) => ({
+      id: `ledger:${item.id}`,
+      title: item.description || item.entry_type,
+      type: 'ai' as const,
+      date: item.created_at,
+      sortTime: new Date(item.created_at).getTime(),
+      amount: Number(item.amount).toLocaleString('id-ID'),
+      positive: Number(item.amount) > 0,
+    })),
+    ...networkSessions.map((session) => ({
+      id: `wifi:${session.id}`,
+      title: session.network?.name || 'Sesi Wi-Fi Partner',
+      type: 'wifi' as const,
+      date: session.started_at,
+      sortTime: new Date(session.started_at).getTime(),
+      amount: session.status === 'active' ? 'Aktif' : session.status,
+      positive: session.status === 'active',
+    })),
+  ].sort((a, b) => (Number.isFinite(b.sortTime) ? b.sortTime : 0) - (Number.isFinite(a.sortTime) ? a.sortTime : 0));
+  const filteredHistory = activeSubTab === 'semua' ? history : history.filter((item) => item.type === activeSubTab);
   const handleTopUp = () => showToast('Top Up belum tersedia melalui backend pembayaran. Tidak ada saldo yang diubah.', 'info');
 
   return (
@@ -239,11 +256,11 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
                       : 'bg-rose-50 text-rose-600'
                   }`}
                 >
-                  {<Sparkles className="w-3.5 h-3.5" />}
+                  {h.type === 'wifi' ? <Wifi className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{h.title}</h4>
-                  <span className="text-[10px] text-slate-400">{h.date}</span>
+                  <span className="text-[10px] text-slate-400">{Number.isFinite(h.sortTime) ? new Date(h.date).toLocaleString('id-ID') : 'Waktu tidak tersedia'}</span>
                 </div>
               </div>
 
