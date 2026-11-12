@@ -40,4 +40,14 @@ async def current_user(
     user = response.json()
     if not isinstance(user, dict) or not user.get("id"):
         raise HTTPException(status_code=401, detail="Authentication response is invalid")
-    return {"id": user["id"], "email": user.get("email")}
+
+    # Supabase Auth metadata is the authoritative registration-time name fallback.
+    # Expose only a normalized display name, never the raw metadata object.
+    metadata = user.get("user_metadata")
+    metadata = metadata if isinstance(metadata, dict) else {}
+    display_name = metadata.get("full_name") or metadata.get("name")
+    if isinstance(display_name, str):
+        display_name = " ".join(display_name.split())[:120] or None
+    else:
+        display_name = None
+    return {"id": user["id"], "email": user.get("email"), "display_name": display_name}
