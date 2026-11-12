@@ -41,6 +41,11 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
   const [profileLoading, setProfileLoading] = useState(true);
   const [savingPreference, setSavingPreference] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const [language, setLanguage] = useState<'id' | 'en'>('id');
+  const [profileLocale, setProfileLocale] = useState('id-ID');
+  const [editProfile, setEditProfile] = useState(false);
+  const [draftProfileName, setDraftProfileName] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -56,6 +61,9 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
           || '';
         setProfileName(registeredName || 'Nama belum diatur');
         setProfileEmail(identity.user?.email || '');
+        const locale = identity.profile?.locale || 'id-ID';
+        setProfileLocale(locale);
+        setLanguage(locale.toLowerCase().startsWith('en') ? 'en' : 'id');
       })
       .catch((error) => {
         if (active) showToast(error instanceof Error ? error.message : 'Profil gagal dimuat.', 'error');
@@ -83,6 +91,44 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
     return () => { active = false; };
   }, []);
 
+  const openProfileEditor = () => {
+    setDraftProfileName(profileName === 'Nama belum diatur' ? '' : profileName);
+    setEditProfile(true);
+  };
+
+  const saveProfile = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const displayName = draftProfileName.trim();
+    if (!displayName) {
+      showToast('Nama tampilan tidak boleh kosong.', 'error');
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      const saved = await profileApi.update({ display_name: displayName });
+      setProfileName(saved.profile.display_name?.trim() || displayName);
+      setEditProfile(false);
+      showToast('Informasi akun berhasil diperbarui.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Profil gagal diperbarui.', 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const changeLanguage = async () => {
+    const next = language === 'id' ? 'en' : 'id';
+    const locale = next === 'id' ? 'id-ID' : 'en-US';
+    try {
+      const saved = await profileApi.update({ locale });
+      setProfileLocale(saved.profile.locale || locale);
+      setLanguage(next);
+      showToast(next === 'id' ? 'Bahasa akun disimpan.' : 'Account language saved.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Bahasa akun gagal disimpan.', 'error');
+    }
+  };
+
   const toggleNotifications = async () => {
     const next = !notificationsEnabled;
     setSavingPreference(true);
@@ -94,7 +140,6 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
       showToast(error instanceof Error ? error.message : 'Preferensi gagal disimpan.', 'error');
     } finally { setSavingPreference(false); }
   };
-  const [language, setLanguage] = useState<'id' | 'en'>('id');
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
 
@@ -132,7 +177,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
       {/* Settings Navigation Menu */}
       <div className="bg-white rounded-3xl p-3 border border-slate-100 shadow-xs space-y-1">
         <button
-          onClick={() => showToast(profileName ? 'Profil akun: ' + profileName + (profileEmail ? ' · ' + profileEmail : '') : 'Informasi profil belum tersedia.', 'info')}
+          onClick={openProfileEditor}
           className="w-full p-3 rounded-2xl hover:bg-slate-50 flex items-center justify-between text-left transition group"
         >
           <div className="flex items-center gap-3">
@@ -200,7 +245,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
         </div>
 
         <button
-          onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+          onClick={() => void changeLanguage()}
           className="w-full p-3 rounded-2xl hover:bg-slate-50 flex items-center justify-between text-left transition group"
         >
           <div className="flex items-center gap-3">
@@ -266,6 +311,30 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
           <span className="text-xs font-bold">Keluar Akun</span>
         </button>
       </div>
+
+      {editProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
+          <form onSubmit={(event) => void saveProfile(event)} className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-slate-100 text-slate-800 space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900">Informasi Akun</h3>
+              <button type="button" onClick={() => setEditProfile(false)} className="text-slate-400 hover:text-slate-600 text-xs font-bold" aria-label="Tutup">✕</button>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="moreai-profile-name" className="block text-xs font-semibold text-slate-700">Nama tampilan</label>
+              <input id="moreai-profile-name" value={draftProfileName} onChange={(event) => setDraftProfileName(event.target.value)} maxLength={120} required className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">Email akun</label>
+              <p className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5 text-xs text-slate-600">{profileEmail || 'Email tidak tersedia'}</p>
+              <p className="text-[10px] text-slate-400">Email dikelola melalui autentikasi akun.</p>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={() => setEditProfile(false)} disabled={savingProfile} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-xs font-semibold text-slate-600 disabled:opacity-50">Batal</button>
+              <button type="submit" disabled={savingProfile || !draftProfileName.trim()} className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white disabled:opacity-50">{savingProfile ? 'Menyimpan…' : 'Simpan perubahan'}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* FAQ Modal */}
       {showFaqModal && (
