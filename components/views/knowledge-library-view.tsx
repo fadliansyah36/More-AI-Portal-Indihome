@@ -20,11 +20,10 @@ export const KnowledgeLibraryView: React.FC = () => {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const result = await knowledgeApi.list({ limit: 100, ...(status === 'all' ? {} : { status }) });
       setDocuments(result.items);
+      setError(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Knowledge Library tidak dapat dimuat.');
     } finally {
@@ -56,7 +55,7 @@ export const KnowledgeLibraryView: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight text-slate-900">Knowledge Library</h1>
           <p className="mt-1 text-xs text-slate-500">Dokumen tenant-scoped yang dapat digunakan Agent Runtime melalui semantic retrieval.</p>
         </div>
-        <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50">
+        <button type="button" onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50">
           <RefreshCw className={loading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} /> Refresh
         </button>
       </header>
@@ -68,7 +67,7 @@ export const KnowledgeLibraryView: React.FC = () => {
 
       <div className="flex flex-wrap gap-2">
         {(['all', 'ready', 'processing', 'failed', 'archived'] as const).map((value) => (
-          <button key={value} type="button" onClick={() => setStatus(value)} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${status === value ? 'bg-red-600 text-white' : 'border border-slate-200 bg-white text-slate-600'}`}>
+          <button key={value} type="button" onClick={() => { setLoading(true); setError(null); setStatus(value); }} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${status === value ? 'bg-red-600 text-white' : 'border border-slate-200 bg-white text-slate-600'}`}>
             {value === 'all' ? 'Semua' : statusLabel[value]}
           </button>
         ))}
