@@ -33,15 +33,20 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   const [activeTab, setActiveTab] = useState<'semua' | 'aktif' | 'selesai' | 'workflow' | 'artifacts'>('semua');
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [runs, setRuns] = useState<CustomerAgentRun[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
-    customerApi.agentRuns().then((items) => {
+    customerApi.agentRunsPage(50).then((page) => {
       if (!active) return;
-      setRuns(items);
-      setTasks(items.map((run) => ({
+      setRuns(page.items);
+      setNextCursor(page.nextCursor);
+      setTasks(page.items.map((run) => ({
         id: run.id,
-        title: `Agent Run ${run.id.slice(0, 8)}`,
+        title: typeof run.input?.prompt === 'string' && run.input.prompt.trim()
+          ? run.input.prompt.trim().slice(0, 100)
+          : `Agent Run ${run.id.slice(0, 8)}`,
         time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
         completed: run.status === 'succeeded',
         category: run.status,
@@ -71,6 +76,36 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   };
 
   const latestRun = runs[0];
+
+  const handleLoadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await customerApi.agentRunsPage(50, nextCursor);
+      setRuns((previous) => {
+        const known = new Set(previous.map((run) => run.id));
+        return [...previous, ...page.items.filter((run) => !known.has(run.id))];
+      });
+      setTasks((previous) => {
+        const known = new Set(previous.map((task) => task.id));
+        const additions = page.items.filter((run) => !known.has(run.id)).map((run) => ({
+          id: run.id,
+          title: typeof run.input?.prompt === 'string' && run.input.prompt.trim()
+            ? run.input.prompt.trim().slice(0, 100)
+            : `Agent Run ${run.id.slice(0, 8)}`,
+          time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
+          completed: run.status === 'succeeded',
+          category: run.status,
+        }));
+        return [...previous, ...additions];
+      });
+      setNextCursor(page.nextCursor);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Riwayat run berikutnya tidak dapat dimuat.', 'error');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const filteredTasks = tasks.filter((t) => {
     if (activeTab === 'aktif') return !t.completed;
@@ -208,6 +243,16 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                 )}
               </div>
             ))
+          )}
+          {nextCursor && (
+            <button
+              type="button"
+              onClick={() => void handleLoadMore()}
+              disabled={loadingMore}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-600 disabled:opacity-50"
+            >
+              {loadingMore ? 'Memuat riwayat…' : 'Muat Tugas Sebelumnya'}
+            </button>
           )}
 
           {/* Quick Access to Campaign Workflow Card */}
