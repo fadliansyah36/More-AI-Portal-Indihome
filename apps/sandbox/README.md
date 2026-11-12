@@ -104,3 +104,19 @@ A private Compose topology is defined in `compose.execution.yml`:
 The socket proxy exposes only the Docker API categories needed for container lifecycle, image inspection and daemon readiness. Because the Docker create API is powerful, the supervisor remains a trusted security boundary: only this service may possess the proxy token; it must validate every request and construct fixed runner arguments. Never expose the proxy or supervisor to the public internet, and never grant the worker direct Docker API access.
 
 No runner image digest, socket-proxy digest, deployment, or readiness result is asserted by this source change. The runtime remains fail-closed until the immutable images and private infrastructure are provisioned and accepted.
+
+
+## Ephemeral workspace snapshot bridge
+
+When the independently gated Python/Bash tools are enabled, the worker now:
+
+1. Resolves the run workspace_id and authenticated user from the durable run context (never from tool arguments).
+2. Lists only active workspace files, then rechecks workspace membership and metadata through the owner/member-scoped workspace RPC.
+3. Downloads each immutable Storage object and verifies its byte length and SHA-256 before creating a bounded snapshot (maximum 200 files / 2 MiB).
+4. Sends the snapshot over the authenticated private supervisor request. The runner materializes it only under its disposable /tmp/workspace tmpfs, with no host mounts and no network.
+5. Rejects symlink paths and returns a bounded file snapshot. Only a successful, non-timeout execution is eligible for write-back.
+6. Compares the original workspace version/hash before writing. Changed/new files are uploaded to new immutable object paths and committed through the existing worker-lease-fenced CAS RPC; deleted files use the existing soft-delete RPC. A stale version or lost lease prevents that file's commit.
+
+The current write-back commits files individually, not as one multi-file database transaction. If a later file conflicts, earlier file commits remain valid and the operation reports an error; callers must refresh the workspace before retrying. Failed/timed-out commands discard their ephemeral changes. Deleted workspace paths cannot be recreated implicitly; use the explicit restore flow. Snapshot limits are intentionally conservative and can be raised only with a coordinated API, supervisor, runner and Storage policy change.
+
+This is a source-level implementation. Sandbox remains disabled unless both runtime and release-gate flags are enabled, and no deployment/runtime acceptance is implied.
