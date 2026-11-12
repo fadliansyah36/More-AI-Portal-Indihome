@@ -89,6 +89,7 @@ for item in root.rglob('*'):
     raw=item.read_bytes()
     total += len(raw)
     if total > 2000000: raise SystemExit('workspace_snapshot_limit_exceeded')
+    if len(changed) >= 200: raise SystemExit('workspace_file_count_exceeded')
     changed[rel]=base64.b64encode(raw).decode('ascii')
 sys.stdout.write(json.dumps({'exit_code':exit_code,'stdout':stdout,'stderr':stderr,'workspace_files':changed},separators=(',',':')))
 """
