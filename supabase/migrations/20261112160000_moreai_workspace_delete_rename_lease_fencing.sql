@@ -17,7 +17,8 @@ declare
   f public.agent_workspace_files%rowtype;
 begin
   if p_path is null or length(p_path) not between 1 and 512
-     or p_path ~ '(^/|//|(^|/)\.\.?(/|$)|\\\\)'
+     or position(chr(92) in p_path)>0
+     or p_path ~ '(^/|//|(^|/)\.\.?(/|$))'
      or p_path !~ '^[A-Za-z0-9._ -]+(/[A-Za-z0-9._ -]+)*$'
      or p_expected_version < 1 then
     raise exception 'workspace_delete_arguments_invalid' using errcode='22023';
@@ -80,8 +81,10 @@ begin
      or length(p_path) not between 1 and 512
      or length(p_new_path) not between 1 and 512
      or p_path=p_new_path
-     or p_path ~ '(^/|//|(^|/)\.\.?(/|$)|\\\\)'
-     or p_new_path ~ '(^/|//|(^|/)\.\.?(/|$)|\\\\)'
+     or position(chr(92) in p_path)>0
+     or p_path ~ '(^/|//|(^|/)\.\.?(/|$))'
+     or position(chr(92) in p_new_path)>0
+     or p_new_path ~ '(^/|//|(^|/)\.\.?(/|$))'
      or p_path !~ '^[A-Za-z0-9._ -]+(/[A-Za-z0-9._ -]+)*$'
      or p_new_path !~ '^[A-Za-z0-9._ -]+(/[A-Za-z0-9._ -]+)*$'
      or p_expected_version < 1 then
