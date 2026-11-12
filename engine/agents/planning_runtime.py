@@ -71,15 +71,19 @@ class PlanningAgentRuntime(AgentRuntime):
     def _validate_persisted_rows(self, rows: list[dict[str, Any]], steps: list[dict[str, Any]]) -> None:
         if len(rows) != len(steps):
             raise RuntimeError("planning_persisted_manifest_mismatch")
-        for index, (row, step) in enumerate(zip(rows, steps), start=1):
+        persisted_inputs: list[dict[str, Any]] = []
+        for index, row in enumerate(rows, start=1):
             if row.get("sequence") != index or row.get("step_key") != f"planning.step.{index}":
                 raise RuntimeError("planning_persisted_step_key_mismatch")
             persisted_input = row.get("input")
             if not isinstance(persisted_input, dict):
                 raise RuntimeError("planning_persisted_step_invalid")
-            normalized = self._validate_steps([persisted_input])[0]
-            if normalized != step:
-                raise RuntimeError("planning_persisted_step_input_mismatch")
+            persisted_inputs.append(persisted_input)
+        # Validate as a whole plan: dependency indexes are relative to the
+        # entire manifest, not to each individual row.
+        normalized_inputs = self._validate_steps(persisted_inputs)
+        if normalized_inputs != steps:
+            raise RuntimeError("planning_persisted_step_input_mismatch")
 
     def _validate_executor_keys(self, steps: list[dict[str, Any]]) -> None:
         missing = sorted({step["agent_key"] for step in steps if step["agent_key"] not in self.step_executors})
