@@ -67,3 +67,17 @@ def test_planning_checkpoint_becomes_owner_visible_thinking_step():
     })
     assert activity["message"] == "Planning step 2 completed"
     assert activity["type"] == "thinking"
+
+def test_customer_run_lifecycle_routes_are_registered():
+    from app.main import app
+
+    routes = {
+        (route.path, method)
+        for route in app.routes
+        for method in getattr(route, "methods", set())
+    }
+    assert ("/api/v1/customer/agent-runs", "GET") in routes
+    assert ("/api/v1/customer/agent-runs/{run_id}", "GET") in routes
+    assert ("/api/v1/customer/agent-runs/{run_id}/steps", "GET") in routes
+    assert ("/api/v1/customer/agent-runs/{run_id}/cancel", "POST") in routes
+    assert ("/api/v1/customer/agent-runs/{run_id}/stream", "GET") in routes
