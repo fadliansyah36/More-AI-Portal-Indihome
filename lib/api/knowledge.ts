@@ -28,7 +28,8 @@ export const knowledgeApi = {
     if (options.title) body.append('title', options.title);
     return moreAiCustomerApi<{
       document: CustomerKnowledgeDocument;
-      status: 'processing';
+      status: 'processing' | 'ready' | 'failed';
+      reused: boolean;
       upload: { filename: string; size_bytes: number; mime_type: string };
     }>('/api/v1/customer/knowledge/documents/upload', { method: 'POST', body });
   },
