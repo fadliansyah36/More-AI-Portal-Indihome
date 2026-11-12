@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, Shield, Lock, LogOut } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
@@ -38,7 +38,7 @@ export const SecuritySettingsView: React.FC<SecuritySettingsViewProps> = ({
   const [mfaBusy, setMfaBusy] = useState(false);
   const [removingFactor, setRemovingFactor] = useState<string | null>(null);
 
-  const loadFactors = async () => {
+  const loadFactors = useCallback(async () => {
     setLoadingFactors(true);
     try {
       const { data, error } = await createSupabaseBrowserClient().auth.mfa.listFactors();
@@ -54,11 +54,11 @@ export const SecuritySettingsView: React.FC<SecuritySettingsViewProps> = ({
     } finally {
       setLoadingFactors(false);
     }
-  };
+  }, [showToast]);
 
   useEffect(() => {
     void loadFactors();
-  }, []);
+  }, [loadFactors]);
 
   const verifiedTotp = factors.filter((factor) => factor.factor_type === 'totp' && factor.status === 'verified');
 
