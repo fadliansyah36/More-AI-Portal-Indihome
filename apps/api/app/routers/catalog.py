@@ -20,7 +20,7 @@ async def list_agents(request: Request, user: dict[str, Any] = Depends(current_u
         "order": "display_name.asc", "limit": "200",
     })
     # Do not advertise DB definitions that have no registered production runtime.
-    supported = {"manus", "planning"}
+    supported = {"manus", "planning", "toolcall"}
     sandbox_image = os.getenv("MOREAI_SANDBOX_IMAGE", "")
     if (
         os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
