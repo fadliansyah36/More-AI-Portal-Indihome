@@ -139,3 +139,19 @@ def test_browser_proxy_entrypoints_use_container_local_imports():
     assert PinnedConnectProxy is not None
     assert callable(serve)
     assert callable(main)
+
+
+@pytest.mark.asyncio
+async def test_browser_request_guard_allows_global_cdn_rotation_but_pins_current_request():
+    import socket
+    from app.browser_security import BrowserRequestGuard
+
+    answer = ["93.184.216.34"]
+    async def resolve(host, port, socktype):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (answer[0], port))]
+
+    guard = BrowserRequestGuard(BrowserPolicy(("trusted.example",)), resolver=resolve)
+    await guard.validate_request("https://trusted.example/one")
+    answer[0] = "1.1.1.1"
+    _, _, pinned = await guard.resolve_pinned("https://trusted.example/two")
+    assert pinned == ("1.1.1.1",)
