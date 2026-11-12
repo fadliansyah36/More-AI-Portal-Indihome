@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Wifi, Home, Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Wifi, Home, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 
 interface WelcomeSuccessViewProps {
