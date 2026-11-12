@@ -417,6 +417,14 @@ export const customerApi = {
       body: JSON.stringify({ content, agent_key: agentKey }),
     }),
   agentRuns: () => moreAiCustomerApi<CustomerAgentRun[]>('/api/v1/agent-runs'),
+  conversationSessions: (conversationId: string, limit = 50) => moreAiCustomerApi<{ items: Array<{
+    id: string; conversation_id: string; status: string; attempt: number;
+    max_attempts: number; created_at: string; started_at: string | null;
+    finished_at: string | null; available_at: string | null; heartbeat_at: string | null;
+    cancel_requested_at: string | null; last_checkpoint_key: string | null;
+  }>; count: number }>(
+    '/api/v1/conversations/' + encodeURIComponent(conversationId) + '/sessions?limit=' + encodeURIComponent(String(limit)),
+  ),
   getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/agent-runs/${runId}`),
   cancelRun: (runId: string) => moreAiCustomerApi<{ run_id: string; status: string }>(`/api/v1/agent-runs/${runId}/cancel`, {
     method: 'POST',
