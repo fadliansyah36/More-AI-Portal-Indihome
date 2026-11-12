@@ -106,6 +106,7 @@ class DurableOpenManusRuntime:
         event_publisher: Callable[[str, str, str, dict[str, Any]], Awaitable[Any]] | None = None,
         max_rounds: int = 12,
         tool_timeout_seconds: float = 120.0,
+        system_prompt: str | None = None,
     ):
         if isinstance(tool_timeout_seconds, bool) or not 1 <= tool_timeout_seconds <= 1800:
             raise ValueError("tool_timeout_seconds_must_be_between_1_and_1800")
@@ -115,6 +116,7 @@ class DurableOpenManusRuntime:
         self.plan_store = plan_store
         self.event_publisher = event_publisher
         self.max_rounds = max_rounds
+        self.system_prompt = system_prompt
         enabled_tools = {"create_chat_completion"}
         if plan_store is not None:
             enabled_tools.add("planning")
@@ -227,7 +229,7 @@ class DurableOpenManusRuntime:
 
         system = {
             "role": "system",
-            "content": (
+            "content": self.system_prompt or (
                 "You are MoreAI Manus, based on OpenManus. Use only supplied tools. "
                 "Never claim an action happened unless a tool result confirms it. "
                 "When the user asks about indexed documents or workspace knowledge, call knowledge_search. Cite every factual claim grounded in retrieval using the exact marker [source:<chunk_id>] returned by the tool; never invent a source marker. "
