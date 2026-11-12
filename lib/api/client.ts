@@ -478,7 +478,7 @@ export const artifactApi = {
 
 export const customerApi = {
   context: () => moreAiCustomerApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
-  conversations: () => moreAiCustomerApi<CustomerConversation[]>('/api/v1/customer/conversations'),
+  conversations: (limit = 50, before?: string) => moreAiCustomerApi<CustomerConversation[]>(`/api/v1/customer/conversations?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
   getConversation: (conversationId: string) => moreAiCustomerApi<{
     conversation: CustomerConversation;
     messages: Array<{ id: string; role: string; content: string; model_key: string | null; run_id: string | null; created_at: string }>;
@@ -492,7 +492,7 @@ export const customerApi = {
       headers: { 'Idempotency-Key': idempotencyKey },
       body: JSON.stringify({ content, agent_key: agentKey }),
     }),
-  agentRuns: () => moreAiCustomerApi<CustomerAgentRun[]>('/api/v1/customer/agent-runs'),
+  agentRuns: (limit = 50, before?: string) => moreAiCustomerApi<CustomerAgentRun[]>(`/api/v1/customer/agent-runs?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
   conversationSessions: (conversationId: string, limit = 50) => moreAiCustomerApi<{ items: Array<{
     id: string; conversation_id: string; status: string; attempt: number;
     max_attempts: number; created_at: string; started_at: string | null;
