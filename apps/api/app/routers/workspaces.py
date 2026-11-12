@@ -102,7 +102,6 @@ async def list_workspace_files(
     await _workspace_access(repo, workspace_id, user["id"])
     rows = await repo.select("agent_workspace_files", {
         "workspace_id": f"eq.{workspace_id}",
-        "user_id": f"eq.{user['id']}",
         "select": "id,path,version,storage_path,sha256,size_bytes,updated_at",
         "order": "updated_at.desc",
         "limit": "500",
@@ -120,7 +119,6 @@ async def list_workspace_file_versions(
     current = await repo.select("agent_workspace_files", {
         "id": f"eq.{file_id}",
         "workspace_id": f"eq.{workspace_id}",
-        "user_id": f"eq.{user['id']}",
         "select": "id,path,version,storage_path,sha256,size_bytes,updated_at",
         "limit": "1",
     })
@@ -129,7 +127,6 @@ async def list_workspace_file_versions(
     file = current[0]
     history = await repo.select("agent_workspace_file_versions", {
         "workspace_id": f"eq.{workspace_id}",
-        "user_id": f"eq.{user['id']}",
         "path": f"eq.{file['path']}",
         "select": "id,path,version,storage_path,sha256,size_bytes,committed_at",
         "order": "version.desc",
