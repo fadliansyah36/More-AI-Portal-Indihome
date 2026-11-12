@@ -480,3 +480,13 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Capability map updated: `openmanus-backend-capability-map.json`.
 - Report: [PHASE-07-FRONTEND-SSE-RECONNECT-20261112.md](./PHASE-07-FRONTEND-SSE-RECONNECT-20261112.md).
 
+
+
+## 2026-11-12 — Phase 08 streaming usage latency accounting
+
+- Commit: `157b110a14d456dad6751a22f34983a26c2df19e`.
+- `MeteredGateway.stream` now records elapsed provider-stream latency using `time.monotonic()` instead of persisting a hardcoded zero. Provider/model token usage and cost remain recorded through the existing idempotent accounting lifecycle.
+- No provider call, database write, credit settlement, retry/fallback runtime, tests, lint, typecheck or build was executed. This closes a source-level accounting omission only; Phase 08 remains IN PROGRESS.
+- Capability map: `openmanus-backend-capability-map.json`.
+- Report: [PHASE-08-STREAMING-LATENCY-ACCOUNTING-20261112.md](./PHASE-08-STREAMING-LATENCY-ACCOUNTING-20261112.md).
+
