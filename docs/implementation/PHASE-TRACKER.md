@@ -1,4 +1,4 @@
-| 09 | Existing Frontend API Integration | IN PROGRESS — Knowledge Library list/detail/archive is API-backed; existing Customer/Partner data views use typed FastAPI clients. Data-loading state updates in affected screens now pass frontend lint without visual redesign. Remaining Customer journeys/screens still require complete screen-to-contract binding | [Phase 00 run 43168282282](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43168282282): lint/build/server/browser smoke + responsive screenshots PASS at 360/390/768/1024/1440 px; source commits `5d64651b`, `80d47ed6`, `f4e1e2b6`, `fa401c4d`, `9dddeb85`, `7ba938e6`, `524a856d`, `82221637`, `f1697f90`, `560b4401`, `9a486b9f`, `561eda2f`, `e1ea1e7e`, `15dd58f6`, `8d76d059`, `da2e7ce3`, `a17f385a`, `a1c8fa19`, `a3973755`, `93c405d1` |
+| 09 | Existing Frontend API Integration | IN PROGRESS — Production Customer screenshot shows Tasks & Workflow fetch failure. Confirmed configured API origin returns HTTP 500 FUNCTION_INVOCATION_FAILED on /health and /ready. FastAPI Vercel entrypoint now resolves monorepo imports and API project root was aligned to apps/api; deployment still blocked by Vercel 100/day API deployment quota. Existing Customer views continue to use typed FastAPI clients; complete screen-to-contract binding and live proof remain open | [Phase 00 run 43168282282](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43168282282): lint/build/server/browser smoke + responsive screenshots PASS at 360/390/768/1024/1440 px; source commits `5d64651b`, `80d47ed6`, `f4e1e2b6`, `fa401c4d`, `9dddeb85`, `7ba938e6`, `524a856d`, `82221637`, `f1697f90`, `560b4401`, `9a486b9f`, `561eda2f`, `e1ea1e7e`, `15dd58f6`, `8d76d059`, `da2e7ce3`, `a17f385a`, `a1c8fa19`, `a3973755`, `93c405d1` |
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -768,3 +768,19 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - **External configuration gate:** connected Supabase DB tools cannot update hosted Auth provider settings. Project owner must switch Authentication → Sign In / Providers → Email → Confirm email OFF. Until this is saved, signup may return a user with a null session and immediate login remains blocked by the provider setting. No claim of successful real signup/login E2E is made.
 - API unit tests passed: 27 passed (run [43185507782](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43185507782)); worker tests also passed. Phase 04 API/worker/engine/sandbox policy jobs passed in [run 43185332570](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43185332570). The responsive browser baseline and new register/login smoke assertions are still running in [run 43185507782](https://github.com/fadliansyah36/More-AI-Portal-Indihome/actions/runs/43185507782).
 - Detailed implementation and configuration steps: [AUTH-REGISTER-LOGIN-SECURITY-20261112.md](AUTH-REGISTER-LOGIN-SECURITY-20261112.md).
+
+
+## 2026-11-12 Customer API runtime recovery (priority scope)
+
+- Confirmed production root cause behind Customer Tasks `Failed to fetch`: configured FastAPI origin `https://more-ai-api-more-ai.vercel.app` returns HTTP 500 `FUNCTION_INVOCATION_FAILED` for both `/health` and `/ready`. This is not a missing frontend API URL; Vercel project env includes `NEXT_PUBLIC_MOREAI_API_URL`, and backend CORS env includes `https://moreai.web.id`.
+- API Vercel build evidence shows Python metadata under `apps/api/pyproject.toml` but deployment entrypoint `.` at monorepo root, while the function entrypoint is nested under `apps/api/api/index.py` and imports `app.main` plus root `engine`. Updated the API function entrypoint to explicitly resolve both API workspace and monorepo root before importing FastAPI; aligned Vercel API project root directory to `apps/api` and enabled source files outside root for engine imports.
+- API and worker unit tests passed on commit `b9426254f8fb8b143696edec36a46d0666e6b920`; frontend lint/build passed. Follow-up entrypoint hardening commit `17453150da788481500b36c0683e4e7db750aab6` is committed, but not yet deployed or runtime-verified.
+- Vercel production redeployment was rejected with HTTP 402 `api-deployments-free-per-day`; do not claim runtime recovery. See [PHASE-09-CUSTOMER-API-PRODUCTION-RECOVERY-20261112.md](./PHASE-09-CUSTOMER-API-PRODUCTION-RECOVERY-20261112.md).
+- `MOREAI_AGENT_EXECUTION_ENABLED=false` remains intentional until durable worker/provider/credit gates are live. Do not enable merely to hide a queue that has no active worker.
+
+## Next focused work
+
+1. Restore FastAPI runtime deployment and prove `/health` and `/ready` from production.
+2. Verify every existing Customer screen against the real FastAPI route/schema and Supabase-backed records; fix mismatches without changing visual design.
+3. Complete Customer chat/run lifecycle only after worker/provider readiness; prove enqueue → worker → engine → persistence → events → UI.
+4. Keep Phase 09 IN PROGRESS and Phase 10/11 NOT ACCEPTED until authenticated production E2E is evidenced.
