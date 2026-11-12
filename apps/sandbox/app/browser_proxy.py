@@ -36,11 +36,20 @@ class PinnedConnectProxy:
 
     async def handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         upstream_writer = None
+        target_host = ""
+        request_method = "unknown"
         try:
             raw = await asyncio.wait_for(reader.readline(), timeout=3)
             if len(raw) > self.limits.header_bytes:
                 raise BrowserPolicyError("browser_proxy_request_too_large")
             line = raw.decode("ascii", "strict").strip().split()
+            if line:
+                request_method = line[0].upper()[:16]
+                if len(line) > 1:
+                    if request_method == "CONNECT":
+                        target_host = line[1].rsplit(":", 1)[0].strip("[]")[:253]
+                    else:
+                        target_host = (urlsplit(line[1]).hostname or "")[:253]
             if len(line) != 3 or line[0].upper() != "CONNECT" or line[2] not in ("HTTP/1.0", "HTTP/1.1"):
                 raise BrowserPolicyError("browser_proxy_connect_only")
             authority = line[1]
@@ -106,7 +115,11 @@ class PinnedConnectProxy:
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            logger.warning("browser proxy request failed (%s)", str(exc) if isinstance(exc, BrowserPolicyError) else type(exc).__name__)
+            logger.warning(
+                "browser proxy request failed method=%s host=%s reason=%s",
+                request_method, target_host,
+                str(exc) if isinstance(exc, BrowserPolicyError) else type(exc).__name__,
+            )
             if not writer.is_closing():
                 try:
                     writer.write(b"HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n")
