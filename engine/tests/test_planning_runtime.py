@@ -6,10 +6,13 @@ from engine.agents.protocol import AgentRunContext, AgentRunResult
 
 
 class FakeGateway:
+    def __init__(self, agent_key="manus"):
+        self.agent_key = agent_key
+
     async def complete(self, **kwargs):
         return {"text": json.dumps({"title": "Plan", "steps": [
-            {"objective": "step one", "dependencies": [], "expected_output": "one", "tool_requirement": "none", "risk": "low", "estimated_usage": {"input_tokens": 10, "output_tokens": 10}},
-            {"objective": "step two", "dependencies": [0], "expected_output": "two", "tool_requirement": "none", "risk": "low", "estimated_usage": {"input_tokens": 10, "output_tokens": 10}},
+            {"objective": "step one", "agent_key": self.agent_key, "dependencies": [], "expected_output": "one", "tool_requirement": "none", "risk": "low", "estimated_usage": {"input_tokens": 10, "output_tokens": 10}},
+            {"objective": "step two", "agent_key": self.agent_key, "dependencies": [0], "expected_output": "two", "tool_requirement": "none", "risk": "low", "estimated_usage": {"input_tokens": 10, "output_tokens": 10}},
         ]})}
 
 
@@ -135,4 +138,29 @@ def test_planning_runtime_repairs_partial_rows_from_checkpoint_manifest():
         assert result.output["completed_steps"] == 2
         assert len(store.plan_steps) == 2
         assert len(executor.payloads) == 2
+    asyncio.run(run())
+
+
+def test_planning_runtime_dispatches_steps_to_registered_agent_key():
+    async def run():
+        store = FakeStore()
+        default_executor = FakeExecutor()
+        research_executor = FakeExecutor()
+        runtime = PlanningAgentRuntime(
+            gateway=FakeGateway("research"),
+            store=store,
+            step_executors={"manus": default_executor, "research": research_executor},
+            default_executor="manus",
+        )
+        async def checkpoint(key, state):
+            return {"ok": True}
+        result = await runtime.execute(
+            AgentRunContext("run-agents", "user-1", None, None, None, 0, 3),
+            {"prompt": "use research agent"},
+            checkpoint,
+            asyncio.Event(),
+        )
+        assert result.output["completed_steps"] == 2
+        assert default_executor.payloads == []
+        assert [p["agent_key"] for p in research_executor.payloads] == ["research", "research"]
     asyncio.run(run())
