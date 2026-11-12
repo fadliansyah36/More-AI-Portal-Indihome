@@ -37,6 +37,24 @@ class BrowserSupervisor:
         self.service_token = service_token
         self.http = http
 
+    async def check_ready(self) -> dict:
+        response = await self.http.get(
+            f"{self.service_url}/ready",
+            headers={"Authorization": f"Bearer {self.service_token}"},
+            timeout=httpx.Timeout(5.0, connect=2.0),
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if (
+            not isinstance(payload, dict)
+            or payload.get("status") != "ready"
+            or payload.get("egress_enforced") is not True
+            or payload.get("proxy_configured") is not True
+            or payload.get("proxy_reachable") is not True
+        ):
+            raise RuntimeError("browser_supervisor_egress_readiness_failed")
+        return payload
+
     async def browser_use(self, arguments: dict, *, run_id: str, user_id: str) -> str:
         import json
         url = arguments.get("url")
