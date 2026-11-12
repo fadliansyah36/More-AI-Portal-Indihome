@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from app import browser_service
+from app import browser_readiness
 
 
 class FakeWriter:
@@ -28,9 +28,9 @@ async def test_browser_readiness_requires_reachable_authenticated_proxy(monkeypa
     monkeypatch.setenv("MOREAI_BROWSER_PROXY_URL", "http://browser-egress-proxy:3128")
     monkeypatch.setenv("MOREAI_BROWSER_PROXY_TOKEN", "x" * 40)
     monkeypatch.setenv("MOREAI_BROWSER_EGRESS_ENFORCED", "true")
-    monkeypatch.setattr(browser_service.asyncio, "open_connection", open_connection)
+    monkeypatch.setattr(browser_readiness.asyncio, "open_connection", open_connection)
 
-    result = await browser_service.ready()
+    result = await browser_readiness.browser_readiness()
     assert result["status"] == "ready"
     assert result["proxy_reachable"] is True
     assert writer.closed is True
