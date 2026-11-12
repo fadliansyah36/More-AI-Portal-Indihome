@@ -89,7 +89,10 @@ async def update_conversation(
     await repo.owned_record("conversations", conversation_id, user["id"])
     changes: dict[str, Any] = {"updated_at": datetime.now(timezone.utc).isoformat()}
     if body.title is not None:
-        changes["title"] = body.title.strip() or None
+        normalized_title = body.title.strip()
+        if not normalized_title:
+            raise HTTPException(422, "conversation_title_cannot_be_empty")
+        changes["title"] = normalized_title
     if body.status is not None:
         changes["status"] = body.status
     if len(changes) == 1:
