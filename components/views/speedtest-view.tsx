@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, Gauge, Wifi, Zap, Activity, Play, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Wifi, Play, RefreshCw } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 import { moreAiCustomerFetch } from '@/lib/api/client';
