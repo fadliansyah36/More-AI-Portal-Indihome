@@ -79,3 +79,12 @@ Worker settings (only after the deployment security gate is accepted):
 The worker checks authenticated `/ready` before it starts claiming work. The dispatcher also requires the supervisor for the SWE agent, and the adapter re-checks readiness before each execution. Any missing, invalid or degraded supervisor fails closed; there is no local Docker fallback.
 
 This source integration does not deploy the supervisor, provision its private network/socket proxy, or authorize enabling either runtime flag. Those remain release-gated.
+
+Supervisor service environment:
+
+- `MOREAI_SANDBOX_SUPERVISOR_ENABLED=true`
+- `MOREAI_SANDBOX_SERVICE_TOKEN=<same 32+ character worker token>`
+- `MOREAI_SANDBOX_IMAGE=<runner-image>@sha256:<64-hex-digest>`
+- `DOCKER_HOST=<restricted Docker socket proxy endpoint>`
+
+The supervisor readiness endpoint runs `docker info` through the configured daemon/socket proxy and will not report ready when that boundary is unavailable. The socket proxy must deny privileged/container-host operations and expose only the container lifecycle API needed by the runner. A raw unrestricted Docker daemon socket is not an acceptable production configuration.
