@@ -154,9 +154,13 @@ class WorkerRuntime:
     async def _heartbeat_loop(
         self, run_id: str, cancelled: asyncio.Event, lease_lost: asyncio.Event,
     ):
+        # Renew well before the configured lease expires. A fixed 30s interval
+        # silently loses leases when deployments configure lease_seconds below 90.
+        lease_seconds = self.rpc.settings.lease_seconds
+        heartbeat_interval = max(1.0, min(30.0, lease_seconds / 3.0))
         while not cancelled.is_set():
             try:
-                await asyncio.wait_for(cancelled.wait(), timeout=30)
+                await asyncio.wait_for(cancelled.wait(), timeout=heartbeat_interval)
             except TimeoutError:
                 try:
                     state = await self.rpc.heartbeat(run_id)
