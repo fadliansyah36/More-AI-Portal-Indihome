@@ -31,7 +31,7 @@ async def health():
 
 @app.get("/ready")
 async def ready():
-    from apps.sandbox.app.browser_readiness import browser_readiness
+    from .browser_readiness import browser_readiness
 
     return await browser_readiness()
 
