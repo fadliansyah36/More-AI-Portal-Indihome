@@ -681,3 +681,5 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - Report: [PHASE-08-TENANT-KNOWLEDGE-RAG-20261112.md](./PHASE-08-TENANT-KNOWLEDGE-RAG-20261112.md).
 - This is source implementation only. Migration was not applied; provider calls, worker runtime, tests, lint, typecheck, build, staging and deployment were not run.
 - Phase 08 remains IN PROGRESS; Phase 06 and Phase 09 remain IN PROGRESS; Phase 10 BLOCKED; Phase 11 NOT STARTED.
+
+- RAG follow-up hardening: owner/scope/content digest uniqueness, fail-closed duplicate ingestion, and personal + exact-workspace retrieval. Commits: `20f43316`, `b8b961f6`.
