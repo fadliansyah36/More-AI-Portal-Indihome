@@ -128,8 +128,31 @@ class PlanningAgentRuntime(AgentRuntime):
             await self.store.mark_step(run_id=context.run_id,step_index=index,status="running")
             await checkpoint(f"planning.step.{index}.started",{"step_index":index,"objective":step["objective"][:500]})
             try:
+                dependency_outputs = [
+                    {
+                        "step": dependency,
+                        "objective": steps[dependency]["objective"],
+                        "output": rows_by_index[dependency].get("output"),
+                    }
+                    for dependency in step["dependencies"]
+                ]
+                dependency_context = ""
+                if dependency_outputs:
+                    serialized = json.dumps(
+                        dependency_outputs, ensure_ascii=False, separators=(",", ":"), default=str,
+                    )
+                    dependency_context = (
+                        "\n\nCompleted dependency results (trusted run artifacts; "
+                        "use them as input and do not claim unverified facts):\n"
+                        + serialized[:20000]
+                    )
                 result=await self.step_executor.execute(
-                    context,{"prompt":step["objective"]+"\nExpected output: "+step["expected_output"],"planning_step":index},
+                    context,
+                    {
+                        "prompt": step["objective"] + "\nExpected output: " + step["expected_output"] + dependency_context,
+                        "planning_step": index,
+                        "dependencies": step["dependencies"],
+                    },
                     checkpoint,cancelled,
                 )
                 await self.store.mark_step(run_id=context.run_id,step_index=index,status="succeeded",notes="Step execution confirmed",output=result.output)
