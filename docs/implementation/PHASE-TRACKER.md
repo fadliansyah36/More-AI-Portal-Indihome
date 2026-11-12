@@ -943,3 +943,5 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Write-back is per-file, not atomic across multiple files; partial commit can occur if a later file conflicts. This limitation and recovery expectations are documented.
 - Report: [Phase 04 Persistent Workspace Snapshot Bridge](./PHASE-04-PERSISTENT-WORKSPACE-SNAPSHOT-BRIDGE-20261113.md).
 - No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment, migration or Supabase live mutation were run. Sandbox remains disabled behind both explicit activation gates. Phase 04 remains IN PROGRESS.
+
+- Runner output buffering was further bounded through temporary files on the runner's 16 MiB tmpfs, with only the first 64 KiB per stdout/stderr stream returned. Source fix: `b7db9fcec321457edcd50232d4645c493cbd5f63`; report includes the complete source commit list.
