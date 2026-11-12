@@ -24,7 +24,11 @@ export const DevicesConnectedView: React.FC<DevicesConnectedViewProps> = ({ onBa
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(() => { if (active) void load(); });
+    return () => { active = false; };
+  }, [load]);
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
