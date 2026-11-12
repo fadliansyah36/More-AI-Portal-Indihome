@@ -8,11 +8,7 @@ import {
   Video,
   Languages,
   Presentation,
-  Send,
-  Copy,
-  Check,
   ChevronRight,
-  ArrowRight,
   Wand2,
 } from 'lucide-react';
 
@@ -24,9 +20,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
   const [activeTab, setActiveTab] = useState<'semua' | 'teks' | 'gambar' | 'video'>('semua');
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = useState('');
-  const [generatedOutput, setGeneratedOutput] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [handoffNotice, setHandoffNotice] = useState<string | null>(null);
 
   const tools = [
     {
@@ -99,27 +93,27 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
   const handleRunTool = (tool: typeof tools[0]) => {
     setSelectedTool(tool.id);
     setCustomPrompt(tool.samplePrompt);
-    setGeneratedOutput(null);
+    setHandoffNotice(null);
   };
 
   const handleGenerate = () => {
     if (!customPrompt.trim()) return;
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      setGeneratedOutput(`[Hasil AI Generated - ${selectedTool ? tools.find(t => t.id === selectedTool)?.name : 'MoreAI'}]
-      
-Judul: Solusi Produktivitas Digital UMKM Indonesia
-Tanggal: ${new Date().toLocaleDateString('id-ID')}
-
-1. Ringkasan Eksekutif:
-   Pemanfaatan AI terintegrasi pada jaringan Wi-Fi lokal membuka peluang peningkatan omset hingga 40% bagi pemilik usaha mikro melalui otomatisasi konten dan personalisasi layanan pelanggan.
-
-2. Rencana Eksekusi:
-   - Peluncuran program Wi-Fi bersponsor di 5 titik kafe percontohan.
-   - Distribusi AI Credit Free Partner ISP untuk pengunjung tetap.
-   - Evaluasi mingguan melalui Dashboard Partner MoreAI.`);
-    }, 1000);
+    const selected = tools.find((tool) => tool.id === selectedTool);
+    if (!selected) return;
+    if (selected.category !== 'teks') {
+      setHandoffNotice(
+        selected.category === 'gambar'
+          ? 'Generasi gambar belum tersedia pada runtime OpenManus yang terhubung. Tidak ada gambar atau kredit yang dibuat.'
+          : 'Generasi video belum tersedia pada runtime OpenManus yang terhubung. Tidak ada video atau kredit yang dibuat.'
+      );
+      return;
+    }
+    if (!onNavigateToChat) {
+      setHandoffNotice('Chat AI belum terhubung pada halaman ini. Prompt belum dikirim dan tidak ada proses yang dijalankan.');
+      return;
+    }
+    setHandoffNotice('Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.');
+    onNavigateToChat('Gunakan kemampuan AI MoreAI untuk tugas ' + selected.name + '.\n\nInstruksi pengguna:\n' + customPrompt.trim());
   };
 
   return (
@@ -195,9 +189,7 @@ Tanggal: ${new Date().toLocaleDateString('id-ID')}
               <Sparkles className="w-4 h-4 text-red-600" />
               <span>Jalankan {tools.find((t) => t.id === selectedTool)?.name}</span>
             </span>
-            <span className="text-[10px] text-red-600 font-semibold bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-              Biaya: 50 Poin
-            </span>
+            <span className="text-[10px] text-slate-500 font-semibold bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">Eksekusi melalui Agent Chat</span>
           </div>
 
           <textarea
@@ -211,44 +203,17 @@ Tanggal: ${new Date().toLocaleDateString('id-ID')}
           <div className="flex gap-2">
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || !customPrompt.trim()}
+              disabled={!customPrompt.trim() || !onNavigateToChat}
               className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{isGenerating ? 'Membuat Konten...' : 'Generate Sekarang'}</span>
+              <span>Lanjutkan di Chat AI</span>
             </button>
-
-            {onNavigateToChat && (
-              <button
-                onClick={() => onNavigateToChat(customPrompt)}
-                className="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
-                title="Buka di Chat AI"
-              >
-                Ke Chat AI
-              </button>
-            )}
           </div>
 
-          {/* Output Display */}
-          {generatedOutput && (
-            <div className="mt-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 space-y-2">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <span className="font-bold text-slate-900 text-[11px]">Hasil Pekerjaan</span>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedOutput);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="flex items-center gap-1 text-[10px] text-slate-600 hover:text-slate-900"
-                >
-                  {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                  <span>{copied ? 'Tersalin' : 'Salin'}</span>
-                </button>
-              </div>
-              <pre className="whitespace-pre-wrap font-sans text-xs text-slate-700 leading-relaxed">
-                {generatedOutput}
-              </pre>
+          {handoffNotice && (
+            <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-[11px] leading-relaxed text-slate-600">
+              {handoffNotice}
             </div>
           )}
         </div>
