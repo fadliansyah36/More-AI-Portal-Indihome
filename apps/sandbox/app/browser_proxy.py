@@ -8,7 +8,7 @@ import socket
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
-from apps.sandbox.app.browser_security import BrowserPolicyError, BrowserRequestGuard
+from app.browser_security import BrowserPolicyError, BrowserRequestGuard
 
 
 @dataclass(frozen=True)
