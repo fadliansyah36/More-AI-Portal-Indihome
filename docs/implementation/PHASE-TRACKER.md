@@ -490,3 +490,8 @@ Detailed report: [DIRECT-MAIN-FULLSCOPE-INTEGRATION-REPORT-20261111.md](./DIRECT
 - Capability map: `openmanus-backend-capability-map.json`.
 - Report: [PHASE-08-STREAMING-LATENCY-ACCOUNTING-20261112.md](./PHASE-08-STREAMING-LATENCY-ACCOUNTING-20261112.md).
 
+## 2026-11-12 — SWE workspace CAS tool-contract alignment
+- Commit: `18fecad2f2785f14b8ae1aa3c676ff3936a095e6`.
+- The `str_replace_editor` tool schema now exposes optional non-negative `expected_version`, aligning the LLM-visible contract with the existing lease-fenced workspace CAS handler. Stale explicit versions are rejected by the handler; omission retains compatibility by resolving the current version.
+- No tests, lint, typecheck, build, browser/runtime, migration or deployment checks were run. This is a narrow contract fix, not SWE workspace or Phase 04 acceptance.
+- Detailed remaining phase gaps and next sequence: `PHASE-04-09-CONTINUATION-20261112.md`.
