@@ -166,17 +166,18 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
             </button>
 
             <button
-              onClick={() => setCurrentStep(3)}
-              className="w-full py-3 rounded-2xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-semibold transition shadow-2xs"
+              type="button"
+              disabled
+              className="w-full py-3 rounded-2xl bg-white border border-slate-200 text-slate-400 text-xs font-semibold transition shadow-2xs disabled:opacity-60"
             >
-              Daftar Akun Baru
+              Pendaftaran belum tersedia
             </button>
 
             <button
-              onClick={() => setCurrentStep(3)}
+              onClick={() => setCurrentStep(1)}
               className="w-full py-2 text-slate-400 hover:text-slate-600 text-xs font-medium"
             >
-              Nanti Saja
+              Kembali
             </button>
           </div>
         </div>
@@ -193,7 +194,7 @@ export const CaptivePortalView: React.FC<CaptivePortalViewProps> = ({
               Syarat dan Ketentuan
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Dengan melanjutkan, Anda menyetujui syarat dan ketentuan penggunaan layanan MoreAI di jaringan Global Partner ISP/Network.
+              Pratinjau syarat dan ketentuan. Persetujuan tidak dikirim atau disimpan sampai layanan consent backend tersedia.
             </p>
           </div>
 
