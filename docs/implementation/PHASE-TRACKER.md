@@ -639,3 +639,10 @@ Phase 04: produce endpoint/capability parity matrix from the pinned upstream tre
 - No UI redesign or direct browser Supabase data/Storage access was introduced.
 - No tests, lint, typecheck, build, browser/API runtime, staging, migration or deployment were run. This is a source-level integration correction, not Phase 09 acceptance.
 - Phase 04/07/08/06/09 remain IN PROGRESS; continue Phase 04 before the dependent phases.
+
+
+## 2026-11-12 — Phase 04 workspace signed URL origin hardening
+- Commit: `7405e5d6fb580b74c0c0d3bd07efe89024907255`.
+- Workspace signed-download endpoint rejects absolute Storage URLs outside the configured HTTPS Supabase origin, URLs with userinfo, and malformed/protocol-relative relative paths. Existing authorization/private bucket checks remain.
+- Report: `docs/implementation/PHASE-04-WORKSPACE-SIGNED-URL-ORIGIN-HARDENING-20261112.md`.
+- Source-only change; no tests/lint/typecheck/build/runtime/browser QA/staging/migration/deployment. Phase 04 remains IN PROGRESS.
