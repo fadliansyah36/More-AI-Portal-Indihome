@@ -56,3 +56,14 @@ def test_thinking_view_marks_failures_as_errors():
     })
     assert activity["type"] == "error"
     assert activity["message"] == "Agent run timed out"
+
+
+def test_planning_checkpoint_becomes_owner_visible_thinking_step():
+    activity = _thinking_message({
+        "event_type": "worker.checkpoint",
+        "timestamp": "2026-11-12T08:00:00Z",
+        "sequence": 11,
+        "checkpoint_key": "planning.step.2.completed",
+    })
+    assert activity["message"] == "Planning step 2 completed"
+    assert activity["type"] == "thinking"
