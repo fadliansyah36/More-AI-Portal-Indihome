@@ -48,7 +48,7 @@ class SupabaseWorkspaceTool:
         operation = arguments.get("operation")
         if operation is None:
             operation = "edit" if old else "create"
-        if operation not in {"create", "edit", "delete", "rename"}:
+        if operation not in {"create", "edit", "delete", "rename", "restore_deleted"}:
             raise ValueError("workspace_operation_invalid")
         current=await self.client.workspace_get_file(user_id,workspace_id,path)
         version=current.get("version")
@@ -58,6 +58,16 @@ class SupabaseWorkspaceTool:
         if isinstance(expected,bool) or not isinstance(expected,int) or expected!=version:
             raise ValueError("workspace_version_conflict")
         storage_path=current.get("storage_path")
+        deleted_at = current.get("deleted_at")
+        if deleted_at is not None and operation != "restore_deleted":
+            raise ValueError("workspace_file_is_deleted_use_restore_deleted")
+        if operation == "restore_deleted":
+            if deleted_at is None or not storage_path:
+                raise ValueError("workspace_deleted_file_not_found")
+            result = await self.client.workspace_restore_deleted_file(
+                run_id,user_id,workspace_id,path,version,
+            )
+            return json.dumps(result,separators=(",",":"))
         if operation == "delete":
             if not storage_path:
                 raise ValueError("workspace_file_not_found")
