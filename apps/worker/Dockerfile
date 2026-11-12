@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/srv/moreai:/srv/moreai/apps/worker
 
 WORKDIR /srv/moreai
-RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng tesseract-ocr-ind && rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home --uid 10001 moreai
 COPY apps/worker /srv/moreai/apps/worker
 COPY engine /srv/moreai/engine
