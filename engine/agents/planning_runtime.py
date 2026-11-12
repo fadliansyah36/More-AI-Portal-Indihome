@@ -68,6 +68,11 @@ class PlanningAgentRuntime(AgentRuntime):
             raise RuntimeError("planning_manifest_too_large")
         return validated
 
+    def _validate_executor_keys(self, steps: list[dict[str, Any]]) -> None:
+        missing = sorted({step["agent_key"] for step in steps if step["agent_key"] not in self.step_executors})
+        if missing:
+            raise RuntimeError("planning_step_agent_not_registered:" + ",".join(missing))
+
     async def _new_plan(self, context: AgentRunContext, prompt: str) -> tuple[str,list[dict[str,Any]]]:
         response=await self.gateway.complete(
             user_id=context.user_id,run_id=context.run_id,request_key=f"{context.run_id}:planning",
@@ -82,6 +87,7 @@ class PlanningAgentRuntime(AgentRuntime):
             title=raw["title"]
             if not isinstance(title,str) or not title.strip(): raise ValueError("title")
             steps=self._validate_steps(raw["steps"])
+            self._validate_executor_keys(steps)
         except (KeyError,TypeError,ValueError,json.JSONDecodeError) as exc:
             raise RuntimeError("planning_model_returned_invalid_schema") from exc
         await self.store.create(run_id=context.run_id,title=title.strip()[:500],steps=steps)
@@ -104,6 +110,7 @@ class PlanningAgentRuntime(AgentRuntime):
             manifest_steps=manifest.get("steps")
             if isinstance(manifest_steps,list):
                 steps=self._validate_steps(manifest_steps)
+                self._validate_executor_keys(steps)
                 if len(steps)!=manifest.get("step_count"):
                     raise RuntimeError("planning_manifest_mismatch")
                 if len(rows)!=len(steps):
@@ -124,6 +131,7 @@ class PlanningAgentRuntime(AgentRuntime):
                         raise RuntimeError("planning_persisted_step_invalid")
                     steps.append(source)
                 steps=self._validate_steps(steps)
+                self._validate_executor_keys(steps)
         elif rows:
             # Recover the complementary crash window: rows exist but the
             # manifest checkpoint was not visible in the worker's recovery set.
@@ -134,6 +142,7 @@ class PlanningAgentRuntime(AgentRuntime):
                     raise RuntimeError("planning_persisted_step_invalid")
                 steps.append(source)
             steps=self._validate_steps(steps)
+            self._validate_executor_keys(steps)
             title=prompt.strip()[:500]
             manifest={"title":title,"step_count":len(steps),"steps":steps}
             await self.store.create(run_id=context.run_id,title=title,steps=steps)
