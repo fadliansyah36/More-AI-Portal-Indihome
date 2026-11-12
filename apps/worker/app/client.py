@@ -18,6 +18,7 @@ class WorkerSettings:
     service_role_key: str
     worker_id: str
     lease_seconds: int = 90
+    run_timeout_seconds: int = 1800
 
     def __post_init__(self):
         if not self.supabase_url.startswith("https://"):
@@ -26,6 +27,8 @@ class WorkerSettings:
             raise ValueError("WORKER_ID must contain 8 to 128 characters")
         if not 15 <= self.lease_seconds <= 900:
             raise ValueError("lease_seconds must be between 15 and 900")
+        if not 30 <= self.run_timeout_seconds <= 7200:
+            raise ValueError("run_timeout_seconds must be between 30 and 7200")
         if not self.service_role_key:
             raise ValueError("SUPABASE_SERVICE_ROLE_KEY is required")
 
