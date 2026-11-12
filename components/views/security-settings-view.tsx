@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Shield, Lock, Smartphone, LogOut, CheckCircle2, AlertTriangle, Key, Loader2 } from 'lucide-react';
+import { ArrowLeft, Shield, Lock, LogOut } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
