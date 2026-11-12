@@ -5,6 +5,7 @@ from app.sandbox_tools import IsolatedSandboxToolAdapter
 from apps.sandbox.app.runner import DockerSandbox
 from app.llm_gateway import create_metered_gateway
 from app.memory_store import SupabaseConversationMemoryStore
+from app.knowledge_tools import SupabaseKnowledgeTools
 from app.plan_store import SupabasePlanStore
 from engine.agents.durable_tool_runtime import DurableOpenManusRuntime
 from engine.agents.planning_runtime import PlanningAgentRuntime
@@ -20,6 +21,7 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     gateway = create_metered_gateway(client, http_client)
     plan_store = SupabasePlanStore(client)
     memory_store = SupabaseConversationMemoryStore(client)
+    knowledge_tools = SupabaseKnowledgeTools(client, http_client) if os.getenv("MOREAI_EMBEDDING_BASE_URL") and os.getenv("MOREAI_EMBEDDING_MODEL") else None
     search_tools = TavilySearchAdapter(http_client) if os.getenv("TAVILY_API_KEY") else None
     # The default bucket is provisioned by the Phase 05 migration; deployments may override it.
     storage_tools = SupabaseArtifactTool(client) if os.getenv("MOREAI_ARTIFACTS_BUCKET", "moreai-artifacts") else None
@@ -43,6 +45,7 @@ def build_agent_registry(client: WorkerRpcClient, http_client) -> AgentRegistry:
     manus = DurableOpenManusRuntime(
         gateway,
         memory_store=memory_store,
+        knowledge_tools=knowledge_tools,
         plan_store=plan_store,
         search_tools=search_tools,
         storage_tools=storage_tools,
