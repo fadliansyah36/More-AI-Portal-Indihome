@@ -2,11 +2,12 @@ from contextlib import asynccontextmanager
 from uuid import uuid4
 
 import httpx
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
 from app.config import Settings
 from app.dependencies import current_user
@@ -73,17 +74,64 @@ async def correlation_id(request: Request, call_next):
     return response
 
 
+def _error_response(request: Request, *, status_code: int, code: str, message: str, details: Any = None, headers: dict[str, str] | None = None):
+    error = {
+        "code": code,
+        "message": message,
+        "correlation_id": getattr(request.state, "correlation_id", None),
+    }
+    if details is not None:
+        error["details"] = details
+    return JSONResponse(
+        status_code=status_code,
+        content={"error": error},
+        headers=headers,
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_error(request: Request, exc: HTTPException):
+    detail = exc.detail
+    if isinstance(detail, dict):
+        code = str(detail.get("code") or "http_error")
+        message = str(detail.get("message") or "The request could not be completed")
+        details = detail.get("details")
+    else:
+        code = {
+            400: "bad_request", 401: "unauthorized", 403: "forbidden",
+            404: "not_found", 409: "conflict", 422: "validation_error",
+            429: "rate_limited", 503: "service_unavailable",
+        }.get(exc.status_code, "http_error")
+        message = str(detail) if isinstance(detail, str) else "The request could not be completed"
+        details = None
+    return _error_response(
+        request, status_code=exc.status_code, code=code,
+        message=message, details=details, headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_error(request: Request, exc: RequestValidationError):
+    safe_errors = [
+        {
+            "location": [str(part) for part in item.get("loc", ())],
+            "type": str(item.get("type", "invalid")),
+            "message": str(item.get("msg", "Invalid value")),
+        }
+        for item in exc.errors()
+    ]
+    return _error_response(
+        request, status_code=422, code="validation_error",
+        message="One or more request fields are invalid",
+        details={"fields": safe_errors},
+    )
+
+
 @app.exception_handler(Exception)
 async def unhandled_exception(request: Request, exc: Exception):
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": {
-                "code": "internal_error",
-                "message": "An unexpected server error occurred",
-                "correlation_id": getattr(request.state, "correlation_id", None),
-            }
-        },
+    return _error_response(
+        request, status_code=500, code="internal_error",
+        message="An unexpected server error occurred",
     )
 
 
