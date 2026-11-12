@@ -302,7 +302,7 @@ class SupabaseWorkspaceTool:
         snapshot: dict[str, bytes] = {}
         baseline: dict[str, dict[str, Any]] = {}
         total = 0
-        prefix = f"/workspaces/{workspace_id}/versions/"
+        prefix = f"{user_id}/workspaces/{workspace_id}/versions/"
         for row in rows:
             path = self._safe_path(row.get("path"))
             # Re-check membership and current metadata through the owner-scoped RPC.
