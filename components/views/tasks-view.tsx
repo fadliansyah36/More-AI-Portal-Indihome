@@ -298,14 +298,14 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-slate-100">
             <h3 className="text-base font-bold text-slate-900 mb-1">Tambah Tugas AI Baru</h3>
-            <p className="text-xs text-slate-500 mb-3">Tuliskan pekerjaan yang ingin dijadwalkan</p>
+            <p className="text-xs text-slate-500 mb-3">Tuliskan instruksi yang akan dikirim ke Agent Chat untuk membuat Agent Run.</p>
 
             <form onSubmit={handleAddTask} className="space-y-3">
               <input
                 type="text"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Contoh: Analisis tren TikTok kopi..."
+                placeholder="Contoh: Analisis tren pasar kopi di Indonesia..."
                 autoFocus
                 className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-slate-900"
               />
@@ -323,7 +323,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                   disabled={!newTaskTitle.trim()}
                   className="flex-1 py-2 rounded-xl bg-red-600 disabled:opacity-40 text-white text-xs font-semibold hover:bg-red-700 transition"
                 >
-                  Simpan Tugas
+                  Lanjutkan di Chat AI
                 </button>
               </div>
             </form>
