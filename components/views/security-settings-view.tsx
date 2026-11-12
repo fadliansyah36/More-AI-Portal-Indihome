@@ -20,24 +20,9 @@ export const SecuritySettingsView: React.FC<SecuritySettingsViewProps> = ({
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
-  const [activeSessions, setActiveSessions] = useState([
-    {
-      id: 'dev-1',
-      device: 'iPhone 15 Pro Max',
-      browser: 'Safari Mobile PWA',
-      location: 'Jakarta, Indonesia',
-      status: 'Sesi Ini (Aktif)',
-      isCurrent: true,
-    },
-    {
-      id: 'dev-2',
-      device: 'MacBook Pro 16"',
-      browser: 'Chrome 130 macOS',
-      location: 'Semarang, Indonesia',
-      status: 'Aktif 2 jam lalu',
-      isCurrent: false,
-    },
-  ]);
+  const [activeSessions, setActiveSessions] = useState<Array<{
+    id: string; device: string; browser: string; location: string; status: string; isCurrent: boolean;
+  }>>([]);
 
   const toggle2FA = () => {
     const nextState = !twoFactorAuth;
@@ -113,7 +98,7 @@ export const SecuritySettingsView: React.FC<SecuritySettingsViewProps> = ({
             </div>
             <div>
               <h3 className="text-xs font-bold text-slate-900">Autentikasi 2 Langkah (2FA)</h3>
-              <p className="text-[10px] text-slate-500 mt-0.5">Kode OTP WhatsApp / SMS saat login</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">MFA enrollment dan verifikasi TOTP belum tersedia</p>
             </div>
           </div>
 
@@ -183,10 +168,11 @@ export const SecuritySettingsView: React.FC<SecuritySettingsViewProps> = ({
           <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
             Sesi Perangkat Aktif
           </h3>
-          <span className="text-[10px] text-slate-400 font-semibold">2 Perangkat</span>
+          <span className="text-[10px] text-slate-400 font-semibold">{activeSessions.length} Perangkat</span>
         </div>
 
         <div className="space-y-2">
+          {activeSessions.length === 0 && <p className="text-[11px] text-slate-500">Inventaris sesi perangkat belum tersedia dari kontrak Auth saat ini. Tombol di bawah mencabut seluruh sesi global.</p>}
           {activeSessions.map((sess) => (
             <div
               key={sess.id}
