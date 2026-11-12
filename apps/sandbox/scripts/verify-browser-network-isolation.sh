@@ -53,6 +53,11 @@ if docker exec "$browser_id" sh -lc 'command -v curl >/dev/null 2>&1'; then
 else
   fail "curl is unavailable in browser image; cannot verify proxy success"
 fi
+if docker exec "$browser_id" sh -lc 'curl --fail --silent --show-error --max-time 15 --proxy "$MOREAI_BROWSER_PROXY_URL" --proxy-user "moreai:$MOREAI_BROWSER_PROXY_TOKEN" https://httpbin.org/get >/dev/null' 2>/dev/null; then
+  pass "redirect/download test origin is reachable through the allowlist proxy"
+else
+  fail "httpbin test origin is unreachable; redirect/download denial cannot be accepted"
+fi
 
 # Exercise the browser process itself, not just curl through the proxy.
 if navigate_json="$(docker exec "$proxy_id" curl --fail --silent --show-error \
