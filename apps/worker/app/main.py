@@ -112,24 +112,70 @@ async def run_worker() -> None:
                         if not processed:
                             ingestion_job = await rpc.claim_knowledge_ingestion()
                             if ingestion_job:
+                                document_id = str(ingestion_job["id"])
+                                owner_id = str(ingestion_job["owner_user_id"])
+                                lease_until = str(ingestion_job.get("ingestion_lease_until") or "")
+                                lease_lost = asyncio.Event()
+                                async def heartbeat() -> None:
+                                    nonlocal lease_until
+                                    while True:
+                                        await asyncio.sleep(45)
+                                        try:
+                                            renewed = await rpc.heartbeat_knowledge_ingestion(
+                                                document_id, owner_id, lease_until, lease_seconds=900,
+                                            )
+                                        except asyncio.CancelledError:
+                                            raise
+                                        except Exception:
+                                            logger.exception("knowledge_ingestion_heartbeat_error document_id=%s", document_id)
+                                            # A transient heartbeat error is retried once before fail-closed cancellation.
+                                            await asyncio.sleep(5)
+                                            renewed = await rpc.heartbeat_knowledge_ingestion(
+                                                document_id, owner_id, lease_until, lease_seconds=900,
+                                            )
+                                        if not renewed:
+                                            lease_lost.set()
+                                            logger.warning("knowledge_ingestion_lease_lost document_id=%s", document_id)
+                                            return
+                                        lease_until = renewed
+
+                                processing_task = asyncio.create_task(
+                                    knowledge_ingestion.process_uploaded_document(ingestion_job),
+                                    name=f"knowledge-ingestion-{document_id}",
+                                )
+                                heartbeat_task = asyncio.create_task(
+                                    heartbeat(), name=f"knowledge-heartbeat-{document_id}",
+                                )
                                 try:
-                                    extracted_page_count = await knowledge_ingestion.process_uploaded_document(ingestion_job)
-                                    finished = await rpc.finish_knowledge_ingestion(
-                                        str(ingestion_job["id"]), str(ingestion_job["owner_user_id"]),
-                                        True, page_count=extracted_page_count,
+                                    done, _ = await asyncio.wait(
+                                        {processing_task, heartbeat_task},
+                                        return_when=asyncio.FIRST_COMPLETED,
                                     )
-                                    if not finished:
-                                        logger.warning("knowledge_ingestion_lease_lost document_id=%s", ingestion_job.get("id"))
+                                    if heartbeat_task in done and lease_lost.is_set():
+                                        processing_task.cancel()
+                                        await asyncio.gather(processing_task, return_exceptions=True)
+                                    else:
+                                        extracted_page_count = await processing_task
+                                        finished = await rpc.finish_knowledge_ingestion(
+                                            document_id, owner_id, True,
+                                            page_count=extracted_page_count,
+                                        )
+                                        if not finished:
+                                            logger.warning("knowledge_ingestion_finish_fenced document_id=%s", document_id)
                                 except asyncio.CancelledError:
+                                    processing_task.cancel()
                                     raise
                                 except Exception as ingestion_error:
                                     attempt = int(ingestion_job.get("ingestion_attempt") or 1)
-                                    code = str(ingestion_error)[:80] or "knowledge_ingestion_failed"
-                                    await rpc.finish_knowledge_ingestion(
-                                        str(ingestion_job["id"]), str(ingestion_job["owner_user_id"]),
-                                        False, error_code=code,
-                                    )
-                                    logger.exception("knowledge_ingestion_failed document_id=%s attempt=%s", ingestion_job.get("id"), attempt)
+                                    code = type(ingestion_error).__name__.lower()[:80] or "knowledge_ingestion_failed"
+                                    if not lease_lost.is_set():
+                                        await rpc.finish_knowledge_ingestion(
+                                            document_id, owner_id, False, error_code=code,
+                                        )
+                                    logger.exception("knowledge_ingestion_failed document_id=%s attempt=%s", document_id, attempt)
+                                finally:
+                                    heartbeat_task.cancel()
+                                    await asyncio.gather(heartbeat_task, return_exceptions=True)
                                 processed = True
                     except asyncio.CancelledError:
                         raise
