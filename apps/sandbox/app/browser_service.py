@@ -66,6 +66,9 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
             args=[
                 "--disable-quic", "--disable-background-networking",
                 "--disable-component-update", "--disable-sync", "--no-first-run",
+                "--no-default-browser-check", "--disable-default-apps",
+                "--disable-extensions", "--disable-translate",
+                "--disable-features=MediaRouter,OptimizationHints",
                 "--proxy-bypass-list=<-loopback>",
             ],
         )
