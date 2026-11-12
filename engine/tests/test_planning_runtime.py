@@ -70,5 +70,6 @@ def test_planning_runtime_persists_and_executes_steps():
         assert executor.payloads[1]["dependencies"] == [0]
         assert "Completed dependency results" in executor.payloads[1]["prompt"]
         assert "step one" in executor.payloads[1]["prompt"]
+        assert "Expected output: one" in executor.payloads[1]["prompt"]
 
     asyncio.run(run())
