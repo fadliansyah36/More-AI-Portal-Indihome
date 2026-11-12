@@ -51,7 +51,11 @@ export const PartnerVouchersView: React.FC<PartnerVouchersViewProps> = ({
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(() => { if (active) void load(); });
+    return () => { active = false; };
+  }, [load]);
 
   const createCode = async () => {
     const expiry = new Date(expiresAt);
