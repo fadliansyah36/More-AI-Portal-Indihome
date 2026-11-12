@@ -257,6 +257,7 @@ export default function App() {
                 <TasksView
                   onOpenWorkspaceFiles={() => handleNavigate('files')}
                   onOpenWorkflow={() => handleNavigate('workflow_progress')}
+                  onStartPrompt={handleStartPrompt}
                 />
               )}
 
