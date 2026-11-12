@@ -184,20 +184,17 @@ class DockerSandbox:
         except _OutputLimitExceeded:
             self._terminate(process)
             await process.wait()
-            await self._remove_container(cidfile)
             await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
             return SandboxResult(-1, "", "output_limit_exceeded", False)
         except TimeoutError:
             self._terminate(process)
             await process.wait()
-            await self._remove_container(cidfile)
             await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
             return SandboxResult(-1, "", "execution_timeout", True)
         except BaseException:
             self._terminate(process)
             await process.wait()
-            await self._remove_container(cidfile)
             await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
             raise
-        else:
+        finally:
             await self._remove_container(cidfile)
