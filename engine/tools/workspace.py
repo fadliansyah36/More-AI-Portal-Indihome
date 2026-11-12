@@ -43,6 +43,8 @@ class SupabaseWorkspaceTool:
         if not workspace_id: raise RuntimeError("persistent_workspace_requires_workspace_id")
         path=self._safe_path(arguments.get("path"))
         old,new=arguments.get("old_str"),arguments.get("new_str")
+        if old is None:
+            old = ""
         operation = arguments.get("operation")
         if operation is None:
             operation = "edit" if old else "create"
