@@ -45,3 +45,12 @@ Continue Phase 04: finish OpenManus server/session and agent lifecycle parity, w
 - Documented the immutable runner image publication/digest requirement and the private Compose topology in `apps/sandbox/README.md`.
 - Commits: `2c62bc79f808420926a7dc79206c72c52781e7b1`, `91fa8128462a72f5826061df5316cdf61fdf4285`, `7a681f504935a7c7278300849f627c6dcdbc2d4d`, `c3de455c0da2c06955dde3b3aea4e938fc8c1220`, `c507d6930f41f25ef463b8e4691ab6d2b60e11c7`.
 - Not run: tests, lint, typecheck, build, Docker build, browser/API probes, staging, deployment or Supabase mutation. The execution and browser supervisors remain release-gated and have not been runtime-accepted.
+
+
+## Follow-up hardening — daemon-side cancellation cleanup
+
+- `apps/sandbox/app/runner.py` now records the Docker container ID with a per-invocation CID file.
+- Timeout, cancellation, output-limit termination and normal completion all run a final cleanup path that requests daemon-side forced removal of the container. This closes the gap where killing the local Docker CLI process alone could leave the daemon-managed container running.
+- The cleanup uses the same restricted supervisor-only Docker API path; it does not grant Docker access to the worker.
+- Commits: `b32cb13e97c855872f44b001b607b2b0d60452e7`, `2b45715f89f647d4194e1e76ecc5506b59a9db3b`.
+- This is source-level hardening only. No Docker daemon, runtime or test was invoked.
