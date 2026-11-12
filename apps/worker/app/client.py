@@ -303,6 +303,24 @@ class WorkerRpcClient:
             raise RuntimeError("workspace_rename_commit_invalid")
         return result
 
+    async def workspace_commit_execution_snapshot(
+        self, run_id: str, user_id: str, workspace_id: str, bucket: str,
+        operation_key: str, changes: list[dict[str, Any]], deletes: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        result = await self.rpc("moreai_workspace_commit_execution_snapshot", {
+            "p_run_id": run_id, "p_worker_id": self.settings.worker_id,
+            "p_user_id": user_id, "p_workspace_id": workspace_id,
+            "p_bucket": bucket, "p_operation_key": operation_key,
+            "p_changes": changes, "p_deletes": deletes,
+        })
+        if (
+            not isinstance(result, dict) or result.get("atomic") is not True
+            or not isinstance(result.get("saved"), list)
+            or not isinstance(result.get("deleted"), list)
+        ):
+            raise RuntimeError("workspace_execution_commit_invalid")
+        return result
+
     async def workspace_abort_write(self, run_id: str, user_id: str, workspace_id: str, path: str, token: str) -> bool:
         return await self.rpc("moreai_workspace_abort_write", {"p_run_id":run_id,"p_worker_id":self.settings.worker_id,"p_user_id":user_id,"p_workspace_id":workspace_id,"p_path":path,"p_token":token}) is True
 
