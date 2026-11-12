@@ -11,6 +11,7 @@ from app.dispatcher import RegisteredAgentDispatcher
 from app.registry_factory import build_agent_registry
 from app.runtime import WorkerRuntime
 from app.outbox import DurableEventOutboxPublisher
+from apps.sandbox.app.browser_supervisor import BrowserSupervisor
 
 
 async def _health_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
@@ -70,6 +71,15 @@ async def run_worker() -> None:
         })
         if not quota_policies:
             raise RuntimeError("no_enabled_llm_quota_policy")
+        if os.getenv("MOREAI_BROWSER_ENABLED", "false").lower() == "true":
+            browser_client = BrowserSupervisor(
+                service_url=os.getenv("MOREAI_BROWSER_SERVICE_URL", ""),
+                service_token=os.getenv("MOREAI_BROWSER_SERVICE_TOKEN", ""),
+                egress_enforced=os.getenv("MOREAI_BROWSER_EGRESS_ENFORCED", "false").lower() == "true",
+                allow_private_http=os.getenv("MOREAI_BROWSER_PRIVATE_NETWORK_HTTP", "false").lower() == "true",
+                http=http,
+            )
+            await browser_client.check_ready()
         registry = build_agent_registry(rpc, http)
         runtime = WorkerRuntime(rpc, RegisteredAgentDispatcher(registry, checkpoint_loader=rpc.list_checkpoints))
         health_server = await asyncio.start_server(
