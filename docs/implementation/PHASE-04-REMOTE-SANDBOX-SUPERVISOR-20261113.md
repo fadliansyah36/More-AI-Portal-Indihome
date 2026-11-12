@@ -79,3 +79,13 @@ Continue Phase 04: finish OpenManus server/session and agent lifecycle parity, w
 - Dispatcher explicitly preserves `RunPausedForApproval` as durable control flow. It must reach `WorkerRuntime` unchanged so the already-committed approval pause is not misreported as an execution failure.
 - Added explicit upstream failure classes: HTTP timeout and transport errors are retryable; HTTP 429/5xx are retryable; non-transient HTTP status errors are classified as rejected requests. No response body, provider message or credential is copied into the durable error.
 - Commits: `96388b5cbd9d898c35012240f307ba9fb976429d`, `bdaf4b2c3809acb2c22bc3d26e6ed63780e57b65`.
+
+
+## Follow-up — browser download denial
+
+- Browser contexts remain configured with `accept_downloads=False`; the page now also registers an explicit download event handler and calls `Download.cancel()` for every download event.
+- Browser action responses expose a `blocked_downloads` count for navigation and extraction, so callers can distinguish a page that attempted a download from a normal page interaction.
+- Downloaded files are not persisted to the supervisor filesystem or returned as artifacts. A future controlled-download feature must introduce malware/content scanning, MIME and size policy, quarantine storage, tenant-scoped artifact ownership and audit before enabling any download acceptance.
+- Commit: `845b9e7d5ae5cff9676b06218324126fbaa6eca4`.
+- Workspace limitation remains: workspace read/edit tools are backed by versioned Supabase Storage and metadata, but the Python/Bash runner still receives only source text and has no workspace filesystem snapshot or write-back bridge. Shell-level workspace parity remains blocked; this increment does not claim it.
+- No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment or Supabase mutation were performed.
