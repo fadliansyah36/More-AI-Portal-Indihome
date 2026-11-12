@@ -33,11 +33,10 @@ export const PartnerStaffView: React.FC<PartnerStaffViewProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const rows = await partnerApi.members();
       setStaffList(rows as PartnerMember[]);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Daftar staf tidak dapat dimuat.');
     } finally {
@@ -83,7 +82,7 @@ export const PartnerStaffView: React.FC<PartnerStaffViewProps> = ({
           <h1 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">Manajemen Staf &amp; Operator</h1>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => void load()} disabled={loading} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 disabled:opacity-50" aria-label="Segarkan">
+          <button onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 disabled:opacity-50" aria-label="Segarkan">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button onClick={() => setShowAddModal(true)} className="text-xs font-bold text-red-600 flex items-center gap-1 hover:text-red-700" aria-label="Undang staf">
