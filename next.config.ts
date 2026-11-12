@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Browser-facing baseline for auth/customer routes; API mutations also enforce Origin in FastAPI.
   async headers() {
     return [{
       source: '/:path*',
