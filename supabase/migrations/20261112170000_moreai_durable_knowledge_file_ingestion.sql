@@ -78,12 +78,12 @@ set search_path = ''
 as $$
 begin
   update public.knowledge_documents
-  set status = case when p_success then 'ready' else 'failed' end,
+  set status = case when p_success then 'ready' when ingestion_attempt >= 3 then 'failed' else 'processing' end,
       ingestion_error_code = case when p_success then null else left(coalesce(p_error_code,'ingestion_failed'),80) end,
       ingestion_lease_until = null,
       page_count = case when p_success then greatest(coalesce(p_page_count,0),0) else page_count end,
       metadata = jsonb_set(
-        jsonb_set(coalesce(metadata,'{}'::jsonb), '{ingestion_state}', to_jsonb(case when p_success then 'ready' else 'failed' end), true),
+        jsonb_set(coalesce(metadata,'{}'::jsonb), '{ingestion_state}', to_jsonb(case when p_success then 'ready' when ingestion_attempt >= 3 then 'failed' else 'queued' end), true),
         '{processed_at}', to_jsonb(now()), true
       ),
       updated_at = now()
