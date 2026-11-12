@@ -4,6 +4,7 @@ import os
 import re
 from typing import Any
 from uuid import UUID, uuid4
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -195,7 +196,29 @@ async def create_workspace_file_download(
     signed_path = payload.get("signedURL") or payload.get("signedUrl")
     if not isinstance(signed_path, str) or not signed_path:
         raise HTTPException(502, "Storage did not return a signed download path")
-    signed_url = signed_path if signed_path.startswith("https://") else base_url + "/storage/v1" + (signed_path if signed_path.startswith("/") else "/" + signed_path)
+    # Storage is a trusted server-side dependency, but never forward an arbitrary
+    # absolute URL to the browser. A compromised/misconfigured Storage response
+    # must not turn this endpoint into an external navigation or token-leak vector.
+    base_parts = urlsplit(base_url)
+    signed_parts = urlsplit(signed_path)
+    if signed_parts.scheme or signed_parts.netloc:
+        if (
+            signed_parts.scheme != "https"
+            or signed_parts.netloc.lower() != (base_parts.netloc or "").lower()
+            or signed_parts.username is not None
+            or signed_parts.password is not None
+        ):
+            raise HTTPException(502, "Storage returned a signed URL outside the configured Supabase origin")
+        signed_url = signed_path
+    else:
+        if (
+            not signed_path.startswith("/")
+            or signed_path.startswith("//")
+            or "\\\\" in signed_path
+            or any(ord(char) < 32 for char in signed_path)
+        ):
+            raise HTTPException(502, "Storage returned an invalid signed download path")
+        signed_url = base_url + "/storage/v1" + signed_path
     return {"file_id": str(file_id), "version": selected.get("version", version), "url": signed_url, "expires_in": 60}
 
 
