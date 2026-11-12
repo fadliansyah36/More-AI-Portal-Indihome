@@ -204,7 +204,7 @@ def test_connect_proxy_rejects_socket_peer_that_differs_from_dns_pin(monkeypatch
         authorization = base64.b64encode(("moreai:" + token).encode()).decode()
         client_reader = asyncio.StreamReader()
         client_reader.feed_data(
-            f"CONNECT example.com:443 HTTP/1.1\\r\\nProxy-Authorization: Basic {authorization}\\r\\n\\r\\n".encode()
+            f"CONNECT example.com:443 HTTP/1.1\r\nProxy-Authorization: Basic {authorization}\r\n\r\n".encode()
         )
         client_reader.feed_eof()
         client_writer = FakeWriter(("172.18.0.2", 3128))
