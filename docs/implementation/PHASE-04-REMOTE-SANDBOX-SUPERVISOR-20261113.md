@@ -72,3 +72,10 @@ Continue Phase 04: finish OpenManus server/session and agent lifecycle parity, w
 - Workspace metadata and file tools are scoped through `AgentRunContext.workspace_id` and lease-fenced workspace RPCs. However, a persistent filesystem view is not mounted into the isolated Python/Bash runner; file operations remain mediated through workspace tools. Do not claim shell-level workspace parity until a safe, ephemeral workspace bridge is implemented.
 - Complete upstream server/session parity and browser download scanning remain open.
 - No tests, lint, typecheck, build, browser/API probes, Docker build, staging, deployment or Supabase mutation were performed.
+
+
+## Approval and provider failure classification correction
+
+- Dispatcher explicitly preserves `RunPausedForApproval` as durable control flow. It must reach `WorkerRuntime` unchanged so the already-committed approval pause is not misreported as an execution failure.
+- Added explicit upstream failure classes: HTTP timeout and transport errors are retryable; HTTP 429/5xx are retryable; non-transient HTTP status errors are classified as rejected requests. No response body, provider message or credential is copied into the durable error.
+- Commits: `96388b5cbd9d898c35012240f307ba9fb976429d`, `bdaf4b2c3809acb2c22bc3d26e6ed63780e57b65`.
