@@ -29,16 +29,32 @@
 - API errors are surfaced; unavailable gateway telemetry (live throughput, device controls, session extension/disconnection) remains unavailable and is not fabricated.
 - Existing visual hierarchy and disabled actions are preserved.
 
+### Agent Code Assistant and captive portal truthfulness
+
+- Code Assistant no longer fabricates Python execution output or reports a successful local run. It sends the edited code to the existing Customer Chat handoff for Agent review; actual Python/Bash execution remains disabled until the supervisor, approval and sandbox release gates are met.
+- The Projects panel no longer claims automatic persistence when no workspace persistence action is wired.
+- Captive OTP no longer includes demo auto-fill, fabricated OTP resend success, or a fake successful verification transition. Inputs and verification remain disabled until a gateway OTP contract is available.
+- Captive success screen now reads Customer network sessions, wallet balances and Partner entitlement from FastAPI. It reports an active session only when an unexpired active network session exists; static SSID, speed, duration and bonus-credit claims were removed.
+- Captive Portal preview now labels gateway activation as unconnected and removes fabricated 100 Mbps / 100,000 AI credit claims.
+
 ## Commits
 
 - `a7282fa7fd774d8dc4a78d66ed07fa8aa363122f` — profile editor and server-persisted language preference.
 - `4bd3ca15a7951b1b3bc7027450e7f934285efdd7` — remove unused locale state.
 - `2d74e9d0e8f1f28e99f45d79093d8ff369142daa` — bind Wi-Fi session screen to customer APIs.
+- `cb2058502d47d1e9171df582d5660bda021eeb7b`, `7d1d599be9aa40c1619e91b7abec58a57c922547` — route code review to Customer Agent Chat and remove simulated code execution.
+- `e5b558bfa9ce4f1b08ec218655df415643f12ddc`, `a0c9770bb817681bf56d9670f40bd0cc7adad7de`, `61493b3ccb59008aa5395862029aeb22e9615ea3` — disable simulated captive OTP verification.
+- `26465c54f62d747d0e29f5ccd1190538f80f7f32`, `11cdde9f52b8ab156d9ae5c85b02b79a17d0a009` — read captive success state from Customer APIs and remove static access/credit claims.
 
 ## Files changed
 
 - `components/views/profile-settings-view.tsx`
 - `components/views/wifi-session-view.tsx`
+- `components/views/code-view.tsx`
+- `components/views/captive-otp-view.tsx`
+- `components/views/captive-success-view.tsx`
+- `components/views/captive-portal-view.tsx`
+- `app/page.tsx`
 
 ## Verification and operational restrictions
 
