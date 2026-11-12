@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { Play, RotateCcw, Copy, Check, Terminal, Code2, Sparkles, FolderGit2 } from 'lucide-react';
 
-export const CodeView: React.FC = () => {
+interface CodeViewProps { onNavigateToChat?: (prompt: string) => void; }
+
+export const CodeView: React.FC<CodeViewProps> = ({ onNavigateToChat }) => {
   const [activeSubTab, setActiveSubTab] = useState<'editor' | 'projects'>('editor');
   const [code, setCode] = useState<string>(
 `def greet(name):
@@ -13,35 +15,20 @@ export const CodeView: React.FC = () => {
 print(greet("MoreAI - Global Partner Network"))`
   );
 
-  const [output, setOutput] = useState<string>('Hello, MoreAI - Global Partner Network!');
+  const [output, setOutput] = useState<string>('Sandbox eksekusi belum diaktifkan. Kode tidak akan dijalankan pada browser.');
   const [isRunning, setIsRunning] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleRunCode = () => {
+    if (!code.trim() || isRunning) return;
+    if (!onNavigateToChat) {
+      setOutput('Chat AI belum tersedia pada layar ini. Kode tidak dijalankan.');
+      return;
+    }
     setIsRunning(true);
-    setTimeout(() => {
-      setIsRunning(false);
-      // Simulate real execution
-      try {
-        if (code.includes('print')) {
-          const match = code.match(/print\((.*?)\)/);
-          if (match) {
-            const inner = match[1].replace(/["']/g, '');
-            if (inner.includes('greet')) {
-              setOutput('Hello, MoreAI - Global Partner Network!\n[Process completed successfully with exit code 0]');
-            } else {
-              setOutput(`${inner}\n[Process completed successfully with exit code 0]`);
-            }
-          } else {
-            setOutput('Program executed successfully.');
-          }
-        } else {
-          setOutput('[Process completed with no standard output]');
-        }
-      } catch {
-        setOutput('Error executing snippet');
-      }
-    }, 600);
+    onNavigateToChat('Tinjau kode Python berikut menggunakan Agent MoreAI. Jelaskan tujuan, potensi bug, risiko keamanan, dan usulkan perbaikan. Jangan mengklaim kode sudah dieksekusi.\n\n```python\n' + code + '\n```');
+    setOutput('Kode dikirim sebagai permintaan analisis ke Chat AI. Tidak ada proses Python yang dieksekusi pada sandbox.');
+    setIsRunning(false);
   };
 
   const sampleSnippets = [
@@ -105,7 +92,7 @@ print(greet("MoreAI - Global Partner Network"))`
                 key={idx}
                 onClick={() => {
                   setCode(s.code);
-                  setOutput('Klik "Run Code" untuk menjalankan snippet.');
+                  setOutput('Snippet dimuat. Pilih Analisis dengan AI untuk meminta review; kode belum dieksekusi.');
                 }}
                 className="px-2.5 py-1 rounded-xl bg-white hover:bg-red-50 text-slate-700 hover:text-red-600 border border-slate-200 text-[11px] font-semibold whitespace-nowrap transition active:scale-95 shrink-0"
               >
@@ -158,7 +145,7 @@ print(greet("MoreAI - Global Partner Network"))`
             {/* Action Bar */}
             <div className="px-4 py-2.5 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between">
               <span className="text-[11px] text-slate-400 font-sans">
-                Sandboxed MicroVM Environment
+                Eksekusi sandbox dinonaktifkan hingga supervisor dan approval gate siap
               </span>
               <button
                 onClick={handleRunCode}
@@ -166,7 +153,7 @@ print(greet("MoreAI - Global Partner Network"))`
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold transition shadow-xs"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>{isRunning ? 'Menjalankan...' : 'Run Code'}</span>
+                <span>{isRunning ? 'Mengirim...' : 'Analisis dengan AI'}</span>
               </button>
             </div>
           </div>
@@ -193,9 +180,9 @@ print(greet("MoreAI - Global Partner Network"))`
       ) : (
         <div className="p-6 text-center bg-white rounded-3xl border border-slate-100 text-slate-500 space-y-2">
           <FolderGit2 className="w-10 h-10 mx-auto text-slate-300" />
-          <h3 className="text-sm font-bold text-slate-800">Proyek Script Terintegrasi</h3>
+          <h3 className="text-sm font-bold text-slate-800">Penyimpanan Proyek</h3>
           <p className="text-xs text-slate-400 max-w-xs mx-auto">
-            Proyek backend dan script otomasi disimpan otomatis di workspace MoreAI Anda.
+            Penyimpanan proyek belum terhubung ke API workspace. Tidak ada proyek yang disimpan otomatis.
           </p>
         </div>
       )}
