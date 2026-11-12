@@ -98,6 +98,7 @@ async def create_customer_workspace(
 @router.get("/{workspace_id}/files")
 async def list_workspace_files(
     workspace_id: UUID, request: Request,
+    include_deleted: bool = Query(default=False),
     user: dict[str, Any] = Depends(customer_principal),
 ):
     repo = repository(request)
