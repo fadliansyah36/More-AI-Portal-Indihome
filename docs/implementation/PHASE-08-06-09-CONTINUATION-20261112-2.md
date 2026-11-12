@@ -17,6 +17,7 @@
 - Retryable failures use the durable bounded backoff and maximum-attempt policy from the ingestion migration. Owner-scoped retry API resets attempt count and requeues the existing private source object.
 - Repeated identical file bytes for the same owner/workspace reuse the existing processing/ready/failed document by SHA-256 rather than creating duplicate ingestion rows.
 - Upload response reloads and returns the persisted queued metadata, not the initial pre-upload row.
+- The upload endpoint fails closed if the server-side Storage service credential is absent; idempotent upload response distinguishes processing/ready/failed and the Analyse screen reports the real existing ingestion state.
 
 ### Provider, agent, Flow and tool integration
 - Authenticated `GET /api/v1/models/capabilities` exposes enabled provider/model capability metadata only; no provider config or secret values are returned.
@@ -36,6 +37,7 @@
 - OpenAPI now declares bearer JWT security for versioned API operations and documents optional `X-Correlation-ID`.
 - FastAPI continues to generate request/response Pydantic schemas, including multipart request body for knowledge upload.
 - Customer conversations and agent-run history now accept bounded `limit` and timezone-aware `before` filters.
+- Authenticated network speed-test routes provide bounded 4 MiB upload / 8 MiB download and ping measurements for the device-to-API path.
 - Customer network speed test has authenticated ping, bounded 4 MiB upload and bounded 8 MiB download endpoints; all responses are no-store.
 - Workspace upload/retry authorization now requires an active workspace and owner or active member access.
 - Existing principal resolution remains server-side from Supabase Auth and server-managed membership/role assignments.
@@ -47,6 +49,7 @@
 
 ## Phase 09 — Customer Dashboard source integration
 - Speedtest screen no longer shows simulated ISP metrics. It measures real device ↔ MoreAI API round-trip, download and upload; labels explicitly state this is not ONT/gateway optical telemetry.
+- The Analyse flow now reports idempotent duplicate-upload outcomes accurately instead of always claiming a new job was queued.
 - Analyse screen now uploads the selected local PDF/image through the existing multipart FastAPI Knowledge ingestion path; fake sample documents and fabricated KPI/AI analysis output were removed.
 - Research screen now reads the authenticated user's persisted Agent Run history. Fabricated popular topics are replaced by an explicit unavailable state until an official public research source is connected.
 - Tools Catalog now reads the live OpenManus tool registry through FastAPI; static invented tools/actions were removed and runtime default policy is shown.
