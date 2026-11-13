@@ -54,6 +54,11 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Device pause/filter/session control | No active customer mutation client | No verified partner gateway device-control contract | Disabled; no simulated device status |
 | Support request/ticket | No active ticket client | No support ticket table, workflow or official support provider | Unavailable; FAQ does not claim ticket submission |
 
+- Chat workspace context: Chat loads the owner/member workspace page list, allows selection for new conversations, restores the stored `workspace_id`, and sends it through `POST /api/v1/customer/conversations`. FastAPI validates `agent.run.create` at conversation binding and message enqueue; the existing atomic enqueue RPC persists that conversation workspace ID onto the Agent Run. The existing Workflow screen remains the PRD task/run monitor.
+- Workspace authorization: read endpoints require `workspace.read`; direct file upload/delete/restore require `workspace.manage`; workspace-scoped run listing requires `agent.run.read`; workspace identity rename/archive and member removal remain owner-only. Active member access is resolved through `roles`, `role_permissions`, and `permissions`, not membership status alone.
+- Workspace member navigation decision: Master PRD section 6.1 does not specify a Customer workspace-member administration screen, and the current API has no invitation contract. No incomplete member-management screen was added. The existing member list/removal API remains owner/member scoped.
+- Workflow approvals now render persisted approved/denied/expired/consumed history and update the local decision timestamp from the API response. Files artifact pagination now deduplicates IDs and preserves retry state.
+
 ## Contract correction in this increment
 
 - Extended the typed Customer client to cover the already-existing conversation/session lifecycle routes: list sessions with `X-Next-Cursor`, read a session, cancel a session, read sequenced session events, update conversation metadata and archive a conversation. All methods use the authenticated FastAPI client and the backend's existing ownership checks. [Implementation report](./PHASE-09-CUSTOMER-CONVERSATION-SESSION-API-COVERAGE-20261113.md)
