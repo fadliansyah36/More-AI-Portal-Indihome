@@ -56,3 +56,8 @@ Scope: source-level integration corrections across existing Customer UI, FastAPI
 - Review quota/wallet/ledger pagination and idempotency contracts without changing immutable financial ledger semantics.
 - Provider-dependent Gateway/OTP, EduTech catalog/video, payment settlement and support adapters remain blocked until official provider contracts, credentials and server-side integration details are available; do not introduce mocks.
 - Phase 09 remains IN PROGRESS. Phase 10 must not start until the Customer API integration gaps are closed and documented.
+
+### 5. Additional API contract alignment
+- Corrected the Customer speed-test upload response type to match FastAPI's actual `{ status, received_bytes, server_receive_ms }` payload.
+- Added `workspace_restore_version` to the frontend tool-approval request union to match the FastAPI `ApprovalRequest` Literal contract.
+- Commits: `760b6f50b5e9abb4eede4f562349fb195cbd0fd9`, `532286dc5454a1007a2873ac55ced312d32e5bb7`.
