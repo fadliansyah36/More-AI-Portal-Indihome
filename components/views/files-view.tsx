@@ -189,6 +189,7 @@ export const FilesView: React.FC = () => {
     const pending = workspaces.filter((workspace) => workspaceFileCursors[workspace.id]);
     if (!pending.length || loadingMoreWorkspaceFiles) return;
     setLoadingMoreWorkspaceFiles(true);
+    setWorkspaceError(null);
     try {
       const results = await Promise.allSettled(pending.map(async (workspace) => {
         const cursor = workspaceFileCursors[workspace.id];
@@ -411,7 +412,11 @@ export const FilesView: React.FC = () => {
     setArtifactPaginationError(null);
     try {
       const page = await artifactApi.listPage(50, artifactNextCursor);
-      setFiles((current) => [...current, ...mapArtifactRows(page.items)]);
+      setFiles((current) => {
+        const additions = mapArtifactRows(page.items);
+        const known = new Set(current.map((file) => file.id));
+        return [...current, ...additions.filter((file) => !known.has(file.id))];
+      });
       setArtifactNextCursor(page.nextCursor);
     } catch (cause) {
       setArtifactPaginationError(cause instanceof Error ? cause.message : 'Halaman artefak berikutnya tidak dapat dimuat.');
