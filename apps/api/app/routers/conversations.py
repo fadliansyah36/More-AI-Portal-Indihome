@@ -140,7 +140,7 @@ async def get_conversation(conversation_id: UUID, request: Request, user: dict[s
     return {"conversation": conversation, "messages": messages}
 
 
-@router.post("/{conversation_id}/messages", status_code=202)
+@router.post("/{conversation_id}/messages", status_code=202, response_model=dict[str, Any])
 async def send_message(
     conversation_id: UUID,
     body: MessageCreate,
@@ -231,7 +231,7 @@ async def get_conversation_session(
     }
 
 
-@router.post("/{conversation_id}/sessions/{run_id}/cancel")
+@router.post("/{conversation_id}/sessions/{run_id}/cancel", response_model=dict[str, Any])
 async def cancel_conversation_session(
     conversation_id: UUID,
     run_id: UUID,
