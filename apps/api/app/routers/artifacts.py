@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import re
+from datetime import datetime
 from typing import Any
 from urllib.parse import quote
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from pydantic import BaseModel
 
 from app.authorization import customer_principal
 from app.routers.conversations import repository
@@ -14,6 +16,24 @@ from app.routers.conversations import repository
 router = APIRouter(prefix="/api/v1/artifacts", tags=["artifacts"])
 MAX_ARTIFACT_BYTES = 2_000_000
 _SAFE_FILENAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._ -]{0,179}$")
+
+
+class CustomerArtifactResponse(BaseModel):
+    id: UUID
+    run_id: UUID | None
+    storage_path: str
+    mime_type: str | None
+    size_bytes: int | None
+    checksum_sha256: str | None
+    metadata: dict[str, Any] | None
+    created_at: datetime
+
+
+class CustomerArtifactDownloadResponse(BaseModel):
+    artifact_id: UUID
+    url: str
+    expires_in: int
+
 
 
 def _storage_headers(request: Request) -> dict[str, str]:
@@ -57,7 +77,7 @@ def _validate_owner_path(user_id: str, path: str) -> str:
     return path
 
 
-@router.get("")
+@router.get("", response_model=list[CustomerArtifactResponse])
 async def list_artifacts(request: Request, user: dict[str, Any] = Depends(customer_principal)):
     """Return owned artifacts with their durable Agent Run relationship."""
     repo = repository(request)
@@ -90,7 +110,7 @@ async def list_artifacts(request: Request, user: dict[str, Any] = Depends(custom
     ]
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, response_model=CustomerArtifactResponse)
 async def upload_artifact(
     request: Request,
     filename: str = Header(alias="X-Filename", max_length=180),
@@ -178,7 +198,7 @@ async def upload_artifact(
         raise
 
 
-@router.post("/{artifact_id}/signed-download")
+@router.post("/{artifact_id}/signed-download", response_model=CustomerArtifactDownloadResponse)
 async def create_artifact_download(
     artifact_id: UUID,
     request: Request,
