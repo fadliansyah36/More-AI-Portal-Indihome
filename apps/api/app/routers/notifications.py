@@ -4,11 +4,12 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 
 from app.dependencies import current_user
 from app.routers.conversations import repository
+from app.pagination import decode_timestamp_id_cursor, encode_timestamp_id_cursor, timestamp_id_filter
 
 router = APIRouter(prefix="/api/v1/notifications", tags=["notifications"])
 
@@ -29,6 +30,7 @@ class NotificationResponse(BaseModel):
 class NotificationListResponse(BaseModel):
     items: list[NotificationResponse]
     limit: int
+    next_cursor: str | None = None
 
 
 class NotificationPreferencesResponse(BaseModel):
@@ -56,20 +58,32 @@ class NotificationPreferencesUpdate(BaseModel):
 @router.get("", response_model=NotificationListResponse)
 async def list_notifications(
     request: Request,
+    response: Response,
     unread_only: bool = False,
     limit: int = Query(default=30, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(current_user),
 ):
+    decoded = decode_timestamp_id_cursor(cursor)
     filters = {
         "user_id": f"eq.{user['id']}",
         "select": "id,notification_type,title,body,resource_type,resource_id,action_url,metadata,read_at,created_at",
-        "order": "created_at.desc",
-        "limit": str(limit),
+        "order": "created_at.desc,id.desc",
+        "limit": str(limit + 1),
     }
     if unread_only:
         filters["read_at"] = "is.null"
+    cursor_filter = timestamp_id_filter(decoded, "created_at")
+    if cursor_filter:
+        filters["or"] = cursor_filter
     rows = await repository(request).select("notifications", filters)
-    return {"items": rows, "limit": limit}
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    next_cursor = encode_timestamp_id_cursor(rows[-1], "created_at") if has_more and rows else None
+    if next_cursor:
+        response.headers["X-Next-Cursor"] = next_cursor
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return {"items": rows, "limit": limit, "next_cursor": next_cursor}
 
 
 @router.get("/preferences", response_model=NotificationPreferencesResponse)
