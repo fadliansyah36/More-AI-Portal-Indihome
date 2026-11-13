@@ -47,7 +47,7 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Wallet / ledger / quotas | `customerApi.wallets()/ledger()/quotas()` | Customer wallet, ledger and quota read routes | Read-only connected |
 | Payment top-up / checkout / subscription | No active payment mutation client | No checkout, payment-intent or verified webhook settlement contract/table/provider | Unavailable; no balance or entitlement mutation is claimed |
 | Wi-Fi session history | `customerApi.networkSessions()` | `GET /api/v1/customer/network-sessions` | Read-only connected |
-| Network speed test | Customer speedtest API client | `GET /api/v1/customer/network/speedtest/ping`, download, upload | Measures client ↔ MoreAI API path only; not an ISP throughput guarantee |
+| Network speed test | `customerApi.networkSpeedtestPing/Download/Upload()` | `GET /api/v1/customer/network/speedtest/ping`, download, upload | Typed FastAPI client now used by the existing Speedtest screen; measures client ↔ MoreAI API path only, not an ISP throughput guarantee ([report](./PHASE-09-CUSTOMER-SPEEDTEST-TYPED-API-20261113.md)) |
 | Captive terms / consent / OTP / access activation | UI remains fail-closed | No complete customer consent, OTP send/verify or gateway session create/refresh/revoke API | Unavailable pending real gateway adapter and provider credentials |
 | Access code redemption | `customerApi.redeemAccessCode()` | `POST /api/v1/customer/access-codes/redeem` | Connected but requires a valid network verification session first |
 | Device pause/filter/session control | No active customer mutation client | No verified partner gateway device-control contract | Disabled; no simulated device status |
