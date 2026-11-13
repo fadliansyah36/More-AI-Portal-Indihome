@@ -44,6 +44,15 @@ Supabase migrations applied:
 Supabase migration applied:
 - `moreai_worker_workspace_restore_immutable_version`
 
+### 4. Learning progress collection
+
+- Removed the 1,000-row learning progress cap. The endpoint now uses a stable `(completed_at, id)` keyset cursor and returns an exact total count separately from the current page count.
+- Added matching indexes for owner-scoped progress ordering with and without module filtering.
+- The EduTech overview reads `total_count` rather than treating the first page length as the total saved progress count. Typed `progressPage` is available for incremental consumers.
+
+Supabase migration applied:
+- `moreai_customer_learning_progress_pagination`
+
 ### 4. Contract and screen reconciliation
 
 - Conversation session detail now returns `available_at`, `heartbeat_at` and `cancel_requested_at` in addition to the existing run lifecycle fields.
@@ -80,6 +89,8 @@ Per instruction, no test suite, lint, typecheck, build, browser run, API probe, 
 3. Continue auditing all screen states and ensure local editor examples are never mistaken for saved backend data.
 4. Continue provider-independent integration where contracts exist. Gateway/OTP, EduTech catalog/video, media generation, payment settlement and support remain fail-closed until official provider contracts and credentials are supplied.
 5. Phase 09 remains IN PROGRESS. Phase 10 and Phase 11 must not be marked complete or started as accepted integration work without authorization for their respective verification gates.
+
+- Learning progress keyset/count migration: `supabase/migrations/20261113240000_moreai_customer_learning_progress_pagination.sql` (applied to the canonical Supabase project).
 
 ## Main repository evidence
 
