@@ -35,7 +35,11 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
     customerApi.agents()
       .then((rows) => {
         if (!active) return;
-        const mapped = rows.filter((row) => row.enabled).map((row) => ({
+        // The current FastAPI chat enqueue contract accepts these three
+        // runtime keys. Do not present catalog entries as runnable until the
+        // transport contract explicitly supports their key.
+        const supportedRuntimeKeys = new Set(['manus', 'planning', 'toolcall']);
+        const mapped = rows.filter((row) => row.enabled && supportedRuntimeKeys.has(row.key)).map((row) => ({
           id: row.key, name: row.name, specialty: 'Runtime ' + row.version,
           description: row.description, iconName: 'Bot', color: 'bg-slate-500',
           creditsRequired: 0, active: row.enabled,
@@ -55,7 +59,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
       <div className="space-y-4 pb-20 animate-fadeIn">
         <div><h1 className="text-xl font-bold text-slate-900 tracking-tight">AI Agent Studio</h1><p className="text-xs text-slate-500">Katalog agent dari FastAPI dan OpenManus.</p></div>
         <div className="p-8 rounded-3xl bg-white border border-slate-100 text-center text-xs text-slate-500">
-          {isLoadingAgents ? 'Memuat katalog agent...' : agentLoadError || 'Belum ada agent yang diaktifkan di backend.'}
+          {isLoadingAgents ? 'Memuat katalog agent...' : agentLoadError || 'Belum ada agent dengan runtime key yang didukung Chat API (manus, planning, toolcall).'}
         </div>
       </div>
     );
