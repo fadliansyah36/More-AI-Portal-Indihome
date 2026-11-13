@@ -55,6 +55,8 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 
 ## Contract correction in this increment
 
+- Extended the typed Customer client to cover the already-existing conversation/session lifecycle routes: list sessions with `X-Next-Cursor`, read a session, cancel a session, read sequenced session events, update conversation metadata and archive a conversation. All methods use the authenticated FastAPI client and the backend's existing ownership checks. [Implementation report](./PHASE-09-CUSTOMER-CONVERSATION-SESSION-API-COVERAGE-20261113.md)
+
 - Corrected the unused typed `conversationSessions` client method, which previously called `/api/v1/conversations/{id}/sessions` even though the FastAPI contract requires `/api/v1/conversations/{conversation_id}/sessions/{run_id}`. The typed method is now `conversationSession(conversationId, runId)` and targets the implemented route.
 - Added `GET /api/v1/customer/usage/analytics?days=7|30|365` and its typed response contract.
 - Added optional document ID filtering to the OpenManus `knowledge_search` tool schema/runtime. Analyse sends the selected ready document ID into the new Chat Agent Run, and the worker passes that exact ID to the existing owner/workspace-scoped pgvector RPC.
