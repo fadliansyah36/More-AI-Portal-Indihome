@@ -29,7 +29,7 @@ print(greet("MoreAI - Global Partner Network"))`
 
   useEffect(() => {
     let active = true;
-    customerApi.agentRuns().then((items) => {
+    customerApi.agentRunsPage(50).then(({ items }) => {
       if (active) setAvailableRuns(items);
     }).catch(() => {
       // The run selector remains empty when history is unavailable; uploads can
@@ -54,7 +54,7 @@ print(greet("MoreAI - Global Partner Network"))`
     if (activeSubTab !== 'projects') return;
     let active = true;
     setProjectsLoading(true);
-    Promise.allSettled([artifactApi.list(), customerApi.agentRuns()]).then(([artifacts, runs]) => {
+    Promise.allSettled([artifactApi.list(), customerApi.agentRunsPage(50)]).then(([artifacts, runs]) => {
       if (!active) return;
       if (artifacts.status === 'fulfilled') {
         setSavedProjects(artifacts.value);
@@ -62,7 +62,7 @@ print(greet("MoreAI - Global Partner Network"))`
       } else {
         setProjectsError(artifacts.reason instanceof Error ? artifacts.reason.message : 'Snapshot kode tidak dapat dimuat.');
       }
-      if (runs.status === 'fulfilled') setAvailableRuns(runs.value);
+      if (runs.status === 'fulfilled') setAvailableRuns(runs.value.items);
     }).finally(() => {
       if (active) setProjectsLoading(false);
     });
@@ -78,7 +78,7 @@ print(greet("MoreAI - Global Partner Network"))`
     setIsSaving(true);
     try {
       await artifactApi.upload('main.py', new Blob([code], { type: 'text/x-python' }), 'text/x-python', selectedRunId || undefined);
-      setSavedProjects(await artifactApi.list());
+      setSavedProjects((await artifactApi.listPage(100)).items);
       setProjectsError(null);
       setOutput(selectedRunId
         ? 'Snapshot main.py tersimpan dan ditautkan ke Agent Run ' + selectedRunId.slice(0, 8) + '. Kode tidak dieksekusi.'
