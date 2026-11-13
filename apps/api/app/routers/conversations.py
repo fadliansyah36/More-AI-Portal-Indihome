@@ -325,7 +325,7 @@ async def get_conversation_session_events(
         payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
         safe_payload = {
             key: value for key, value in payload.items()
-            if key in {"tool", "round", "index", "status", "phase", "progress", "checkpoint_key"}
+            if key in {"tool", "round", "index", "status", "phase", "progress", "checkpoint_key", "agent_key", "step_index", "risk", "error_code", "error_type"}
             and isinstance(value, (str, int, float, bool))
             and (not isinstance(value, str) or len(value) <= 100)
         }
