@@ -1128,3 +1128,11 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - No tests, lint, typecheck, build, browser/API/worker execution, migration apply, Supabase mutation, staging or deployment were performed.
 
 **Phase 09 remains IN PROGRESS.** Next: complete source-level screen/action contract reconciliation against latest PRD; close approval consumption/expiry lifecycle transaction gap where necessary; review citation recovery for every agent/checkpoint branch; then finalize acceptance matrix. Phase 10 remains blocked by Phase 09 completion and runtime-verification authorization; Phase 11 follows Phase 10.
+
+
+### 2026-11-14 final reconciliation update
+- Direct Agent Run event history `GET /api/v1/agent-runs/{id}/events` now uses the same safe event projection as logs/thinking/WebSocket/SSE; Customer terminal SSE is restricted to final text, structured citations and bounded error code.
+- RAG tool results now include validated per-chunk citation markers; final prompt requires exact markers; the runtime persists chunk/document provenance and removes machine markers from visible prose. Customer conversation detail and keyset history hydrate citations from the owner-scoped run output.
+- Worker approval decision labels are no longer duplicated after the atomic decision event; successful single-use consumption remains separately recorded.
+- Latest report: [Phase 09 Customer Chat/session/citation continuation](./PHASE-09-CUSTOMER-CHAT-DURABLE-SESSION-RECOVERY-20261113.md), commit `ebb40fe6eca095a33c283edc81c273f38c6a1e8c`.
+- New approval migration remains source-only and unapplied. No tests, build, browser/API/worker verification, Supabase mutation, staging or deployment were performed. Phase 09 remains open.
