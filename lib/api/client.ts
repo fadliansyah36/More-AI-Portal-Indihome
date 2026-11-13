@@ -925,6 +925,9 @@ export const workspaceApi = {
 
 export const customerWorkspaceApi = {
   list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces'),
+  listPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspace>(
+    '/api/v1/customer/workspaces?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
+  ),
   create: (name: string) => moreAiCustomerApi<CustomerWorkspace>('/api/v1/customer/workspaces', {
     method: 'POST', body: JSON.stringify({ name }),
   }),
@@ -941,6 +944,9 @@ export const customerWorkspaceApi = {
     status: string; invited_by: string | null; joined_at: string | null; created_at: string;
   }>; count: number }>(
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/members',
+  ),
+  membersPage: (workspaceId: string, limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspaceMember>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/members?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
   ),
   removeMember: (workspaceId: string, memberId: string) => moreAiCustomerApi<{
     member_id: string; status: 'removed';
