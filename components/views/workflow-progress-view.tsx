@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Clock, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, Loader2, AlertCircle, Download } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { customerApi, customerToolApprovalApi, type CustomerAgentRun, type CustomerToolApproval } from '@/lib/api/client';
+import { artifactApi, customerApi, customerToolApprovalApi, type CustomerAgentRun, type CustomerToolApproval, type CustomerArtifact } from '@/lib/api/client';
 
 interface WorkflowProgressViewProps {
   onBack: () => void;
@@ -36,6 +36,8 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   onBack,
 }) => {
   const [runs, setRuns] = useState<CustomerAgentRun[]>([]);
+  const [artifacts, setArtifacts] = useState<CustomerArtifact[]>([]);
+  const [downloadingArtifactId, setDownloadingArtifactId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [approvals, setApprovals] = useState<CustomerToolApproval[]>([]);
@@ -48,15 +50,18 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       try {
         setIsLoading(true);
         setError(null);
-        const [runsResult, approvalsResult] = await Promise.allSettled([
+        const [runsResult, approvalsResult, artifactsResult] = await Promise.allSettled([
           customerApi.agentRuns(),
           customerToolApprovalApi.list(),
+          artifactApi.list(),
         ]);
         if (active) {
           if (runsResult.status === 'fulfilled') setRuns(runsResult.value);
           else setError(runsResult.reason instanceof Error ? runsResult.reason.message : 'Workflow tidak dapat dimuat.');
           if (approvalsResult.status === 'fulfilled') setApprovals(approvalsResult.value);
           else setApprovalError(approvalsResult.reason instanceof Error ? approvalsResult.reason.message : 'Persetujuan tidak dapat dimuat.');
+          if (artifactsResult.status === 'fulfilled') setArtifacts(artifactsResult.value);
+
         }
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : 'Workflow tidak dapat dimuat.');
@@ -83,6 +88,19 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       setApprovalError(cause instanceof Error ? cause.message : 'Keputusan persetujuan gagal disimpan.');
     } finally {
       setApprovalActionId(null);
+    }
+  };
+
+  const downloadRunArtifact = async (artifactId: string) => {
+    if (downloadingArtifactId) return;
+    setDownloadingArtifactId(artifactId);
+    try {
+      const result = await artifactApi.signedDownload(artifactId);
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Artefak run tidak dapat diunduh.');
+    } finally {
+      setDownloadingArtifactId(null);
     }
   };
 
@@ -184,6 +202,24 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1">Conversation: {run.conversation_id || 'Tidak terkait percakapan'}</p>
                     <p className="text-[11px] text-slate-700 mt-2 bg-white p-2.5 rounded-xl border border-slate-100 whitespace-pre-wrap break-words">{runSummary(run)}</p>
+                    {artifacts.filter((artifact) => artifact.run_id === run.id).length > 0 && (
+                      <div className="mt-2 rounded-xl border border-slate-200 bg-white p-2.5">
+                        <p className="mb-1.5 text-[10px] font-semibold text-slate-600">Artefak hasil run</p>
+                        <div className="space-y-1.5">
+                          {artifacts.filter((artifact) => artifact.run_id === run.id).map((artifact) => (
+                            <div key={artifact.id} className="flex items-center justify-between gap-2">
+                              <span className="min-w-0 truncate text-[10px] text-slate-600">
+                                {typeof artifact.metadata?.filename === 'string' ? artifact.metadata.filename : artifact.storage_path.split('/').pop()}
+                              </span>
+                              <button type="button" onClick={() => void downloadRunArtifact(artifact.id)} disabled={downloadingArtifactId === artifact.id} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
+                                {downloadingArtifactId === artifact.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                Unduh
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
