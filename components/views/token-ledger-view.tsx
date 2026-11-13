@@ -25,7 +25,7 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
       .then(async (walletResult) => {
         if (!active) return;
         setWallets(walletResult.wallets);
-        const primary = walletResult.wallets.find((wallet) => wallet.status === 'active') || walletResult.wallets[0];
+        const primary = walletResult.wallets.find((wallet) => wallet.status === 'active') || null;
         if (!primary) {
           setTransactions([]);
           setNextCursor(null);
@@ -53,7 +53,7 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
     return true;
   }), [transactions, filterType]);
 
-  const primaryWallet = wallets.find((wallet) => wallet.status === 'active') || wallets[0];
+  const primaryWallet = wallets.find((wallet) => wallet.status === 'active') || null;
 
   const loadMore = async () => {
     if (!nextCursor || loadingMore || !primaryWallet) return;
