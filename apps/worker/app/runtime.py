@@ -62,6 +62,16 @@ class WorkerRuntime:
                 )
                 return result
 
+            run_input = run.get("input") if isinstance(run.get("input"), dict) else {}
+            agent_key = run_input.get("agent_key", "manus")
+            if not isinstance(agent_key, str) or not agent_key.strip():
+                raise ValueError("durable_run_agent_key_invalid")
+            attempt = int(run.get("attempt") or 0)
+            lifecycle_identity = f"worker:{run_id}:{attempt}"
+            await self.rpc.append_run_event(run_id, f"{lifecycle_identity}:agent.started", "agent.execution.started", {"agent_key": agent_key[:80], "attempt": attempt})
+            if agent_key == "planning":
+                await self.rpc.append_run_event(run_id, f"{lifecycle_identity}:planning.started", "planning.started", {"agent_key": agent_key, "attempt": attempt})
+
             # Race execution against the durable cancellation signal. The heartbeat
             # sets this event when the API/RPC reports cancel_requested; merely passing
             # the event into the agent is insufficient when a provider/tool call is
@@ -130,9 +140,13 @@ class WorkerRuntime:
                 # Never race the new owner with a stale terminal write.
                 return True
             if cancelled.is_set():
+                await self.rpc.append_run_event(run_id, f"{lifecycle_identity}:agent.cancelled", "agent.execution.cancelled", {"agent_key": agent_key[:80]})
                 await self.rpc.append_run_event(run_id, "worker:run.cancelled", "run.cancelled", {})
                 await self.rpc.finish(run_id, "cancelled")
             else:
+                if agent_key == "planning":
+                    await self.rpc.append_run_event(run_id, f"{lifecycle_identity}:planning.completed", "planning.completed", {"agent_key": agent_key})
+                await self.rpc.append_run_event(run_id, f"{lifecycle_identity}:agent.completed", "agent.execution.completed", {"agent_key": agent_key[:80]})
                 await self.rpc.append_run_event(run_id, "worker:run.completed", "run.completed", {})
                 await self.rpc.finish(run_id, "succeeded", output=output)
         except RunPausedForApproval:
