@@ -82,10 +82,12 @@ async def set_learning_progress(
     body: LearningProgressUpdate, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
 ):
-    result = await repository(request).rpc("moreai_set_customer_learning_progress", {
-        "p_user_id": user["id"],
-        "p_module_key": body.module_key,
-        "p_lesson_key": body.lesson_key,
-        "p_completed": body.completed,
-    })
-    return result
+    # Do not persist caller-invented lesson identifiers while the official EduTech
+    # catalogue/enrollment contract is unavailable. Read-only saved progress remains enabled.
+    raise HTTPException(
+        status_code=503,
+        detail={
+            "code": "learning_catalog_unavailable",
+            "message": "Learning progress can only be updated after an official EduTech catalogue supplies verified module and lesson identifiers.",
+        },
+    )
