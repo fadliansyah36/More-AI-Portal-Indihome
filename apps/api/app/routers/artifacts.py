@@ -7,11 +7,12 @@ from typing import Any
 from urllib.parse import quote
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Query, Response
 from pydantic import BaseModel
 
 from app.authorization import customer_principal
 from app.routers.conversations import repository
+from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter
 
 router = APIRouter(prefix="/api/v1/artifacts", tags=["artifacts"])
 MAX_ARTIFACT_BYTES = 2_000_000
@@ -78,24 +79,37 @@ def _validate_owner_path(user_id: str, path: str) -> str:
 
 
 @router.get("", response_model=list[CustomerArtifactResponse])
-async def list_artifacts(request: Request, user: dict[str, Any] = Depends(customer_principal)):
-    """Return owned artifacts with their durable Agent Run relationship."""
+async def list_artifacts(
+    request: Request,
+    response: Response,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Return owned artifacts with stable keyset pagination and durable Agent Run links."""
+    decoded = decode_created_at_id_cursor(cursor)
     repo = repository(request)
     rows = await repo.select("artifacts", {
         "user_id": f"eq.{user['id']}",
         "select": "id,run_id,storage_path,mime_type,size_bytes,checksum_sha256,metadata,created_at",
-        "order": "created_at.desc",
-        "limit": "200",
+        "order": "created_at.desc,id.desc",
+        "limit": str(limit + 1),
     })
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(rows[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
     # Chat attachments are linked atomically through the message/run junction.
-    # Their upload necessarily precedes run creation, so resolve the relationship
-    # from that authoritative junction rather than trusting client metadata.
+    # Resolve only links for this page, rather than scanning a fixed global slice.
+    artifact_ids = [str(row["id"]) for row in rows if row.get("id")]
     attachment_links = await repo.select("conversation_message_attachments", {
         "user_id": f"eq.{user['id']}",
+        "artifact_id": f"in.({','.join(artifact_ids)})" if artifact_ids else "in.(00000000-0000-0000-0000-000000000000)",
         "select": "artifact_id,run_id",
         "order": "created_at.desc",
-        "limit": "1000",
-    })
+        "limit": str(max(1, len(artifact_ids) * 10)),
+    }) if artifact_ids else []
     linked_run_by_artifact = {
         str(link["artifact_id"]): str(link["run_id"])
         for link in attachment_links
