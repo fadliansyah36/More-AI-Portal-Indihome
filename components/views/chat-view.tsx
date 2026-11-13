@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Bot, Copy, Loader2, Paperclip, Send, ShieldCheck, Sparkles, StopCircle, User, X } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 import { NavigationTab } from '@/types/moreai';
-import { artifactApi, customerApi, moreAiApiStream } from '@/lib/api/client';
+import { artifactApi, customerApi, moreAiApiStream, workspaceApi, type CustomerWorkspace } from '@/lib/api/client';
 
 interface ChatCitation {
   id: string;
@@ -40,6 +40,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
   const { showToast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [workspaces, setWorkspaces] = useState<CustomerWorkspace[]>([]);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
+  const [workspaceCursor, setWorkspaceCursor] = useState<string | null>(null);
+  const [workspaceLoading, setWorkspaceLoading] = useState(true);
+  const [workspaceLoadingMore, setWorkspaceLoadingMore] = useState(false);
+  const [workspaceLoadError, setWorkspaceLoadError] = useState<string | null>(null);
   const [inputText, setInputText] = useState(initialPrompt);
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoringConversation, setIsRestoringConversation] = useState(!initialPrompt.trim());
@@ -63,6 +69,40 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
   }, [messages]);
 
   useEffect(() => {
+    let active = true;
+    workspaceApi.listPage(100)
+      .then((page) => {
+        if (!active) return;
+        setWorkspaces(page.items);
+        setWorkspaceCursor(page.nextCursor);
+        setWorkspaceLoadError(null);
+      })
+      .catch((cause) => {
+        if (active) setWorkspaceLoadError(cause instanceof Error ? cause.message : 'Daftar workspace tidak dapat dimuat.');
+      })
+      .finally(() => { if (active) setWorkspaceLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const loadMoreWorkspaces = async () => {
+    if (!workspaceCursor || workspaceLoadingMore || conversationId) return;
+    setWorkspaceLoadingMore(true);
+    setWorkspaceLoadError(null);
+    try {
+      const page = await workspaceApi.listPage(100, workspaceCursor);
+      setWorkspaces((current) => {
+        const known = new Set(current.map((workspace) => workspace.id));
+        return [...current, ...page.items.filter((workspace) => !known.has(workspace.id))];
+      });
+      setWorkspaceCursor(page.nextCursor);
+    } catch (cause) {
+      setWorkspaceLoadError(cause instanceof Error ? cause.message : 'Pilihan workspace berikutnya tidak dapat dimuat.');
+    } finally {
+      setWorkspaceLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
     if (initialPrompt.trim()) {
       setIsRestoringConversation(false);
       return;
@@ -76,6 +116,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         const restored = await customerApi.getConversation(latest.id);
         if (!active) return;
         setConversationId(restored.conversation.id);
+        setSelectedWorkspaceId(restored.conversation.workspace_id || '');
         setOlderMessagesCursor(restored.nextCursor);
         setMessageHistoryError(null);
         setMessages(restored.messages
@@ -131,7 +172,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
   const handleSendMessage = useCallback(async (textToSend?: string) => {
     const text = (textToSend ?? inputText).trim();
     const filesToUpload = textToSend === undefined ? [...pendingAttachments] : [];
-    if ((!text && filesToUpload.length === 0) || isLoading || isRestoringConversation) return;
+    if ((!text && filesToUpload.length === 0) || isLoading || isRestoringConversation || workspaceLoading) return;
     const prompt = text || 'Tolong analisis file yang saya lampirkan dan jelaskan temuan pentingnya.';
 
     const userMessage: ChatMessage = {
@@ -158,7 +199,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     try {
       let activeConversationId = conversationId;
       if (!activeConversationId) {
-        const created = await customerApi.createConversation(prompt.slice(0, 120));
+        const created = await customerApi.createConversation(prompt.slice(0, 120), selectedWorkspaceId || null);
         activeConversationId = created.id;
         setConversationId(created.id);
         setOlderMessagesCursor(null);
@@ -281,7 +322,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       setIsCancelling(false);
       setIsLoading(false);
     }
-  }, [inputText, pendingAttachments, isLoading, isRestoringConversation, conversationId, showToast, initialAgentKey]);
+  }, [inputText, pendingAttachments, isLoading, isRestoringConversation, conversationId, showToast, initialAgentKey, selectedWorkspaceId, workspaceLoading]);
 
   const handleCancelRun = useCallback(async () => {
     if (!activeRunId || isCancelling) return;
@@ -408,6 +449,30 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       </div>
 
       <form onSubmit={(event) => { event.preventDefault(); void handleSendMessage(); }} className="border-t border-slate-100 bg-white p-3">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <label htmlFor="chat-workspace" className="text-[10px] font-semibold text-slate-500">Simpan percakapan di</label>
+          <select
+            id="chat-workspace"
+            value={selectedWorkspaceId}
+            onChange={(event) => setSelectedWorkspaceId(event.target.value)}
+            disabled={!!conversationId || isLoading || isRestoringConversation || workspaceLoading}
+            className="min-w-0 max-w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-700 disabled:bg-slate-50 disabled:opacity-70"
+          >
+            <option value="">Percakapan pribadi</option>
+            {selectedWorkspaceId && !workspaces.some((workspace) => workspace.id === selectedWorkspaceId) && (
+              <option value={selectedWorkspaceId}>Workspace percakapan tersimpan</option>
+            )}
+            {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
+          </select>
+          {workspaceCursor && !conversationId && (
+            <button type="button" onClick={() => void loadMoreWorkspaces()} disabled={workspaceLoadingMore}
+              className="text-[10px] font-semibold text-red-600 disabled:opacity-50">
+              {workspaceLoadingMore ? 'Memuat…' : 'Muat lainnya'}
+            </button>
+          )}
+        </div>
+        {workspaceLoading && <p role="status" className="mb-2 text-[10px] text-slate-400">Memuat pilihan workspace…</p>}
+        {workspaceLoadError && <p role="alert" className="mb-2 text-[10px] text-amber-700">Workspace tidak tersedia: {workspaceLoadError}. Percakapan baru tetap dapat disimpan sebagai percakapan pribadi.</p>}
         {pendingAttachments.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
             {pendingAttachments.map((file, index) => (
@@ -461,7 +526,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             disabled={isLoading || isRestoringConversation}
             className="max-h-32 min-h-10 flex-1 resize-y bg-transparent px-2 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:opacity-60"
           />
-          <button type="submit" disabled={isLoading || isRestoringConversation || (!inputText.trim() && pendingAttachments.length === 0)} aria-label="Kirim pesan" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+          <button type="submit" disabled={isLoading || isRestoringConversation || workspaceLoading || (!inputText.trim() && pendingAttachments.length === 0)} aria-label="Kirim pesan" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300">
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
         </div>
