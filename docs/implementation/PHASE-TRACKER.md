@@ -1114,3 +1114,17 @@ Phase 09 remains **IN PROGRESS**. Customer event consumers now recognize the exp
 No tests, lint, typecheck, build, browser verification, live API/worker execution, Supabase mutation, staging or deployment were performed. Source implementation and documentation only; runtime behavior remains unverified.
 
 **Next Phase 09 work:** (1) transactionally append approval decision/resume events in the database RPC via a new forward-only migration; (2) finish Customer endpoint authorization/response contract audit; (3) reconcile RAG citation provenance across retrieval, final output, persisted conversation history and Chat restore; (4) finalize the Customer UI/API acceptance matrix. Phase 10 End-to-End Integration Verification is dependency-next only after Phase 09 and must remain unperformed unless runtime verification is authorized. Phase 11 Integration Release Gate follows Phase 10.
+
+
+## 2026-11-14 — Phase 09 Customer Dashboard continuation (latest source-only increment)
+
+- Atomic approval decision and resume event migration source committed: `supabase/migrations/20261114090000_moreai_atomic_approval_decision_events.sql` (commit `dd67833335b925ea3fbc4754fff4f5cf44b37f12`). It appends decision and `run.resume_queued` events to the durable event table and canonical outbox in the same transaction as approval/pause/run/checkpoint updates. **Not applied to Supabase**; production does not yet use this new RPC definition.
+- FastAPI and Chat consumers now surface `run.resume_queued`; worker no longer duplicates atomic grant/deny/expire events. Consumption event remains worker-observed.
+- Customer API source audit: 77 route handlers across ten Customer/shared router modules; all 77 route signatures require `customer_principal`, while Customer WebSockets explicitly resolve `require_customer_context`. JSON endpoints use explicit response models except SSE/binary/WebSocket transport-specific routes. Live RLS/cross-tenant proof remains outstanding.
+- Customer session replay and SSE now use allowlisted activity metadata; terminal SSE returns final answer text and validated citations, not raw run output/error objects.
+- RAG citations now flow from an explicit retrieval `citation_marker`, through final answer marker matching and structured Agent Run output, to owner-scoped Customer conversation detail/history responses and Chat restore/pagination/resumed completion. Markers are removed from visible prose while citation metadata remains attached.
+- UI changes remain limited to existing Chat lifecycle labels, typed citation metadata and history restoration. No redesign or token migration.
+- Reports updated: [Phase 09 Chat/session/citation continuation](./PHASE-09-CUSTOMER-CHAT-DURABLE-SESSION-RECOVERY-20261113.md) and [Customer action/API inventory](./PHASE-09-CUSTOMER-ACTION-API-INVENTORY-20261113.md).
+- No tests, lint, typecheck, build, browser/API/worker execution, migration apply, Supabase mutation, staging or deployment were performed.
+
+**Phase 09 remains IN PROGRESS.** Next: complete source-level screen/action contract reconciliation against latest PRD; close approval consumption/expiry lifecycle transaction gap where necessary; review citation recovery for every agent/checkpoint branch; then finalize acceptance matrix. Phase 10 remains blocked by Phase 09 completion and runtime-verification authorization; Phase 11 follows Phase 10.
