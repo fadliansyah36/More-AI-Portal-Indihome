@@ -25,6 +25,7 @@ class PlanningAgentRuntime(AgentRuntime):
         step_executors: dict[str, AgentRuntime] | None = None,
         default_executor: str = "manus",
         approval_gate: Any | None = None,
+        event_publisher: Any | None = None,
     ):
         executors = dict(step_executors or {})
         if step_executor is not None:
@@ -35,6 +36,11 @@ class PlanningAgentRuntime(AgentRuntime):
         self.step_executors, self.default_executor = executors, default_executor
         self.step_executor = executors[default_executor]
         self.approval_gate = approval_gate
+        self.event_publisher = event_publisher
+
+    async def _emit(self, context: AgentRunContext, event_type: str, event_key: str, payload: dict[str, Any]) -> None:
+        if self.event_publisher is not None:
+            await self.event_publisher(context.run_id, f"planning:{context.attempt}:{event_key}", event_type, payload)
 
     @staticmethod
     def _validate_steps(raw_steps: Any) -> list[dict[str, Any]]:
@@ -201,6 +207,7 @@ class PlanningAgentRuntime(AgentRuntime):
                 raise RuntimeError("planning_dependency_not_satisfied")
             if step["risk"] in {"high","critical"} or step["tool_requirement"] not in {"none","llm","planning"}:
                 await self.store.mark_step(run_id=context.run_id,step_index=index,status="waiting_approval",notes="approval_required")
+                await self._emit(context, "planning.step.approval_required", f"step:{index}:approval_required", {"step_index": index, "agent_key": step["agent_key"], "risk": step["risk"]})
                 await checkpoint("planning.step.waiting_approval",{"step_index":index,"risk":step["risk"]})
                 if self.approval_gate is None:
                     raise PermissionError("planning_step_requires_approval_gate")
@@ -211,8 +218,10 @@ class PlanningAgentRuntime(AgentRuntime):
                 )
                 if not approved:
                     raise PermissionError("planning_step_approval_denied_or_expired")
+                await self._emit(context, "planning.step.approval_resumed", f"step:{index}:approval_resumed", {"step_index": index, "agent_key": step["agent_key"]})
 
             await self.store.mark_step(run_id=context.run_id,step_index=index,status="running")
+            await self._emit(context, "planning.step.started", f"step:{index}:started", {"step_index": index, "agent_key": step["agent_key"], "risk": step["risk"]})
             await checkpoint(f"planning.step.{index}.started",{"step_index":index,"objective":step["objective"][:500]})
             try:
                 dependency_outputs = [
@@ -247,11 +256,13 @@ class PlanningAgentRuntime(AgentRuntime):
                     checkpoint,cancelled,
                 )
                 await self.store.mark_step(run_id=context.run_id,step_index=index,status="succeeded",notes="Step execution confirmed",output=result.output)
+                await self._emit(context, "planning.step.completed", f"step:{index}:completed", {"step_index": index, "agent_key": step["agent_key"], "status": "succeeded"})
                 await checkpoint(f"planning.step.{index}.completed",{"step_index":index,"status":"succeeded"})
                 results.append({"step":index,"status":"succeeded","output":result.output})
                 completed.add(index)
                 completed_outputs[index] = result.output
             except Exception as exc:
                 await self.store.mark_step(run_id=context.run_id,step_index=index,status="failed",notes=type(exc).__name__)
+                await self._emit(context, "planning.step.failed", f"step:{index}:failed", {"step_index": index, "agent_key": step["agent_key"], "error_type": type(exc).__name__})
                 raise
         return AgentRunResult({"title":title,"steps":results,"completed_steps":len(completed)})
