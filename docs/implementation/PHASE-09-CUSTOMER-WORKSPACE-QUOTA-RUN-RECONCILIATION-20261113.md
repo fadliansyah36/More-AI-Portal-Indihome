@@ -61,3 +61,7 @@ Scope: source-level integration corrections across existing Customer UI, FastAPI
 - Corrected the Customer speed-test upload response type to match FastAPI's actual `{ status, received_bytes, server_receive_ms }` payload.
 - Added `workspace_restore_version` to the frontend tool-approval request union to match the FastAPI `ApprovalRequest` Literal contract.
 - Commits: `760b6f50b5e9abb4eede4f562349fb195cbd0fd9`, `532286dc5454a1007a2873ac55ced312d32e5bb7`.
+
+### 6. Deleted workspace file download semantics
+- Workspace file signed-download now reads `deleted_at` and refuses to issue a link for a deleted current version. Explicit prior immutable versions remain addressable through version history.
+- Commit: `2b54081947a234194e8d759e1a2ba2379d0b0771`.
