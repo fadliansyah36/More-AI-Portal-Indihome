@@ -79,6 +79,15 @@ async def upload_artifact(
     """Upload raw bytes to private owner-scoped Storage, then persist metadata."""
     if not _SAFE_FILENAME.fullmatch(filename) or filename in {".", ".."}:
         raise HTTPException(400, "Filename contains unsupported characters")
+    declared_length = request.headers.get("content-length")
+    if declared_length:
+        try:
+            if int(declared_length) > MAX_ARTIFACT_BYTES:
+                raise HTTPException(413, "Artifact must contain between 1 byte and 2 MB")
+        except ValueError as exc:
+            raise HTTPException(400, "Content-Length is invalid") from exc
+    if conversation_id is not None and purpose is None:
+        raise HTTPException(422, "Conversation-scoped uploads require an explicit artifact purpose")
     content = await request.body()
     if not content or len(content) > MAX_ARTIFACT_BYTES:
         raise HTTPException(413, "Artifact must contain between 1 byte and 2 MB")
