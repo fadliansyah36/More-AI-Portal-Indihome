@@ -164,6 +164,21 @@ export const FilesView: React.FC = () => {
       ]);
       setWorkspaceUploadMessage('File tersimpan sebagai versi baru pada workspace yang dipilih.');
     } catch (cause) {
+      // Reconcile local CAS version after conflicts or ambiguous network failures.
+      // The server may have committed the immutable version even if its response was lost.
+      try {
+        const refreshed = await workspaceApi.files(selectedWorkspaceId);
+        setWorkspaceFiles((current) => [
+          ...current.filter((item) => item.workspaceId !== selectedWorkspaceId),
+          ...refreshed.items.map((item) => ({
+            ...item,
+            workspaceId: selectedWorkspaceId,
+            workspaceName: workspace.name,
+          })),
+        ]);
+      } catch {
+        // Preserve the original upload error; a later explicit reload can recover.
+      }
       setWorkspaceError(cause instanceof Error ? cause.message : 'Upload workspace gagal diproses oleh server.');
     } finally {
       setUploadingWorkspaceFile(false);
