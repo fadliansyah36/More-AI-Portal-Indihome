@@ -872,6 +872,12 @@ export type CustomerWorkspaceFile = {
   sha256: string | null;
   size_bytes: number | null;
   updated_at: string;
+  deleted_at?: string | null;
+};
+
+export type CustomerWorkspaceFileLifecycleResult = {
+  id: string; workspace_id: string; path: string; version: number;
+  deleted_at: string | null; status: 'deleted' | 'restored';
 };
 
 export type CustomerWorkspaceFileVersion = {
@@ -913,9 +919,23 @@ export const workspaceApi = {
   files: (workspaceId: string) => moreAiCustomerApi<{ items: CustomerWorkspaceFile[]; count: number }>(
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files?limit=100',
   ),
-  filesPage: (workspaceId: string, limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspaceFile>(
-    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
+  filesPage: (workspaceId: string, limit = 50, cursor?: string, includeDeleted = false) => moreAiCustomerApiPage<CustomerWorkspaceFile>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files?limit=' + Math.max(1, Math.min(100, limit))
+      + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '')
+      + (includeDeleted ? '&include_deleted=true' : ''),
   ),
+  deleteFile: (workspaceId: string, fileId: string, expectedVersion: number) =>
+    moreAiCustomerApi<CustomerWorkspaceFileLifecycleResult>(
+      '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId)
+        + '/delete?expected_version=' + encodeURIComponent(String(expectedVersion)),
+      { method: 'POST' },
+    ),
+  restoreFile: (workspaceId: string, fileId: string, expectedVersion: number) =>
+    moreAiCustomerApi<CustomerWorkspaceFileLifecycleResult>(
+      '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId)
+        + '/restore?expected_version=' + encodeURIComponent(String(expectedVersion)),
+      { method: 'POST' },
+    ),
   uploadFile: (workspaceId: string, path: string, expectedVersion: number, file: Blob, idempotencyKey: string) =>
     moreAiCustomerApi<CustomerWorkspaceUploadResult>(
       '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files',
