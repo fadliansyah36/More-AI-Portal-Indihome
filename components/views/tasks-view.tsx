@@ -19,7 +19,7 @@ import {
   Layers,
   ArrowLeft,
 } from 'lucide-react';
-import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact } from '@/lib/api/client';
+import { artifactApi, customerApi, type CustomerAgentRun, type CustomerAgentRunActivity, type CustomerWorkflowStep, type CustomerArtifact } from '@/lib/api/client';
 import { agentRunStatusLabel, isTerminalAgentRunStatus } from '@/lib/api/agent-run-status';
 import { TaskItem } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
@@ -73,6 +73,56 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   }, []);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedRun, setSelectedRun] = useState<CustomerAgentRun | null>(null);
+  const [runSteps, setRunSteps] = useState<CustomerWorkflowStep[]>([]);
+  const [runActivity, setRunActivity] = useState<CustomerAgentRunActivity[]>([]);
+  const [runDetailLoading, setRunDetailLoading] = useState(false);
+  const [runDetailError, setRunDetailError] = useState<string | null>(null);
+  const [cancellingRun, setCancellingRun] = useState(false);
+
+  const openRunDetails = async (run: CustomerAgentRun) => {
+    setSelectedRun(run);
+    setRunSteps([]);
+    setRunActivity([]);
+    setRunDetailError(null);
+    setRunDetailLoading(true);
+    const [stepsResult, activityResult, runResult] = await Promise.allSettled([
+      customerApi.getRunSteps(run.id),
+      customerApi.getRunActivity(run.id, 0, 200),
+      customerApi.getRun(run.id),
+    ]);
+    if (stepsResult.status === 'fulfilled') setRunSteps(stepsResult.value);
+    if (activityResult.status === 'fulfilled') setRunActivity(activityResult.value.items);
+    if (runResult.status === 'fulfilled') {
+      setSelectedRun(runResult.value);
+      setRuns((current) => current.map((item) => item.id === run.id ? runResult.value : item));
+    }
+    const errors = [stepsResult, activityResult, runResult]
+      .filter((result) => result.status === 'rejected')
+      .map((result) => result.reason instanceof Error ? result.reason.message : 'Data lifecycle Agent Run tidak dapat dimuat.');
+    if (errors.length) setRunDetailError(errors.join(' · '));
+    setRunDetailLoading(false);
+  };
+
+  const cancelSelectedRun = async () => {
+    if (!selectedRun || isTerminalAgentRunStatus(selectedRun.status) || cancellingRun) return;
+    setCancellingRun(true);
+    setRunDetailError(null);
+    try {
+      const result = await customerApi.cancelRun(selectedRun.id);
+      const refreshed = await customerApi.getRun(selectedRun.id);
+      setSelectedRun(refreshed);
+      setRuns((current) => current.map((item) => item.id === refreshed.id ? refreshed : item));
+      setTasks((current) => current.map((task) => task.id === refreshed.id
+        ? { ...task, completed: isTerminalAgentRunStatus(refreshed.status), category: agentRunStatusLabel(refreshed.status) }
+        : task));
+      showToast(result.status === 'cancel_requested' ? 'Permintaan pembatalan diteruskan ke worker.' : 'Status Agent Run diperbarui.', 'success');
+    } catch (cause) {
+      setRunDetailError(cause instanceof Error ? cause.message : 'Permintaan pembatalan gagal.');
+    } finally {
+      setCancellingRun(false);
+    }
+  };
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,9 +294,15 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
             </div>
           ) : (
             filteredTasks.map((task) => (
-              <div
+              <button
+                type="button"
                 key={task.id}
-                className={`p-3.5 rounded-2xl border transition-all flex items-center gap-3 group ${
+                onClick={() => {
+                  const run = runs.find((item) => item.id === task.id);
+                  if (run) void openRunDetails(run);
+                }}
+                aria-label={`Lihat detail Agent Run ${task.id.slice(0, 8)}`}
+                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-center gap-3 group ${
                   task.completed
                     ? 'bg-slate-50/70 border-slate-200/60 opacity-80'
                     : 'bg-white border-slate-200/90 hover:border-red-200 shadow-xs'
@@ -287,7 +343,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                     +{task.credits}K
                   </span>
                 )}
-              </div>
+              </button>
             ))
           )}
           {nextCursor && (
@@ -372,6 +428,63 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
             </button>
           )}
           <button onClick={() => onOpenWorkspaceFiles?.()} className="w-full py-3 rounded-2xl bg-red-600 text-white text-xs font-bold">Buka Workspace File</button>
+        </div>
+      )}
+
+      {/* Durable Agent Run detail: only owner-safe backend projections are rendered. */}
+      {selectedRun && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-slate-900">Detail Agent Run</h3>
+                <p className="text-[11px] text-slate-500 break-all">{selectedRun.id}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-700">Status backend: {agentRunStatusLabel(selectedRun.status)} · Attempt {selectedRun.attempt ?? '—'} / {selectedRun.max_attempts ?? '—'}</p>
+              </div>
+              <button type="button" onClick={() => setSelectedRun(null)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600">Tutup</button>
+            </div>
+            {runDetailError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{runDetailError}</p>}
+            {runDetailLoading ? <p className="text-xs text-slate-500">Memuat lifecycle dari FastAPI…</p> : (
+              <>
+                {typeof selectedRun.output?.text === 'string' && (
+                  <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 space-y-1">
+                    <h4 className="text-xs font-bold text-emerald-900">Output</h4>
+                    <p className="whitespace-pre-wrap text-xs text-emerald-950">{selectedRun.output.text}</p>
+                  </section>
+                )}
+                {selectedRun.last_checkpoint_key && (
+                  <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-600">Checkpoint terakhir: <span className="font-semibold">{selectedRun.last_checkpoint_key}</span></p>
+                )}
+                <section className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-900">Durable workflow steps ({runSteps.length})</h4>
+                  {runSteps.length ? runSteps.map((step) => (
+                    <div key={step.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-2.5">
+                      <div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-800">{step.sequence}. {step.step_key}</p><p className="text-[10px] text-slate-500">{step.started_at ? new Date(step.started_at).toLocaleString('id-ID') : 'Belum dimulai'}</p></div>
+                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-700">{step.status}</span>
+                    </div>
+                  )) : <p className="text-[11px] text-slate-500">Belum ada step yang dipersist oleh worker.</p>}
+                </section>
+                <section className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-900">Execution events ({runActivity.length})</h4>
+                  {runActivity.length ? runActivity.map((event) => (
+                    <div key={event.id} className="rounded-xl border border-slate-200 p-2.5">
+                      <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-slate-800">#{event.sequence} · {event.message || event.event_type}</p><span className="text-[10px] text-slate-500">{event.level || 'INFO'}</span></div>
+                      <p className="mt-1 text-[10px] text-slate-500">{new Date(event.timestamp).toLocaleString('id-ID')}{event.tool ? ' · Tool: ' + event.tool : ''}{event.phase ? ' · ' + event.phase : ''}{typeof event.progress === 'number' ? ' · ' + event.progress + '%' : ''}</p>
+                    </div>
+                  )) : <p className="text-[11px] text-slate-500">Belum ada event yang tersedia pada safe activity projection.</p>}
+                </section>
+              </>
+            )}
+            <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-3">
+              {!isTerminalAgentRunStatus(selectedRun.status) && (
+                <button type="button" onClick={() => void cancelSelectedRun()} disabled={cancellingRun}
+                  className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 disabled:opacity-50">
+                  {cancellingRun ? 'Mengirim pembatalan…' : 'Batalkan Agent Run'}
+                </button>
+              )}
+              <p className="self-center text-[10px] text-slate-500">Retry tidak ditampilkan karena belum ada endpoint retry customer yang terverifikasi.</p>
+            </div>
+          </div>
         </div>
       )}
 
