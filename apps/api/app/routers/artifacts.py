@@ -107,9 +107,9 @@ async def upload_artifact(
                 raise HTTPException(415, "Text attachments must use UTF-8 encoding") from exc
         elif mime_type == "application/pdf" and not content.startswith(b"%PDF-"):
             raise HTTPException(415, "PDF signature is invalid")
-        elif mime_type == "image/jpeg" and not content.startswith(b"\\xff\\xd8\\xff"):
+        elif mime_type == "image/jpeg" and not content.startswith(b"\xff\xd8\xff"):
             raise HTTPException(415, "JPEG signature is invalid")
-        elif mime_type == "image/png" and not content.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+        elif mime_type == "image/png" and not content.startswith(b"\x89PNG\r\n\x1a\n"):
             raise HTTPException(415, "PNG signature is invalid")
         elif mime_type == "image/webp" and not (content.startswith(b"RIFF") and content[8:12] == b"WEBP"):
             raise HTTPException(415, "WebP signature is invalid")
