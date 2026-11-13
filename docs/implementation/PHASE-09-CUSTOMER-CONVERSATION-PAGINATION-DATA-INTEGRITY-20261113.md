@@ -5,6 +5,10 @@ Repository: `fadliansyah36/More-AI-Portal-Indihome`
 Branch: `main`  
 Scope: source-level integration and contract corrections only. Existing Customer UI visual system and navigation remain protected; no real tests or staging.
 
+Baseline commit at start of this increment: `749ec489a808ffe5d02c1b753e4109a95dcfdb98`  
+Latest source commit in this increment: `1bdce9de5a401214151beee752b1b918906f2185`  
+Latest tracker commit: `f0c946386eb3c69185a179f36565700a4562e8dd`
+
 ## Implemented in this increment
 
 ### 1. Conversation and Agent Run response contracts
@@ -55,6 +59,15 @@ Scope: source-level integration and contract corrections only. Existing Customer
 - `276f1a5e2dac435fb47dd09369e64fb3db75800f`, `675ffd7c95859ebf0853969701da2d45d2033c29` — currency-safe wallet display in Wi-Fi and captive success.
 - `e4fe2b4b43e8a15c69737ec9cd026c389c86094a`, `b1830b17ff49fd9a8ba040087e1f8eb632aa2275`, `a1b8b6b52f2480dee0fb9e1d26d0ed13a63e1e62`, `70953f9fab7a0327f9ae392fa72ededa5d7946ed` — EduTech fail-closed catalogue and lesson views.
 - `560b0d97b2511a45a254367c12645e62b2284ccd` — typed quota policy scope.
+
+
+## Files and UI preservation
+- Backend: `apps/api/app/main.py`, `apps/api/app/pagination.py`, and Customer routers for conversations, Customer context/wallet/network, Agent Runs, workspaces, artifacts, approvals, knowledge, learning, catalog and notifications.
+- Frontend: `lib/api/client.ts`, `lib/api/knowledge.ts`, and Customer views for Files, Research, Workflow, Code Assistant, Chat, Token Ledger, Benefit Credit, Wi-Fi Session, Captive Success and EduTech.
+- Documentation: Phase 09 action/API inventory, Phase 09 reconciliation report and Phase tracker.
+- No source was copied from or replaced by a generic OpenManus UI. Existing Customer design system, navigation and component structure were retained. The only material content change removes local EduTech demo courses/lessons from active screens and replaces them with an explicit provider-unavailable state.
+- UI screenshots were not captured because the requested boundary excludes browser/runtime verification; this is recorded as an unverified visual regression item, not as proof of visual acceptance.
+- No Supabase schema or migration was changed in this increment.
 
 ## Provider and source-of-truth boundaries
 - Gateway/OTP/consent/session activation remains disabled until official gateway APIs, credentials and verification contracts exist.
