@@ -64,6 +64,12 @@ class SupabaseWorkspaceTool:
         if operation == "restore_deleted":
             if deleted_at is None or not storage_path:
                 raise ValueError("workspace_deleted_file_not_found")
+            bucket = await self.client.client.get(
+                f"{self.client.settings.supabase_url.rstrip('/')}/storage/v1/bucket/{quote(self.bucket, safe='')}",
+                headers=self._headers(), timeout=8.0,
+            )
+            if bucket.status_code >= 400 or not isinstance(bucket.json(), dict) or bucket.json().get("public") is not False:
+                raise RuntimeError("workspace_bucket_must_exist_and_be_private")
             expected_sha = current.get("sha256")
             expected_size = current.get("size_bytes")
             if (
