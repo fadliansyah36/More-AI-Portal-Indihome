@@ -27,6 +27,17 @@ print(greet("MoreAI - Global Partner Network"))`
   const [projectsError, setProjectsError] = useState<string | null>(null);
   const [downloadingProject, setDownloadingProject] = useState<string | null>(null);
 
+  useEffect(() => {
+    let active = true;
+    customerApi.agentRuns().then((items) => {
+      if (active) setAvailableRuns(items);
+    }).catch(() => {
+      // The run selector remains empty when history is unavailable; uploads can
+      // still be saved without a run association.
+    });
+    return () => { active = false; };
+  }, []);
+
   const handleRunCode = () => {
     if (!code.trim() || isRunning) return;
     if (!onNavigateToChat) {
