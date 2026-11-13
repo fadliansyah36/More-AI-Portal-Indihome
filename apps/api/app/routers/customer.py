@@ -239,8 +239,13 @@ async def customer_agent_run_stream(
                 idle_rounds += 1
                 run = await repo.owned_record("agent_runs", run_id, principal["id"])
                 status = run.get("status")
-                if status in {"succeeded", "failed", "cancelled", "expired"}:
-                    terminal_event = "run.completed" if status == "succeeded" else "run.cancelled" if status == "cancelled" else "run.failed"
+                if status in {"succeeded", "failed", "cancelled", "expired", "timed_out"}:
+                    terminal_event = (
+                        "run.completed" if status == "succeeded"
+                        else "run.cancelled" if status == "cancelled"
+                        else "run.timed_out" if status == "timed_out"
+                        else "run.failed"
+                    )
                     payload = json.dumps({
                         "run_id": str(run_id), "status": status,
                         "output": run.get("output"), "error": run.get("error"),
