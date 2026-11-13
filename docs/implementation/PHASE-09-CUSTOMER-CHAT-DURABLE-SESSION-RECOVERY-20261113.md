@@ -385,3 +385,7 @@ Additional commits:
 - `decaf2e48f2e75fe8d5e90de4c08e2505c5bf5b5` — sanitize direct Agent Run event-history endpoint.
 
 No runtime verification was performed. The approval migration was applied to canonical Supabase; no data mutation, staging or deployment was performed.
+
+
+### PRD coverage acceptance matrix
+The final Customer screen/action reconciliation is recorded in [PHASE-09-CUSTOMER-DASHBOARD-ACCEPTANCE-MATRIX-20261114.md](./PHASE-09-CUSTOMER-DASHBOARD-ACCEPTANCE-MATRIX-20261114.md). It maps the existing Customer views to backend contracts and explicitly marks unavailable or gated contracts (connector OAuth, Memory privacy lifecycle, manual retry, payment/subscription settlement, partner OTP/gateway activation and isolated tool execution) as not connected rather than simulating them. Phase 09 remains open until those approved provider/domain contracts are available and runtime acceptance is separately authorized.
