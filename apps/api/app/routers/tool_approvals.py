@@ -30,7 +30,7 @@ class ToolApprovalDecisionResponse(BaseModel):
     id: UUID
     run_id: UUID
     tool_key: str
-    status: Literal["approved", "denied", "expired"]
+    status: Literal["approved", "denied", "expired", "consumed"]
     decided_at: datetime
     expires_at: datetime
 
@@ -111,20 +111,32 @@ async def decide_tool_approval(
     user: dict[str, Any] = Depends(customer_principal),
 ):
     repo = repository(request)
-    await repo.owned_record("agent_tool_approvals", approval_id, user["id"])
-    result = await repo.rpc("moreai_decide_tool_approval", {
-        "p_approval_id": str(approval_id),
-        "p_user_id": user["id"],
-        "p_decision": body.decision,
-    })
-    if isinstance(result, dict) and result.get("id"):
-        return result
-    rows = await repo.select("agent_tool_approvals", {
-        "id": f"eq.{approval_id}",
-        "user_id": f"eq.{user['id']}",
-        "select": "id,run_id,tool_key,status,decided_at,expires_at",
-        "limit": "1",
-    })
-    if not rows:
-        raise HTTPException(404, "Tool approval not found")
-    return rows[0]
+    current = await repo.owned_record("agent_tool_approvals", approval_id, user["id"])
+    projection = lambda row: {
+        "id": row["id"], "run_id": row["run_id"], "tool_key": row["tool_key"],
+        "status": row["status"], "decided_at": row.get("decided_at"),
+        "expires_at": row["expires_at"],
+    }
+    current_status = str(current.get("status") or "")
+    if current_status in {"approved", "denied", "expired", "consumed"}:
+        if current_status == body.decision or current_status in {"expired", "consumed"}:
+            return projection(current)
+        raise HTTPException(409, "Tool approval already has a different durable decision")
+    try:
+        result = await repo.rpc("moreai_decide_tool_approval", {
+            "p_approval_id": str(approval_id),
+            "p_user_id": user["id"],
+            "p_decision": body.decision,
+        })
+        if isinstance(result, dict) and result.get("id"):
+            return result
+    except HTTPException:
+        # A lost response or concurrent decision may leave the durable row
+        # committed. Re-read owner-scoped state before returning a conflict.
+        refreshed = await repo.owned_record("agent_tool_approvals", approval_id, user["id"])
+        refreshed_status = str(refreshed.get("status") or "")
+        if refreshed_status == body.decision or refreshed_status in {"expired", "consumed"}:
+            return projection(refreshed)
+        raise
+    refreshed = await repo.owned_record("agent_tool_approvals", approval_id, user["id"])
+    return projection(refreshed)
