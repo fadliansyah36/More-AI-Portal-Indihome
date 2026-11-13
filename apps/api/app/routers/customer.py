@@ -158,6 +158,15 @@ class CustomerUsageRecordResponse(BaseModel):
     created_at: datetime
 
 
+class CustomerAccessCodeRedeemResponse(BaseModel):
+    redemption_id: UUID
+    replayed: bool
+    redeemed_at: datetime
+    reward_id: UUID | None = None
+    partner_entitlement_activated: bool | None = None
+    message: str | None = None
+
+
 class CustomerUsageAnalyticsSummaryResponse(BaseModel):
     total_requests: int
     total_tokens: int
@@ -806,7 +815,7 @@ class AccessCodeRedeem(BaseModel):
     verification_session_id: UUID
 
 
-@router.post("/access-codes/redeem", response_model=dict[str, Any])
+@router.post("/access-codes/redeem", response_model=CustomerAccessCodeRedeemResponse)
 async def redeem_partner_access_code(
     body: AccessCodeRedeem,
     request: Request,
