@@ -80,3 +80,7 @@ No support ticket schema, response lifecycle or official support provider is con
 - No tests, lint, typecheck, build, browser checks, screenshots, API probes, worker execution, staging or E2E checks were run.
 - Supabase schema and migration metadata were inspected read-only, except the explicitly recorded additive analytics migration.
 - Production frontend/API deployment still needs a new deployment after the Vercel deployment quota recovers.
+
+## Captive Gateway production inventory addendum
+
+Read-only production counts at the time of this inventory: `network_providers=0`, `partner_networks=0`, `network_verification_configs=0`, `network_sessions=0`. All five network verification catalog methods are `adapter_ready=false`. There is no real gateway/network configuration or provider secret reference in the canonical project to connect an adapter against. The customer portal therefore remains fail-closed until a partner network and supported gateway/provider contract are onboarded.
