@@ -83,3 +83,8 @@ Scope: source-level integration and contract corrections only. Existing Customer
 - Knowledge chunk `token_count` is nullable to match persisted records.
 - Commits: `83f3c73e6548b84b18ef39671c685ce46f1d49e8`, `0d9bf31108b63622d0c3787b5b68e4d771c2b375`, `390abbc76680683ad4ca4d27438c517bcdfd5b0a`, `37b544099e7593e2e65102291ea7a4b7404c6e09`, `89d49cebb165a6d88d507aba531278cd2c3b627f`, `f9364d435297a9e20ce3f17946856f6b08a6b3d9`, `251aa620a5b7b709219e827f28ce4ada9347d10d`, `61ba3229ae19ca05cfa58a6c8fa4d79fb5276b5b`.
 - Currency display refinements: Token Ledger does not show a fabricated zero balance when no active wallet exists and Wi-Fi Session does not append a currency without an active wallet. Commits `554707e14e7b4183c52591cd715a0ad75a1e3244`, `4ffa37989d66bf522d6d4e19b8b572fc5b168051`, `b15271a86378667bbf1955ab9b5f1030722cee05`.
+
+### Artifact navigation pagination
+- Private artifact listing now uses stable `created_at + id` keyset pagination, emits `X-Next-Cursor`, and resolves Chat attachment run links only for the current page rather than a fixed global link slice.
+- Added typed `artifactApi.listPage()` and updated the Files screen to load artifact pages incrementally without losing already-loaded items. Legacy Research/Tasks/artifact readers request a bounded first page of 100 items.
+- Commits: `ffc1b645f1a12eb9ca49112df65d0c84915a88f3`, `05f905a01eeba8eb57cdf4c8d2c8d3c2fc0e03ba`, `89a49091aac90d73c375ce8862958f24ce37d5af`, `2e6b0195aa8e477651951b643d82da062073ca42`.
