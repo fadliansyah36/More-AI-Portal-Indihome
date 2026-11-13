@@ -4,24 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Clock, Loader2, AlertCircle, Download } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { artifactApi, customerApi, customerToolApprovalApi, type CustomerAgentRun, type CustomerToolApproval, type CustomerArtifact } from '@/lib/api/client';
+import { agentRunStatusLabel, isActiveAgentRunStatus, isTerminalAgentRunStatus } from '@/lib/api/agent-run-status';
 
 interface WorkflowProgressViewProps {
   onBack: () => void;
   onNavigateTab: (tab: NavigationTab) => void;
 }
 
-const statusLabel: Record<string, string> = {
-  queued: 'Dalam antrean',
-  pending: 'Menunggu worker',
-  running: 'Sedang berjalan',
-  awaiting_approval: 'Menunggu persetujuan',
-  waiting_approval: 'Menunggu persetujuan',
-  succeeded: 'Selesai',
-  failed: 'Gagal',
-  cancelled: 'Dibatalkan',
-  expired: 'Kedaluwarsa',
-  timed_out: 'Waktu eksekusi habis',
-};
+
 
 const runSummary = (run: CustomerAgentRun) => {
   const output = run.output || {};
@@ -105,8 +95,8 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     }
   };
 
-  const activeCount = runs.filter((run) => ['queued', 'pending', 'running', 'awaiting_approval', 'waiting_approval'].includes(run.status)).length;
-  const completedCount = runs.filter((run) => run.status === 'succeeded').length;
+  const activeCount = runs.filter((run) => isActiveAgentRunStatus(run.status)).length;
+  const completedCount = runs.filter((run) => isTerminalAgentRunStatus(run.status)).length;
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -181,7 +171,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         {!isLoading && !error && runs.length > 0 && (
           <div className="space-y-3">
             {runs.map((run) => {
-              const terminal = ['succeeded', 'failed', 'cancelled', 'expired'].includes(run.status);
+              const terminal = isTerminalAgentRunStatus(run.status);
               const successful = run.status === 'succeeded';
               return (
                 <div key={run.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3">
@@ -198,7 +188,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="text-xs font-bold text-slate-900 truncate">Agent Run · {run.id.slice(0, 8)}</h3>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${successful ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : terminal ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
-                        {statusLabel[run.status] || run.status}
+                        {agentRunStatusLabel(run.status)}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1">Conversation: {run.conversation_id || 'Tidak terkait percakapan'}</p>
