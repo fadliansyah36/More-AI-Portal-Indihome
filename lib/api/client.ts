@@ -274,7 +274,7 @@ export async function moreAiApiStream(
         }
         receivedEvent = true;
         onEvent({ id, event, data: parsed as Record<string, unknown> });
-        if (['run.completed', 'run.failed', 'run.cancelled', 'run.expired'].includes(event)) terminal = true;
+        if (['run.completed', 'run.failed', 'run.cancelled', 'run.timed_out', 'run.expired'].includes(event)) terminal = true;
       } catch {
         // Malformed frames are ignored; durable run/event retrieval remains authoritative.
       }
