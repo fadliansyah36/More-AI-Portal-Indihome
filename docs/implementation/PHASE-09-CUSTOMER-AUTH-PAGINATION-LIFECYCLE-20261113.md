@@ -39,6 +39,7 @@ Scope: source-only continuation of the existing Customer dashboard integration. 
 - `82f812a8367d2c78e09b934791865ac469e512ae` — scope Customer agent/model catalogue to Customer principal.
 - `af4b68c24b6c55b9f2de54c678e4c8ee6b022f35` — require Customer principal across Customer API routes.
 - `15257ace00c0d7b53c7d115d73718953432a0aae` — separate approval decision persistence from Agent Run refresh errors.
+- `0532ce6e5cc927e456aec368ada2e0237d8fc96b` — type the complete durable approval decision response, including the required `resumed` flag.
 - `9ff71fbd281a9d6127c620dcc739182214c115fe` — initial Customer principal enforcement for notifications.
 - Pagination, schema and sample-content corrections are recorded in the latest direct-main commit history, including `4888d625`, `0fbb38a8`, `0638df8a`, `d8454a46`, `eac4dc1e` and `33a01753`.
 
