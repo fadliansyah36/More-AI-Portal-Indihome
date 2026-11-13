@@ -345,9 +345,9 @@ export const platformCatalogApi = {
 };
 
 export const profileApi = {
-  get: () => moreAiCustomerApi<{ user: { id: string; email?: string; display_name?: string | null }; profile: CustomerProfile | null }>('/api/v1/me'),
+  get: () => moreAiCustomerApi<{ user: { id: string; email: string | null; display_name: string | null }; profile: CustomerProfile | null }>('/api/v1/me'),
   update: (payload: Partial<Pick<CustomerProfile, 'display_name' | 'avatar_path' | 'locale' | 'timezone'>>) =>
-    moreAiCustomerApi<{ user: { id: string; email?: string; display_name?: string | null }; profile: CustomerProfile }>('/api/v1/me/profile', {
+    moreAiCustomerApi<{ user: { id: string; email: string | null; display_name: string | null }; profile: CustomerProfile | null }>('/api/v1/me/profile', {
       method: 'PATCH', body: JSON.stringify(payload),
     }),
 };
