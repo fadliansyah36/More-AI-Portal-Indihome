@@ -43,14 +43,22 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
   const [inputText, setInputText] = useState(initialPrompt);
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoringConversation, setIsRestoringConversation] = useState(!initialPrompt.trim());
+  const [olderMessagesCursor, setOlderMessagesCursor] = useState<string | null>(null);
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
+  const [messageHistoryError, setMessageHistoryError] = useState<string | null>(null);
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const sentInitialPrompt = useRef(false);
+  const suppressAutoScroll = useRef(false);
 
   useEffect(() => {
+    if (suppressAutoScroll.current) {
+      suppressAutoScroll.current = false;
+      return;
+    }
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -68,6 +76,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         const restored = await customerApi.getConversation(latest.id);
         if (!active) return;
         setConversationId(restored.conversation.id);
+        setOlderMessagesCursor(restored.nextCursor);
+        setMessageHistoryError(null);
         setMessages(restored.messages
           .filter((message) => message.role === 'user' || message.role === 'assistant')
           .map((message) => ({
@@ -88,6 +98,35 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     void restoreLatestConversation();
     return () => { active = false; };
   }, [initialPrompt]);
+
+  const loadOlderMessages = async () => {
+    if (!conversationId || !olderMessagesCursor || loadingOlderMessages) return;
+    setLoadingOlderMessages(true);
+    setMessageHistoryError(null);
+    try {
+      const page = await customerApi.conversationMessagesPage(conversationId, 50, olderMessagesCursor);
+      const older = page.items
+        .filter((message) => message.role === 'user' || message.role === 'assistant')
+        .map((message) => ({
+          id: message.id,
+          sender: message.role as 'user' | 'assistant',
+          text: message.content,
+          time: new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: message.role === 'assistant' ? 'MoreAI Agent Runtime' : undefined,
+          attachments: message.attachments ?? [],
+        }));
+      suppressAutoScroll.current = true;
+      setMessages((current) => {
+        const known = new Set(current.map((message) => message.id));
+        return [...older.filter((message) => !known.has(message.id)), ...current];
+      });
+      setOlderMessagesCursor(page.nextCursor);
+    } catch (cause) {
+      setMessageHistoryError(cause instanceof Error ? cause.message : 'Riwayat percakapan sebelumnya tidak dapat dimuat.');
+    } finally {
+      setLoadingOlderMessages(false);
+    }
+  };
 
   const handleSendMessage = useCallback(async (textToSend?: string) => {
     const text = (textToSend ?? inputText).trim();
@@ -122,6 +161,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         const created = await customerApi.createConversation(prompt.slice(0, 120));
         activeConversationId = created.id;
         setConversationId(created.id);
+        setOlderMessagesCursor(null);
       }
 
       const uploadedAttachments = await Promise.all(
@@ -285,6 +325,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       </header>
 
       <div className="flex-1 space-y-4 overflow-y-auto bg-slate-50/70 px-4 py-5">
+        {olderMessagesCursor && (
+          <div className="mx-auto max-w-sm space-y-2 text-center">
+            <button type="button" onClick={() => void loadOlderMessages()} disabled={loadingOlderMessages}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50">
+              {loadingOlderMessages ? 'Memuat pesan sebelumnya…' : 'Muat pesan sebelumnya'}
+            </button>
+            {messageHistoryError && <p role="alert" className="text-xs text-amber-800">{messageHistoryError}</p>}
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="mx-auto flex max-w-md flex-col items-center py-12 text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
