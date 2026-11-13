@@ -127,11 +127,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       const uploadedAttachments = await Promise.all(
         filesToUpload.map((file) => artifactApi.uploadAttachment(activeConversationId as string, file)),
       );
-      if (filesToUpload.length > 0) setPendingAttachments([]);
       const queued = await customerApi.sendMessage(
         activeConversationId, prompt, crypto.randomUUID(), initialAgentKey,
         uploadedAttachments.map((attachment) => attachment.id),
       );
+      if (filesToUpload.length > 0) setPendingAttachments([]);
       setActiveRunId(queued.run.id);
 
       setMessages((previous) => [...previous, {
