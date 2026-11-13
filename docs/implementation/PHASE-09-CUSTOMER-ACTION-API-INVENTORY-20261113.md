@@ -32,7 +32,7 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Create Studio image/video generation | No provider client exposed | No verified generation provider contract | Unavailable; must not create mock media or charge credits |
 | Agent Studio catalog | `customerApi.agents()` | `GET /api/v1/agents` | Connected; FastAPI response schema declares enabled agent catalogue; explicit typed client uses configured Customer API origin |
 | Research history and artifacts | `customerApi.agentRunsPage()`, `artifactApi.listPage()/signedDownload()` | Agent Run and private Artifact routes | Connected; Research uses keyset run and artifact pages with incremental loading; artifact references are owner-scoped and signed downloads remain server-issued |
-| Analyse document upload | `knowledgeApi.upload()/listPage()/get()` | `POST /api/v1/customer/knowledge/documents/upload`, `GET /documents`, `GET /documents/{id}` | Connected to private ingestion and owner-scoped Knowledge Library; Analyse document selection and Knowledge Library now load document pages incrementally; upload/list/detail/retry/archive response schemas declared; retry and archive remain owner-scoped |
+| Analyse document upload | `knowledgeApi.upload()/listPage()/get()` | `POST /api/v1/customer/knowledge/documents/upload`, `GET /documents`, `GET /documents/{id}` | Connected to private ingestion and owner-scoped Knowledge Library; Analyse document selection and Knowledge Library now load document pages incrementally; upload/list/detail/retry/archive response schemas declared; document chunks now use owner-scoped after_chunk_index pagination and exact total count; retry and archive remain owner-scoped |
 | Analyse selected document with Agent | Knowledge document selection → Chat handoff | Durable Agent Run + `knowledge_search(document_ids)` | Source-integrated; retrieval is restricted to the selected ready document ID |
 | Code Assistant analysis | `CodeView → handleStartPrompt` | Existing Chat Agent Run contract | Connected; no Python execution claim |
 | Code snapshot save/list/download | `artifactApi.upload/listPage/signedDownload` | `POST/GET /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; Code Assistant snapshot history and Agent Run selector load incrementally; optional owner-verified Agent Run link |
@@ -77,7 +77,7 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 - Files screen exposes deleted state, restore/delete actions, exact path lookup before upload, and explicit download of archived versions. Upload into a deleted path requires restore first.
 - Conversation session detail now includes all persisted timing/cancellation lifecycle fields; conversation attachment response items are typed.
 - Workspace member/run API contracts remain owner/member-scoped and paginated. The current UI does not contain a dedicated member/run management screen.
-- Knowledge Library list is paged and owner-scoped; document detail chunk retrieval remains capped at 500 and is not yet paginated. Learning progress is now keyset-paged with exact total count and no 1,000-row cap.
+- Knowledge Library list and document chunk detail are paged and owner-scoped, with exact chunk totals. Learning progress is also keyset-paged with exact total count and no 1,000-row cap; progress writes remain fail-closed until official catalog IDs exist.
 - See [Workspace union pagination & immutable file lifecycle report](./PHASE-09-CUSTOMER-WORKSPACE-UNION-LIFECYCLE-20261113.md).
 
 ## Additional reconciliation — 2026-11-13
