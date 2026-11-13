@@ -24,6 +24,7 @@ print(greet("MoreAI - Global Partner Network"))`
   const [availableRuns, setAvailableRuns] = useState<CustomerAgentRun[]>([]);
   const [availableRunsNextCursor, setAvailableRunsNextCursor] = useState<string | null>(null);
   const [loadingMoreRuns, setLoadingMoreRuns] = useState(false);
+  const [availableRunsError, setAvailableRunsError] = useState<string | null>(null);
   const [selectedRunId, setSelectedRunId] = useState('');
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [projectsError, setProjectsError] = useState<string | null>(null);
@@ -34,10 +35,9 @@ print(greet("MoreAI - Global Partner Network"))`
   useEffect(() => {
     let active = true;
     customerApi.agentRunsPage(50).then((page) => {
-      if (active) { setAvailableRuns(page.items); setAvailableRunsNextCursor(page.nextCursor); }
-    }).catch(() => {
-      // The run selector remains empty when history is unavailable; uploads can
-      // still be saved without a run association.
+      if (active) { setAvailableRuns(page.items); setAvailableRunsNextCursor(page.nextCursor); setAvailableRunsError(null); }
+    }).catch((cause) => {
+      if (active) setAvailableRunsError(cause instanceof Error ? cause.message : 'Riwayat Agent Run tidak dapat dimuat.');
     });
     return () => { active = false; };
   }, []);
@@ -67,7 +67,8 @@ print(greet("MoreAI - Global Partner Network"))`
       } else {
         setProjectsError(artifacts.reason instanceof Error ? artifacts.reason.message : 'Snapshot kode tidak dapat dimuat.');
       }
-      if (runs.status === 'fulfilled') { setAvailableRuns(runs.value.items); setAvailableRunsNextCursor(runs.value.nextCursor); }
+      if (runs.status === 'fulfilled') { setAvailableRuns(runs.value.items); setAvailableRunsNextCursor(runs.value.nextCursor); setAvailableRunsError(null); }
+      else setAvailableRunsError(runs.reason instanceof Error ? runs.reason.message : 'Riwayat Agent Run tidak dapat dimuat.');
     }).finally(() => {
       if (active) setProjectsLoading(false);
     });
@@ -107,8 +108,9 @@ print(greet("MoreAI - Global Partner Network"))`
         return [...current, ...page.items.filter((run) => !known.has(run.id))];
       });
       setAvailableRunsNextCursor(page.nextCursor);
+      setAvailableRunsError(null);
     } catch (cause) {
-      setProjectsError(cause instanceof Error ? cause.message : 'Riwayat Agent Run berikutnya tidak dapat dimuat.');
+      setAvailableRunsError(cause instanceof Error ? cause.message : 'Riwayat Agent Run berikutnya tidak dapat dimuat.');
     } finally {
       setLoadingMoreRuns(false);
     }
@@ -213,6 +215,7 @@ print(greet("MoreAI - Global Partner Network"))`
                 return <option key={run.id} value={run.id}>{label} · {run.status}</option>;
               })}
             </select>
+            {availableRunsError && <p role="alert" className="text-[10px] text-amber-800">{availableRunsError}</p>}
             {availableRunsNextCursor && (
               <button type="button" onClick={() => void loadMoreAvailableRuns()} disabled={loadingMoreRuns}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
