@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal
 from typing import Any, Literal
 from uuid import UUID
@@ -151,6 +151,43 @@ class CustomerUsageRecordResponse(BaseModel):
     status: str
     latency_ms: int | None
     created_at: datetime
+
+
+class CustomerUsageAnalyticsSummaryResponse(BaseModel):
+    total_requests: int
+    total_tokens: int
+    successful_requests: int
+    failed_requests: int
+    total_cost: Decimal
+    average_latency_ms: int
+
+
+class CustomerUsageAnalyticsModelResponse(BaseModel):
+    model_key: str
+    provider_key: str
+    requests: int
+    tokens: int
+    successful_requests: int
+    cost: Decimal
+
+
+class CustomerUsageAnalyticsDayResponse(BaseModel):
+    day: date
+    requests: int
+    tokens: int
+    cost: Decimal
+
+
+class CustomerUsageAnalyticsPeriodResponse(BaseModel):
+    since: datetime
+    until: datetime
+
+
+class CustomerUsageAnalyticsResponse(BaseModel):
+    summary: CustomerUsageAnalyticsSummaryResponse
+    by_model: list[CustomerUsageAnalyticsModelResponse]
+    by_day: list[CustomerUsageAnalyticsDayResponse]
+    period: CustomerUsageAnalyticsPeriodResponse
 
 
 class CustomerEntitlementResponse(BaseModel):
@@ -617,7 +654,7 @@ async def customer_usage(
     return rows
 
 
-@router.get("/usage/analytics", response_model=dict[str, Any])
+@router.get("/usage/analytics", response_model=CustomerUsageAnalyticsResponse)
 async def customer_usage_analytics(
     request: Request,
     days: int = Query(default=30, ge=1, le=365),
