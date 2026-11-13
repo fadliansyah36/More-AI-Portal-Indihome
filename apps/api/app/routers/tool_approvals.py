@@ -63,7 +63,7 @@ async def list_tool_approvals(
     })
 
 
-@router.post("", status_code=201, response_model=ToolApprovalMutationResponse)
+@router.post("", status_code=201, response_model=ToolApprovalResponse)
 async def request_tool_approval(
     body: ApprovalRequest, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
@@ -83,7 +83,15 @@ async def request_tool_approval(
         raise
     if not approval_id:
         raise HTTPException(502, "Approval request was not persisted")
-    return {"id": approval_id, "status": "pending"}
+    rows = await repo.select("agent_tool_approvals", {
+        "id": f"eq.{approval_id}",
+        "user_id": f"eq.{user['id']}",
+        "select": "id,run_id,tool_key,summary,status,requested_at,expires_at,decided_at,consumed_at",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(502, "Persisted approval could not be reloaded")
+    return rows[0]
 
 
 @router.post("/{approval_id}/decision", response_model=ToolApprovalDecisionResponse)
