@@ -230,7 +230,10 @@ async def get_run_steps(
 @router.post("/{run_id}/cancel", response_model=AgentRunCancellationResponse)
 async def cancel_run(run_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
-    await repo.owned_record("agent_runs", run_id, user["id"])
+    run = await repo.owned_record("agent_runs", run_id, user["id"])
+    status = str(run.get("status") or "")
+    if status in _TERMINAL_RUN_STATUSES:
+        return {"run_id": str(run_id), "status": status}
     return await repo.rpc("moreai_worker_request_cancel", {"p_run_id": str(run_id), "p_user_id": user["id"]})
 
 
