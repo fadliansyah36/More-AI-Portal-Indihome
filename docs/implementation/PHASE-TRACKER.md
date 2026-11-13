@@ -1032,3 +1032,15 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Latest source commit before tracker update: `575e193fd7f1a38310b4b6ca63da44446b9e0fde`; report updated at `6c8b9e0c898333d901ba500e3406383510393122`.
 
 - Vercel CLI fallback outcome is documented in the Phase 09 report; the disposable sandbox was removed after the unauthenticated CLI attempt.
+
+
+## 2026-11-13 direct-main continuation — Agent Run / Artifact cross-screen linkage
+
+- Added owner-verified Agent Run association for artifact uploads via `X-Agent-Run-Id`; FastAPI checks the run belongs to the authenticated Customer before persisting `artifacts.run_id`.
+- Code Assistant can select an owned persisted Agent Run before saving a private code snapshot; Research AI displays run-linked artifacts and signed downloads in its run detail.
+- Commits: `6f06afa4`, `9126d358`, `4af10492`, `fe3b2efa`, `26c73d7e`, `828eb868`, `ed0eb39e`.
+- Vercel More AI binding confirmed. Frontend and FastAPI Production deployments for `5501e3c80200f8c3e0d8314a6828a915f5c73305` reached READY. Frontend aliases include `moreai.web.id` and `www.moreai.web.id`; API alias is `more-ai-api.vercel.app`.
+- A subsequent attempt to deploy current source HEAD `ed0eb39ef96267f24c7bfe6024763e1684b3f82d` hit Vercel HTTP 402 daily deployment quota. The latest cross-screen source increment is not yet live.
+- Supabase migration history re-read: the nine previously applied migrations remain recorded; no migration was added in this increment.
+- No real tests, staging, browser/API/worker runtime checks or E2E verification. Phase 09 IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+- Detailed report: [PHASE-09-CUSTOMER-WORKSPACE-CAS-CHAT-RESUME-20261113.md](./PHASE-09-CUSTOMER-WORKSPACE-CAS-CHAT-RESUME-20261113.md).
