@@ -30,7 +30,7 @@ export const AnalyseView: React.FC<AnalyseViewProps> = ({ onNavigateToChat }) =>
       if (active) {
         setDocuments(page.items);
         setDocumentsNextCursor(page.nextCursor);
-        setSelectedDocumentId((current) => current || items.find((item) => item.status === 'ready')?.id || items[0]?.id || '');
+        setSelectedDocumentId((current) => current || page.items.find((item) => item.status === 'ready')?.id || page.items[0]?.id || '');
       }
     }).catch((cause) => {
       if (active) setDocumentsError(cause instanceof Error ? cause.message : 'Knowledge Library tidak dapat dimuat.');
