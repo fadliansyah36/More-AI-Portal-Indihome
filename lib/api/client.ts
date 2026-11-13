@@ -369,6 +369,7 @@ export type CustomerConversationMessage = {
   run_id: string | null;
   created_at: string;
   attachments?: Array<{ id: string; filename: string; mime_type: string | null; size_bytes: number | null }>;
+  citations?: Array<{ id: string; document_id: string; title: string; similarity?: number; source_page?: number | null; char_start?: number | null; char_end?: number | null; marker: string }>;
 };
 
 export type CustomerConversationSession = {
