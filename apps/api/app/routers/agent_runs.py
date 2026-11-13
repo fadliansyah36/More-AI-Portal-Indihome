@@ -18,6 +18,7 @@ router = APIRouter(prefix="/api/v1/agent-runs", tags=["agent-runs"])
 
 
 _MAX_EVENT_SEQUENCE = 9_223_372_036_854_775_807
+_TERMINAL_RUN_STATUSES = {"succeeded", "failed", "cancelled", "timed_out", "expired"}
 
 
 def _validated_event_sequence(value: Any) -> int:
@@ -341,13 +342,13 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
             if item["event_type"] in {
                 "run.started", "run.progress", "tool.started", "tool.completed",
                 "tool.cancelled", "run.completed", "run.failed", "run.cancelled",
-                "run.timed_out", "worker.checkpoint",
+                "run.timed_out", "run.expired", "worker.checkpoint",
             }
         ]
         initial_logs = [
             {
                 **_thinking_message(item),
-                "level": "ERROR" if item["event_type"] in {"run.failed", "run.timed_out"} else "INFO",
+                "level": "ERROR" if item["event_type"] in {"run.failed", "run.timed_out", "run.expired"} else "INFO",
                 "event_type": item["event_type"],
             }
             for item in initial_activities
@@ -374,7 +375,7 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
             "system_logs": initial_logs,
             "progress": progress,
             "sequence": cursor,
-            **({"result": run.get("output")} if run.get("status") in {"succeeded", "failed", "cancelled", "expired"} else {}),
+            **({"result": run.get("output")} if run.get("status") in _TERMINAL_RUN_STATUSES else {}),
         })
         if run.get("status") in {"succeeded", "failed", "cancelled", "expired"}:
             await websocket.close(code=1000)
@@ -478,8 +479,8 @@ async def stream_events(
                 idle_rounds += 1
                 run = await repo.owned_record("agent_runs", run_id, user["id"])
                 status = run.get("status")
-                if status in {"succeeded", "failed", "cancelled", "expired"}:
-                    terminal_event = "run.completed" if status == "succeeded" else "run.cancelled" if status == "cancelled" else "run.failed"
+                if status in _TERMINAL_RUN_STATUSES:
+                    terminal_event = {"succeeded": "run.completed", "failed": "run.failed", "cancelled": "run.cancelled", "timed_out": "run.timed_out", "expired": "run.expired"}[status]
                     payload = json.dumps({"run_id": str(run_id), "status": status, "output": run.get("output"), "error": run.get("error")}, separators=(",", ":"))
                     yield f"id: {event_cursor}\nevent: {terminal_event}\ndata: {payload}\n\n"
                     return
