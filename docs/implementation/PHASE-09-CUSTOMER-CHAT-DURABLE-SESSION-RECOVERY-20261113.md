@@ -304,7 +304,7 @@ No tests, lint, typecheck, build, browser checks, API probes, worker execution, 
 - When the run transitions from `waiting_approval` to `queued`, the same transaction also appends `run.resume_queued`. The helper serializes per-run sequence allocation, uses stable event keys, checks idempotency conflicts, and writes the same outbox envelope used by the worker event publisher.
 - The worker no longer republishes decision/grant/deny/expire events after resuming. It only publishes `tool.approval_consumed` after the single-use consume RPC succeeds. Consumption is still worker-observed, not transactionally emitted by the consume RPC.
 - FastAPI REST thinking, initial/replay WebSocket projections, and Chat activity labels now include `run.resume_queued`.
-- **Migration is committed but NOT applied to Supabase.** No live schema mutation was performed. Until the migration is applied through an authorized database-change workflow, production still uses the previously deployed RPC and atomic event behavior is not active there.
+- **Migration has been applied to the canonical Supabase project** `uunfgimtokhucegqbpce` as migration version `20261113182657` (`moreai_atomic_approval_decision_events`). The live function definition was inspected read-only after application and confirms the helper is installed and `run.resume_queued` is emitted by the decision RPC. No runtime approval flow was executed.
 
 ### Customer API authorization and response-contract source audit
 A source-level route inventory was performed across the Customer/shared Customer API routers:
@@ -347,8 +347,8 @@ A source-level route inventory was performed across the Customer/shared Customer
 
 | Area | Source-level state | Runtime acceptance |
 |---|---|---|
-| Approval decision event | Migration source atomically appends decision event with approval state | Not applied; not run |
-| Approval resume event | Migration source appends `run.resume_queued` in same transaction as run queue/checkpoint state | Not applied; not run |
+| Approval decision event | Migration applied; RPC atomically appends decision event with approval state | Runtime not run |
+| Approval resume event | Applied RPC appends `run.resume_queued` in same transaction as run queue/checkpoint state | Runtime not run |
 | Approval consumption event | Worker emits after successful one-time consume; not atomic with consume RPC | Not run |
 | Customer route authentication | 77/77 route signatures use customer principal; WebSockets explicitly resolve Customer context | Not run |
 | Customer response contracts | JSON routes typed; SSE and binary transports intentionally custom | Not run |
@@ -359,7 +359,7 @@ A source-level route inventory was performed across the Customer/shared Customer
 | Workflow/Tasks lifecycle | Safe run activity projection contains new event family; Workflow/Tasks use run activity contracts | Not run |
 
 ### Remaining Phase 09 blockers
-1. The new Supabase migration must be reviewed/applied through an authorized migration process before atomic approval events are active in the canonical database. This execution deliberately did not mutate Supabase.
+1. The approval decision/resume transaction is now installed in Supabase; its behavior still requires runtime acceptance when that is authorized.
 2. The Customer API review is source-level only. Live owner/member/partner/platform and cross-tenant denial proof remains outstanding.
 3. Citation behavior still needs provider/worker execution acceptance across manus, planning, toolcall and checkpoint recovery variants. No real tests or provider runs were performed.
 4. Complete the remaining screen/action inventory against the latest PRD and ensure every visible action is either connected to a real endpoint or explicitly unavailable; no simulated provider features.
@@ -384,4 +384,4 @@ Additional commits:
 - `f242bc10e49145d4b9bcc5e54066af8aabaeaf48` — remove duplicate worker decision events.
 - `decaf2e48f2e75fe8d5e90de4c08e2505c5bf5b5` — sanitize direct Agent Run event-history endpoint.
 
-No runtime verification or Supabase migration application was performed.
+No runtime verification was performed. The approval migration was applied to canonical Supabase; no data mutation, staging or deployment was performed.
