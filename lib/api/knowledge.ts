@@ -20,6 +20,14 @@ export type CustomerKnowledgeChunk = {
   created_at: string;
 };
 
+export type CustomerKnowledgeDocumentDetail = {
+  document: CustomerKnowledgeDocument;
+  chunks: CustomerKnowledgeChunk[];
+  chunk_count: number;
+  total_chunk_count: number;
+  next_after_chunk_index: number | null;
+};
+
 export const knowledgeApi = {
   upload: (file: File, options: { workspaceId?: string; title?: string } = {}) => {
     const body = new FormData();
@@ -53,11 +61,17 @@ export const knowledgeApi = {
       '/api/v1/customer/knowledge/documents?' + params.toString(),
     );
   },
-  get: (documentId: string) => moreAiCustomerApi<{
-    document: CustomerKnowledgeDocument;
-    chunks: CustomerKnowledgeChunk[];
-    chunk_count: number;
-  }>('/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId)),
+  get: (documentId: string, options: { limit?: number; afterChunkIndex?: number } = {}) => moreAiCustomerApi<CustomerKnowledgeDocumentDetail>(
+    '/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId)
+      + '?limit=' + Math.min(200, Math.max(1, options.limit ?? 100))
+      + (options.afterChunkIndex === undefined ? '' : '&after_chunk_index=' + encodeURIComponent(String(options.afterChunkIndex))),
+  ),
+  chunksPage: (documentId: string, limit = 100, afterChunkIndex?: number) =>
+    moreAiCustomerApi<CustomerKnowledgeDocumentDetail>(
+      '/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId)
+        + '?limit=' + Math.min(200, Math.max(1, limit))
+        + (afterChunkIndex === undefined ? '' : '&after_chunk_index=' + encodeURIComponent(String(afterChunkIndex))),
+    ),
   retry: (documentId: string) => moreAiCustomerApi<{ id: string; status: 'processing'; ingestion_state: 'queued' }>(
     '/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId) + '/retry',
     { method: 'POST' },
