@@ -18,6 +18,7 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [paginationError, setPaginationError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -58,12 +59,16 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
   const loadMore = async () => {
     if (!nextCursor || loadingMore || !primaryWallet) return;
     setLoadingMore(true);
+    setPaginationError(null);
     try {
       const page = await customerApi.ledgerPage(50, nextCursor, primaryWallet.id);
-      setTransactions((current) => [...current, ...page.items]);
+      setTransactions((current) => {
+        const known = new Set(current.map((item) => item.id));
+        return [...current, ...page.items.filter((item) => !known.has(item.id))];
+      });
       setNextCursor(page.nextCursor);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Riwayat transaksi berikutnya tidak dapat dimuat.');
+      setPaginationError(err instanceof Error ? err.message : 'Riwayat transaksi berikutnya tidak dapat dimuat.');
     } finally {
       setLoadingMore(false);
     }
@@ -143,7 +148,8 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
             </div>
           );
         })}
-        {!loading && !error && nextCursor && (
+        {paginationError && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{paginationError}</p>}
+        {!loading && nextCursor && (
           <button type="button" onClick={loadMore} disabled={loadingMore}
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
             {loadingMore ? 'Memuat transaksi…' : 'Muat transaksi berikutnya'}
