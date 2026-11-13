@@ -327,12 +327,125 @@ async def restore_customer_workspace_file(
     expected_version: int = Query(ge=1, le=9_223_372_036_854_775_807),
     user: dict[str, Any] = Depends(customer_principal),
 ):
-    await _workspace_access(repository(request), workspace_id, user["id"])
-    result = await repository(request).rpc("moreai_customer_workspace_restore_file", {
+    from urllib.parse import quote, urlsplit
+
+    repo = repository(request)
+    await _workspace_access(repo, workspace_id, user["id"])
+    rows = await repo.select("agent_workspace_files", {
+        "id": f"eq.{file_id}",
+        "workspace_id": f"eq.{workspace_id}",
+        "select": "id,user_id,path,version,storage_path,sha256,size_bytes,deleted_at,pending_token",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "Workspace file not found")
+    file = rows[0]
+    if file.get("version") != expected_version:
+        raise HTTPException(409, "Workspace file version changed; refresh and retry")
+    if file.get("deleted_at") is None:
+        raise HTTPException(409, "Workspace file is not deleted")
+    if file.get("pending_token") is not None:
+        raise HTTPException(409, "Workspace file has a write in progress")
+    source_path = file.get("storage_path")
+    checksum = file.get("sha256")
+    size_bytes = file.get("size_bytes")
+    file_user_id = str(file.get("user_id") or "")
+    expected_prefix = file_user_id + "/workspaces/" + str(workspace_id) + "/versions/"
+    if (
+        not isinstance(source_path, str)
+        or not source_path.startswith(expected_prefix)
+        or source_path.startswith("/")
+        or ".." in source_path.split("/")
+        or not isinstance(checksum, str)
+        or not re.fullmatch(r"[0-9a-f]{64}", checksum)
+        or not isinstance(size_bytes, int)
+        or size_bytes < 0
+        or size_bytes > _MAX_CUSTOMER_WORKSPACE_UPLOAD
+    ):
+        raise HTTPException(409, "Deleted workspace file has no valid committed object to restore")
+
+    settings = request.app.state.settings
+    if not settings.supabase_data_ready or not settings.supabase_service_role_key:
+        raise HTTPException(503, "Workspace Storage is not configured")
+    bucket = os.getenv("MOREAI_WORKSPACE_BUCKET", "moreai-artifacts")
+    base_url = settings.supabase_url.rstrip("/")
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": "Bearer " + settings.supabase_service_role_key,
+    }
+    bucket_response = await request.app.state.http.get(
+        base_url + "/storage/v1/bucket/" + quote(bucket, safe=""),
+        headers=headers,
+        timeout=8.0,
+    )
+    if bucket_response.status_code >= 400 or not isinstance(bucket_response.json(), dict) or bucket_response.json().get("public") is not False:
+        raise HTTPException(503, "Workspace Storage bucket must exist and be private")
+
+    async def read_private_object(object_path: str) -> Any:
+        signed_response = await request.app.state.http.post(
+            base_url + "/storage/v1/object/sign/" + quote(bucket, safe="") + "/" + quote(object_path, safe="/"),
+            json={"expiresIn": 60},
+            headers={**headers, "Content-Type": "application/json"},
+            timeout=12.0,
+        )
+        if signed_response.status_code >= 400:
+            raise HTTPException(502, "Could not create a private workspace object read link")
+        signed_payload = signed_response.json()
+        signed_path = signed_payload.get("signedURL") or signed_payload.get("signedUrl")
+        if not isinstance(signed_path, str) or not signed_path:
+            raise HTTPException(502, "Storage did not return a signed object read path")
+        base_parts = urlsplit(base_url)
+        signed_parts = urlsplit(signed_path)
+        if signed_parts.scheme or signed_parts.netloc:
+            if signed_parts.scheme != "https" or signed_parts.netloc.lower() != (base_parts.netloc or "").lower():
+                raise HTTPException(502, "Storage returned a signed object URL outside the configured Supabase origin")
+            signed_url = signed_path
+        else:
+            if not signed_path.startswith("/") or signed_path.startswith("//") or "\\" in signed_path:
+                raise HTTPException(502, "Storage returned an invalid signed object path")
+            signed_url = base_url + "/storage/v1" + signed_path
+        object_response = await request.app.state.http.get(signed_url, timeout=30.0)
+        if object_response.status_code >= 400:
+            raise HTTPException(502, "Private workspace object could not be read")
+        return object_response
+
+    source_response = await read_private_object(source_path)
+    content = source_response.content
+    actual_digest = hashlib.sha256(content).hexdigest()
+    if len(content) != size_bytes or actual_digest != checksum:
+        raise HTTPException(409, "Stored workspace object failed its recorded size or SHA-256 integrity check")
+
+    next_version = expected_version + 1
+    restored_path = (
+        file_user_id + "/workspaces/" + str(workspace_id)
+        + "/versions/" + str(next_version) + "/" + str(file["path"])
+    )
+    upload_response = await request.app.state.http.post(
+        base_url + "/storage/v1/object/" + quote(bucket, safe="") + "/" + quote(restored_path, safe="/"),
+        content=content,
+        headers={
+            **headers,
+            "Content-Type": source_response.headers.get("content-type", "application/octet-stream"),
+            "x-upsert": "false",
+        },
+        timeout=30.0,
+    )
+    if upload_response.status_code == 409:
+        destination_response = await read_private_object(restored_path)
+        if hashlib.sha256(destination_response.content).hexdigest() != checksum or len(destination_response.content) != size_bytes:
+            raise HTTPException(409, "A different object already occupies the next workspace version path")
+    elif upload_response.status_code >= 400:
+        raise HTTPException(502, "Restored workspace object could not be written to private Storage")
+
+    result = await repo.rpc("moreai_customer_workspace_restore_file", {
         "p_user_id": user["id"],
         "p_workspace_id": str(workspace_id),
         "p_file_id": str(file_id),
         "p_expected_version": expected_version,
+        "p_storage_path": restored_path,
+        "p_sha256": checksum,
+        "p_size_bytes": size_bytes,
+        "p_bucket": bucket,
     })
     if not isinstance(result, dict):
         raise HTTPException(502, "Workspace file restoration returned an invalid database response")
