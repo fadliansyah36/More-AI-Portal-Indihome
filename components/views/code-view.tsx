@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Play, Copy, Check, Terminal, Code2, FolderGit2, Save, Download, Loader2 } from 'lucide-react';
-import { artifactApi, type CustomerArtifact } from '@/lib/api/client';
+import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact } from '@/lib/api/client';
 
 interface CodeViewProps { onNavigateToChat?: (prompt: string) => void; }
 
@@ -21,6 +21,8 @@ print(greet("MoreAI - Global Partner Network"))`
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedProjects, setSavedProjects] = useState<CustomerArtifact[]>([]);
+  const [availableRuns, setAvailableRuns] = useState<CustomerAgentRun[]>([]);
+  const [selectedRunId, setSelectedRunId] = useState('');
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [projectsError, setProjectsError] = useState<string | null>(null);
   const [downloadingProject, setDownloadingProject] = useState<string | null>(null);
@@ -56,10 +58,12 @@ print(greet("MoreAI - Global Partner Network"))`
     }
     setIsSaving(true);
     try {
-      await artifactApi.upload('main.py', new Blob([code], { type: 'text/x-python' }), 'text/x-python');
+      await artifactApi.upload('main.py', new Blob([code], { type: 'text/x-python' }), 'text/x-python', selectedRunId || undefined);
       setSavedProjects(await artifactApi.list());
       setProjectsError(null);
-      setOutput('Snapshot main.py berhasil disimpan sebagai artefak privat. Kode tidak dieksekusi.');
+      setOutput(selectedRunId
+        ? 'Snapshot main.py tersimpan dan ditautkan ke Agent Run ' + selectedRunId.slice(0, 8) + '. Kode tidak dieksekusi.'
+        : 'Snapshot main.py berhasil disimpan sebagai artefak privat tanpa tautan Agent Run. Kode tidak dieksekusi.');
     } catch (cause) {
       setOutput(cause instanceof Error ? cause.message : 'Snapshot kode gagal disimpan.');
     } finally {
@@ -138,6 +142,18 @@ print(greet("MoreAI - Global Partner Network"))`
 
       {activeSubTab === 'editor' ? (
         <div className="space-y-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1.5">
+            <label htmlFor="code-artifact-run" className="block text-[11px] font-semibold text-slate-700">Hubungkan snapshot dengan Agent Run</label>
+            <select id="code-artifact-run" value={selectedRunId} onChange={(event) => setSelectedRunId(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
+              <option value="">Simpan tanpa tautan run</option>
+              {availableRuns.map((run) => {
+                const prompt = run.input?.prompt;
+                const label = typeof prompt === 'string' && prompt.trim() ? prompt.trim().slice(0, 72) : 'Agent Run ' + run.id.slice(0, 8);
+                return <option key={run.id} value={run.id}>{label} · {run.status}</option>;
+              })}
+            </select>
+            <p className="text-[10px] text-slate-500">Run dipilih dari riwayat akun dan diverifikasi ulang oleh FastAPI sebelum artefak ditautkan.</p>
+          </div>
           {/* Quick Snippet Selector */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
             <span className="text-[11px] text-slate-400 font-medium shrink-0">Snippet:</span>
@@ -263,6 +279,7 @@ print(greet("MoreAI - Global Partner Network"))`
                     <div className="min-w-0">
                       <p className="truncate text-xs font-semibold text-slate-900">{filename}</p>
                       <p className="mt-1 text-[10px] text-slate-500">{size} · {new Date(artifact.created_at).toLocaleString('id-ID')}</p>
+                      {artifact.run_id && <p className="mt-1 text-[10px] font-medium text-blue-700">Agent Run: {artifact.run_id.slice(0, 8)}</p>}
                     </div>
                     <button type="button" onClick={() => void downloadCodeSnapshot(artifact.id)} disabled={downloadingProject === artifact.id} className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
                       {downloadingProject === artifact.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
