@@ -4,11 +4,12 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 
 from app.authorization import customer_principal
 from app.routers.conversations import repository
+from app.pagination import decode_timestamp_id_cursor, encode_timestamp_id_cursor, timestamp_id_filter
 
 router = APIRouter(prefix="/api/v1/customer/tool-approvals", tags=["customer-tool-approvals"])
 
@@ -47,15 +48,30 @@ class ApprovalDecision(BaseModel):
 
 @router.get("", response_model=list[ToolApprovalResponse])
 async def list_tool_approvals(
-    request: Request, user: dict[str, Any] = Depends(customer_principal),
+    request: Request,
+    response: Response,
+    limit: int = Query(default=30, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
-    return await repository(request).select("agent_tool_approvals", {
+    decoded = decode_timestamp_id_cursor(cursor)
+    filters = {
         "user_id": f"eq.{user['id']}",
         "status": "in.(pending,approved,denied,expired,consumed)",
         "select": "id,run_id,tool_key,summary,status,requested_at,expires_at,decided_at,consumed_at",
-        "order": "requested_at.desc",
-        "limit": "100",
-    })
+        "order": "requested_at.desc,id.desc",
+        "limit": str(limit + 1),
+    }
+    cursor_filter = timestamp_id_filter(decoded, "requested_at")
+    if cursor_filter:
+        filters["or"] = cursor_filter
+    rows = await repository(request).select("agent_tool_approvals", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(rows[-1], "requested_at")
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return rows
 
 
 @router.post("", status_code=201, response_model=ToolApprovalResponse)
@@ -94,8 +110,21 @@ async def decide_tool_approval(
     approval_id: UUID, body: ApprovalDecision, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
 ):
-    return await repository(request).rpc("moreai_decide_tool_approval", {
+    repo = repository(request)
+    await repo.owned_record("agent_tool_approvals", approval_id, user["id"])
+    result = await repo.rpc("moreai_decide_tool_approval", {
         "p_approval_id": str(approval_id),
         "p_user_id": user["id"],
         "p_decision": body.decision,
     })
+    if isinstance(result, dict) and result.get("id"):
+        return result
+    rows = await repo.select("agent_tool_approvals", {
+        "id": f"eq.{approval_id}",
+        "user_id": f"eq.{user['id']}",
+        "select": "id,run_id,tool_key,status,decided_at,expires_at",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "Tool approval not found")
+    return rows[0]
