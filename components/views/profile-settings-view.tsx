@@ -20,6 +20,7 @@ import {
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 import { profileApi, customerApi, notificationApi } from '@/lib/api/client';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface ProfileSettingsViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -63,8 +64,26 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
         const locale = identity.profile?.locale || 'id-ID';
         setLanguage(locale.toLowerCase().startsWith('en') ? 'en' : 'id');
       })
-      .catch((error) => {
-        if (active) showToast(error instanceof Error ? error.message : 'Profil gagal dimuat.', 'error');
+      .catch(async (error) => {
+        if (!active) return;
+        // Keep the account identity visible even when the business API is
+        // temporarily unavailable. Supabase browser access remains Auth-only.
+        try {
+          const { data, error: authError } = await createSupabaseBrowserClient().auth.getUser();
+          if (authError) throw authError;
+          const metadata = data.user?.user_metadata && typeof data.user.user_metadata === 'object'
+            ? data.user.user_metadata as Record<string, unknown>
+            : {};
+          const authName = [metadata.full_name, metadata.name, metadata.display_name]
+            .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
+            ?.trim();
+          const email = data.user?.email || '';
+          setProfileName(authName || email.split('@')[0] || 'Nama belum diatur');
+          setProfileEmail(email);
+          setLanguage('id');
+        } catch {
+          showToast(error instanceof Error ? error.message : 'Profil gagal dimuat.', 'error');
+        }
       })
       .finally(() => { if (active) setProfileLoading(false); });
 
