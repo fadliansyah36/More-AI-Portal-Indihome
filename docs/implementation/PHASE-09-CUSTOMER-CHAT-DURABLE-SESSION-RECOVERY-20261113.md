@@ -122,3 +122,66 @@ No test, lint, typecheck, build, browser, API, worker, staging or deployment act
 4. Complete lifecycle event coverage for planning, tool execution, approval decisions, checkpoints, and final outputs across Chat and Workflow screens.
 5. Resolve durable retry contract from worker/outbox semantics before adding any retry action; do not replay a completed or ambiguous mutation from the client.
 6. Update final Phase 09 acceptance matrix and unresolved-gap register. Phase 10/11 release verification remains blocked by the explicit no-test/no-staging instruction.
+
+## Phase 09 continuation — Chat lifecycle activity, Files audit, and acceptance matrix (2026-11-14)
+
+### Chat lifecycle activity
+Commit: `05c5c9ae11d2df01628186e7d7f64ef56187981e`
+
+- Chat now retains an in-memory per-message lifecycle activity list from the existing durable SSE stream and exposes it in a collapsed activity disclosure.
+- The projection allowlists sequence, event name, timestamp, tool, phase, status, progress and checkpoint key. It deliberately does not render raw event payloads, tool arguments, provider observations, or checkpoint state.
+- Checkpoint text remains a replaceable snapshot; replay does not append duplicate text.
+- Approval-waiting lifecycle states are reflected in the assistant source label where the corresponding event is received.
+- This UI is a safe presentation layer over the current stream. It is not evidence that every planner/tool event is emitted by the worker: current worker runtime source explicitly emits run.started, run.progress, run.completed, run.failed, run.cancelled and run.timed_out. Fine-grained tool/planning lifecycle event production and approval resume event parity remain gaps to be completed at the backend/worker boundary.
+- The workflow screen separately consumes durable safe activity logs and owner-scoped tool approval records. Approval decisions use the durable decision RPC and reload the canonical approval row.
+
+### Files and artifact lifecycle source audit
+Inspected current customer UI and FastAPI routes:
+- Workspace file UI already supports upload, paginated listing, immutable version history, signed download by current or historical version, soft-delete, and restore.
+- FastAPI workspace routes call workspace membership/permission checks before file reads and lifecycle mutations. Delete/restore use expected-version guards; restore validates the previous object path and writes a new immutable version rather than overwriting history.
+- Workspace signed download checks workspace access, deleted-state/version selection and storage path ownership before requesting a short-lived signed URL.
+- Private artifact API lists only rows filtered by authenticated user, resolves chat attachment run linkage from the owner-scoped message-attachment junction, validates private bucket configuration, validates owner-prefixed storage paths and issues 60-second signed URLs only after `owned_record`.
+- Artifact upload validates filename, size, MIME/signature for supported chat attachments, checks conversation ownership and explicit run ownership when supplied, stores a SHA-256 checksum, and compensates object upload if metadata persistence fails.
+- Tasks/Workflow/Files surfaces use the artifact API for private run-linked artifact downloads. No browser direct-to-Supabase business-data access was introduced.
+- Scope limitation: this is source inspection, not an exhaustive independent review of every workspace membership role, every Storage policy, or live signed URL behavior. No Storage/RLS policy was changed.
+
+### RAG and citation contract findings
+- Worker knowledge retrieval is tenant/user scoped through `moreai_match_knowledge_chunks`, passing authenticated user id, optional workspace id, vector, bounded match count and optional validated document IDs.
+- Worker retrieval currently returns a JSON tool result with chunk id, document id, title, content, similarity and metadata. That is an internal tool result, not yet a canonical structured citation contract attached to the persisted Agent Run output.
+- Chat UI renders citation records only if the final run output supplies structured `citations` with id, document_id, title and marker; it also accepts optional page/character offsets and similarity. It does not fabricate citations from model prose.
+- Therefore RAG retrieval exists, and conditional citation rendering exists, but structured evidence provenance from retrieved chunks through runtime output to persisted response is still an acceptance gap. A future backend contract must bind citation ids to retrieved chunk/document ids and sanitize metadata before it is persisted or returned.
+
+### Durable retry findings
+- Worker dispatcher classifies retryable upstream timeout, transport failures, and HTTP 429/5xx as retryable execution errors; attempt and max_attempts are passed into the runtime context.
+- The durable worker/outbox has separate leased at-least-once event publication retry with event-id deduplication. This is not a customer Agent Run retry action.
+- No customer-facing manual retry endpoint or safe replay contract was confirmed in the inspected customer routes. Do not expose a client retry button until a backend operation defines idempotency, terminal-state eligibility, fresh run identity/attempt semantics, billing/entitlement revalidation, workspace authorization, attachment/artifact linkage, and audit events.
+- Automatic worker retry and outbox retry must remain distinct concepts in UI copy and acceptance evidence.
+
+### Phase 09 acceptance matrix (source-level status)
+| Capability | Source-level status | Remaining acceptance gap |
+|---|---|---|
+| Customer Chat enqueue | Connected to FastAPI durable enqueue and idempotency key | Runtime/provider execution not exercised |
+| Chat session recovery | Implemented from persisted session/events and SSE cursor | Runtime replay/race behavior unverified |
+| Chat progress/checkpoint | Safe activity disclosure and checkpoint text snapshot | Backend fine-grained event production incomplete |
+| Planning/tool lifecycle | UI can display allowlisted event metadata | Worker does not yet emit a complete normalized planning/tool event taxonomy |
+| Tool approval | Durable list/decision APIs and workflow UI exist | End-to-end pause/decision/resume lifecycle unverified; event parity gap |
+| Workflow steps/cancellation | Owner-scoped step list and cancellation wired | Live worker cancellation semantics unverified |
+| Tasks | Durable Agent Run detail, steps, activity, output and cancellation | No independent task CRUD or manual retry contract |
+| Workspace Files | Upload/list/version history/signed download/soft-delete/restore UI and API routes exist | Exhaustive role/Storage policy review and runtime verification pending |
+| Artifacts | Owner-scoped list/upload/signed download and run linkage | Retention/deletion/version semantics not evidenced as a complete artifact lifecycle |
+| Knowledge ingestion | Upload/list/detail/chunk metadata/retry/archive routes and UI exist | Live ingestion and workspace-role verification not run |
+| RAG retrieval | Tenant-scoped pgvector retrieval exists in worker tool | Structured citations are not yet guaranteed in persisted run output |
+| Customer authorization | Inspected routes use customer principal and owner/workspace checks in key flows | Full endpoint-by-endpoint authorization/response contract inventory still pending |
+| Supabase schema/RLS | Existing migrations provide durable lifecycle and scoped data structures | No schema/RLS changes in this continuation |
+| Release acceptance | Not performed | Explicitly blocked by no-test/no-staging instruction |
+
+### Remaining gaps and next implementation order
+1. Normalize and emit durable worker events for planning start/complete, tool start/complete/failure, approval required/decision/resume, checkpoint, cancellation requested, and terminal output. Keep public event payloads allowlisted and raw payloads private.
+2. Define a structured RAG citation contract from retrieved chunk/document identity through agent result persistence and customer response; keep citation evidence bound to owner/workspace scope.
+3. Finish endpoint-by-endpoint Customer authorization and response contract inventory, including shared Agent Run logs/events, workspace role permissions, artifact endpoints, knowledge endpoints, tool approvals, billing/usage and remaining customer routers.
+4. Decide whether artifact deletion/versioning is a required product lifecycle; current artifact surface is immutable/private but no complete user-facing delete/retention contract was evidenced.
+5. Define manual Agent Run retry only if the backend supports a safe new-run/idempotent retry operation; worker automatic retry and outbox retry are not manual retry.
+6. Finalize Phase 09 acceptance matrix after source implementation. Runtime acceptance remains intentionally not performed.
+
+### Verification boundary
+Only repository source inspection and source edits were performed. No tests, lint, typecheck, build, browser verification, live API calls, worker execution, Supabase mutations, staging, or deployment were performed. Do not treat this report as runtime acceptance evidence.
