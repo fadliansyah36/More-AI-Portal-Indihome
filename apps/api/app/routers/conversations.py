@@ -138,7 +138,7 @@ async def create_conversation(body: ConversationCreate, request: Request, user: 
     repo = repository(request)
     if body.workspace_id is not None:
         from app.routers.workspaces import _workspace_access
-        await _workspace_access(repo, body.workspace_id, user["id"])
+        await _workspace_access(repo, body.workspace_id, user["id"], "agent.run.create")
     return await repo.insert("conversations", {
         "user_id": user["id"], "workspace_id": str(body.workspace_id) if body.workspace_id else None,
         "title": body.title, "status": "active", "metadata": {},
