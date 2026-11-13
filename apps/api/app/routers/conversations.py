@@ -269,6 +269,9 @@ async def cancel_conversation_session(
     run = await repo.owned_record("agent_runs", run_id, user["id"])
     if str(run.get("conversation_id")) != str(conversation_id):
         raise HTTPException(404, "session_not_found")
+    status = str(run.get("status") or "")
+    if status in {"succeeded", "failed", "cancelled", "timed_out", "expired"}:
+        return {"run_id": str(run_id), "status": status}
     return await repo.rpc("moreai_worker_request_cancel", {
         "p_run_id": str(run_id),
         "p_user_id": user["id"],
