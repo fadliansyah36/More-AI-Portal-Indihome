@@ -402,7 +402,7 @@ class DurableOpenManusRuntime:
                     raise RuntimeError("llm_returned_empty_final_response")
                 # A retrieval hit is not automatically a citation. Only persist
                 # chunk identities explicitly cited by the final model response.
-                cited_chunk_ids = set(re.findall(r"\\[source:([0-9a-fA-F-]{36})\\]", text))
+                cited_chunk_ids = set(re.findall(r"\[source:([0-9a-fA-F-]{36})\]", text))
                 citations: list[dict[str, Any]] = []
                 seen_citations: set[str] = set()
                 for checkpoint_key, checkpoint_state in states.items():
