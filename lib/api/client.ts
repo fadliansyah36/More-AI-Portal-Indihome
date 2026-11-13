@@ -394,6 +394,25 @@ export type CustomerConversationSessionEvent = {
   payload: Record<string, unknown>;
 };
 
+export type CustomerAgentRunActivity = {
+  id: string;
+  sequence: number;
+  timestamp: string;
+  event_type: string;
+  tool?: string | null;
+  round?: number | null;
+  index?: number | null;
+  status?: string | null;
+  phase?: string | null;
+  progress?: number | null;
+  tool_count?: number | null;
+  next_round?: number | null;
+  timeout_seconds?: number | null;
+  checkpoint_key?: string | null;
+  level?: string | null;
+  message?: string | null;
+};
+
 export type CustomerWorkflowStep = {
   id: string;
   sequence: number;
@@ -680,6 +699,10 @@ export const customerApi = {
     method: 'POST',
   }),
   getRunSteps: (runId: string) => moreAiCustomerApi<CustomerWorkflowStep[]>(`/api/v1/customer/agent-runs/${runId}/steps`),
+  getRunActivity: (runId: string, after = 0, limit = 200) =>
+    moreAiCustomerApi<{ items: CustomerAgentRunActivity[]; count: number; next_after: number }>(
+      `/api/v1/agent-runs/${encodeURIComponent(runId)}/logs?after=${Math.max(0, after)}&limit=${Math.max(1, Math.min(500, limit))}`,
+    ),
   getRunEvents: (runId: string, after = 0) => moreAiCustomerApi<Array<{
     id: string; event_type: string; sequence: number; payload: Record<string, unknown>; created_at: string;
   }>>(`/api/v1/agent-runs/${runId}/events?after=${Math.max(0, after)}`),
