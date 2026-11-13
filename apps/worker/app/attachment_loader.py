@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import io
 import os
-import re
+from urllib.parse import quote
 from typing import Any
 
 from app.client import WorkerRpcClient
@@ -95,7 +95,7 @@ class CustomerChatAttachmentLoader:
     async def _download(self, path: str) -> bytes:
         url = (
             f"{self.client.settings.supabase_url.rstrip('/')}/storage/v1/object/"
-            f"{self.bucket}/{path}"
+            f"{quote(self.bucket, safe='')}/{quote(path, safe='/')}"
         )
         headers = {
             "apikey": self.client.settings.service_role_key,
