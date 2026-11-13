@@ -77,7 +77,7 @@ async def list_agents(request: Request, user: dict[str, Any] = Depends(customer_
 
 
 @router.get("/models/capabilities", response_model=ModelCapabilityListResponse)
-async def list_model_capabilities(request: Request, user: dict[str, Any] = Depends(current_user)):
+async def list_model_capabilities(request: Request, user: dict[str, Any] = Depends(customer_principal)):
     """Expose only enabled provider/model capabilities; never return provider secrets/config."""
     repo = repository(request)
     providers = await repo.select("llm_providers", {
@@ -111,6 +111,6 @@ async def list_model_capabilities(request: Request, user: dict[str, Any] = Depen
 
 
 @router.get("/tools", response_model=list[ToolCatalogItemResponse])
-async def list_tools(user: dict[str, Any] = Depends(current_user)):
+async def list_tools(user: dict[str, Any] = Depends(customer_principal)):
     # The catalog describes upstream tools; availability remains false until a safe adapter is enabled.
     return tool_catalog()
