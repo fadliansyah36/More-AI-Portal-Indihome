@@ -149,7 +149,10 @@ def _slug(name: str) -> str:
     return f"{base}-{uuid4().hex[:10]}"
 
 
-async def _workspace_access(repo, workspace_id: UUID, user_id: str) -> dict[str, Any]:
+async def _workspace_access(
+    repo, workspace_id: UUID, user_id: str, permission_key: str = "workspace.read",
+) -> dict[str, Any]:
+    """Resolve workspace access and role permissions from canonical membership rows."""
     rows = await repo.select("workspaces", {
         "id": f"eq.{workspace_id}",
         "status": "eq.active",
@@ -159,16 +162,41 @@ async def _workspace_access(repo, workspace_id: UUID, user_id: str) -> dict[str,
     if not rows:
         raise HTTPException(404, "Workspace not found")
     workspace = rows[0]
-    if workspace.get("owner_user_id") != user_id:
-        members = await repo.select("workspace_members", {
-            "workspace_id": f"eq.{workspace_id}",
-            "user_id": f"eq.{user_id}",
-            "status": "eq.active",
-            "select": "id",
-            "limit": "1",
-        })
-        if not members:
-            raise HTTPException(404, "Workspace not found")
+    if str(workspace.get("owner_user_id")) == str(user_id):
+        return workspace
+
+    members = await repo.select("workspace_members", {
+        "workspace_id": f"eq.{workspace_id}",
+        "user_id": f"eq.{user_id}",
+        "status": "eq.active",
+        "select": "id,role_id",
+        "limit": "1",
+    })
+    if not members:
+        raise HTTPException(404, "Workspace not found")
+    role_id = members[0].get("role_id")
+    if not role_id:
+        raise HTTPException(403, "Workspace membership has no assigned role")
+
+    roles = await repo.select("roles", {
+        "id": f"eq.{role_id}", "scope": "eq.workspace",
+        "select": "id", "limit": "1",
+    })
+    if not roles:
+        raise HTTPException(403, "Workspace role is invalid")
+    role_permissions = await repo.select("role_permissions", {
+        "role_id": f"eq.{role_id}", "select": "permission_id", "limit": "200",
+    })
+    permission_ids = [str(row["permission_id"]) for row in role_permissions if row.get("permission_id")]
+    if not permission_ids:
+        raise HTTPException(403, "Workspace permission denied")
+    permissions = await repo.select("permissions", {
+        "id": f"in.({','.join(permission_ids)})",
+        "key": f"eq.{permission_key}",
+        "select": "key", "limit": "1",
+    })
+    if not permissions:
+        raise HTTPException(403, "Workspace permission denied")
     return workspace
 
 
@@ -307,7 +335,7 @@ async def delete_customer_workspace_file(
     expected_version: int = Query(ge=0, le=9_223_372_036_854_775_807),
     user: dict[str, Any] = Depends(customer_principal),
 ):
-    await _workspace_access(repository(request), workspace_id, user["id"])
+    await _workspace_access(repository(request), workspace_id, user["id"], "workspace.manage")
     result = await repository(request).rpc("moreai_customer_workspace_delete_file", {
         "p_user_id": user["id"],
         "p_workspace_id": str(workspace_id),
@@ -330,7 +358,7 @@ async def restore_customer_workspace_file(
     from urllib.parse import quote, urlsplit
 
     repo = repository(request)
-    await _workspace_access(repo, workspace_id, user["id"])
+    await _workspace_access(repo, workspace_id, user["id"], "workspace.manage")
     rows = await repo.select("agent_workspace_files", {
         "id": f"eq.{file_id}",
         "workspace_id": f"eq.{workspace_id}",
@@ -668,7 +696,7 @@ async def list_customer_workspace_runs(
     """List the caller's durable agent runs associated with an accessible workspace."""
     decoded = decode_timestamp_id_cursor(cursor)
     repo = repository(request)
-    await _workspace_access(repo, workspace_id, user["id"])
+    await _workspace_access(repo, workspace_id, user["id"], "agent.run.read")
     filters = {
         "workspace_id": f"eq.{workspace_id}",
         "user_id": f"eq.{user['id']}",
@@ -721,7 +749,7 @@ async def upload_customer_workspace_file(
         raise HTTPException(422, "Workspace version is outside the supported range")
 
     repo = repository(request)
-    await _workspace_access(repo, workspace_id, user["id"])
+    await _workspace_access(repo, workspace_id, user["id"], "workspace.manage")
     content = await request.body()
     if not content or len(content) > _MAX_CUSTOMER_WORKSPACE_UPLOAD:
         raise HTTPException(413, "Workspace files must contain between 1 byte and 2 MB")
