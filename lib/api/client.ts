@@ -709,7 +709,7 @@ export const customerApi = {
   entitlements: () => moreAiCustomerApi<CustomerEntitlement[]>('/api/v1/customer/entitlements'),
   quotas: () => moreAiCustomerApi<CustomerQuota[]>('/api/v1/customer/quotas'),
   redeemAccessCode: (code: string, networkId: string, verificationSessionId: string, idempotencyKey: string) =>
-    moreAiCustomerApi<Record<string, unknown>>('/api/v1/customer/access-codes/redeem', { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ code, network_id: networkId, verification_session_id: verificationSessionId }) }),
+    moreAiCustomerApi<CustomerAccessCodeRedeemResponse>('/api/v1/customer/access-codes/redeem', { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ code, network_id: networkId, verification_session_id: verificationSessionId }) }),
 };
 
 export type PartnerCampaign = {
