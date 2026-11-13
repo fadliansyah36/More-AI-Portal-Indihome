@@ -34,6 +34,9 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   const [approvals, setApprovals] = useState<CustomerToolApproval[]>([]);
   const [approvalError, setApprovalError] = useState<string | null>(null);
   const [approvalActionId, setApprovalActionId] = useState<string | null>(null);
+  const [nextRunCursor, setNextRunCursor] = useState<string | null>(null);
+  const [loadingMoreRuns, setLoadingMoreRuns] = useState(false);
+  const [runPaginationError, setRunPaginationError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -42,12 +45,15 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         setIsLoading(true);
         setError(null);
         const [runsResult, approvalsResult, artifactsResult] = await Promise.allSettled([
-          customerApi.agentRuns(),
+          customerApi.agentRunsPage(50),
           customerToolApprovalApi.list(),
           artifactApi.list(),
         ]);
         if (active) {
-          if (runsResult.status === 'fulfilled') setRuns(runsResult.value);
+          if (runsResult.status === 'fulfilled') {
+            setRuns(runsResult.value.items);
+            setNextRunCursor(runsResult.value.nextCursor);
+          }
           else setError(runsResult.reason instanceof Error ? runsResult.reason.message : 'Workflow tidak dapat dimuat.');
           if (approvalsResult.status === 'fulfilled') setApprovals(approvalsResult.value);
           else setApprovalError(approvalsResult.reason instanceof Error ? approvalsResult.reason.message : 'Persetujuan tidak dapat dimuat.');
@@ -74,11 +80,31 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         : item));
       // The decision RPC atomically re-queues a paused run. Refresh durable run
       // state immediately so the Customer screen reflects the worker resume.
-      setRuns(await customerApi.agentRuns());
+      const runPage = await customerApi.agentRunsPage(50);
+      setRuns(runPage.items);
+      setNextRunCursor(runPage.nextCursor);
     } catch (cause) {
       setApprovalError(cause instanceof Error ? cause.message : 'Keputusan persetujuan gagal disimpan.');
     } finally {
       setApprovalActionId(null);
+    }
+  };
+
+  const loadMoreRuns = async () => {
+    if (!nextRunCursor || loadingMoreRuns) return;
+    setLoadingMoreRuns(true);
+    setRunPaginationError(null);
+    try {
+      const page = await customerApi.agentRunsPage(50, nextRunCursor);
+      setRuns((current) => {
+        const known = new Set(current.map((run) => run.id));
+        return [...current, ...page.items.filter((run) => !known.has(run.id))];
+      });
+      setNextRunCursor(page.nextCursor);
+    } catch (cause) {
+      setRunPaginationError(cause instanceof Error ? cause.message : 'Halaman workflow berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreRuns(false);
     }
   };
 
@@ -215,6 +241,13 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                 </div>
               );
             })}
+            {runPaginationError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{runPaginationError}</div>}
+            {nextRunCursor && (
+              <button type="button" onClick={() => void loadMoreRuns()} disabled={loadingMoreRuns}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                {loadingMoreRuns ? 'Memuat workflow…' : 'Muat workflow berikutnya'}
+              </button>
+            )}
           </div>
         )}
 
