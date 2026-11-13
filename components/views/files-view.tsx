@@ -236,11 +236,16 @@ export const FilesView: React.FC = () => {
       setWorkspaceError('Workspace yang dipilih tidak lagi tersedia. Muat ulang halaman.');
       return;
     }
-    const existing = workspaceFiles.find((item) => item.workspaceId === selectedWorkspaceId && item.path === file.name);
     setUploadingWorkspaceFile(true);
     setWorkspaceUploadMessage(null);
     setWorkspaceError(null);
     try {
+      const currentPage = await workspaceApi.fileByPath(selectedWorkspaceId, file.name);
+      const existing = currentPage.items[0];
+      if (existing?.deleted_at) {
+        setWorkspaceError('File dengan nama ini sedang dihapus. Pulihkan dari daftar file workspace sebelum mengunggah versi baru.');
+        return;
+      }
       await workspaceApi.uploadFile(
         selectedWorkspaceId,
         file.name,
