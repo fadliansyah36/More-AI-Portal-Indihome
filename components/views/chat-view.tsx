@@ -28,6 +28,10 @@ interface ChatRunActivity {
   status?: string;
   progress?: number;
   checkpoint_key?: string;
+  agent_key?: string;
+  step_index?: number;
+  risk?: string;
+  error_code?: string;
 }
 
 interface ChatMessage {
@@ -342,17 +346,35 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         const status = typeof payload.status === 'string' ? payload.status : undefined;
         const progress = typeof payload.progress === 'number' ? payload.progress : undefined;
         const checkpointKey = typeof payload.checkpoint_key === 'string' ? payload.checkpoint_key : undefined;
+        const agentKey = typeof payload.agent_key === 'string' ? payload.agent_key : undefined;
+        const stepIndex = typeof payload.step_index === 'number' ? payload.step_index : undefined;
+        const risk = typeof payload.risk === 'string' ? payload.risk : undefined;
+        const errorCode = typeof payload.error_code === 'string' ? payload.error_code : undefined;
         if (!['run.completed', 'run.failed', 'run.cancelled', 'run.timed_out', 'run.expired', 'stream.timeout'].includes(event)) {
           const labels: Record<string, string> = {
             'agent.planning': 'Perencanaan agent',
             'planning.started': 'Perencanaan dimulai',
             'planning.completed': 'Perencanaan selesai',
+            'planning.step.started': 'Langkah perencanaan dimulai',
+            'planning.step.completed': 'Langkah perencanaan selesai',
+            'planning.step.failed': 'Langkah perencanaan gagal',
+            'planning.step.approval_required': 'Langkah perencanaan menunggu persetujuan',
+            'planning.step.approval_resumed': 'Langkah perencanaan dilanjutkan',
+            'agent.execution.started': 'Agent mulai bekerja',
+            'agent.execution.completed': 'Agent menyelesaikan eksekusi',
+            'agent.execution.failed': 'Eksekusi agent gagal',
+            'agent.execution.cancelled': 'Eksekusi agent dibatalkan',
+            'agent.execution.timed_out': 'Eksekusi agent melewati batas waktu',
             'tool.started': 'Tool mulai dijalankan',
             'tool.completed': 'Tool selesai dijalankan',
             'tool.failed': 'Tool gagal dijalankan',
-            'tool.approval_required': 'Menunggu persetujuan tool',
+            'tool.timed_out': 'Tool melewati batas waktu',
+            'tool.cancelled': 'Tool dibatalkan',
+            'tool.approval_requested': 'Persetujuan penggunaan tool diminta',
             'tool.approval_granted': 'Persetujuan tool diberikan',
             'tool.approval_denied': 'Persetujuan tool ditolak',
+            'tool.approval_expired': 'Persetujuan tool kedaluwarsa',
+            'tool.approval_consumed': 'Persetujuan tool digunakan',
             'run.progress': 'Progress eksekusi',
             'worker.checkpoint': 'Checkpoint tersimpan',
             'run.awaiting_approval': 'Menunggu persetujuan',
@@ -369,6 +391,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             ...(status ? { status } : {}),
             ...(progress !== undefined ? { progress } : {}),
             ...(checkpointKey ? { checkpoint_key: checkpointKey } : {}),
+            ...(agentKey ? { agent_key: agentKey } : {}),
+            ...(stepIndex !== undefined ? { step_index: stepIndex } : {}),
+            ...(risk ? { risk } : {}),
+            ...(errorCode ? { error_code: errorCode } : {}),
           };
           lifecycleActivity.push(activity);
           setMessages((previous) => previous.map((message) =>
