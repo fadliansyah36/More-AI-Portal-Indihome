@@ -515,6 +515,27 @@ export const artifactApi = {
     ),
 };
 
+export type CustomerUsageAnalytics = {
+  summary: {
+    total_requests: number;
+    total_tokens: number;
+    successful_requests: number;
+    failed_requests: number;
+    total_cost: number | string;
+    average_latency_ms: number;
+  };
+  by_model: Array<{
+    model_key: string;
+    provider_key: string;
+    requests: number;
+    tokens: number;
+    successful_requests: number;
+    cost: number | string;
+  }>;
+  by_day: Array<{ day: string; requests: number; tokens: number; cost: number | string }>;
+  period: { since: string; until: string };
+};
+
 export const customerApi = {
   context: () => moreAiCustomerApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
   conversations: (limit = 50, before?: string) => moreAiCustomerApi<CustomerConversation[]>(`/api/v1/customer/conversations?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
@@ -564,6 +585,7 @@ export const customerApi = {
   wallets: () => moreAiCustomerApi<{ wallets: CustomerWallet[] }>('/api/v1/customer/wallet'),
   ledger: (limit = 50, before?: string) => moreAiCustomerApi<CustomerLedgerEntry[]>(`/api/v1/customer/wallet/ledger?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
   usage: (limit = 50, before?: string) => moreAiCustomerApi<CustomerUsageRecord[]>(`/api/v1/customer/usage?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
+  usageAnalytics: (days = 30) => moreAiCustomerApi<CustomerUsageAnalytics>(`/api/v1/customer/usage/analytics?days=${Math.max(1, Math.min(365, days))}`),
   entitlements: () => moreAiCustomerApi<CustomerEntitlement[]>('/api/v1/customer/entitlements'),
   quotas: () => moreAiCustomerApi<CustomerQuota[]>('/api/v1/customer/quotas'),
   redeemAccessCode: (code: string, networkId: string, verificationSessionId: string, idempotencyKey: string) =>
