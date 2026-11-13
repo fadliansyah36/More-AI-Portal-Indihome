@@ -30,7 +30,7 @@ interface ChatMessage {
 interface ChatViewProps {
   onBack: () => void;
   initialPrompt?: string;
-  initialAgentKey?: 'manus' | 'planning';
+  initialAgentKey?: 'manus' | 'planning' | 'toolcall';
   onNavigateTab?: (tab: NavigationTab) => void;
 }
 
