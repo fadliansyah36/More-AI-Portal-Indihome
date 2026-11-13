@@ -262,7 +262,7 @@ export const FilesView: React.FC = () => {
       // Reconcile local CAS version after conflicts or ambiguous network failures.
       // The server may have committed the immutable version even if its response was lost.
       try {
-        const refreshed = await workspaceApi.files(selectedWorkspaceId);
+        const refreshed = await workspaceApi.filesPage(selectedWorkspaceId, 100);
         setWorkspaceFiles((current) => [
           ...current.filter((item) => item.workspaceId !== selectedWorkspaceId),
           ...refreshed.items.map((item) => ({
@@ -271,6 +271,7 @@ export const FilesView: React.FC = () => {
             workspaceName: workspace.name,
           })),
         ]);
+        setWorkspaceFileCursors((current) => ({ ...current, [selectedWorkspaceId]: refreshed.nextCursor }));
       } catch {
         // Preserve the original upload error; a later explicit reload can recover.
       }
