@@ -217,3 +217,8 @@ Continue Phase 09. Finish Agent Run/Artifact relationships and the Customer acti
 - No tests, lint, typecheck, build, browser checks, screenshots, API probes, worker execution, provider calls, staging or E2E checks were run.
 - The Supabase analytics migration is applied, but the new analytics API/UI is not runtime-accepted.
 - Phase 09 remains IN PROGRESS; Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
+
+### Captive Gateway production inventory — additional readback
+- Read-only production row counts: `network_providers=0`, `partner_networks=0`, `network_verification_configs=0`, and `network_sessions=0`.
+- The five verification catalog methods remain `adapter_ready=false`.
+- This confirms there is currently no real partner network/provider configuration to bind an adapter to. No partner gateway credentials, callback/API contract, or secret reference can be inferred from an empty inventory. The gateway remains blocked by actual provider onboarding/configuration, not merely by missing UI wiring.
