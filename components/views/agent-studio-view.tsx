@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { moreAiCustomerApi } from '@/lib/api/client';
+import { customerApi } from '@/lib/api/client';
 import { AIAgent } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
@@ -32,7 +32,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
   const [agentLoadError, setAgentLoadError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
-    moreAiCustomerApi<Array<{ id: string; key: string; name: string; description: string; version: string; enabled: boolean }>>('/api/v1/agents')
+    customerApi.agents()
       .then((rows) => {
         if (!active) return;
         const mapped = rows.filter((row) => row.enabled).map((row) => ({
