@@ -780,6 +780,16 @@ export type CustomerToolApproval = {
   consumed_at: string | null;
 };
 
+export type CustomerToolApprovalDecision = {
+  id: string;
+  run_id: string;
+  tool_key: string;
+  status: 'approved' | 'denied' | 'expired' | 'consumed';
+  decided_at: string | null;
+  expires_at: string;
+  resumed: boolean;
+};
+
 export const customerToolApprovalApi = {
   list: () => moreAiCustomerApi<CustomerToolApproval[]>('/api/v1/customer/tool-approvals'),
   listPage: (limit = 30, cursor?: string) => moreAiCustomerApiPage<CustomerToolApproval>(
@@ -790,7 +800,7 @@ export const customerToolApprovalApi = {
       method: 'POST', body: JSON.stringify(input),
     }),
   decide: (approvalId: string, decision: 'approved' | 'denied') =>
-    moreAiCustomerApi<{ id: string; run_id: string; tool_key: string; status: 'approved' | 'denied' | 'expired' | 'consumed'; decided_at: string | null; expires_at: string; resumed?: boolean }>(`/api/v1/customer/tool-approvals/${approvalId}/decision`, {
+    moreAiCustomerApi<CustomerToolApprovalDecision>(`/api/v1/customer/tool-approvals/${approvalId}/decision`, {
       method: 'POST', body: JSON.stringify({ decision }),
     }),
 };
