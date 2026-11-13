@@ -4,7 +4,7 @@ import hashlib
 import os
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 from urllib.parse import urlsplit
 
@@ -102,6 +102,11 @@ class CustomerWorkspaceRunResponse(BaseModel):
     heartbeat_at: datetime | None = None
     cancel_requested_at: datetime | None = None
     last_checkpoint_key: str | None = None
+
+
+class CustomerWorkspaceMemberRemovalResponse(BaseModel):
+    member_id: UUID
+    status: Literal["removed"]
 
 
 class CustomerWorkspaceRunListResponse(BaseModel):
@@ -433,8 +438,7 @@ async def list_customer_workspace_members(
         "order": "created_at.asc,id.asc",
         "limit": str(limit + 1),
     }
-    cursor_filter = timestamp_id_filter(decoded, "created_at")
-    if cursor_filter:
+    if decoded:
         # Ascending order uses the inverse keyset predicate.
         timestamp, identifier = decoded
         filters["or"] = f"(created_at.gt.{timestamp},and(created_at.eq.{timestamp},id.gt.{identifier}))"
@@ -447,7 +451,7 @@ async def list_customer_workspace_members(
     return {"items": rows, "count": len(rows)}
 
 
-@router.delete("/{workspace_id}/members/{member_id}", response_model=dict[str, Any])
+@router.delete("/{workspace_id}/members/{member_id}", response_model=CustomerWorkspaceMemberRemovalResponse)
 async def remove_customer_workspace_member(
     workspace_id: UUID, member_id: UUID, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
