@@ -38,7 +38,7 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Code snapshot save/list/download | `artifactApi.upload/listPage/signedDownload` | `POST/GET /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; Code Assistant snapshot history and Agent Run selector load incrementally; optional owner-verified Agent Run link |
 | Tasks / Agent Run history | `customerApi.agentRunsPage()` | `GET /api/v1/customer/agent-runs` | Connected; succeeded/failed/cancelled/timed_out/expired are all treated as terminal for active-vs-finished filtering |
 | Tasks / Run artifacts | `artifactApi.listPage()/signedDownload()` | `GET /api/v1/artifacts`, `POST /{id}/signed-download` | Connected in Tasks view with keyset pagination; run relationship displayed |
-| Workspace files | `workspaceApi`, `customerWorkspaceApi` | `/api/v1/customer/workspaces` and nested file/version/run routes | Connected to versioned private Storage and CAS; response schemas cover workspace, file/version, signed download, member, run and upload; Files reconciles after failed/ambiguous CAS responses; archive guard blocks active/approval-waiting runs; deleted current versions cannot receive signed links; owner-only rename/archive/member removal retained |
+| Workspace files | `workspaceApi`, `customerWorkspaceApi` | `/api/v1/customer/workspaces` and nested file/version/member/run routes | Connected to database-side owner/member union keyset pagination (no 1,000-row fan-in); Files loads workspace/file/version pages, resolves exact server-side path/version before CAS upload, exposes soft-delete/restore, archives deleted versions, copies restore bytes into the next immutable Storage path, and supports explicit archived-version download; owner-only workspace rename/archive/member removal retained |
 | Private artifacts | `artifactApi.listPage()/upload()/signedDownload()` | `GET/POST /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; owner-scoped list has stable keyset pagination and Files, Tasks, Research, Workflow, Results and Code screens load pages incrementally; 2 MB object limit, private Storage and owner checks retained |
 | Profile update | `profileApi.update()` | `PATCH /api/v1/me/profile` | Connected |
 | Security MFA/password | Supabase Auth MFA and password methods | Supabase Auth | TOTP factor management and password update; extended session/device inventory is unavailable |
@@ -68,6 +68,17 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 - Profile, notification, tools catalog and model-capability requests now use the configured Customer API origin, preserving role-specific API routing when `NEXT_PUBLIC_MOREAI_CUSTOMER_API_URL` is configured (commit `00974162`).
 - Agent Studio's `GET /api/v1/agents` request is exposed as the typed `customerApi.agents()` contract rather than an inline generic request (commit `4e709c28`).
 
+
+## Workspace union pagination and immutable file lifecycle — 2026-11-13
+
+- Workspace list no longer fetches separate owner/member collections and merges them in memory. FastAPI calls `moreai_customer_workspaces_page`, which unions active owner/member workspace IDs and applies a stable database keyset cursor. Supporting partial indexes are applied.
+- Customer delete is a soft-delete with version-history archival. Customer restore validates the stored object hash/size, copies it into the next version-addressed Storage path, and commits metadata with CAS semantics.
+- OpenManus Worker restore uses a lease-fenced RPC and the same immutable object-copy rule. The old worker restore RPC overload is no longer executable by `service_role`.
+- Files screen exposes deleted state, restore/delete actions, exact path lookup before upload, and explicit download of archived versions. Upload into a deleted path requires restore first.
+- Conversation session detail now includes all persisted timing/cancellation lifecycle fields; conversation attachment response items are typed.
+- Workspace member/run API contracts remain owner/member-scoped and paginated. The current UI does not contain a dedicated member/run management screen.
+- Knowledge Library list is paged and owner-scoped; document detail chunk retrieval remains capped at 500 and is not yet paginated.
+- See [Workspace union pagination & immutable file lifecycle report](./PHASE-09-CUSTOMER-WORKSPACE-UNION-LIFECYCLE-20261113.md).
 
 ## Additional reconciliation — 2026-11-13
 
