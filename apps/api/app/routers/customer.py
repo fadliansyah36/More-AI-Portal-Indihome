@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -397,6 +397,26 @@ async def customer_usage(
             raise HTTPException(422, "before must include a timezone")
         filters["created_at"] = f"lt.{before.isoformat()}"
     return await repository(request).select("llm_usage", filters)
+
+
+@router.get("/usage/analytics")
+async def customer_usage_analytics(
+    request: Request,
+    days: int = Query(default=30, ge=1, le=365),
+    user: dict[str, Any] = Depends(current_user),
+):
+    """Return server-aggregated historical usage for the authenticated Customer only."""
+    principal = await require_customer_context(request, user)
+    until = datetime.now(timezone.utc)
+    since = until - timedelta(days=days)
+    result = await repository(request).rpc("moreai_customer_usage_analytics", {
+        "p_user_id": principal["id"],
+        "p_since": since.isoformat(),
+        "p_until": until.isoformat(),
+    })
+    if not isinstance(result, dict) or not isinstance(result.get("summary"), dict):
+        raise HTTPException(502, "Customer usage analytics returned an invalid response")
+    return result
 
 
 @router.get("/entitlements")
