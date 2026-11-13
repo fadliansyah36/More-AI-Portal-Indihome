@@ -88,13 +88,20 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       setApprovalError(null);
       const result = await customerToolApprovalApi.decide(approvalId, decision);
       setApprovals((current) => current.map((item) => item.id === approvalId
-        ? { ...item, status: result.status as CustomerToolApproval['status'] }
+        ? { ...item, status: result.status }
         : item));
-      // The decision RPC atomically re-queues a paused run. Refresh durable run
-      // state immediately so the Customer screen reflects the worker resume.
-      const runPage = await customerApi.agentRunsPage(50);
-      setRuns(runPage.items);
-      setNextRunCursor(runPage.nextCursor);
+      // The decision RPC atomically re-queues a paused run. Keep the durable
+      // approval decision visible even if the independent run-list refresh fails.
+      try {
+        const runPage = await customerApi.agentRunsPage(50);
+        setRuns(runPage.items);
+        setNextRunCursor(runPage.nextCursor);
+        setRunPaginationError(null);
+      } catch (refreshError) {
+        setRunPaginationError(refreshError instanceof Error
+          ? 'Keputusan tersimpan; status workflow belum dapat diperbarui: ' + refreshError.message
+          : 'Keputusan tersimpan; status workflow belum dapat diperbarui.');
+      }
     } catch (cause) {
       setApprovalError(cause instanceof Error ? cause.message : 'Keputusan persetujuan gagal disimpan.');
     } finally {
