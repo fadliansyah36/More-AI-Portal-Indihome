@@ -109,7 +109,7 @@ export const WifiSessionView: React.FC<WifiSessionViewProps> = ({ onBack, onNavi
         <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full rounded-full bg-red-600 transition-all" style={{ width: `${quotaPercent}%` }} /></div>
         <p className="text-[11px] text-slate-500">{quota ? `Pemakaian ${quota.metric_key} dari kebijakan kuota akun.` : 'Belum ada kebijakan kuota AI yang tersedia untuk akun ini.'}</p>
         <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-          <span>{loading ? 'Memuat saldo…' : `Saldo: ${balance !== null && Number.isFinite(balance) ? balance.toLocaleString('id-ID') : 'Tidak tersedia'} ${currency}`}</span>
+          <span>{loading ? 'Memuat saldo…' : balance !== null && Number.isFinite(balance) ? `Saldo: ${balance.toLocaleString('id-ID')} ${currency}` : 'Saldo: Tidak tersedia'}</span>
           <button onClick={() => onNavigateTab('account_upgrade')} className="text-red-600 font-bold hover:underline">Lihat Paket &gt;</button>
         </div>
       </div>
