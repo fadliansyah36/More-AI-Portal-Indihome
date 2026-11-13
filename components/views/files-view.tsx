@@ -293,21 +293,10 @@ export const FilesView: React.FC = () => {
     setError(null);
     try {
       await artifactApi.upload(file.name, file, file.type || 'application/octet-stream');
-      const rows = await artifactApi.list();
-      setFiles(rows.map((row) => {
-        const metadata = row.metadata || {};
-        const name = typeof metadata.filename === 'string'
-          ? metadata.filename
-          : row.storage_path.split('/').pop() || row.storage_path;
-        return {
-          id: row.id,
-          name,
-          size: formatSize(row.size_bytes),
-          date: new Date(row.created_at).toLocaleString('id-ID'),
-          type: categoryFor(row.mime_type, row.storage_path),
-          checksum: row.checksum_sha256,
-        };
-      }));
+      const page = await artifactApi.listPage(50);
+      setFiles(mapArtifactRows(page.items));
+      setArtifactNextCursor(page.nextCursor);
+      setArtifactPaginationError(null);
       setUploadMessage('File berhasil disimpan sebagai artefak privat pada akun Anda.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Upload artefak gagal diproses oleh server.');
