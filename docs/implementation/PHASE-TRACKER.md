@@ -1078,3 +1078,13 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Consent persistence and OTP challenge/delivery primitives were not identified in the inspected schema. Existing Customer routes expose network session history and access-code redemption, while Partner routes expose tenant-scoped network registration/configuration, readiness gating, and access-code lifecycle. No verified provider callback contract or secret resolver is configured.
 - Reconciled the real-provider prerequisites for Captive Gateway, OTP, EduTech, payment and support in [Provider onboarding and domain contract gate](./PHASE-09-PROVIDER-ONBOARDING-AND-DOMAIN-CONTRACTS-20261113.md). This is an onboarding/architecture artifact, not a claim that an adapter or lifecycle was implemented.
 - No migration, provider activation, test, staging, runtime request, build, lint, typecheck, browser check, worker execution or deployment was performed. Phase 09 remains IN PROGRESS; Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
+
+## 2026-11-13 — Customer Create Studio text workflow continuation
+
+- Corrected the existing Create Studio Generate Video action: the screen's described script/storyboard deliverable now hands off to the existing Chat/OpenManus Agent path, with an explicit text-only instruction and no claim that a video file was rendered.
+- Image generation remains unavailable until a real media provider is configured; no synthetic media, credit charge or success state was introduced.
+- Existing Customer UI layout and visual styling were not changed.
+- Source commit: `02a619298894ba4cfedff72bafd7b2eea116604a`.
+- Continuation report: [Phase 09 Customer Dashboard Integration — Continuation](./PHASE-09-CUSTOMER-DASHBOARD-CONTINUATION-20261113-2.md).
+- No tests, lint, typecheck, build, browser/API/worker runtime checks, provider calls, migration, staging or deployment were run.
+- Phase 09 remains IN PROGRESS; Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
