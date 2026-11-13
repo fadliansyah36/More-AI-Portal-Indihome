@@ -865,7 +865,10 @@ export type CustomerWorkspaceMember = {
 };
 
 export const workspaceApi = {
-  list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces'),
+  list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces?limit=100'),
+  listPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspace>(
+    '/api/v1/customer/workspaces?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
+  ),
   create: (name: string) => moreAiCustomerApi<CustomerWorkspace>('/api/v1/customer/workspaces', {
     method: 'POST', body: JSON.stringify({ name }),
   }),
