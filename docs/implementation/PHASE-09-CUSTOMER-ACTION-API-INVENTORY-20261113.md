@@ -128,3 +128,16 @@ Read-only production counts at the time of this inventory: `network_providers=0`
 - Customer cancellation endpoints now return terminal statuses without invoking the deployed cancellation RPC for succeeded/failed/cancelled/timed_out/expired runs. The RPC itself still needs a forward-only migration for direct-call terminal parity; no migration was applied.
 - Read-only Supabase schema inspection aligned the Customer network nested response, workspace file nullable fields and artifact JSONB metadata. Profile identity now has a dedicated FastAPI response model.
 - See [Customer pagination, lifecycle & contract hardening](./PHASE-09-CUSTOMER-PAGINATION-LIFECYCLE-CONTRACT-HARDENING-20261113.md).
+
+
+## 2026-11-13 authorization and collection pagination continuation
+
+- Customer router endpoints for context, conversation/message lifecycle, Agent Runs, network-session history, wallet, ledger, usage, analytics, entitlements, quota and access-code redemption now use `customer_principal` instead of generic bearer authentication. The principal resolver excludes active Partner memberships and platform-privileged assignments from the Customer API.
+- Notification list/read/read-all and preference read/update endpoints now use the same Customer principal. Notification rows remain user-scoped and keyset-paginated by `created_at,id`.
+- Agent, tool and model capability catalogues used by Customer screens now require the Customer principal. Partner and platform APIs remain separate.
+- Incremental page loading now exists for artifact collections in Artifact Results, Workflow and Code Assistant; the Analyse document selector uses paged Knowledge Library data; Code Assistant Agent Run selection loads additional run pages. Existing notification, approval, workspace/file/version, conversation/message, Agent Run, ledger and usage page cursors remain wired.
+- Approval decision state is rendered from the durable response. Agent Run refresh is independent and may show a refresh warning without rolling back or misreporting a committed approval decision.
+- Owner-scoped cancellation routes short-circuit already-terminal runs. The response status union includes `cancel_requested`, `cancelled`, `succeeded`, `failed`, `timed_out` and `expired`.
+- Report: [Customer authorization, pagination & lifecycle continuation](./PHASE-09-CUSTOMER-AUTH-PAGINATION-LIFECYCLE-20261113.md).
+
+This remains a source-level inventory. It is not proof of runtime authorization, Supabase RLS behavior, complete pagination under concurrent writes, or Customer-to-Worker E2E. No tests, builds, lint, typecheck, browser/API probes, staging, migrations, live Supabase writes, provider calls or deployment were performed in this continuation.
