@@ -37,6 +37,8 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   const [nextRunCursor, setNextRunCursor] = useState<string | null>(null);
   const [loadingMoreRuns, setLoadingMoreRuns] = useState(false);
   const [runPaginationError, setRunPaginationError] = useState<string | null>(null);
+  const [nextApprovalCursor, setNextApprovalCursor] = useState<string | null>(null);
+  const [loadingMoreApprovals, setLoadingMoreApprovals] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -46,7 +48,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         setError(null);
         const [runsResult, approvalsResult, artifactsResult] = await Promise.allSettled([
           customerApi.agentRunsPage(50),
-          customerToolApprovalApi.list(),
+          customerToolApprovalApi.listPage(50),
           artifactApi.list(),
         ]);
         if (active) {
@@ -55,7 +57,10 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
             setNextRunCursor(runsResult.value.nextCursor);
           }
           else setError(runsResult.reason instanceof Error ? runsResult.reason.message : 'Workflow tidak dapat dimuat.');
-          if (approvalsResult.status === 'fulfilled') setApprovals(approvalsResult.value);
+          if (approvalsResult.status === 'fulfilled') {
+            setApprovals(approvalsResult.value.items);
+            setNextApprovalCursor(approvalsResult.value.nextCursor);
+          }
           else setApprovalError(approvalsResult.reason instanceof Error ? approvalsResult.reason.message : 'Persetujuan tidak dapat dimuat.');
           if (artifactsResult.status === 'fulfilled') setArtifacts(artifactsResult.value);
 
@@ -87,6 +92,23 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       setApprovalError(cause instanceof Error ? cause.message : 'Keputusan persetujuan gagal disimpan.');
     } finally {
       setApprovalActionId(null);
+    }
+  };
+
+  const loadMoreApprovals = async () => {
+    if (!nextApprovalCursor || loadingMoreApprovals) return;
+    setLoadingMoreApprovals(true);
+    try {
+      const page = await customerToolApprovalApi.listPage(50, nextApprovalCursor);
+      setApprovals((current) => {
+        const known = new Set(current.map((item) => item.id));
+        return [...current, ...page.items.filter((item) => !known.has(item.id))];
+      });
+      setNextApprovalCursor(page.nextCursor);
+    } catch (cause) {
+      setApprovalError(cause instanceof Error ? cause.message : 'Riwayat persetujuan berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreApprovals(false);
     }
   };
 
@@ -137,7 +159,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         <div className="w-5" />
       </div>
 
-      {(approvals.some((item) => item.status === 'pending') || approvalError) && (
+      {(approvals.some((item) => item.status === 'pending') || approvalError || nextApprovalCursor) && (
         <section className="p-4 rounded-3xl bg-amber-50/70 border border-amber-200 space-y-3">
           <div>
             <h2 className="text-sm font-bold text-slate-900">Persetujuan Tool Agent</h2>
@@ -158,6 +180,12 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
             </div>
           ))}
           {approvalError && <p className="text-xs text-rose-700">{approvalError}</p>}
+          {nextApprovalCursor && (
+            <button type="button" onClick={() => void loadMoreApprovals()} disabled={loadingMoreApprovals}
+              className="w-full py-2 rounded-xl border border-amber-200 bg-white text-xs font-semibold text-amber-800 disabled:opacity-50">
+              {loadingMoreApprovals ? 'Memuat persetujuan…' : 'Muat riwayat persetujuan'}
+            </button>
+          )}
         </section>
       )}
 
