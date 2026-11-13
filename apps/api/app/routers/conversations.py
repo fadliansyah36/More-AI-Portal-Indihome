@@ -82,6 +82,17 @@ class ConversationSessionPageResponse(BaseModel):
     count: int
 
 
+class ConversationSessionCancellationResponse(BaseModel):
+    run_id: UUID
+    status: str
+
+
+class ConversationMessageEnqueueResponse(BaseModel):
+    run: dict[str, Any]
+    message: dict[str, Any] | None
+    replayed: bool
+
+
 class ConversationArchiveResponse(BaseModel):
     id: UUID
     status: Literal["archived"]
@@ -140,7 +151,7 @@ async def get_conversation(conversation_id: UUID, request: Request, user: dict[s
     return {"conversation": conversation, "messages": messages}
 
 
-@router.post("/{conversation_id}/messages", status_code=202, response_model=dict[str, Any])
+@router.post("/{conversation_id}/messages", status_code=202, response_model=ConversationMessageEnqueueResponse)
 async def send_message(
     conversation_id: UUID,
     body: MessageCreate,
@@ -231,7 +242,7 @@ async def get_conversation_session(
     }
 
 
-@router.post("/{conversation_id}/sessions/{run_id}/cancel", response_model=dict[str, Any])
+@router.post("/{conversation_id}/sessions/{run_id}/cancel", response_model=ConversationSessionCancellationResponse)
 async def cancel_conversation_session(
     conversation_id: UUID,
     run_id: UUID,
