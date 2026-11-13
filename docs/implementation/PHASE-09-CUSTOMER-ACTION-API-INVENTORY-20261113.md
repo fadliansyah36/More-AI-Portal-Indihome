@@ -174,3 +174,10 @@ Conversation session event replay and Customer Agent Run SSE now share the safe 
 
 ### Approval decision event contract
 The new forward-only migration source appends approval decision and run-resume events transactionally with approval/pause/run/checkpoint updates. It is committed but not applied to Supabase under the current no-live-mutation instruction; canonical production behavior is unchanged until an authorized migration apply.
+
+
+### Event-history privacy closure
+The direct Agent Run event-history endpoint now uses the same safe allowlist as logs/thinking/WebSocket/SSE. Customer SSE terminal payloads are projected to final answer text, validated citations and a bounded error code. Raw event payloads and provider/tool internals are not part of the Customer event response contract.
+
+### Final RAG marker contract
+Knowledge Search returns an explicit validated `citation_marker` for each chunk. The final model instruction requires exact markers; the durable runtime resolves them against retrieved chunk IDs, stores chunk/document provenance in Agent Run output, and strips markers from visible prose. Conversation detail and keyset message history restore citations through the assistant message's owner-scoped `run_id`.
