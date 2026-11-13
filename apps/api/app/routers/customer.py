@@ -25,6 +25,21 @@ class CustomerContextResponse(BaseModel):
     tenant: None = None
 
 
+class CustomerNetworkLocationResponse(BaseModel):
+    id: UUID
+    name: str | None = None
+    address: str | None = None
+
+
+class CustomerNetworkDetailsResponse(BaseModel):
+    id: UUID
+    name: str | None = None
+    ssid_label: str | None = None
+    gateway_type: str | None = None
+    status: str | None = None
+    location: CustomerNetworkLocationResponse | None = None
+
+
 class CustomerNetworkSessionResponse(BaseModel):
     id: UUID
     network_id: UUID
@@ -34,7 +49,7 @@ class CustomerNetworkSessionResponse(BaseModel):
     expires_at: datetime
     ended_at: datetime | None = None
     end_reason: str | None = None
-    network: dict[str, Any] | None = None
+    network: CustomerNetworkDetailsResponse | None = None
 
 
 class CustomerSpeedtestPingResponse(BaseModel):
