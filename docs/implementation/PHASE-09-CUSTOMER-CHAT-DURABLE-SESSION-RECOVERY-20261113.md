@@ -79,3 +79,18 @@ This is a compatibility alignment, not proof that every upstream OpenManus agent
 - Authorization: reconcile all customer routes, shared `/api/v1/agent-runs` endpoints, workspace membership checks, artifact ownership and knowledge workspace access. Do not assume a route is customer-safe solely because a frontend API method exists.
 
 No test, lint, typecheck, build, browser, API, worker, staging or deployment activity was performed, per owner instruction. The evidence here is repository source and API contract inspection only.
+
+
+## Incremental continuation — Safe activity timeline and Knowledge chunk visibility
+
+Commits:
+- `261a7aee47b6f8be5d4ef5295bbce3c6a5200e31` — typed customer run activity contract
+- `6ba5b9f130bf2952ce695597936af55ccb6d17a9` — Workflow activity timeline
+- `b3aff663b8e4c3e9ba2e2c618919fd8ad0e46bf8` — Knowledge chunk detail panel
+- `0fe7059ba955f2aa7b3684fd22df2affda349532` — zero-valued chunk cursor guard
+
+Workflow now requests the owner-scoped `/api/v1/agent-runs/{run_id}/logs` safe activity projection, not the raw event payload endpoint. It renders sequence, event label, tool name, timestamp, level and progress where provided. This avoids exposing raw tool arguments/observations through the UI.
+
+Knowledge Library now exposes document ingestion detail and paginated chunk metadata through the existing `knowledgeApi.get/chunksPage` contract. It shows chunk index and token count only; it does not expose private chunk content or embeddings.
+
+No test, lint, typecheck, build, browser, API, worker, staging or deployment activity was performed. Source changes remain unverified at runtime.
