@@ -453,6 +453,7 @@ export type CustomerNetworkSession = {
 
 export type CustomerArtifact = {
   id: string;
+  run_id: string | null;
   storage_path: string;
   mime_type: string | null;
   size_bytes: number | null;
