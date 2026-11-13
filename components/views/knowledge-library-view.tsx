@@ -68,7 +68,7 @@ export const KnowledgeLibraryView: React.FC = () => {
   };
 
   const loadMoreChunks = async () => {
-    if (!detail?.next_after_chunk_index || detailLoading || !detailId) return;
+    if (detail?.next_after_chunk_index === null || detail?.next_after_chunk_index === undefined || detailLoading || !detailId) return;
     setDetailLoading(true);
     setDetailError(null);
     try {
