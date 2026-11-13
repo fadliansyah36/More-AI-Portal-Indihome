@@ -103,6 +103,17 @@ class CustomerAgentRunResponse(BaseModel):
     finished_at: datetime | None = None
 
 
+class CustomerAgentRunCancellationResponse(BaseModel):
+    run_id: UUID
+    status: str
+
+
+class CustomerMessageEnqueueResponse(BaseModel):
+    run: CustomerAgentRunResponse
+    message: CustomerConversationMessageResponse | None = None
+    replayed: bool
+
+
 class CustomerWalletResponse(BaseModel):
     id: UUID
     currency: str
@@ -266,7 +277,7 @@ async def customer_conversation(
     return {"conversation": conversation, "messages": messages}
 
 
-@router.post("/conversations/{conversation_id}/messages", status_code=202, response_model=dict[str, Any])
+@router.post("/conversations/{conversation_id}/messages", status_code=202, response_model=CustomerMessageEnqueueResponse)
 async def send_customer_message(
     conversation_id: UUID, body: MessageCreate, request: Request,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -330,7 +341,7 @@ async def customer_agent_run(
 
 
 
-@router.post("/agent-runs/{run_id}/cancel", response_model=dict[str, Any])
+@router.post("/agent-runs/{run_id}/cancel", response_model=CustomerAgentRunCancellationResponse)
 async def customer_cancel_agent_run(
     run_id: UUID,
     request: Request,
