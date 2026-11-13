@@ -488,10 +488,16 @@ async def customer_wallet(
 @router.get("/wallet/ledger", response_model=list[CustomerLedgerEntryResponse])
 async def customer_wallet_ledger(
     request: Request,
+    response: Response,
     limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     before: datetime | None = Query(default=None),
+    wallet_id: UUID | None = Query(default=None),
     user: dict[str, Any] = Depends(current_user),
 ):
+    if cursor and before:
+        raise HTTPException(422, "Use either cursor or before, not both")
+    decoded = decode_created_at_id_cursor(cursor)
     principal = await require_customer_context(request, user)
     repo = repository(request)
     wallets = await repo.select("wallet_accounts", {
@@ -499,38 +505,66 @@ async def customer_wallet_ledger(
         "select": "id", "limit": "20",
     })
     ids = [str(row["id"]) for row in wallets if row.get("id")]
+    if wallet_id is not None:
+        if str(wallet_id) not in ids:
+            raise HTTPException(404, "wallet_not_found")
+        ids = [str(wallet_id)]
     if not ids:
+        response.headers["X-Pagination-Mode"] = "keyset"
         return []
     filters = {
         "wallet_id": f"in.({','.join(ids)})",
         "select": "id,wallet_id,entry_type,amount,balance_after,reference_type,reference_id,description,created_at",
-        "order": "created_at.desc", "limit": str(limit),
+        "order": "created_at.desc,id.desc", "limit": str(limit + 1),
     }
+    cursor_filter = created_at_id_filter(decoded)
+    if cursor_filter:
+        filters["or"] = cursor_filter
     if before:
         if before.tzinfo is None:
             raise HTTPException(422, "before must include a timezone")
-        filters["created_at"] = f"lt.{before.isoformat()}"
-    return await repo.select("credit_ledger", filters)
+        filters["created_at"] = f"lt.{before.astimezone(timezone.utc).isoformat()}"
+    rows = await repo.select("credit_ledger", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(rows[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return rows
 
 
 @router.get("/usage", response_model=list[CustomerUsageRecordResponse])
 async def customer_usage(
     request: Request,
+    response: Response,
     limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     before: datetime | None = Query(default=None),
     user: dict[str, Any] = Depends(current_user),
 ):
+    if cursor and before:
+        raise HTTPException(422, "Use either cursor or before, not both")
+    decoded = decode_created_at_id_cursor(cursor)
     principal = await require_customer_context(request, user)
     filters = {
         "user_id": f"eq.{principal['id']}",
         "select": "id,run_id,provider_key,model_key,input_tokens,output_tokens,estimated_cost,actual_cost,status,latency_ms,created_at",
-        "order": "created_at.desc", "limit": str(limit),
+        "order": "created_at.desc,id.desc", "limit": str(limit + 1),
     }
+    cursor_filter = created_at_id_filter(decoded)
+    if cursor_filter:
+        filters["or"] = cursor_filter
     if before:
         if before.tzinfo is None:
             raise HTTPException(422, "before must include a timezone")
-        filters["created_at"] = f"lt.{before.isoformat()}"
-    return await repository(request).select("llm_usage", filters)
+        filters["created_at"] = f"lt.{before.astimezone(timezone.utc).isoformat()}"
+    rows = await repository(request).select("llm_usage", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(rows[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return rows
 
 
 @router.get("/usage/analytics")
