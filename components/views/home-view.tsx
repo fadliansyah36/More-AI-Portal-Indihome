@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { customerApi, profileApi } from '@/lib/api/client';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface HomeViewProps {
   onNavigate: (tab: NavigationTab) => void;
@@ -49,10 +50,25 @@ export const HomeView: React.FC<HomeViewProps> = ({
           || userName;
         setDisplayName(registeredName);
       })
-      .catch(() => {
-        // Preserve the authenticated route's supplied identity instead of
-        // replacing a known name with a generic greeting on transient API errors.
-        if (active) setDisplayName(userName);
+      .catch(async () => {
+        if (!active) return;
+        // Identity is Auth data, not business data. If FastAPI is temporarily
+        // unreachable, read only the signed-in user's Auth record as a safe
+        // fallback; never query profile tables directly from the browser.
+        try {
+          const { data, error } = await createSupabaseBrowserClient().auth.getUser();
+          if (error) throw error;
+          const metadata = data.user?.user_metadata && typeof data.user.user_metadata === 'object'
+            ? data.user.user_metadata as Record<string, unknown>
+            : {};
+          const authName = [metadata.full_name, metadata.name, metadata.display_name]
+            .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
+            ?.trim();
+          const emailName = data.user?.email?.split('@')[0]?.trim();
+          if (active) setDisplayName(authName || emailName || userName);
+        } catch {
+          if (active) setDisplayName(userName);
+        }
       });
     return () => { active = false; };
   }, [userName]);
