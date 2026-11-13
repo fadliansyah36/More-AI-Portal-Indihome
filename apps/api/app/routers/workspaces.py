@@ -49,6 +49,15 @@ class CustomerWorkspaceFileListResponse(BaseModel):
     count: int
 
 
+class CustomerWorkspaceFileLifecycleResponse(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    path: str
+    version: int
+    deleted_at: datetime | None = None
+    status: Literal["deleted", "restored"]
+
+
 class CustomerWorkspaceFileVersionResponse(BaseModel):
     id: UUID
     path: str
@@ -286,6 +295,46 @@ async def list_workspace_file_versions(
         response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(history[-1], "committed_at")
     response.headers["X-Pagination-Mode"] = "keyset"
     return {"items": history, "count": len(history), "current_version": file["version"]}
+
+@router.post("/{workspace_id}/files/{file_id}/delete", response_model=CustomerWorkspaceFileLifecycleResponse)
+async def delete_customer_workspace_file(
+    workspace_id: UUID,
+    file_id: UUID,
+    request: Request,
+    expected_version: int = Query(ge=0, le=9_223_372_036_854_775_807),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    await _workspace_access(repository(request), workspace_id, user["id"])
+    result = await repository(request).rpc("moreai_customer_workspace_delete_file", {
+        "p_user_id": user["id"],
+        "p_workspace_id": str(workspace_id),
+        "p_file_id": str(file_id),
+        "p_expected_version": expected_version,
+    })
+    if not isinstance(result, dict):
+        raise HTTPException(502, "Workspace file deletion returned an invalid database response")
+    return result
+
+
+@router.post("/{workspace_id}/files/{file_id}/restore", response_model=CustomerWorkspaceFileLifecycleResponse)
+async def restore_customer_workspace_file(
+    workspace_id: UUID,
+    file_id: UUID,
+    request: Request,
+    expected_version: int = Query(ge=1, le=9_223_372_036_854_775_807),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    await _workspace_access(repository(request), workspace_id, user["id"])
+    result = await repository(request).rpc("moreai_customer_workspace_restore_file", {
+        "p_user_id": user["id"],
+        "p_workspace_id": str(workspace_id),
+        "p_file_id": str(file_id),
+        "p_expected_version": expected_version,
+    })
+    if not isinstance(result, dict):
+        raise HTTPException(502, "Workspace file restoration returned an invalid database response")
+    return result
+
 
 @router.post("/{workspace_id}/files/{file_id}/signed-download", response_model=CustomerWorkspaceSignedDownloadResponse)
 async def create_workspace_file_download(
