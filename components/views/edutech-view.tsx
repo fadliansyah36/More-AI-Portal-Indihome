@@ -52,9 +52,10 @@ export const EdutechView: React.FC = () => {
         {(['semua', 'ai', 'produktivitas', 'karier'] as const).map((cat) => (
           <button
             key={cat}
-            onClick={() => setActiveCategory(cat)}
+            type="button"
+            disabled
             className={`flex-1 py-1.5 text-xs font-semibold rounded-xl capitalize transition ${
-              activeCategory === cat ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              cat === 'semua' ? 'bg-red-600 text-white shadow-xs' : 'text-slate-400'
             }`}
           >
             {cat}
