@@ -1069,3 +1069,12 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Commits: `a127c4eb`, `eedd1e90`, `0fd4f4e8`.
 - No tests, lint, typecheck, build, browser/API/worker runtime checks, screenshots, staging, or E2E verification. No Supabase schema/data changes.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-13 — Provider onboarding and customer-domain contract gate
+
+- Re-read the controlling `AGENTS.md` and Master PRD at `public/assets/aistudio/MoreAI_Master_PRD_v1.0_ID_2f5fa0c2.md`. Confirmed the required trust boundary: FastAPI owns all business data/actions; browser Supabase access remains Auth-only; provider credentials stay server-side; unavailable sponsored access fails closed.
+- Read-only production schema inspection confirms the verification/session persistence primitives already exist: `network_verification_attempts`, `network_verification_evidence`, `network_verification_sessions`, `network_gateway_nonces`, `network_sessions`, and `network_session_events`. All listed network lifecycle tables are RLS-enabled. This does not establish that the API lifecycle or provider integration is complete.
+- Consent persistence and OTP challenge/delivery primitives were not identified in the inspected schema. Existing Customer routes expose network session history and access-code redemption, while Partner routes expose tenant-scoped network registration/configuration, readiness gating, and access-code lifecycle. No verified provider callback contract or secret resolver is configured.
+- Reconciled the real-provider prerequisites for Captive Gateway, OTP, EduTech, payment and support in [Provider onboarding and domain contract gate](./PHASE-09-PROVIDER-ONBOARDING-AND-DOMAIN-CONTRACTS-20261113.md). This is an onboarding/architecture artifact, not a claim that an adapter or lifecycle was implemented.
+- No migration, provider activation, test, staging, runtime request, build, lint, typecheck, browser check, worker execution or deployment was performed. Phase 09 remains IN PROGRESS; Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
