@@ -22,17 +22,23 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
   const [nextRunCursor, setNextRunCursor] = useState<string | null>(null);
   const [loadingMoreRuns, setLoadingMoreRuns] = useState(false);
   const [runPaginationError, setRunPaginationError] = useState<string | null>(null);
+  const [nextArtifactCursor, setNextArtifactCursor] = useState<string | null>(null);
+  const [loadingMoreArtifacts, setLoadingMoreArtifacts] = useState(false);
+  const [artifactPaginationError, setArtifactPaginationError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([customerApi.agentRunsPage(50), artifactApi.list()]).then(([runResult, artifactResult]) => {
+    Promise.allSettled([customerApi.agentRunsPage(50), artifactApi.listPage(50)]).then(([runResult, artifactResult]) => {
       if (!active) return;
       if (runResult.status === 'fulfilled') {
         setRuns(runResult.value.items);
         setNextRunCursor(runResult.value.nextCursor);
       }
       else setError(runResult.reason instanceof Error ? runResult.reason.message : 'Riwayat riset tidak dapat dimuat.');
-      if (artifactResult.status === 'fulfilled') setArtifacts(artifactResult.value);
+      if (artifactResult.status === 'fulfilled') {
+        setArtifacts(artifactResult.value.items);
+        setNextArtifactCursor(artifactResult.value.nextCursor);
+      }
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
@@ -52,6 +58,24 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
       setRunPaginationError(cause instanceof Error ? cause.message : 'Halaman riwayat riset berikutnya tidak dapat dimuat.');
     } finally {
       setLoadingMoreRuns(false);
+    }
+  };
+
+  const loadMoreArtifacts = async () => {
+    if (!nextArtifactCursor || loadingMoreArtifacts) return;
+    setLoadingMoreArtifacts(true);
+    setArtifactPaginationError(null);
+    try {
+      const page = await artifactApi.listPage(50, nextArtifactCursor);
+      setArtifacts((current) => {
+        const known = new Set(current.map((artifact) => artifact.id));
+        return [...current, ...page.items.filter((artifact) => !known.has(artifact.id))];
+      });
+      setNextArtifactCursor(page.nextCursor);
+    } catch (cause) {
+      setArtifactPaginationError(cause instanceof Error ? cause.message : 'Halaman artefak berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreArtifacts(false);
     }
   };
 
@@ -209,7 +233,14 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
                   );
                 })
               ) : (
-                <p className="rounded-xl bg-slate-50 p-3 text-[10px] text-slate-500">Belum ada artefak yang tercatat untuk run ini.</p>
+                <p className="rounded-xl bg-slate-50 p-3 text-[10px] text-slate-500">Belum ada artefak yang tercatat untuk run ini pada halaman yang dimuat.</p>
+              )}
+              {artifactPaginationError && <p role="alert" className="text-[10px] text-amber-800">{artifactPaginationError}</p>}
+              {nextArtifactCursor && (
+                <button type="button" onClick={() => void loadMoreArtifacts()} disabled={loadingMoreArtifacts}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
+                  {loadingMoreArtifacts ? 'Memuat artefak…' : 'Muat artefak berikutnya'}
+                </button>
               )}
             </div>
 
