@@ -367,3 +367,21 @@ A source-level route inventory was performed across the Customer/shared Customer
 
 ### Verification boundary
 No tests, lint, typecheck, build, browser checks, API probes, worker execution, migration application, Supabase schema/data changes, staging or deployment were performed. Phase 09 remains **IN PROGRESS**, not complete. Phase 10 is dependency-next only after Phase 09 source completion and when runtime verification is separately authorized; Phase 11 follows Phase 10.
+
+
+### Final source reconciliation addendum (2026-11-14)
+- `apps/api/app/routers/agent_runs.py` `GET /{run_id}/events` now returns the same safe activity projection rather than raw event payloads. This closes the remaining JSON event-history path that could expose internal tool observations/arguments to an otherwise authorized run owner.
+- `apps/api/app/routers/customer.py` terminal SSE now returns only final answer text, validated citation metadata and a bounded error code; it no longer forwards the complete raw Agent Run output/error object.
+- `apps/worker/app/knowledge_tools.py` now returns a validated exact `citation_marker` per retrieved chunk. The final-response instruction explicitly requires using the tool-provided marker adjacent to retrieval-grounded claims.
+- `engine/agents/durable_tool_runtime.py` extracts exact source markers into structured chunk provenance and strips those machine markers from user-visible prose before storing the final answer and conversation-memory assistant message.
+- Chat restore and older-message pagination now hydrate citations from owner-scoped Agent Run output; resumed-run completion also restores citations from the terminal result.
+- The worker no longer emits duplicate approval granted/denied/expired events after the new transactionally emitted decision event; successful one-time approval consumption remains a distinct worker-observed event.
+
+Additional commits:
+- `49457b1d7cfeb99c73c4bb2f0877fbffce22505a` — retrieval tool emits exact citation markers.
+- `f386c89628d5195bd566e8cebe84b6efc17f4868` — final response prompt requires exact retrieval-provided marker.
+- `e129c47a481aa0a13c80de7c8085b495e73d3a91` — marker-free visible prose with structured citation provenance.
+- `f242bc10e49145d4b9bcc5e54066af8aabaeaf48` — remove duplicate worker decision events.
+- `decaf2e48f2e75fe8d5e90de4c08e2505c5bf5b5` — sanitize direct Agent Run event-history endpoint.
+
+No runtime verification or Supabase migration application was performed.
