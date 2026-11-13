@@ -21,6 +21,24 @@ class AgentCatalogItemResponse(BaseModel):
     enabled: bool
 
 
+class ToolCatalogItemResponse(BaseModel):
+    key: str
+    version: str
+    description: str
+    input_schema: dict[str, Any]
+    capability_tags: list[str]
+    permission_scope: str
+    risk: str
+    approval_mode: str
+    execution_environment: str
+    timeout_seconds: int
+    resource_limits: dict[str, Any]
+    idempotency: str
+    audit_category: str
+    available_by_default: list[str]
+    enabled_by_default: bool
+
+
 class ModelCapabilityItemResponse(BaseModel):
     provider_key: str
     provider_name: str
@@ -92,7 +110,7 @@ async def list_model_capabilities(request: Request, user: dict[str, Any] = Depen
     return {"items": items, "count": len(items), "source": "enabled_provider_model_registry"}
 
 
-@router.get("/tools", response_model=list[dict[str, Any]])
+@router.get("/tools", response_model=list[ToolCatalogItemResponse])
 async def list_tools(user: dict[str, Any] = Depends(current_user)):
     # The catalog describes upstream tools; availability remains false until a safe adapter is enabled.
     return tool_catalog()
