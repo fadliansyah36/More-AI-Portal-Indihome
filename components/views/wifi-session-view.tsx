@@ -44,12 +44,13 @@ export const WifiSessionView: React.FC<WifiSessionViewProps> = ({ onBack, onNavi
   const remainingTime = activeSession
     ? [Math.floor(remainingSeconds / 3600), Math.floor((remainingSeconds % 3600) / 60), remainingSeconds % 60].map((part) => String(part).padStart(2, '0')).join(':')
     : '—:—:—';
-  const balance = useMemo(() => wallets.reduce((total, wallet) => total + Number(wallet.balance || 0), 0), [wallets]);
+  const primaryWallet = wallets.find((wallet) => wallet.status === 'active') || null;
+  const balance = primaryWallet ? Number(primaryWallet.balance || 0) : null;
   const quota = quotas.find((item) => /partner|ai|token|credit/i.test(item.metric_key)) || null;
   const quotaLimit = quota ? Number(quota.limit_value) : 0;
   const quotaUsed = quota ? Number(quota.usage?.used_value || 0) : 0;
   const quotaPercent = quotaLimit > 0 ? Math.max(0, Math.min(100, (quotaUsed / quotaLimit) * 100)) : 0;
-  const currency = wallets[0]?.currency || 'kredit';
+  const currency = primaryWallet?.currency || 'kredit';
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
@@ -108,7 +109,7 @@ export const WifiSessionView: React.FC<WifiSessionViewProps> = ({ onBack, onNavi
         <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full rounded-full bg-red-600 transition-all" style={{ width: `${quotaPercent}%` }} /></div>
         <p className="text-[11px] text-slate-500">{quota ? `Pemakaian ${quota.metric_key} dari kebijakan kuota akun.` : 'Belum ada kebijakan kuota AI yang tersedia untuk akun ini.'}</p>
         <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-          <span>{loading ? 'Memuat saldo…' : `Saldo: ${Number.isFinite(balance) ? balance.toLocaleString('id-ID') : '—'} ${currency}`}</span>
+          <span>{loading ? 'Memuat saldo…' : `Saldo: ${balance !== null && Number.isFinite(balance) ? balance.toLocaleString('id-ID') : 'Tidak tersedia'} ${currency}`}</span>
           <button onClick={() => onNavigateTab('account_upgrade')} className="text-red-600 font-bold hover:underline">Lihat Paket &gt;</button>
         </div>
       </div>
