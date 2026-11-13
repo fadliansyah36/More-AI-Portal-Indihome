@@ -146,6 +146,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             time: new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             source: message.role === 'assistant' ? 'MoreAI Agent Runtime' : undefined,
             attachments: message.attachments ?? [],
+            citations: message.citations ?? [],
           }));
         setMessages(restoredMessages);
 
@@ -265,6 +266,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
           time: new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: message.role === 'assistant' ? 'MoreAI Agent Runtime' : undefined,
           attachments: message.attachments ?? [],
+          citations: message.citations ?? [],
         }));
       suppressAutoScroll.current = true;
       setMessages((current) => {
