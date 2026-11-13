@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 from urllib.parse import urlsplit
@@ -14,6 +15,18 @@ from app.authorization import customer_principal
 from app.routers.conversations import repository
 
 router = APIRouter(prefix="/api/v1/customer/workspaces", tags=["customer-workspaces"])
+
+
+class WorkspaceFileUploadResponse(BaseModel):
+    workspace_id: UUID
+    file_id: UUID
+    path: str
+    version: int
+    storage_path: str
+    sha256: str
+    size_bytes: int
+    updated_at: datetime
+    replayed: bool
 
 
 class WorkspaceCreate(BaseModel):
@@ -365,7 +378,7 @@ def _customer_workspace_path(value: str) -> str:
     return value
 
 
-@router.post("/{workspace_id}/files", status_code=201)
+@router.post("/{workspace_id}/files", status_code=201, response_model=WorkspaceFileUploadResponse)
 async def upload_customer_workspace_file(
     workspace_id: UUID,
     request: Request,
