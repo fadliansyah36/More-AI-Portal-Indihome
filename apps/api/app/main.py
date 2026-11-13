@@ -68,8 +68,14 @@ class ProfileRecordResponse(BaseModel):
     timezone: str | None = None
 
 
+class ProfileIdentityResponse(BaseModel):
+    id: UUID
+    email: str | None = None
+    display_name: str | None = None
+
+
 class MyProfileResponse(BaseModel):
-    user: dict[str, Any]
+    user: ProfileIdentityResponse
     profile: ProfileRecordResponse | None = None
 
 
