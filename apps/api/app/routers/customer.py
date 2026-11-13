@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import datetime, timezone, timedelta
-from typing import Any
+from decimal import Decimal
+from typing import Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
@@ -17,6 +18,22 @@ from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cur
 
 
 router = APIRouter(prefix="/api/v1/customer", tags=["customer"])
+
+
+class CustomerQuotaUsageResponse(BaseModel):
+    used_value: Decimal
+    window_start: datetime
+    updated_at: datetime
+
+
+class CustomerQuotaResponse(BaseModel):
+    id: UUID
+    scope_type: Literal["platform", "global", "user"]
+    scope_id: UUID | None
+    metric_key: str
+    limit_value: Decimal
+    window_seconds: int
+    usage: CustomerQuotaUsageResponse | None = None
 
 
 @router.get("/context")
@@ -438,7 +455,7 @@ async def customer_entitlements(
     })
 
 
-@router.get("/quotas")
+@router.get("/quotas", response_model=list[CustomerQuotaResponse])
 async def customer_quotas(
     request: Request, user: dict[str, Any] = Depends(current_user),
 ):
