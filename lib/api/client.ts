@@ -5,6 +5,37 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_MOREAI_API_URL || '').replace(/\/$
 // and remain isolated by their server-side /customer and /partner route namespaces.
 const CUSTOMER_API_BASE_URL = (process.env.NEXT_PUBLIC_MOREAI_CUSTOMER_API_URL || API_BASE_URL).replace(/\/$/, '');
 const PARTNER_API_BASE_URL = (process.env.NEXT_PUBLIC_MOREAI_PARTNER_API_URL || API_BASE_URL).replace(/\/$/, '');
+const VERIFIED_API_FALLBACK_ORIGIN = 'https://more-ai-api.vercel.app';
+
+/** Retry only safe reads on the verified production alias; never replay mutations. */
+async function fetchMoreAiApi(
+  baseUrl: string,
+  path: string,
+  init: RequestInit,
+  headers: Headers,
+  accessToken: string,
+): Promise<Response> {
+  const method = (init.method || 'GET').toUpperCase();
+  const requestHeaders = new Headers(headers);
+  requestHeaders.set('Authorization', 'Bearer ' + accessToken);
+  const requestInit: RequestInit = { ...init, headers: requestHeaders, cache: 'no-store' };
+  try {
+    return await fetch(baseUrl + path, requestInit);
+  } catch (error) {
+    if (baseUrl !== 'https://more-ai-api-more-ai.vercel.app' || !['GET', 'HEAD'].includes(method)) {
+      if (error instanceof TypeError) {
+        throw new Error('Layanan API MoreAI tidak dapat dijangkau. Periksa koneksi, domain API, dan konfigurasi CORS.');
+      }
+      throw error;
+    }
+    try {
+      return await fetch(VERIFIED_API_FALLBACK_ORIGIN + path, requestInit);
+    } catch {
+      throw new Error('Layanan API MoreAI tidak dapat dijangkau melalui domain utama maupun alias cadangan. Periksa koneksi dan deployment FastAPI.');
+    }
+  }
+}
+
 
 async function moreAiApiAt<T>(baseUrl: string, path: string, init: RequestInit = {}): Promise<T> {
   if (!baseUrl) {
@@ -24,11 +55,7 @@ async function moreAiApiAt<T>(baseUrl: string, path: string, init: RequestInit =
     throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
   }
   let accessToken = sessionResult.data.session.access_token;
-  const send = () => {
-    const requestHeaders = new Headers(headers);
-    requestHeaders.set('Authorization', 'Bearer ' + accessToken);
-    return fetch(baseUrl + path, { ...init, headers: requestHeaders, cache: 'no-store' });
-  };
+  const send = () => fetchMoreAiApi(baseUrl, path, init, headers, accessToken);
 
   let response = await send();
   if (response.status === 401) {
@@ -84,11 +111,7 @@ export async function moreAiCustomerFetch(path: string, init: RequestInit = {}):
     throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
   }
   let token = session.data.session.access_token;
-  const send = () => {
-    const requestHeaders = new Headers(headers);
-    requestHeaders.set('Authorization', 'Bearer ' + token);
-    return fetch(CUSTOMER_API_BASE_URL + path, { ...init, headers: requestHeaders, cache: 'no-store' });
-  };
+  const send = () => fetchMoreAiApi(CUSTOMER_API_BASE_URL, path, init, headers, token);
   let response = await send();
   if (response.status === 401) {
     const refreshed = await supabase.auth.refreshSession();
