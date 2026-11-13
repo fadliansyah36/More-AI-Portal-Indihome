@@ -76,6 +76,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             text: message.content,
             time: new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             source: message.role === 'assistant' ? 'MoreAI Agent Runtime' : undefined,
+            attachments: message.attachments ?? [],
           })));
       } catch {
         // Conversation history remains server-authoritative. A failed restore
