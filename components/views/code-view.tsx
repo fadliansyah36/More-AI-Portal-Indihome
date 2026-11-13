@@ -13,7 +13,7 @@ export const CodeView: React.FC<CodeViewProps> = ({ onNavigateToChat }) => {
     return f"Hello, {name}!"
 
 # Eksekusi fungsi dengan nama platform
-print(greet("MoreAI - Global Partner Network"))`
+print(greet("World"))`
   );
 
   const [output, setOutput] = useState<string>('Sandbox eksekusi belum diaktifkan. Kode tidak akan dijalankan pada browser.');
@@ -158,12 +158,12 @@ print(greet("MoreAI - Global Partner Network"))`
       code: `def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("MoreAI - Global Partner Network"))`,
     },
     {
-      name: 'Kalkulator AI Quota',
-      code: `def hitung_sisa(quota, used):\n    return quota - used\n\nprint(f"Sisa Kuota: {hitung_sisa(100000, 15000)} Poin")`,
+      name: 'Contoh Kalkulasi',
+      code: `# Nilai contoh lokal, bukan kuota akun\ndef hitung_sisa(quota, used):\n    return quota - used\n\nprint(f"Sisa: {hitung_sisa(100, 15)}")`,
     },
     {
-      name: 'Loop Data Pelanggan',
-      code: `pelanggan = ["CoffeeHouse", "Resto Nusantara", "Coworking Hub"]\nfor p in pelanggan:\n    print(f"Partner Wi-Fi Aktif: {p}")`,
+      name: 'Contoh Loop',
+      code: `# Data contoh lokal, bukan daftar pelanggan nyata\nitems = ["item_001", "item_002", "item_003"]\nfor item in items:\n    print(item)`,
     },
   ];
 
