@@ -930,18 +930,23 @@ export const learningApi = {
 };
 
 
-/** Backwards-compatible array pagination helper for APIs exposing X-Next-Cursor. */
+/** Cursor-page reader for both array and { items, ... } Customer API responses. */
 export async function moreAiCustomerApiPage<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<{ items: T[]; nextCursor: string | null }> {
   const response = await moreAiCustomerFetch(path, init);
   const payload: unknown = await response.json();
-  if (!Array.isArray(payload)) {
-    throw new Error('MoreAI API pagination response is not an array.');
+  const items = Array.isArray(payload)
+    ? payload
+    : payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)
+      ? (payload as { items: unknown[] }).items
+      : null;
+  if (!items) {
+    throw new Error('MoreAI API pagination response does not contain an items collection.');
   }
   return {
-    items: payload as T[],
+    items: items as T[],
     nextCursor: response.headers.get('X-Next-Cursor'),
   };
 }
