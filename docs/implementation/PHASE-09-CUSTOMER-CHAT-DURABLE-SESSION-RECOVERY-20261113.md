@@ -43,3 +43,16 @@ No tests, lint, typecheck, build, browser checks, API probes, worker execution, 
 ## Next phase
 
 Continue Phase 09 — Customer Dashboard Integration Completion, next focusing on Agent Runtime and Workflow/Tasks integration. Phase 10 runtime/end-to-end verification and Phase 11 release gate remain unperformed and must not be marked complete.
+
+
+## Incremental continuation — Workflow run controls and step visibility
+
+Commit: `22f9c00d6d5bfc2a68d42eb246cc7a5b7b174928`
+
+Updated `components/views/workflow-progress-view.tsx`:
+- Added on-demand retrieval of durable workflow steps through the existing owner-scoped Customer API method.
+- Exposed step sequence, key, status, start and finish timestamps in an expandable run detail section.
+- Added cancellation action for non-terminal runs and reconciled the returned cancellation status in the local run list.
+- Reused the existing API client contracts; no new route, schema, or direct browser-to-Supabase access was introduced.
+
+No tests/build/lint/typecheck/browser/API/worker execution, staging or deployment were run. The added actions are source-level integrations only and require later authorized runtime acceptance.
