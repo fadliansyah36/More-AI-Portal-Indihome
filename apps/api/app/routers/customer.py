@@ -65,6 +65,7 @@ class CustomerSpeedtestUploadResponse(BaseModel):
 
 class CustomerConversationResponse(BaseModel):
     id: UUID
+    workspace_id: UUID | None = None
     title: str | None
     status: str
     created_at: datetime
@@ -261,9 +262,14 @@ async def create_customer_conversation(
     user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
-    return await repository(request).insert("conversations", {
-        "user_id": principal["id"], "title": body.title,
-        "status": "active", "metadata": {},
+    repo = repository(request)
+    if body.workspace_id is not None:
+        from app.routers.workspaces import _workspace_access
+        await _workspace_access(repo, body.workspace_id, principal["id"])
+    return await repo.insert("conversations", {
+        "user_id": principal["id"],
+        "workspace_id": str(body.workspace_id) if body.workspace_id else None,
+        "title": body.title, "status": "active", "metadata": {},
     })
 
 
@@ -282,7 +288,7 @@ async def customer_conversations(
     principal = await require_customer_context(request, user)
     filters = {
         "user_id": f"eq.{principal['id']}",
-        "select": "id,title,status,created_at,updated_at",
+        "select": "id,workspace_id,title,status,created_at,updated_at",
         "order": "updated_at.desc,id.desc", "limit": str(limit + 1),
     }
     cursor_filter = updated_at_id_filter(decoded)
