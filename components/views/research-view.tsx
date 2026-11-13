@@ -38,6 +38,8 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
       if (artifactResult.status === 'fulfilled') {
         setArtifacts(artifactResult.value.items);
         setNextArtifactCursor(artifactResult.value.nextCursor);
+      } else {
+        setArtifactPaginationError(artifactResult.reason instanceof Error ? artifactResult.reason.message : 'Artefak riset tidak dapat dimuat.');
       }
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
