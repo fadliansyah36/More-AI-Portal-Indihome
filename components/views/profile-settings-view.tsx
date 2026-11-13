@@ -125,7 +125,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
     setSavingProfile(true);
     try {
       const saved = await profileApi.update({ display_name: displayName });
-      setProfileName(saved.profile.display_name?.trim() || displayName);
+      setProfileName(saved.profile?.display_name?.trim() || displayName);
       setEditProfile(false);
       showToast('Informasi akun berhasil diperbarui.', 'success');
     } catch (error) {
