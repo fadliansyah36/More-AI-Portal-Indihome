@@ -42,6 +42,10 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   const [loadingMoreArtifacts, setLoadingMoreArtifacts] = useState(false);
   const [artifactPaginationError, setArtifactPaginationError] = useState<string | null>(null);
   const [loadingMoreApprovals, setLoadingMoreApprovals] = useState(false);
+  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
+  const [runSteps, setRunSteps] = useState<Record<string, Awaited<ReturnType<typeof customerApi.getRunSteps>>>>({});
+  const [stepLoadingId, setStepLoadingId] = useState<string | null>(null);
+  const [runActionId, setRunActionId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -141,6 +145,38 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       setRunPaginationError(cause instanceof Error ? cause.message : 'Halaman workflow berikutnya tidak dapat dimuat.');
     } finally {
       setLoadingMoreRuns(false);
+    }
+  };
+
+  const toggleRunDetails = async (runId: string) => {
+    if (expandedRunId === runId) {
+      setExpandedRunId(null);
+      return;
+    }
+    setExpandedRunId(runId);
+    if (runSteps[runId]) return;
+    setStepLoadingId(runId);
+    try {
+      const steps = await customerApi.getRunSteps(runId);
+      setRunSteps((current) => ({ ...current, [runId]: steps }));
+    } catch (cause) {
+      setRunPaginationError(cause instanceof Error ? cause.message : 'Tahapan Agent Run tidak dapat dimuat.');
+    } finally {
+      setStepLoadingId(null);
+    }
+  };
+
+  const cancelAgentRun = async (runId: string) => {
+    if (runActionId) return;
+    setRunActionId(runId);
+    setRunPaginationError(null);
+    try {
+      const result = await customerApi.cancelRun(runId);
+      setRuns((current) => current.map((run) => run.id === runId ? { ...run, status: result.status } : run));
+    } catch (cause) {
+      setRunPaginationError(cause instanceof Error ? cause.message : 'Permintaan pembatalan Agent Run gagal.');
+    } finally {
+      setRunActionId(null);
     }
   };
 
@@ -303,6 +339,38 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1">Conversation: {run.conversation_id || 'Tidak terkait percakapan'}</p>
                     <p className="text-[11px] text-slate-700 mt-2 bg-white p-2.5 rounded-xl border border-slate-100 whitespace-pre-wrap break-words">{runSummary(run)}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => void toggleRunDetails(run.id)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-slate-700">
+                        {expandedRunId === run.id ? 'Tutup tahapan' : 'Lihat tahapan & progress'}
+                      </button>
+                      {!terminal && (
+                        <button type="button" onClick={() => void cancelAgentRun(run.id)} disabled={runActionId === run.id} className="rounded-lg border border-rose-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-rose-700 disabled:opacity-50">
+                          {runActionId === run.id ? 'Meminta pembatalan…' : 'Batalkan run'}
+                        </button>
+                      )}
+                    </div>
+                    {expandedRunId === run.id && (
+                      <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Durable workflow steps</p>
+                        {stepLoadingId === run.id ? (
+                          <p className="mt-2 text-[11px] text-slate-500">Memuat tahapan dari FastAPI…</p>
+                        ) : (runSteps[run.id] || []).length === 0 ? (
+                          <p className="mt-2 text-[11px] text-slate-500">Belum ada step yang dipublikasikan untuk run ini.</p>
+                        ) : (
+                          <ol className="mt-2 space-y-2">
+                            {(runSteps[run.id] || []).map((step) => (
+                              <li key={step.id} className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                                <div className="min-w-0">
+                                  <p className="text-[11px] font-semibold text-slate-800">{step.sequence}. {step.step_key}</p>
+                                  <p className="mt-0.5 text-[10px] text-slate-400">{step.started_at ? new Date(step.started_at).toLocaleString('id-ID') : 'Belum dimulai'}{step.finished_at ? ' · selesai ' + new Date(step.finished_at).toLocaleString('id-ID') : ''}</p>
+                                </div>
+                                <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{step.status}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+                    )}
                     {artifacts.filter((artifact) => artifact.run_id === run.id).length > 0 && (
                       <div className="mt-2 rounded-xl border border-slate-200 bg-white p-2.5">
                         <p className="mb-1.5 text-[10px] font-semibold text-slate-600">Artefak hasil run</p>
