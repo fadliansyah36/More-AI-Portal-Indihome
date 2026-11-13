@@ -687,6 +687,20 @@ export const workspaceApi = {
   files: (workspaceId: string) => moreAiCustomerApi<{ items: CustomerWorkspaceFile[]; count: number }>(
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files',
   ),
+  uploadFile: (workspaceId: string, path: string, expectedVersion: number, file: Blob, idempotencyKey: string) =>
+    moreAiCustomerApi<Record<string, unknown>>(
+      '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+          'X-Workspace-Path': path,
+          'If-Match': String(expectedVersion),
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: file,
+      },
+    ),
   runs: (workspaceId: string, limit = 50) => moreAiCustomerApi<{ items: Array<{
     id: string; conversation_id: string | null; status: string; attempt: number;
     max_attempts: number; created_at: string; started_at: string | null;
