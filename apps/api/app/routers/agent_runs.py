@@ -19,6 +19,11 @@ from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cur
 router = APIRouter(prefix="/api/v1/agent-runs", tags=["agent-runs"])
 
 
+class AgentRunCancellationResponse(BaseModel):
+    run_id: UUID
+    status: str
+
+
 class AgentRunResponse(BaseModel):
     id: UUID
     conversation_id: UUID | None = None
@@ -222,7 +227,7 @@ async def get_run_steps(
     })
 
 
-@router.post("/{run_id}/cancel")
+@router.post("/{run_id}/cancel", response_model=AgentRunCancellationResponse)
 async def cancel_run(run_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, user["id"])
