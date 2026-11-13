@@ -6,7 +6,7 @@ export type CustomerKnowledgeDocument = {
   workspace_id: string | null;
   source_type: 'text' | 'file' | 'url';
   source_ref: string | null;
-  content_sha256: string;
+  content_sha256: string | null;
   status: 'processing' | 'ready' | 'failed' | 'archived';
   metadata: Record<string, unknown>;
   created_at: string;
