@@ -22,12 +22,12 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Home Agent Run summary | `customerApi.agentRunsPage()` | `GET /api/v1/customer/agent-runs` with keyset cursor | Connected |
 | Home wallet and entitlement | `customerApi.wallets()`, `entitlements()` | `GET /api/v1/customer/wallet`, `GET /api/v1/customer/entitlements` | Connected |
 | Customer context | `customerApi.context()` | `GET /api/v1/customer/context` | Connected |
-| Chat conversation restore | `customerApi.conversations()`, `getConversation()` | `GET /api/v1/customer/conversations`, `GET /api/v1/customer/conversations/{id}` | Connected |
+| Chat conversation restore | `customerApi.conversationsPage()`, `getConversation()` | `GET /api/v1/customer/conversations`, `GET /api/v1/customer/conversations/{id}` | Connected; stable `updated_at + id` keyset pagination with `X-Next-Cursor`; Chat restore uses the typed page client |
 | Chat message / Agent Run enqueue | `customerApi.sendMessage()` | `POST /api/v1/customer/conversations/{id}/messages` | Connected; atomic message/run/attachment RPC and idempotency key |
 | Chat attachments | `artifactApi.uploadAttachment()` | `POST /api/v1/artifacts` with chat purpose/conversation headers | Connected; private Storage, owner validation and worker extraction |
 | Chat stream and cancellation | `moreAiApiStream()`, `cancelRun()` | `GET /api/v1/customer/agent-runs/{id}/stream`, `POST .../{id}/cancel` | Connected; `run.timed_out` and `run.expired` are terminal across Chat, Home, Research, Tasks, Workflow, backend logs/thinking, Customer SSE and Agent Run WebSocket; SSE reconnect honors Last-Event-ID |
-| Run detail, steps and events | `getRun()`, `getRunSteps()`, `getRunEvents()` | `GET /api/v1/customer/agent-runs/{id}`, `GET .../{id}/steps`, `GET /api/v1/agent-runs/{id}/events` | Connected |
-| Workflow approvals | `customerToolApprovalApi` | `/api/v1/customer/tool-approvals` | Connected to durable owner/run-scoped approval lifecycle; frontend tool-key union now matches backend including `workspace_restore_version`; Workflow status display includes `timed_out` |
+| Run detail, steps and events | `getRun()`, `getRunSteps()`, `getRunEvents()` | `GET /api/v1/customer/agent-runs/{id}`, `GET .../{id}/steps`, `GET /api/v1/agent-runs/{id}/events` | Connected; Pydantic response schemas cover run detail/list/steps/logs/thinking/progress/events and customer steps |
+| Workflow approvals | `customerToolApprovalApi` | `/api/v1/customer/tool-approvals` | Connected to durable owner/run-scoped approval lifecycle; approval creation now pre-verifies run ownership; frontend tool-key union matches backend including `workspace_restore_version`; list and create response schemas declared; decision/recovery lifecycle audit remains |
 | Create Studio text/document/translation/presentation | `CreateView → handleStartPrompt → Chat` | Existing Chat message enqueue and Agent Run lifecycle | Connected as an explicit Chat handoff; the run is created when the Chat prompt is submitted |
 | Create Studio image/video generation | No provider client exposed | No verified generation provider contract | Unavailable; must not create mock media or charge credits |
 | Agent Studio catalog | `customerApi.agents()` | `GET /api/v1/agents` | Connected; explicit typed catalog contract on the configured Customer API origin |
@@ -38,14 +38,14 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Code snapshot save/list/download | `artifactApi.upload/list/signedDownload` | `POST/GET /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; optional owner-verified Agent Run link |
 | Tasks / Agent Run history | `customerApi.agentRunsPage()` | `GET /api/v1/customer/agent-runs` | Connected; succeeded/failed/cancelled/timed_out/expired are all treated as terminal for active-vs-finished filtering |
 | Tasks / Run artifacts | `artifactApi.list()/signedDownload()` | `GET /api/v1/artifacts`, `POST /{id}/signed-download` | Newly connected in Tasks view; run relationship displayed |
-| Workspace files | `workspaceApi`, `customerWorkspaceApi` | `/api/v1/customer/workspaces` and nested file/version/run routes | Connected to versioned private Storage and CAS; upload response is typed and Files reconciles current versions after failed/ambiguous CAS responses; archive guard blocks queued/pending/running/approval-waiting runs; deleted current file versions cannot receive signed-download links; owner-only rename/archive/member removal retained |
+| Workspace files | `workspaceApi`, `customerWorkspaceApi` | `/api/v1/customer/workspaces` and nested file/version/run routes | Connected to versioned private Storage and CAS; response schemas cover workspace, file/version, signed download, member, run and upload; Files reconciles after failed/ambiguous CAS responses; archive guard blocks active/approval-waiting runs; deleted current versions cannot receive signed links; owner-only rename/archive/member removal retained |
 | Private artifacts | `artifactApi` | `GET/POST /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; 2 MB object limit and owner checks |
 | Profile update | `profileApi.update()` | `PATCH /api/v1/me/profile` | Connected |
 | Security MFA/password | Supabase Auth MFA and password methods | Supabase Auth | TOTP factor management and password update; extended session/device inventory is unavailable |
 | Notifications | `notificationApi` | `GET /api/v1/notifications`, preferences GET/PUT, read POST, read-all POST | Connected; all calls use the configured Customer API origin |
-| EduTech learning progress | `learningApi.progress()/setProgress()` | `GET/PUT /api/v1/customer/learning/progress` | Connected to owner-scoped persistence; progress state is stored by user/module/lesson; catalog, enrollment, certificates and protected video delivery are not present |
+| EduTech learning progress | `learningApi.progress()` | `GET /api/v1/customer/learning/progress` | Saved progress remains readable; local hardcoded course/lesson samples and fake progress writes were removed from active Customer screens. Progress mutation is withheld until official catalog identifiers exist; catalog, enrollment, certificates and protected video delivery remain unavailable |
 | Analytics usage | `customerApi.usageAnalytics(days)` | `GET /api/v1/customer/usage/analytics` → server-only SQL aggregate | Newly connected; 7/30/365-day historical aggregation from all matching usage records |
-| Wallet / ledger / quotas | `customerApi.wallets()/ledger()/quotas()` | Customer wallet, ledger and quota read routes | Read-only connected; quota reads include platform/global/user policy scope and exact current usage window with a Pydantic response schema; wallet UI selects one active wallet and never adds different currencies |
+| Wallet / ledger / quotas | `customerApi.wallets()/ledgerPage()/usagePage()/quotas()` | Customer wallet, ledger and quota read routes | Read-only connected; ledger and usage use stable `created_at + id` keyset pagination; ledger can be scoped to an owner-verified wallet; Token Ledger and Benefit Credit use the active wallet; Wi-Fi Session and Captive Success no longer add unlike currencies; quota reads include platform/global/user policy scope and exact active window |
 | Payment top-up / checkout / subscription | No active payment mutation client | No checkout, payment-intent or verified webhook settlement contract/table/provider | Unavailable; no balance or entitlement mutation is claimed |
 | Wi-Fi session history | `customerApi.networkSessions()` | `GET /api/v1/customer/network-sessions` | Read-only connected |
 | Network speed test | `customerApi.networkSpeedtestPing/Download/Upload()` | `GET /api/v1/customer/network/speedtest/ping`, download, upload | Typed FastAPI client now matches the actual upload response (`status`, `received_bytes`, `server_receive_ms`); measures client ↔ MoreAI API path only, not an ISP throughput guarantee ([report](./PHASE-09-CUSTOMER-SPEEDTEST-TYPED-API-20261113.md)) |
@@ -79,6 +79,16 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 - Wallet display now uses one active primary wallet rather than summing balances with potentially different currencies.
 - Workspace CAS upload result is represented by `CustomerWorkspaceUploadResult` rather than `Record<string, unknown>`.
 - Customer quota reads now include both platform/global and user policies, retrieve the exact active window for each policy, and expose a declared FastAPI response schema. Usage lookup is keyed to the policy and its computed active window, not a user-only scope filter.
+
+
+## 2026-11-13 continuation — conversation, pagination and data integrity
+
+- FastAPI response schemas now cover Customer conversation/message, session/list/events, Agent Run list/detail/steps/logs/thinking/progress/events, and workspace lifecycle resources.
+- Customer conversation history uses stable `updated_at + id` keyset pagination; ledger and usage use stable `created_at + id` keyset pagination. Legacy `before` timestamp parameters remain for compatibility.
+- Token Ledger loads additional entries only for the active wallet; Benefit Credit history is similarly wallet-scoped. Wi-Fi Session and Captive Success display a single active wallet instead of summing currencies.
+- Tool approval creation checks that the requested run belongs to the authenticated Customer before calling the approval RPC.
+- EduTech Customer screens no longer present local sample courses/lessons as live catalogue data or write progress for a hardcoded sample module. Saved progress remains readable while official catalog/video integration is blocked.
+- See [Conversation, pagination & screen data integrity report](./PHASE-09-CUSTOMER-CONVERSATION-PAGINATION-DATA-INTEGRITY-20261113.md).
 
 ## Real-provider blockers — do not bypass
 
