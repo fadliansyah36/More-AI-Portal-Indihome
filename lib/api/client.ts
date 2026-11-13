@@ -661,6 +661,9 @@ export const customerApi = {
   networkSessions: (limit = 50) => moreAiCustomerApi<CustomerNetworkSession[]>(
     `/api/v1/customer/network-sessions?limit=${Math.min(100, Math.max(1, limit))}`,
   ),
+  networkSessionsPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerNetworkSession>(
+    `/api/v1/customer/network-sessions?limit=${Math.min(100, Math.max(1, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
+  ),
   networkSpeedtestPing: () => moreAiCustomerApi<{ status: 'ok'; service: 'moreai-api'; timestamp: string }>(
     '/api/v1/customer/network/speedtest/ping',
   ),
