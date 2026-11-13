@@ -1059,3 +1059,13 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Readback confirms `moreai.web.id` and `www.moreai.web.id` resolve to frontend deployment `dpl_524drp293BpdsxwtRWmEcUScz8p8`; `moreai.web.id` retains its 308 redirect to `www.moreai.web.id`.
 - Readback confirms `more-ai-api.vercel.app` resolves to FastAPI deployment `dpl_2VajdXAEAgmSzfyx5J5WtQKkex88`.
 - These alias updates make the READY deployment the current domain target. They do not deploy later source commits; current source HEAD remains ahead of the deployed SHA.
+
+## 2026-11-13 direct-main continuation — Customer identity fallback and API transport recovery
+
+- Home greeting and Profile now fall back to the signed-in Supabase Auth user when the FastAPI identity request cannot be reached. Registered name lookup supports `full_name`, `name`, and `display_name`; email local-part is the final display fallback. Browser Supabase access remains Auth-only.
+- The typed API client now retries only GET/HEAD requests against the verified canonical API alias when the configured primary API host fails at the transport layer. Mutating requests are never automatically replayed. Transport errors are surfaced with actionable API/CORS guidance.
+- Production configuration readback confirms the frontend API origin and allowed CORS origins include `moreai.web.id` and `www.moreai.web.id`. Current READY production deployments still point to commit `5501e3c80200f8c3e0d8314a6828a915f5c73305`; the new source changes are not deployed.
+- Vercel runtime error aggregation (24h) returned no error clusters for frontend or API; API individual logs beyond the Hobby plan's one-hour retention were unavailable. No live API/browser request was made.
+- Commits: `a127c4eb`, `eedd1e90`, `0fd4f4e8`.
+- No tests, lint, typecheck, build, browser/API/worker runtime checks, screenshots, staging, or E2E verification. No Supabase schema/data changes.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
