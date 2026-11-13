@@ -58,10 +58,9 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
     return () => { active = false; };
   }, []);
 
-  const balance = useMemo(
-    () => wallets.reduce((total, wallet) => total + Number(wallet.balance || 0), 0),
-    [wallets],
-  );
+  // Wallet balances are currency-scoped; never add unlike currencies into one total.
+  const primaryWallet = wallets.find((wallet) => wallet.status === 'active') || null;
+  const balance = primaryWallet ? Number(primaryWallet.balance || 0) : null;
   const activeEntitlements = entitlements.filter((item) => item.status === 'active');
   const monthlyQuota = quotas.find((item) => /month|monthly|llm|token|credit/i.test(item.metric_key)) || quotas[0];
   const monthlyQuotaLimit = monthlyQuota ? Number(monthlyQuota.limit_value) : null;
@@ -131,7 +130,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
               <span className="text-xs font-bold text-red-200">{monthlyQuota ? `sisa ${monthlyQuota.metric_key}` : 'Kuota belum tersedia'}</span>
             </div>
             <span className="text-[11px] text-white/80 block mt-0.5">
-              Saldo wallet aktif: <strong>{loading ? 'Memuat…' : `${balance.toLocaleString('id-ID')} ${wallets[0]?.currency || 'CREDIT'}`}</strong>{monthlyQuota && monthlyQuotaRemaining !== null ? <span className="ml-1 text-white/75">· terpakai {monthlyQuotaUsed.toLocaleString('id-ID')} dari {monthlyQuotaLimit?.toLocaleString('id-ID')}</span> : null}
+              Saldo wallet aktif: <strong>{loading ? 'Memuat…' : primaryWallet && Number.isFinite(balance) ? `${balance.toLocaleString('id-ID')} ${primaryWallet.currency}` : 'Tidak ada wallet aktif'}</strong>{monthlyQuota && monthlyQuotaRemaining !== null ? <span className="ml-1 text-white/75">· terpakai {monthlyQuotaUsed.toLocaleString('id-ID')} dari {monthlyQuotaLimit?.toLocaleString('id-ID')}</span> : null}
             </span>
           </div>
 
