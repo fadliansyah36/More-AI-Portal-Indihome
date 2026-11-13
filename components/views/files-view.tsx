@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Search, FileText, Image as ImageIcon, FileSpreadsheet, FileCode, ChevronRight, X, Loader2, FolderOpen, UploadCloud } from 'lucide-react';
-import { artifactApi, workspaceApi, type CustomerWorkspaceFile, type CustomerWorkspaceFileVersion } from '@/lib/api/client';
+import { artifactApi, workspaceApi, type CustomerWorkspace, type CustomerWorkspaceFile, type CustomerWorkspaceFileVersion } from '@/lib/api/client';
 
 type ArtifactRecord = {
   id: string;
@@ -51,6 +51,10 @@ export const FilesView: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<ArtifactFile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [workspaces, setWorkspaces] = useState<CustomerWorkspace[]>([]);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
+  const [uploadingWorkspaceFile, setUploadingWorkspaceFile] = useState(false);
+  const [workspaceUploadMessage, setWorkspaceUploadMessage] = useState<string | null>(null);
   const [workspaceFiles, setWorkspaceFiles] = useState<Array<CustomerWorkspaceFile & { workspaceId: string; workspaceName: string }>>([]);
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
@@ -97,6 +101,10 @@ export const FilesView: React.FC = () => {
     let active = true;
     workspaceApi.list()
       .then(async ({ items }) => {
+        if (active) {
+          setWorkspaces(items);
+          setSelectedWorkspaceId((current) => current || items[0]?.id || '');
+        }
         const groups = await Promise.allSettled(items.map(async (workspace) => {
           const result = await workspaceApi.files(workspace.id);
           return result.items.map((file) => ({ ...file, workspaceId: workspace.id, workspaceName: workspace.name }));
@@ -114,6 +122,53 @@ export const FilesView: React.FC = () => {
       .finally(() => { if (active) setWorkspaceLoading(false); });
     return () => { active = false; };
   }, []);
+
+  const uploadWorkspaceFile = async (file: File) => {
+    if (!selectedWorkspaceId) {
+      setWorkspaceError('Pilih workspace terlebih dahulu sebelum mengunggah file.');
+      return;
+    }
+    if (file.size < 1 || file.size > 2_000_000) {
+      setWorkspaceError('File workspace harus berukuran 1 byte hingga 2 MB.');
+      return;
+    }
+    if (!/^[A-Za-z0-9][A-Za-z0-9._ -]{0,179}$/.test(file.name) || file.name === '.' || file.name === '..') {
+      setWorkspaceError('Nama file hanya boleh menggunakan huruf Latin, angka, titik, garis bawah, spasi, atau tanda hubung.');
+      return;
+    }
+    const workspace = workspaces.find((item) => item.id === selectedWorkspaceId);
+    if (!workspace) {
+      setWorkspaceError('Workspace yang dipilih tidak lagi tersedia. Muat ulang halaman.');
+      return;
+    }
+    const existing = workspaceFiles.find((item) => item.workspaceId === selectedWorkspaceId && item.path === file.name);
+    setUploadingWorkspaceFile(true);
+    setWorkspaceUploadMessage(null);
+    setWorkspaceError(null);
+    try {
+      await workspaceApi.uploadFile(
+        selectedWorkspaceId,
+        file.name,
+        existing?.version ?? 0,
+        file,
+        crypto.randomUUID(),
+      );
+      const refreshed = await workspaceApi.files(selectedWorkspaceId);
+      setWorkspaceFiles((current) => [
+        ...current.filter((item) => item.workspaceId !== selectedWorkspaceId),
+        ...refreshed.items.map((item) => ({
+          ...item,
+          workspaceId: selectedWorkspaceId,
+          workspaceName: workspace.name,
+        })),
+      ]);
+      setWorkspaceUploadMessage('File tersimpan sebagai versi baru pada workspace yang dipilih.');
+    } catch (cause) {
+      setWorkspaceError(cause instanceof Error ? cause.message : 'Upload workspace gagal diproses oleh server.');
+    } finally {
+      setUploadingWorkspaceFile(false);
+    }
+  };
 
   const downloadWorkspaceFile = async (file: CustomerWorkspaceFile & { workspaceId: string }) => {
     setDownloadingFile(file.id);
@@ -284,10 +339,41 @@ export const FilesView: React.FC = () => {
 
 
       <section className="space-y-3 pt-3">
-        <div>
-          <h2 className="text-sm font-bold text-slate-900">File Workspace Agent</h2>
-          <p className="text-xs text-slate-500">File kerja yang tersimpan pada workspace aktif dan dibagikan melalui keanggotaan workspace.</p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">File Workspace Agent</h2>
+            <p className="text-xs text-slate-500">File kerja yang tersimpan sebagai versi immutable pada workspace yang dapat Anda akses.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              aria-label="Pilih workspace untuk upload"
+              value={selectedWorkspaceId}
+              onChange={(event) => setSelectedWorkspaceId(event.target.value)}
+              disabled={workspaces.length === 0 || uploadingWorkspaceFile}
+              className="max-w-44 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 disabled:opacity-50"
+            >
+              {workspaces.length === 0 ? <option value="">Tidak ada workspace</option> : workspaces.map((workspace) => (
+                <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
+              ))}
+            </select>
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100">
+              <UploadCloud className="h-3.5 w-3.5" />
+              {uploadingWorkspaceFile ? 'Mengunggah…' : 'Upload workspace'}
+              <input
+                type="file"
+                className="hidden"
+                disabled={uploadingWorkspaceFile || workspaces.length === 0}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadWorkspaceFile(file);
+                  event.currentTarget.value = '';
+                }}
+              />
+            </label>
+          </div>
         </div>
+        {workspaceUploadMessage && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">{workspaceUploadMessage}</div>}
+        {uploadingWorkspaceFile && <div role="status" className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">Mengunggah file ke Storage privat dan mengunci versi metadata…</div>}
         {workspaceLoading ? (
           <div className="rounded-2xl border border-slate-100 bg-white p-5 text-xs text-slate-500">Memuat file workspace…</div>
         ) : workspaceError ? (
