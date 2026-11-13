@@ -1,4 +1,4 @@
-| 09 | Existing Frontend API Integration | IN PROGRESS — Added Customer workspace immutable upload via private Storage + service-role CAS/idempotency RPC and version-history trigger; Files UI now selects workspace and uploads with expected-version If-Match; Chat restores the latest persisted conversation on entry. Migration draft committed but not applied. Chat attachments, cross-screen Agent Run/Artifact lifecycle, Captive Gateway verification/consent/OTP/session lifecycle, EduTech catalog/video, image/video generation, payment/top-up, support and full Customer action-to-OpenAPI audit remain open. No tests/staging/runtime checks. [2026-11-13 increment](./PHASE-09-CUSTOMER-WORKSPACE-CAS-CHAT-RESUME-20261113.md)
+| 09 | Existing Frontend API Integration | IN PROGRESS — Added Customer workspace immutable upload via private Storage + service-role CAS/idempotency RPC and version-history trigger; Files UI now selects workspace and uploads with expected-version If-Match; FastAPI CORS allowlist includes the CAS headers; Chat restores the latest persisted conversation on entry. Migration draft committed but not applied. Chat attachments, cross-screen Agent Run/Artifact lifecycle, Captive Gateway verification/consent/OTP/session lifecycle, EduTech catalog/video, image/video generation, payment/top-up, support and full Customer action-to-OpenAPI audit remain open. No tests/staging/runtime checks. [2026-11-13 increment](./PHASE-09-CUSTOMER-WORKSPACE-CAS-CHAT-RESUME-20261113.md)
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -1015,5 +1015,5 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Phase 09 remains IN PROGRESS.
 
 
-- Final source increment head: `8cc375696a733c131a4d998395ca43c21be2e91c`; implementation report updated at `7ddf9984b52075d1ef54bd7686989e4439d389af`.
+- Final source increment head: `b2241ecf42a2cf53b1af894ccb5e1b6ac9738097`; implementation report updated at `0546163732e2c448630c4d859078a9d2e3748b10`.
 - Vercel More AI team project listing returned HTTP 403 (not authorized), so the deployment target could not be independently inspected. Production deploy was not attempted because Phase 11 remains BLOCKED and the requested no-test constraint prevents satisfying the repository release gate.
