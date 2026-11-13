@@ -43,10 +43,18 @@ print(greet("MoreAI - Global Partner Network"))`
     if (activeSubTab !== 'projects') return;
     let active = true;
     setProjectsLoading(true);
-    artifactApi.list()
-      .then((items) => { if (active) { setSavedProjects(items); setProjectsError(null); } })
-      .catch((cause) => { if (active) setProjectsError(cause instanceof Error ? cause.message : 'Snapshot kode tidak dapat dimuat.'); })
-      .finally(() => { if (active) setProjectsLoading(false); });
+    Promise.allSettled([artifactApi.list(), customerApi.agentRuns()]).then(([artifacts, runs]) => {
+      if (!active) return;
+      if (artifacts.status === 'fulfilled') {
+        setSavedProjects(artifacts.value);
+        setProjectsError(null);
+      } else {
+        setProjectsError(artifacts.reason instanceof Error ? artifacts.reason.message : 'Snapshot kode tidak dapat dimuat.');
+      }
+      if (runs.status === 'fulfilled') setAvailableRuns(runs.value);
+    }).finally(() => {
+      if (active) setProjectsLoading(false);
+    });
     return () => { active = false; };
   }, [activeSubTab]);
 
