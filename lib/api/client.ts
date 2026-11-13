@@ -469,6 +469,17 @@ export const artifactApi = {
       headers: { 'X-Filename': filename, 'Content-Type': mimeType },
       body: content,
     }),
+  uploadAttachment: (conversationId: string, file: File) =>
+    moreAiCustomerApi<CustomerArtifact>('/api/v1/artifacts', {
+      method: 'POST',
+      headers: {
+        'X-Filename': file.name,
+        'Content-Type': file.type || 'application/octet-stream',
+        'X-Artifact-Purpose': 'chat_attachment',
+        'X-Conversation-Id': conversationId,
+      },
+      body: file,
+    }),
   signedDownload: (artifactId: string) =>
     moreAiCustomerApi<{ artifact_id: string; url: string; expires_in: number }>(
       `/api/v1/artifacts/${artifactId}/signed-download`,
@@ -481,17 +492,23 @@ export const customerApi = {
   conversations: (limit = 50, before?: string) => moreAiCustomerApi<CustomerConversation[]>(`/api/v1/customer/conversations?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
   getConversation: (conversationId: string) => moreAiCustomerApi<{
     conversation: CustomerConversation;
-    messages: Array<{ id: string; role: string; content: string; model_key: string | null; run_id: string | null; created_at: string }>;
+    messages: Array<{
+      id: string; role: string; content: string; model_key: string | null;
+      run_id: string | null; created_at: string;
+      attachments?: Array<{ id: string; filename: string; mime_type: string | null; size_bytes: number | null }>;
+    }>;
   }>(`/api/v1/customer/conversations/${conversationId}`),
   createConversation: (title: string) => moreAiCustomerApi<{ id: string }>('/api/v1/customer/conversations', {
     method: 'POST', body: JSON.stringify({ title }),
   }),
-  sendMessage: (conversationId: string, content: string, idempotencyKey: string, agentKey: 'manus' | 'planning' = 'manus') =>
-    moreAiCustomerApi<{ run: { id: string; status: string } }>(`/api/v1/customer/conversations/${conversationId}/messages`, {
-      method: 'POST',
-      headers: { 'Idempotency-Key': idempotencyKey },
-      body: JSON.stringify({ content, agent_key: agentKey }),
-    }),
+  sendMessage: (
+    conversationId: string, content: string, idempotencyKey: string,
+    agentKey: 'manus' | 'planning' | 'toolcall' = 'manus', attachmentIds: string[] = [],
+  ) => moreAiCustomerApi<{ run: { id: string; status: string } }>(`/api/v1/customer/conversations/${conversationId}/messages`, {
+    method: 'POST',
+    headers: { 'Idempotency-Key': idempotencyKey },
+    body: JSON.stringify({ content, agent_key: agentKey, attachment_ids: attachmentIds }),
+  }),
   agentRuns: (limit = 50, before?: string) => moreAiCustomerApi<CustomerAgentRun[]>(`/api/v1/customer/agent-runs?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
   agentRunsPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerAgentRun>(
     `/api/v1/customer/agent-runs?limit=${Math.max(1, Math.min(100, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
