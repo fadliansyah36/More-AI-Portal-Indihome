@@ -33,6 +33,7 @@ class ToolApprovalDecisionResponse(BaseModel):
     status: Literal["approved", "denied", "expired", "consumed"]
     decided_at: datetime | None
     expires_at: datetime
+    resumed: bool = False
 
 
 class ApprovalRequest(BaseModel):
@@ -116,7 +117,7 @@ async def decide_tool_approval(
         return {
             "id": row["id"], "run_id": row["run_id"], "tool_key": row["tool_key"],
             "status": row["status"], "decided_at": row.get("decided_at"),
-            "expires_at": row["expires_at"],
+            "expires_at": row["expires_at"], "resumed": False,
         }
     current_status = str(current.get("status") or "")
     if current_status in {"approved", "denied", "expired", "consumed"}:
