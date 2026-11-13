@@ -125,7 +125,7 @@ class CustomerAgentRunResponse(BaseModel):
 
 class CustomerAgentRunCancellationResponse(BaseModel):
     run_id: UUID
-    status: str
+    status: Literal["cancel_requested", "cancelled", "succeeded", "failed", "timed_out", "expired"]
 
 
 class CustomerMessageEnqueueResponse(BaseModel):
