@@ -92,6 +92,7 @@ Per instruction, no test suite, lint, typecheck, build, browser run, API probe, 
 5. Phase 09 remains IN PROGRESS. Phase 10 and Phase 11 must not be marked complete or started as accepted integration work without authorization for their respective verification gates.
 
 - Learning progress keyset/count migration: `supabase/migrations/20261113240000_moreai_customer_learning_progress_pagination.sql` (applied to the canonical Supabase project).
+- Knowledge chunk count migration: `supabase/migrations/20261113250000_moreai_customer_knowledge_chunk_count.sql` (applied to the canonical Supabase project).
 
 ## Main repository evidence
 
