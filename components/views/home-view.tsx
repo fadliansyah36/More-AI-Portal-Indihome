@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { customerApi, profileApi } from '@/lib/api/client';
+import { agentRunStatusLabel } from '@/lib/api/agent-run-status';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface HomeViewProps {
