@@ -319,6 +319,47 @@ async def customer_conversations(
     return rows
 
 
+def _customer_safe_run_output(output: Any) -> dict[str, Any] | None:
+    if not isinstance(output, dict):
+        return None
+    text_value = output.get("text")
+    if not isinstance(text_value, str):
+        text_value = output.get("content")
+    if not isinstance(text_value, str):
+        return None
+    safe_citations: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    raw_citations = output.get("citations") if isinstance(output.get("citations"), list) else []
+    for item in raw_citations[:100]:
+        if not isinstance(item, dict):
+            continue
+        try:
+            chunk_id = str(UUID(str(item.get("id"))))
+            document_id = str(UUID(str(item.get("document_id"))))
+        except (ValueError, TypeError, AttributeError):
+            continue
+        title, marker = item.get("title"), item.get("marker")
+        if not isinstance(title, str) or not title.strip() or len(title) > 300:
+            continue
+        if marker != f"[source:{chunk_id}]" or chunk_id in seen:
+            continue
+        citation: dict[str, Any] = {
+            "id": chunk_id, "document_id": document_id,
+            "title": title, "marker": marker,
+        }
+        similarity = item.get("similarity")
+        if isinstance(similarity, (int, float)) and not isinstance(similarity, bool):
+            citation["similarity"] = max(0.0, min(1.0, float(similarity)))
+        for field in ("source_page", "char_start", "char_end"):
+            value = item.get(field)
+            if isinstance(value, int) and not isinstance(value, bool):
+                if (field == "source_page" and value > 0) or (field != "source_page" and value >= 0):
+                    citation[field] = value
+        safe_citations.append(citation)
+        seen.add(chunk_id)
+    return {"text": text_value, "citations": safe_citations}
+
+
 async def _customer_conversation_message_citations(
     repo: Any, user_id: str, messages: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -650,9 +691,12 @@ async def customer_agent_run_stream(
                         else "run.expired" if status == "expired"
                         else "run.failed"
                     )
+                    raw_error = run.get("error") if isinstance(run.get("error"), dict) else {}
+                    safe_error = {"code": str(raw_error.get("code") or "agent_execution_failed")[:100]}
                     payload = json.dumps({
                         "run_id": str(run_id), "status": status,
-                        "output": run.get("output"), "error": run.get("error"),
+                        "output": _customer_safe_run_output(run.get("output")),
+                        "error": safe_error if status in {"failed", "timed_out", "expired"} else None,
                     }, separators=(",", ":"))
                     yield f"id: {cursor}\nevent: {terminal_event}\ndata: {payload}\n\n"
                     return
