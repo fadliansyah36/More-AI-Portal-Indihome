@@ -518,7 +518,7 @@ export type CustomerNetworkSession = {
     ssid_label: string | null;
     gateway_type: string | null;
     status: string | null;
-    location: { id: string; name: string | null; address: string | null } | null;
+    location: { id: string; name: string | null; address: Record<string, unknown> | null } | null;
   } | null;
 };
 
