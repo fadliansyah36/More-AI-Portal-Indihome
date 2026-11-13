@@ -563,6 +563,15 @@ export const artifactApi = {
     ),
 };
 
+export type CustomerAccessCodeRedeemResponse = {
+  redemption_id: string;
+  replayed: boolean;
+  redeemed_at: string;
+  reward_id?: string | null;
+  partner_entitlement_activated?: boolean | null;
+  message?: string | null;
+};
+
 export type CustomerUsageAnalytics = {
   summary: {
     total_requests: number;
@@ -778,7 +787,7 @@ export const customerToolApprovalApi = {
       method: 'POST', body: JSON.stringify(input),
     }),
   decide: (approvalId: string, decision: 'approved' | 'denied') =>
-    moreAiCustomerApi<{ id: string; run_id: string; tool_key: string; status: 'approved' | 'denied' | 'expired' | 'consumed'; decided_at: string | null; expires_at: string }>(`/api/v1/customer/tool-approvals/${approvalId}/decision`, {
+    moreAiCustomerApi<{ id: string; run_id: string; tool_key: string; status: 'approved' | 'denied' | 'expired' | 'consumed'; decided_at: string | null; expires_at: string; resumed?: boolean }>(`/api/v1/customer/tool-approvals/${approvalId}/decision`, {
       method: 'POST', body: JSON.stringify({ decision }),
     }),
 };
