@@ -113,25 +113,25 @@ async def decide_tool_approval(
 ):
     repo = repository(request)
     current = await repo.owned_record("agent_tool_approvals", approval_id, user["id"])
-    def projection(row: dict[str, Any]) -> dict[str, Any]:
+    def projection(row: dict[str, Any], resumed: bool = False) -> dict[str, Any]:
         return {
             "id": row["id"], "run_id": row["run_id"], "tool_key": row["tool_key"],
             "status": row["status"], "decided_at": row.get("decided_at"),
-            "expires_at": row["expires_at"], "resumed": False,
+            "expires_at": row["expires_at"], "resumed": resumed,
         }
     current_status = str(current.get("status") or "")
     if current_status in {"approved", "denied", "expired", "consumed"}:
         if current_status == body.decision or current_status in {"expired", "consumed"}:
             return projection(current)
         raise HTTPException(409, "Tool approval already has a different durable decision")
+    resumed = False
     try:
         result = await repo.rpc("moreai_decide_tool_approval", {
             "p_approval_id": str(approval_id),
             "p_user_id": user["id"],
             "p_decision": body.decision,
         })
-        if isinstance(result, dict) and result.get("id"):
-            return result
+        resumed = bool(result.get("resumed")) if isinstance(result, dict) else False
     except HTTPException:
         # A lost response or concurrent decision may leave the durable row
         # committed. Re-read owner-scoped state before returning a conflict.
@@ -140,5 +140,7 @@ async def decide_tool_approval(
         if refreshed_status == body.decision or refreshed_status in {"expired", "consumed"}:
             return projection(refreshed)
         raise
+    # The deployed RPC currently returns only id/run_id/status/resumed.
+    # Reload the canonical row so the public response schema remains complete.
     refreshed = await repo.owned_record("agent_tool_approvals", approval_id, user["id"])
-    return projection(refreshed)
+    return projection(refreshed, resumed)
