@@ -3,7 +3,7 @@
 **Date:** 2026-11-13  
 **Execution branch:** `main`  
 **Baseline commit:** `73bcd2ee13f92ec53b442f2567e51acb552071a3`  
-**Latest implementation commit at report time:** `8cc375696a733c131a4d998395ca43c21be2e91c`  
+**Latest implementation commit at report time:** `b2241ecf42a2cf53b1af894ccb5e1b6ac9738097`  
 **Status:** IN PROGRESS — this increment does not complete Phase 09.
 
 ## Scope delivered
@@ -36,6 +36,7 @@
 
 - `supabase/migrations/20261113001500_moreai_customer_workspace_upload_cas.sql` — new migration draft
 - `apps/api/app/routers/workspaces.py` — customer upload endpoint, path validation, private Storage handling and CAS RPC handoff
+- `apps/api/app/main.py` — allowlisted CORS request headers for `If-Match` and `X-Workspace-Path`
 - `lib/api/client.ts` — typed workspace upload contract
 - `components/views/files-view.tsx` — workspace selection and upload action
 - `components/views/chat-view.tsx` — persisted conversation resume
