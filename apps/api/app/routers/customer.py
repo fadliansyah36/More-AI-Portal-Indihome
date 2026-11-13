@@ -20,6 +20,35 @@ from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cur
 router = APIRouter(prefix="/api/v1/customer", tags=["customer"])
 
 
+class CustomerContextResponse(BaseModel):
+    principal: dict[str, str]
+    tenant: None = None
+
+
+class CustomerNetworkSessionResponse(BaseModel):
+    id: UUID
+    network_id: UUID
+    status: str
+    started_at: datetime
+    last_heartbeat_at: datetime | None = None
+    expires_at: datetime
+    ended_at: datetime | None = None
+    end_reason: str | None = None
+    network: dict[str, Any] | None = None
+
+
+class CustomerSpeedtestPingResponse(BaseModel):
+    status: Literal["ok"]
+    service: Literal["moreai-api"]
+    timestamp: datetime
+
+
+class CustomerSpeedtestUploadResponse(BaseModel):
+    status: Literal["ok"]
+    received_bytes: int
+    server_receive_ms: Decimal
+
+
 class CustomerConversationResponse(BaseModel):
     id: UUID
     title: str | None
@@ -139,7 +168,7 @@ class CustomerQuotaResponse(BaseModel):
     usage: CustomerQuotaUsageResponse | None = None
 
 
-@router.get("/context")
+@router.get("/context", response_model=CustomerContextResponse)
 async def customer_context(
     request: Request, user: dict[str, Any] = Depends(current_user),
 ):
@@ -400,7 +429,7 @@ async def customer_agent_run_stream(
     })
 
 
-@router.get("/network/speedtest/ping")
+@router.get("/network/speedtest/ping", response_model=CustomerSpeedtestPingResponse)
 async def customer_network_speedtest_ping(
     user: dict[str, Any] = Depends(customer_principal),
 ):
@@ -428,7 +457,7 @@ async def customer_network_speedtest_download(
     )
 
 
-@router.post("/network/speedtest/upload")
+@router.post("/network/speedtest/upload", response_model=CustomerSpeedtestUploadResponse)
 async def customer_network_speedtest_upload(
     request: Request,
     user: dict[str, Any] = Depends(customer_principal),
@@ -458,7 +487,7 @@ async def customer_network_speedtest_upload(
     }
 
 
-@router.get("/network-sessions")
+@router.get("/network-sessions", response_model=list[CustomerNetworkSessionResponse])
 async def customer_network_sessions(
     request: Request,
     limit: int = Query(default=50, ge=1, le=100),
