@@ -44,6 +44,8 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   const [loadingMoreApprovals, setLoadingMoreApprovals] = useState(false);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [runSteps, setRunSteps] = useState<Record<string, Awaited<ReturnType<typeof customerApi.getRunSteps>>>>({});
+  const [runActivity, setRunActivity] = useState<Record<string, Awaited<ReturnType<typeof customerApi.getRunActivity>>>>({});
+  const [activityLoadingId, setActivityLoadingId] = useState<string | null>(null);
   const [stepLoadingId, setStepLoadingId] = useState<string | null>(null);
   const [runActionId, setRunActionId] = useState<string | null>(null);
 
@@ -156,13 +158,19 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     setExpandedRunId(runId);
     if (runSteps[runId]) return;
     setStepLoadingId(runId);
+    setActivityLoadingId(runId);
     try {
-      const steps = await customerApi.getRunSteps(runId);
+      const [steps, activity] = await Promise.all([
+        customerApi.getRunSteps(runId),
+        customerApi.getRunActivity(runId, 0, 200),
+      ]);
       setRunSteps((current) => ({ ...current, [runId]: steps }));
+      setRunActivity((current) => ({ ...current, [runId]: activity }));
     } catch (cause) {
-      setRunPaginationError(cause instanceof Error ? cause.message : 'Tahapan Agent Run tidak dapat dimuat.');
+      setRunPaginationError(cause instanceof Error ? cause.message : 'Tahapan atau aktivitas Agent Run tidak dapat dimuat.');
     } finally {
       setStepLoadingId(null);
+      setActivityLoadingId(null);
     }
   };
 
@@ -369,6 +377,27 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                             ))}
                           </ol>
                         )}
+                        <div className="mt-3 border-t border-slate-100 pt-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Event activity (safe backend projection)</p>
+                          {activityLoadingId === run.id ? (
+                            <p className="mt-2 text-[11px] text-slate-500">Memuat event…</p>
+                          ) : (runActivity[run.id]?.items || []).length === 0 ? (
+                            <p className="mt-2 text-[11px] text-slate-500">Belum ada aktivitas yang dipublikasikan.</p>
+                          ) : (
+                            <ol className="mt-2 space-y-2">
+                              {(runActivity[run.id]?.items || []).map((event) => (
+                                <li key={event.id} className="flex items-start gap-2">
+                                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-[11px] font-medium text-slate-700">{event.message || event.event_type}{event.tool ? ' · ' + event.tool : ''}</p>
+                                    <p className="text-[10px] text-slate-400">#{event.sequence} · {new Date(event.timestamp).toLocaleString('id-ID')}{event.progress !== undefined ? ' · ' + event.progress + '%' : ''}</p>
+                                  </div>
+                                  {event.level && <span className="text-[9px] font-semibold text-slate-500">{event.level}</span>}
+                                </li>
+                              ))}
+                            </ol>
+                          )}
+                        </div>
                       </div>
                     )}
                     {artifacts.filter((artifact) => artifact.run_id === run.id).length > 0 && (
