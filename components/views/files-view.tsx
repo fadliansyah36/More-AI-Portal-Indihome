@@ -62,6 +62,8 @@ export const FilesView: React.FC = () => {
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [workspaceFileCursors, setWorkspaceFileCursors] = useState<Record<string, string | null>>({});
+  const [workspaceNextCursor, setWorkspaceNextCursor] = useState<string | null>(null);
+  const [loadingMoreWorkspaces, setLoadingMoreWorkspaces] = useState(false);
   const [loadingMoreWorkspaceFiles, setLoadingMoreWorkspaceFiles] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   const [downloadingArtifact, setDownloadingArtifact] = useState<string | null>(null);
@@ -109,8 +111,10 @@ export const FilesView: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    workspaceApi.list()
-      .then(async ({ items }) => {
+    workspaceApi.listPage(50)
+      .then(async (page) => {
+        const { items } = page;
+        setWorkspaceNextCursor(page.nextCursor);
         if (active) {
           setWorkspaces(items);
           setSelectedWorkspaceId((current) => current || items[0]?.id || '');
@@ -138,6 +142,46 @@ export const FilesView: React.FC = () => {
       .finally(() => { if (active) setWorkspaceLoading(false); });
     return () => { active = false; };
   }, []);
+
+  const loadMoreWorkspaces = async () => {
+    if (!workspaceNextCursor || loadingMoreWorkspaces) return;
+    setLoadingMoreWorkspaces(true);
+    setWorkspaceError(null);
+    try {
+      const page = await workspaceApi.listPage(50, workspaceNextCursor);
+      const known = new Set(workspaces.map((workspace) => workspace.id));
+      const additions = page.items.filter((workspace) => !known.has(workspace.id));
+      const groups = await Promise.allSettled(additions.map(async (workspace) => {
+        const files = await workspaceApi.filesPage(workspace.id, 50);
+        return {
+          workspaceId: workspace.id,
+          nextCursor: files.nextCursor,
+          items: files.items.map((file) => ({ ...file, workspaceId: workspace.id, workspaceName: workspace.name })),
+        };
+      }));
+      setWorkspaces((current) => [...current, ...additions.filter((workspace) => !current.some((item) => item.id === workspace.id))]);
+      setWorkspaceFiles((current) => {
+        const existing = new Set(current.map((file) => file.workspaceId + ':' + file.id));
+        return [...current, ...groups.flatMap((group) => group.status === 'fulfilled'
+          ? group.value.items.filter((file) => !existing.has(file.workspaceId + ':' + file.id)) : [])];
+      });
+      setWorkspaceFileCursors((current) => {
+        const next = { ...current };
+        groups.forEach((group) => {
+          if (group.status === 'fulfilled') next[group.value.workspaceId] = group.value.nextCursor;
+        });
+        return next;
+      });
+      setWorkspaceNextCursor(page.nextCursor);
+      if (groups.some((group) => group.status === 'rejected')) {
+        setWorkspaceError('Sebagian file dari workspace tambahan gagal dimuat. Workspace tetap tersedia untuk dicoba kembali.');
+      }
+    } catch (cause) {
+      setWorkspaceError(cause instanceof Error ? cause.message : 'Workspace berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreWorkspaces(false);
+    }
+  };
 
   const loadMoreWorkspaceFiles = async () => {
     const pending = workspaces.filter((workspace) => workspaceFileCursors[workspace.id]);
@@ -492,6 +536,12 @@ export const FilesView: React.FC = () => {
           <button type="button" onClick={() => void loadMoreWorkspaceFiles()} disabled={loadingMoreWorkspaceFiles}
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
             {loadingMoreWorkspaceFiles ? 'Memuat file workspace…' : 'Muat file workspace berikutnya'}
+          </button>
+        )}
+        {workspaceNextCursor && (
+          <button type="button" onClick={() => void loadMoreWorkspaces()} disabled={loadingMoreWorkspaces}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
+            {loadingMoreWorkspaces ? 'Memuat workspace…' : 'Muat workspace berikutnya'}
           </button>
         )}
       </section>
