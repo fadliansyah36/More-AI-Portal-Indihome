@@ -346,6 +346,7 @@ async def restore_customer_workspace_file(
         raise HTTPException(409, "Workspace file is not deleted")
     if file.get("pending_token") is not None:
         raise HTTPException(409, "Workspace file has a write in progress")
+    _customer_workspace_path(str(file.get("path") or ""))
     source_path = file.get("storage_path")
     checksum = file.get("sha256")
     size_bytes = file.get("size_bytes")
