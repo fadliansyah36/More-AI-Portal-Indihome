@@ -342,6 +342,14 @@ class WorkerRpcClient:
         arguments_hash = hashlib.sha256(
             json.dumps(arguments, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         ).hexdigest()
+        # Persist a minimal, non-sensitive lifecycle marker before the pause RPC
+        # releases the worker lease. The hash binds the request to the exact arguments
+        # without publishing the arguments themselves.
+        await self.append_run_event(
+            run_id, f"worker:approval-requested:{arguments_hash}",
+            "tool.approval_requested",
+            {"tool": approval_tool_key[:80], "arguments_hash": arguments_hash},
+        )
         operation = arguments.get("operation") if isinstance(arguments.get("operation"), str) else "edit"
         path = arguments.get("path") if isinstance(arguments.get("path"), str) else "workspace file"
         action_labels = {
