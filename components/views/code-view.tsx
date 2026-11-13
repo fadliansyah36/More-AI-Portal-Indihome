@@ -22,6 +22,8 @@ print(greet("MoreAI - Global Partner Network"))`
   const [isSaving, setIsSaving] = useState(false);
   const [savedProjects, setSavedProjects] = useState<CustomerArtifact[]>([]);
   const [availableRuns, setAvailableRuns] = useState<CustomerAgentRun[]>([]);
+  const [availableRunsNextCursor, setAvailableRunsNextCursor] = useState<string | null>(null);
+  const [loadingMoreRuns, setLoadingMoreRuns] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState('');
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [projectsError, setProjectsError] = useState<string | null>(null);
@@ -31,8 +33,8 @@ print(greet("MoreAI - Global Partner Network"))`
 
   useEffect(() => {
     let active = true;
-    customerApi.agentRunsPage(50).then(({ items }) => {
-      if (active) setAvailableRuns(items);
+    customerApi.agentRunsPage(50).then((page) => {
+      if (active) { setAvailableRuns(page.items); setAvailableRunsNextCursor(page.nextCursor); }
     }).catch(() => {
       // The run selector remains empty when history is unavailable; uploads can
       // still be saved without a run association.
@@ -65,7 +67,7 @@ print(greet("MoreAI - Global Partner Network"))`
       } else {
         setProjectsError(artifacts.reason instanceof Error ? artifacts.reason.message : 'Snapshot kode tidak dapat dimuat.');
       }
-      if (runs.status === 'fulfilled') setAvailableRuns(runs.value.items);
+      if (runs.status === 'fulfilled') { setAvailableRuns(runs.value.items); setAvailableRunsNextCursor(runs.value.nextCursor); }
     }).finally(() => {
       if (active) setProjectsLoading(false);
     });
@@ -92,6 +94,23 @@ print(greet("MoreAI - Global Partner Network"))`
       setOutput(cause instanceof Error ? cause.message : 'Snapshot kode gagal disimpan.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const loadMoreAvailableRuns = async () => {
+    if (!availableRunsNextCursor || loadingMoreRuns) return;
+    setLoadingMoreRuns(true);
+    try {
+      const page = await customerApi.agentRunsPage(50, availableRunsNextCursor);
+      setAvailableRuns((current) => {
+        const known = new Set(current.map((run) => run.id));
+        return [...current, ...page.items.filter((run) => !known.has(run.id))];
+      });
+      setAvailableRunsNextCursor(page.nextCursor);
+    } catch (cause) {
+      setProjectsError(cause instanceof Error ? cause.message : 'Riwayat Agent Run berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreRuns(false);
     }
   };
 
@@ -194,6 +213,12 @@ print(greet("MoreAI - Global Partner Network"))`
                 return <option key={run.id} value={run.id}>{label} · {run.status}</option>;
               })}
             </select>
+            {availableRunsNextCursor && (
+              <button type="button" onClick={() => void loadMoreAvailableRuns()} disabled={loadingMoreRuns}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
+                {loadingMoreRuns ? 'Memuat Agent Run…' : 'Muat riwayat Agent Run lainnya'}
+              </button>
+            )}
             <p className="text-[10px] text-slate-500">Run dipilih dari riwayat akun dan diverifikasi ulang oleh FastAPI sebelum artefak ditautkan.</p>
           </div>
           {/* Quick Snippet Selector */}
