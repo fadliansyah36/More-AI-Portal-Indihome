@@ -77,3 +77,9 @@ Scope: source-level integration corrections across existing Customer UI, FastAPI
 - Customer SSE now honors the `Last-Event-ID` header on reconnect using the same validated cursor parser as the general Agent Run stream.
 - Customer SSE now terminates on `run.expired` and synthesizes the correct `run.expired` event for persisted expired status instead of mapping it to `run.failed`.
 - Commits: `9e8524842aeaf69eea65faec5681523381c2ca11`, `8e68d8de34aa6594ca200b8ee9a0ce6c0aa2e712`, `80d77589aa3a45e81cdc22cfb5a9430e28d6177e`, `3a922da740aaf9d60186eba251eeb09cc39980b7`.
+
+### 9. Customer API response schema coverage
+- Added FastAPI response models for Customer wallet list, ledger entries, usage records, entitlements and quota policy/current-window usage.
+- Added response models for private artifact list/upload/download, workspace CAS upload, learning progress list/update, tool approval list, and notification list/preferences/read/read-all.
+- Learning progress query now validates optional `module_key` using the same key format as the write contract.
+- Commits: `b36a04ef0ea89ec14e782ab6067b35a56d435dd1`, `0304299fd21f3ac9612adbfc317fe0c0c346f4f3`, `9ed65b67e607df7caed8fccd5b81abefd43a8358`, `975b38a4cc5c7d65759d36967e4edf5ba80d06a6`, `e7f255d462b7e9c960f5ef44644e3eaf0fb190d3`, `0c7c16885051dc6379ff448c6290fb023af91d61`, `a106e6f6bca270ee2f41f2242332810860eb1f61`.
