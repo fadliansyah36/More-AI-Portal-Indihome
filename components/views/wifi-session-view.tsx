@@ -20,10 +20,10 @@ export const WifiSessionView: React.FC<WifiSessionViewProps> = ({ onBack, onNavi
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([customerApi.networkSessions(100), customerApi.wallets(), customerApi.quotas()])
+    Promise.allSettled([customerApi.networkSessionsPage(50), customerApi.wallets(), customerApi.quotas()])
       .then(([sessionResult, walletResult, quotaResult]) => {
         if (!active) return;
-        if (sessionResult.status === 'fulfilled') setSessions(sessionResult.value);
+        if (sessionResult.status === 'fulfilled') setSessions(sessionResult.value.items);
         else setError(sessionResult.reason instanceof Error ? sessionResult.reason.message : 'Riwayat sesi Wi-Fi tidak dapat dimuat.');
         if (walletResult.status === 'fulfilled') setWallets(walletResult.value.wallets || []);
         else setError((current) => current || (walletResult.reason instanceof Error ? walletResult.reason.message : 'Saldo akun tidak dapat dimuat.'));
