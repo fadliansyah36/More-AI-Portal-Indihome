@@ -88,7 +88,7 @@ async def list_notifications(
 
 @router.get("/preferences", response_model=NotificationPreferencesResponse)
 async def get_notification_preferences(
-    request: Request, user: dict[str, Any] = Depends(current_user),
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
 ):
     rows = await repository(request).select("notification_preferences", {
         "user_id": f"eq.{user['id']}",
@@ -105,7 +105,7 @@ async def get_notification_preferences(
 async def update_notification_preferences(
     body: NotificationPreferencesUpdate,
     request: Request,
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     changes = body.model_dump(exclude_unset=True)
     if not changes:
@@ -137,7 +137,7 @@ async def update_notification_preferences(
 async def mark_notification_read(
     notification_id: UUID,
     request: Request,
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     rows = await repository(request).update(
         "notifications",
@@ -151,7 +151,7 @@ async def mark_notification_read(
 
 @router.post("/read-all", response_model=NotificationReadAllResponse)
 async def mark_all_notifications_read(
-    request: Request, user: dict[str, Any] = Depends(current_user),
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
 ):
     rows = await repository(request).update(
         "notifications",
