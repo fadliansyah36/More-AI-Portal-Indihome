@@ -145,3 +145,24 @@ Continue Phase 09. Finish Agent Run/Artifact relationships and the Customer acti
 - Readback confirms `moreai.web.id` and `www.moreai.web.id` resolve to frontend deployment `dpl_524drp293BpdsxwtRWmEcUScz8p8`; `moreai.web.id` retains its 308 redirect to `www.moreai.web.id`.
 - Readback confirms `more-ai-api.vercel.app` resolves to FastAPI deployment `dpl_2VajdXAEAgmSzfyx5J5WtQKkex88`.
 - These alias updates make the READY deployment the current domain target. They do not deploy later source commits; current source HEAD remains ahead of the deployed SHA.
+
+## 2026-11-13 follow-up — production Customer identity and API transport recovery
+
+### Source changes on main
+- `components/views/home-view.tsx`: when `GET /api/v1/me` is unavailable, the greeting now reads only the authenticated Supabase Auth user and resolves the registration name from `user_metadata.full_name`, `name`, or `display_name`, then the email local-part. It does not query profile tables directly from the browser.
+- `components/views/profile-settings-view.tsx`: profile identity and email now have the same Auth-only fallback if the FastAPI profile request fails. Notification preferences remain an independent resource; no false profile-update success is shown.
+- `lib/api/client.ts`: read-only GET/HEAD requests can retry against the verified canonical API alias `https://more-ai-api.vercel.app` only when the configured primary host `https://more-ai-api-more-ai.vercel.app` fails at the transport layer. POST/PATCH/PUT/DELETE are never replayed. Transport failures now produce an actionable API connectivity/CORS message rather than a generic browser `Failed to fetch`.
+- Commits: `a127c4eb05239434d1fd9a34e2ef4f233e56300a`, `eedd1e90f3705320bd121a4e62c3d362ac92f7db`, `0fd4f4e8cbc53e070455589ddffade02bfc634d9`.
+
+### Production configuration readback
+- Frontend `NEXT_PUBLIC_MOREAI_API_URL` is configured to `https://more-ai-api-more-ai.vercel.app`; the API project's `MOREAI_CORS_ALLOWED_ORIGINS` includes both `https://moreai.web.id` and `https://www.moreai.web.id`.
+- The API project's Supabase URL and publishable key variables are configured; API source supports `SUPABASE_PUBLISHABLE_KEY` as the Auth key fallback. Service-role values were not read or exposed.
+- Current Production frontend and API deployments are both READY at commit `5501e3c80200f8c3e0d8314a6828a915f5c73305`. That deployed commit is an ancestor of the identity fallback work but does not include the new transport fallback and current source updates.
+- Runtime error aggregation for the last 24 hours returned no runtime error clusters for either project. Individual API logs could not be queried for 24 hours because the current Vercel plan retains only one hour; a recent 30-minute error-level log query returned no entries. This is not proof that browser-side CORS/transport requests succeed.
+- No live API/browser request was made, in keeping with the no-real-testing instruction. The current production deployment therefore remains unchanged; the latest source commits are not live.
+
+### Verification and scope boundary
+- No tests, lint, typecheck, build, browser checks, screenshots, API probes, worker execution, staging, or E2E checks were run.
+- No Supabase schema or production data changes were needed.
+- Phase 09 remains IN PROGRESS. Identity fallback and safe API transport recovery are source-implemented, not runtime-accepted.
+- Remaining Phase 09 scope remains: complete Agent Run/Artifact links across all Customer workflows; actual Captive Gateway provider adapters and signed network verification; full Customer action/OpenAPI inventory; provider-backed EduTech, payment, support and validated Analytics.
