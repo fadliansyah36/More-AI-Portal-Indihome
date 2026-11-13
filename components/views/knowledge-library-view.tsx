@@ -23,6 +23,10 @@ export const KnowledgeLibraryView: React.FC = () => {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [paginationError, setPaginationError] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Awaited<ReturnType<typeof knowledgeApi.get>> | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -43,6 +47,42 @@ export const KnowledgeLibraryView: React.FC = () => {
     void Promise.resolve().then(() => { if (active) void load(); });
     return () => { active = false; };
   }, [load]);
+
+  const openDocumentDetail = async (documentId: string) => {
+    if (detailId === documentId) {
+      setDetailId(null);
+      setDetail(null);
+      return;
+    }
+    setDetailId(documentId);
+    setDetailLoading(true);
+    setDetailError(null);
+    try {
+      const result = await knowledgeApi.get(documentId, { limit: 100 });
+      setDetail(result);
+    } catch (cause) {
+      setDetailError(cause instanceof Error ? cause.message : 'Detail ingestion tidak dapat dimuat.');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const loadMoreChunks = async () => {
+    if (!detail?.next_after_chunk_index || detailLoading || !detailId) return;
+    setDetailLoading(true);
+    setDetailError(null);
+    try {
+      const page = await knowledgeApi.chunksPage(detailId, 100, detail.next_after_chunk_index);
+      setDetail((current) => current ? {
+        ...page,
+        chunks: [...current.chunks, ...page.chunks.filter((chunk) => !current.chunks.some((known) => known.id === chunk.id))],
+      } : page);
+    } catch (cause) {
+      setDetailError(cause instanceof Error ? cause.message : 'Chunk knowledge berikutnya tidak dapat dimuat.');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   const loadMore = async () => {
     if (!nextCursor || loadingMore) return;
@@ -170,8 +210,39 @@ export const KnowledgeLibraryView: React.FC = () => {
               {busyId === document.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
             </button>
           )}
+          <button type="button" onClick={() => void openDocumentDetail(document.id)} className="shrink-0 rounded-xl border border-slate-200 px-2.5 py-2 text-[10px] font-semibold text-slate-600">
+            {detailId === document.id ? 'Tutup' : 'Chunks'}
+          </button>
         </article>
       ))}
+      {detailId && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div><h2 className="text-sm font-bold text-slate-900">Ingestion & chunk detail</h2><p className="mt-1 text-[11px] text-slate-500">Metadata chunk dari Knowledge API. Isi dokumen dan embedding privat tidak diekspos di panel ini.</p></div>
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{detail ? detail.total_chunk_count + ' chunks' : 'Memuat'}</span>
+          </div>
+          {detailLoading && <p className="mt-3 text-xs text-slate-500">Memuat detail knowledge…</p>}
+          {detailError && <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{detailError}</p>}
+          {detail && (
+            <>
+              <p className="mt-3 text-[11px] text-slate-600">Status ingestion: <strong>{detail.document.status}</strong> · Dimuat {detail.chunks.length} dari {detail.total_chunk_count} chunk</p>
+              <div className="mt-3 space-y-2">
+                {detail.chunks.map((chunk) => (
+                  <div key={chunk.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                    <span className="text-[11px] font-medium text-slate-700">Chunk #{chunk.chunk_index}</span>
+                    <span className="text-[10px] text-slate-500">{chunk.token_count === null ? 'Token count tidak tersedia' : chunk.token_count + ' tokens'}</span>
+                  </div>
+                ))}
+              </div>
+              {detail.next_after_chunk_index !== null && (
+                <button type="button" onClick={() => void loadMoreChunks()} disabled={detailLoading} className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50">
+                  Muat chunk berikutnya
+                </button>
+              )}
+            </>
+          )}
+        </section>
+      )}
       {paginationError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{paginationError}</div>}
       {!loading && nextCursor && (
         <button type="button" onClick={() => void loadMore()} disabled={loadingMore}
