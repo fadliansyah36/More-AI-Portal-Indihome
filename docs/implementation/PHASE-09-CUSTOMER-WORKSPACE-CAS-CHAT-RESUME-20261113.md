@@ -1,82 +1,116 @@
-# Phase 09 — Customer Workspace CAS Upload & Chat Resume
+# Phase 09 — Customer Workspace, Chat Attachments & Run Artifact Integration
 
 **Date:** 2026-11-13  
 **Execution branch:** `main`  
-**Baseline commit:** `73bcd2ee13f92ec53b442f2567e51acb552071a3`  
-**Latest implementation commit at report time:** `b2241ecf42a2cf53b1af894ccb5e1b6ac9738097`  
-**Status:** IN PROGRESS — this increment does not complete Phase 09.
+**Baseline commit:** `dc514ded8711a59c248b1d657d871be832114225`  
+**Latest source commit at report time:** `07bc4716c145a0c360e9947bdb26886ec890e899`  
+**Status:** IN PROGRESS — Phase 09 is not complete.
 
-## Scope delivered
+## Scope delivered in this continuation
 
-### 1. Customer workspace upload contract
+### 1. Customer workspace immutable upload
 
-- Added forward-only migration draft `20261113001500_moreai_customer_workspace_upload_cas.sql`.
-- Added server-only `customer_workspace_upload_idempotency` table with RLS deny policies for `anon` and `authenticated`; table access and RPC execution are restricted to `service_role`.
-- Added `moreai_customer_workspace_commit_upload` RPC. It validates active workspace membership (owner or active member), exact version-addressed Storage path, SHA-256, 1-byte–2-MB size, idempotency key reuse, and expected-version compare-and-swap.
-- Successful commit advances `agent_workspace_files.version` and relies on the existing immutable version-history trigger to archive the previous committed object metadata.
-- Storage objects are uploaded to the configured private `MOREAI_WORKSPACE_BUCKET` (default `moreai-artifacts`) with upsert disabled. Existing objects are reused only after byte-length and SHA-256 equality checks.
-- Added authenticated `POST /api/v1/customer/workspaces/{workspace_id}/files` with `X-Workspace-Path`, `If-Match` expected version and `Idempotency-Key` headers. Browser requests still pass through the typed FastAPI client; no direct browser Storage or PostgREST access was introduced.
-- Ambiguous database commit responses do not trigger destructive object deletion. Immutable object cleanup is deliberately separate from the upload request path.
+- Added `20261113001500_moreai_customer_workspace_upload_cas.sql`.
+- Added a server-only idempotency ledger and service-role-only CAS RPC.
+- The RPC validates active workspace owner/member access, version-addressed immutable Storage path, SHA-256, file size, idempotency payload consistency, and expected-version compare-and-swap.
+- Existing version-history trigger records the previous committed file version.
+- Added authenticated FastAPI `POST /api/v1/customer/workspaces/{workspace_id}/files` using `X-Workspace-Path`, `If-Match`, and `Idempotency-Key`.
+- Customer Files UI now selects a workspace and uploads to its versioned path through the typed API client. Artifact Storage and workspace versioned Storage remain separate.
 
-### 2. Customer Files UI
+### 2. Customer Chat attachment lifecycle
 
-- Added typed `workspaceApi.uploadFile` to `lib/api/client.ts`.
-- Existing Files screen now allows selecting an accessible workspace and uploading a file to that workspace.
-- Re-uploading an existing path sends the last observed version as the CAS precondition; successful uploads refresh that workspace's versioned file list.
-- Existing artifact upload, workspace history, and signed-download flows remain separate and retain their own semantics.
+- Added `20261113130000_moreai_chat_attachment_lifecycle.sql`.
+- Added private owner-scoped attachment linkage from conversation message → durable Agent Run → artifact metadata, with server-only RLS and a service-role-only atomic enqueue RPC.
+- Artifact upload accepts the explicit `chat_attachment` purpose only when the authenticated user owns the target conversation.
+- Server enforces a 2-MB per-file limit, MIME allowlist, UTF-8 validation for text, and PDF/JPEG/PNG/WebP signature checks.
+- Customer Chat now supports up to 10 attachments and 10 MB total selected bytes. Upload uses the existing private artifact Storage path; no browser service-role access was added.
+- Customer message enqueue validates attachment ownership, conversation scope and metadata before persisting message, run and attachment links atomically.
+- Replaying the same idempotency key with a different prompt, agent key or attachment set is rejected.
+- Conversation history now returns attachment metadata alongside persisted messages.
 
-### 3. Agent Chat conversation resume
+### 3. Worker-side attachment consumption
 
-- Chat entry without an initial prompt now loads the most recent active persisted conversation (or most recent conversation when none is active) through Customer FastAPI APIs.
-- Existing user/assistant messages are restored from server-persisted message records, and subsequent messages continue in that conversation.
-- Composer interaction is held while restoration is in progress. Failed history restoration does not fabricate messages and leaves a fresh conversation available.
-- This is conversation resume only; attachment ingestion, attachment-to-message/run references and worker-side attachment context are not yet integrated.
+- Added `apps/worker/app/attachment_loader.py`.
+- Worker resolves attachment links by durable run and user scope, rechecks artifact ownership/purpose/conversation, downloads only from the private artifact bucket, validates byte count and SHA-256, and extracts UTF-8 text, PDF text, or image OCR.
+- Per-file extraction is capped at 25,000 characters and total extracted context at 80,000 characters. File content is passed to the agent as explicitly untrusted source material, not trusted instructions.
+- Manus, ToolCall and gated SWE runtime registrations receive the attachment loader. Planning uses the same Manus execution runtime.
+- Unsupported or unresolved attachments fail closed; worker does not silently omit a requested attachment.
 
-## Files changed
+### 4. Agent Run ↔ Artifact lifecycle
 
-- `supabase/migrations/20261113001500_moreai_customer_workspace_upload_cas.sql` — new migration draft
-- `apps/api/app/routers/workspaces.py` — customer upload endpoint, path validation, private Storage handling and CAS RPC handoff
-- `apps/api/app/main.py` — allowlisted CORS request headers for `If-Match` and `X-Workspace-Path`
-- `lib/api/client.ts` — typed workspace upload contract
-- `components/views/files-view.tsx` — workspace selection and upload action
-- `components/views/chat-view.tsx` — persisted conversation resume
+- Artifact metadata list now includes its owner-scoped `run_id`.
+- Customer Workflow view reads persisted artifacts and renders signed-download actions under the Agent Run that created them.
+- This connects worker-generated artifacts with durable run history. It does not yet provide complete cross-screen navigation and linking for every Create/Analyse/Code/Research/Tasks workflow.
 
-## Safety and data-flow notes
+### 5. Existing Chat resume and Workspace UI
 
-```text
-Customer Files UI
-  -> typed Customer API client + Supabase Auth bearer token
-  -> FastAPI workspace authorization
-  -> private Supabase Storage immutable object path
-  -> service-role-only CAS RPC
-  -> agent_workspace_files + immutable version-history trigger
-```
+- Chat restores the most recent active persisted conversation when opened without an initial prompt.
+- Customer Files UI provides workspace selection and version-aware upload.
+- Existing signed downloads and artifact metadata flows are retained.
 
-- No service-role key is exposed to the browser.
-- No direct browser Supabase Storage/PostgREST access was added.
-- No production Supabase schema change was applied. The migration is committed as source only.
-- No seed or mock business data was added.
-- Workspace membership is checked by FastAPI and rechecked inside the privileged RPC.
-- The RPC uses expected-version CAS to reject stale writes and records idempotent commit results.
+## Source files changed
 
-## Verification and release status
+- `supabase/migrations/20261113001500_moreai_customer_workspace_upload_cas.sql`
+- `supabase/migrations/20261113130000_moreai_chat_attachment_lifecycle.sql`
+- `apps/api/app/routers/workspaces.py`
+- `apps/api/app/routers/artifacts.py`
+- `apps/api/app/routers/conversations.py`
+- `apps/api/app/routers/customer.py`
+- `apps/api/app/main.py`
+- `apps/worker/app/attachment_loader.py`
+- `apps/worker/app/registry_factory.py`
+- `engine/agents/durable_tool_runtime.py`
+- `lib/api/client.ts`
+- `components/views/files-view.tsx`
+- `components/views/chat-view.tsx`
+- `components/views/workflow-progress-view.tsx`
 
-Per product-owner instruction, **no tests, lint, typecheck, build, browser checks, screenshots, staging, API probes, Supabase live writes, or migration apply were run** in this increment. GitHub source readback was used only to confirm the committed source contents; it is not runtime verification.
+## Supabase production migration status
 
-Production deployment was **not performed**. The Vercel project-list request for the More AI team returned HTTP 403 (not authorized), so project/deployment identity could not be independently confirmed through the connected Vercel account. Separately, `AGENTS.md` requires Phase 11 release gates to pass before production deployment. The same repository tracker records Phase 11 as BLOCKED, with full backend parity, deployed worker/sandbox, real-provider E2E, live RLS/cross-tenant proof, OpenAPI compatibility and release security evidence outstanding. The requested no-test constraint means those release gates cannot be demonstrated for this increment; deploying it would violate the repository's controlling release rule.
+Canonical project: `MoreAIdb` / `uunfgimtokhucegqbpce` (PostgreSQL 17, ap-southeast-2).
 
-## Remaining Phase 09 work
+The following nine previously pending source migrations were successfully applied to the production database in dependency order:
 
-1. Chat attachments: private upload, durable message/run attachment references, safe parsing/limits and worker-side context loading.
-2. Agent lifecycle convergence: durable artifact/result linking across Chat, Research, Create, Analyse, Code, Tasks and Workflow; restore prior work and navigate between related runs/artifacts.
-3. Captive Gateway: real signed network context, tenant/network verification adapter, consent persistence, OTP provider, and gateway session create/refresh/revoke lifecycle. Keep fail-closed until actual provider configuration exists.
-4. Complete customer action inventory and route-to-OpenAPI contract mapping; close unsupported actions without mock success.
-5. EduTech course catalog and video delivery API.
-6. Image/video generation providers and durable output artifacts.
-7. Payment checkout, payment webhook settlement, top-up and subscription entitlement activation. Business pricing/payment policy decisions remain unapproved in the Master PRD.
-8. Official customer support channel and ticket lifecycle.
-9. Reconcile Analytics with validated historical aggregate endpoints and ensure every Customer dashboard action has a real contract.
+1. `moreai_workspace_file_version_history`
+2. `moreai_workspace_restore_approval_key`
+3. `moreai_customer_learning_progress`
+4. `moreai_knowledge_rag_vector`
+5. `moreai_durable_knowledge_file_ingestion`
+6. `moreai_customer_workspace_upload_cas`
+7. `moreai_enable_toolcall_agent`
+8. `moreai_workspace_atomic_execution_commit`
+9. `moreai_chat_attachment_lifecycle`
+
+Supabase migration history readback records the eight first migrations at versions `20261113002544` through `20261113002624`, and Chat attachment lifecycle at `20261113003132`. This is migration-history confirmation, not application runtime or feature acceptance. No destructive reset/drop/truncate operation was performed.
+
+## Vercel deployment status
+
+Target team: `More AI` / `team_wHMjZ5NapyaF8aYYVs4UUY36`.  
+Frontend project: `more-ai-portal-indihome` / `prj_2ge37Xd5uBSUGhn3wPsaHfFcW1UV`.  
+Backend project: `more-ai-api` / `prj_L6i6j0ERPcdpZNM1c53hcdPaP9Nn`.
+
+A Production deployment request for the frontend at the then-current `main` commit was rejected by Vercel with HTTP `402 payment_required`, resource `api-deployments-free-per-day`, and `retryAfter=86400`. The API project deployment was not submitted after that quota response. No billing, plan, quota or team settings were changed. The latest attachment/run-artifact commits were made after the rejected deployment request and are therefore not deployed.
+
+## Verification policy and release state
+
+Per the explicit no-real-testing/no-staging instruction, no tests, lint, typecheck, build, browser checks, screenshots, runtime API probes, worker execution, or end-to-end feature checks were run. GitHub source readback and Supabase migration-history readback are not substitutes for runtime verification.
+
+- Phase 09 remains **IN PROGRESS**.
+- Phase 10 remains **NOT ACCEPTED** because frontend → FastAPI → worker → provider/tools → Supabase → frontend runtime proof has not been run.
+- Phase 11 remains **BLOCKED** because security/RLS/cross-tenant proof, migration validation, API contract acceptance, UI regression evidence, worker/sandbox/provider deployment proof and release evidence are incomplete.
+- Production deployment remains blocked by the Vercel daily deployment quota; do not claim that the latest commit is live.
+
+## Remaining Phase 09 scope
+
+1. Full cross-screen Agent Run/Artifact lifecycle: persist and navigate related runs/results across Chat, Research, Create, Analyse, Code, Tasks and Workflow, including artifact-to-run links for all creation flows.
+2. Captive Gateway: actual ISP/gateway adapter, signed network context, tenant/network verification, consent persistence, OTP provider and session create/refresh/revoke. Keep unavailable actions fail-closed until the partner gateway integration is configured.
+3. Complete Customer screen/action inventory against FastAPI/OpenAPI; remove or explicitly disable any unsupported action without fake success.
+4. EduTech catalog, enrollment/lesson contract and protected video delivery.
+5. Provider-backed image/video generation with durable run/credit/artifact lifecycle.
+6. Payment checkout, verified webhook settlement, top-up and subscription entitlement activation. Pricing/payment product decisions and provider credentials are still prerequisites.
+7. Official support channel and ticket lifecycle.
+8. Validated historical Analytics aggregation and remaining profile/security/device/Wi-Fi lifecycle parity.
 
 ## Next dependency-ordered work
 
-Continue Phase 09: implement Chat attachment contracts and worker-side attachment consumption, then unify persisted Agent Run/Artifact relationships across the existing Customer screens. Keep Captive Gateway, payment and provider-backed generation fail-closed until the required external integrations and product decisions exist. Phase 09 must remain IN PROGRESS until the full Customer screen/action inventory is reconciled and the remaining integrations have real contracts and evidence.
+Continue Phase 09. Finish Agent Run/Artifact relationships and the Customer action-to-OpenAPI inventory, then implement the real provider-backed Captive Gateway and other integrations as their contracts/configuration are made available. Phase 10 and Phase 11 cannot be honestly accepted while the requested no-test constraint remains in force.
