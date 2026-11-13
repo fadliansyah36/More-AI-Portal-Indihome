@@ -114,6 +114,7 @@ export const FilesView: React.FC = () => {
     workspaceApi.listPage(50)
       .then(async (page) => {
         const { items } = page;
+        if (!active) return;
         setWorkspaceNextCursor(page.nextCursor);
         if (active) {
           setWorkspaces(items);
@@ -292,7 +293,7 @@ export const FilesView: React.FC = () => {
   };
 
   const openVersionHistory = async (file: CustomerWorkspaceFile & { workspaceId: string; workspaceName: string }) => {
-    setHistoryFile(file); setHistoryLoading(true); setHistoryError(null); setFileVersions([]);
+    setHistoryFile(file); setHistoryLoading(true); setHistoryError(null); setFileVersions([]); setHistoryNextCursor(null);
     try { const result = await workspaceApi.versionsPage(file.workspaceId, file.id, 50); setFileVersions(result.items); setHistoryNextCursor(result.nextCursor); }
     catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Gagal memuat riwayat versi file.'); }
     finally { setHistoryLoading(false); }
