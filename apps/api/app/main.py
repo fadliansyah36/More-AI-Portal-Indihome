@@ -60,6 +60,19 @@ app.include_router(learning.router)
 app.include_router(knowledge.router)
 
 
+class ProfileRecordResponse(BaseModel):
+    id: UUID
+    display_name: str | None = None
+    avatar_path: str | None = None
+    locale: str | None = None
+    timezone: str | None = None
+
+
+class MyProfileResponse(BaseModel):
+    user: dict[str, Any]
+    profile: ProfileRecordResponse | None = None
+
+
 class ProfileUpdate(BaseModel):
     display_name: str | None = Field(default=None, max_length=120)
     avatar_path: str | None = Field(default=None, max_length=512)
@@ -254,7 +267,7 @@ async def readiness(request: Request):
 
 
 @app.get("/v1/me", tags=["identity"], include_in_schema=False)
-@app.get("/api/v1/me", tags=["identity"])
+@app.get("/api/v1/me", tags=["identity"], response_model=MyProfileResponse)
 async def get_me(request: Request, user=Depends(current_user)):
     settings = request.app.state.settings
     token = request.headers["authorization"].removeprefix("Bearer ").strip()
@@ -274,7 +287,7 @@ async def get_me(request: Request, user=Depends(current_user)):
     return {"user": user, "profile": rows[0] if rows else None}
 
 
-@app.patch("/api/v1/me/profile", tags=["identity"])
+@app.patch("/api/v1/me/profile", tags=["identity"], response_model=MyProfileResponse)
 async def update_my_profile(body: ProfileUpdate, request: Request, user=Depends(current_user)):
     changes = body.changes()
     if not changes:
