@@ -418,7 +418,12 @@ async def send_customer_message(
         raise HTTPException(503, "Agent execution is disabled until provider, entitlement and worker gates pass")
     if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
         raise HTTPException(400, "A 12–128 character Idempotency-Key header is required")
-    return await repository(request).rpc("moreai_enqueue_chat_run_with_attachments", {
+    repo = repository(request)
+    conversation = await repo.owned_record("conversations", conversation_id, principal["id"])
+    if conversation.get("workspace_id"):
+        from app.routers.workspaces import _workspace_access
+        await _workspace_access(repo, UUID(str(conversation["workspace_id"])), principal["id"], "agent.run.create")
+    return await repo.rpc("moreai_enqueue_chat_run_with_attachments", {
         "p_user_id": principal["id"], "p_conversation_id": str(conversation_id),
         "p_content": body.content, "p_agent_key": body.agent_key,
         "p_idempotency_key": idempotency_key,
