@@ -163,6 +163,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
           finalOutput = data.error as Record<string, unknown> | undefined;
         } else if (event === 'run.cancelled') {
           terminalStatus = 'cancelled';
+        } else if (event === 'run.timed_out') {
+          terminalStatus = 'timed_out';
+          finalOutput = data.error as Record<string, unknown> | undefined;
+        } else if (event === 'run.expired') {
+          terminalStatus = 'expired';
         }
       });
 
@@ -171,7 +176,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         for (let attempt = 0; attempt < 5; attempt += 1) {
           await new Promise((resolve) => window.setTimeout(resolve, 1200));
           finalRun = await customerApi.getRun(queued.run.id);
-          if (['succeeded', 'failed', 'cancelled'].includes(finalRun.status)) break;
+          if (['succeeded', 'failed', 'cancelled', 'timed_out', 'expired'].includes(finalRun.status)) break;
         }
         terminalStatus = finalRun?.status ?? queued.run.status;
         finalOutput = finalRun?.output ?? finalOutput;
@@ -202,6 +207,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         ));
       } else if (terminalStatus === 'failed') {
         throw new Error('Agent run failed. Silakan periksa riwayat tugas sebelum mencoba kembali.');
+      } else if (terminalStatus === 'timed_out') {
+        setMessages((previous) => previous.map((message) =>
+          message.id === assistantId
+            ? { ...message, text: streamedText || 'Agent melewati batas waktu eksekusi. Silakan coba kembali atau pecah tugas menjadi langkah yang lebih kecil.', source: 'Agent Runtime · timed_out' }
+            : message,
+        ));
+      } else if (terminalStatus === 'expired') {
+        setMessages((previous) => previous.map((message) =>
+          message.id === assistantId
+            ? { ...message, text: streamedText || 'Sesi Agent telah kedaluwarsa. Silakan kirim ulang permintaan untuk memulai sesi baru.', source: 'Agent Runtime · expired' }
+            : message,
+        ));
       } else {
         setMessages((previous) => previous.map((message) =>
           message.id === assistantId
