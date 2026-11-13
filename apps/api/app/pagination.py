@@ -44,7 +44,7 @@ def created_at_id_filter(cursor: tuple[str, str] | None) -> str | None:
     return f"(created_at.lt.{timestamp},and(created_at.eq.{timestamp},id.lt.{identifier}))"
 
 
-_CURSOR_TIMESTAMP_FIELDS = frozenset({"created_at", "updated_at", "requested_at", "committed_at"})
+_CURSOR_TIMESTAMP_FIELDS = frozenset({"created_at", "updated_at", "requested_at", "committed_at", "started_at"})
 
 
 def decode_timestamp_id_cursor(value: str | None) -> tuple[str, str] | None:
