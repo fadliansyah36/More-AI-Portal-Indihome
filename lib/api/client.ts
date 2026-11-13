@@ -940,7 +940,7 @@ export const workspaceApi = {
 
 
 export const customerWorkspaceApi = {
-  list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces'),
+  list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces?limit=100'),
   listPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspace>(
     '/api/v1/customer/workspaces?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
   ),
@@ -959,7 +959,7 @@ export const customerWorkspaceApi = {
     id: string; workspace_id: string; user_id: string; role_id: string | null;
     status: string; invited_by: string | null; joined_at: string | null; created_at: string;
   }>; count: number }>(
-    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/members',
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/members?limit=100',
   ),
   membersPage: (workspaceId: string, limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspaceMember>(
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/members?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
