@@ -252,7 +252,7 @@ async def customer_agent_run_stream(
                     cursor = max(cursor, int(row["sequence"]))
                     payload = json.dumps(row, separators=(",", ":"))
                     yield f"id: {cursor}\nevent: {row['event_type']}\ndata: {payload}\n\n"
-                    if row["event_type"] in {"run.completed", "run.failed", "run.cancelled", "run.timed_out"}:
+                    if row["event_type"] in {"run.completed", "run.failed", "run.cancelled", "run.timed_out", "run.expired"}:
                         return
             else:
                 idle_rounds += 1
@@ -263,6 +263,7 @@ async def customer_agent_run_stream(
                         "run.completed" if status == "succeeded"
                         else "run.cancelled" if status == "cancelled"
                         else "run.timed_out" if status == "timed_out"
+                        else "run.expired" if status == "expired"
                         else "run.failed"
                     )
                     payload = json.dumps({
