@@ -222,3 +222,14 @@ Continue Phase 09. Finish Agent Run/Artifact relationships and the Customer acti
 - Read-only production row counts: `network_providers=0`, `partner_networks=0`, `network_verification_configs=0`, and `network_sessions=0`.
 - The five verification catalog methods remain `adapter_ready=false`.
 - This confirms there is currently no real partner network/provider configuration to bind an adapter to. No partner gateway credentials, callback/API contract, or secret reference can be inferred from an empty inventory. The gateway remains blocked by actual provider onboarding/configuration, not merely by missing UI wiring.
+
+
+## 2026-11-13 follow-up — real provider onboarding gate
+
+- Re-read `AGENTS.md` and the controlling Master PRD. Confirmed FastAPI remains the only business API, browser Supabase access is Auth-only, secrets remain server-side, and network sponsorship must fail closed.
+- Read-only production schema inspection found existing network lifecycle persistence primitives: `network_verification_attempts`, `network_verification_evidence`, `network_verification_sessions`, `network_gateway_nonces`, `network_sessions`, and `network_session_events`. These are RLS-enabled. The presence of tables is not proof of a real gateway integration.
+- The inspected schema does not expose a consent record/challenge lifecycle or OTP challenge/delivery persistence. Existing Customer routes only expose session history and access-code redemption requiring a verification-session ID. Existing Partner routes cover network registration, verification configuration with `adapter_ready` gating, and access-code lifecycle.
+- The production provider inventory remains empty (zero providers, partner networks, verification configs and network sessions); all five verification methods remain not adapter-ready. No exact vendor protocol, provider callback signature, secret-vault reference/resolver, OTP delivery provider or network binding is available. A generic guessed webhook/HMAC protocol would be unsafe and was not introduced.
+- Added [PHASE-09-PROVIDER-ONBOARDING-AND-DOMAIN-CONTRACTS-20261113.md](./PHASE-09-PROVIDER-ONBOARDING-AND-DOMAIN-CONTRACTS-20261113.md) with exact gateway, consent, OTP, session, EduTech, payment and support onboarding requirements and dependency-ordered implementation sequence. Updated the Phase Tracker accordingly.
+- No migration, provider activation, test, staging, runtime API/provider call, worker execution, build, lint, typecheck, browser check or deployment was performed.
+- Phase 09 remains IN PROGRESS. The next executable provider integration step requires the product owner to identify/provision the actual gateway/ISP/RADIUS vendor and provide its official protocol plus secret-manager reference; OTP and the EduTech/payment/support providers must likewise be selected/provisioned before their real contracts can be completed.
