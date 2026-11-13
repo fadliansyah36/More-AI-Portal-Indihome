@@ -79,6 +79,17 @@ class CustomerConversationMessageAttachmentResponse(BaseModel):
     size_bytes: int | None
 
 
+class CustomerConversationCitationResponse(BaseModel):
+    id: UUID
+    document_id: UUID
+    title: str
+    similarity: float | None = None
+    source_page: int | None = None
+    char_start: int | None = None
+    char_end: int | None = None
+    marker: str
+
+
 class CustomerConversationMessageResponse(BaseModel):
     id: UUID
     role: str
@@ -87,6 +98,7 @@ class CustomerConversationMessageResponse(BaseModel):
     run_id: UUID | None
     created_at: datetime
     attachments: list[CustomerConversationMessageAttachmentResponse] = Field(default_factory=list)
+    citations: list[CustomerConversationCitationResponse] = Field(default_factory=list)
 
 
 class CustomerConversationMessagePageResponse(BaseModel):
@@ -307,7 +319,69 @@ async def customer_conversations(
     return rows
 
 
-async def _customer_conversation_message_attachments(
+async async def _customer_conversation_message_citations(
+    repo: Any, user_id: str, messages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    run_ids = sorted({
+        str(message["run_id"]) for message in messages
+        if message.get("role") == "assistant" and message.get("run_id")
+    })
+    if not run_ids:
+        return [{**message, "citations": []} for message in messages]
+
+    runs = await repo.select("agent_runs", {
+        "id": f"in.({','.join(run_ids)})",
+        "user_id": f"eq.{user_id}",
+        "select": "id,output",
+        "limit": str(len(run_ids)),
+    })
+    citations_by_run: dict[str, list[dict[str, Any]]] = {}
+    for run in runs:
+        output = run.get("output") if isinstance(run.get("output"), dict) else {}
+        raw_citations = output.get("citations") if isinstance(output.get("citations"), list) else []
+        safe: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for item in raw_citations[:100]:
+            if not isinstance(item, dict):
+                continue
+            try:
+                chunk_id = str(UUID(str(item.get("id"))))
+                document_id = str(UUID(str(item.get("document_id"))))
+            except (ValueError, TypeError, AttributeError):
+                continue
+            title = item.get("title")
+            marker = item.get("marker")
+            if not isinstance(title, str) or not title.strip() or len(title) > 300:
+                continue
+            if marker != f"[source:{chunk_id}]" or chunk_id in seen:
+                continue
+            citation: dict[str, Any] = {
+                "id": chunk_id, "document_id": document_id,
+                "title": title[:300], "marker": marker,
+            }
+            similarity = item.get("similarity")
+            if isinstance(similarity, (int, float)) and not isinstance(similarity, bool):
+                citation["similarity"] = max(0.0, min(1.0, float(similarity)))
+            for field in ("source_page", "char_start", "char_end"):
+                value = item.get(field)
+                if isinstance(value, int) and not isinstance(value, bool):
+                    if (field == "source_page" and value > 0) or (field != "source_page" and value >= 0):
+                        citation[field] = value
+            safe.append(citation)
+            seen.add(chunk_id)
+        citations_by_run[str(run.get("id"))] = safe
+
+    return [
+        {
+            **message,
+            "citations": citations_by_run.get(str(message.get("run_id")), [])
+            if message.get("role") == "assistant" else [],
+        }
+        for message in messages
+    ]
+
+
+def _customer_conversation_message_attachments(
     repo: Any, user_id: str, conversation_id: UUID, messages: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     message_ids = [str(row["id"]) for row in messages if row.get("id")]
@@ -369,6 +443,7 @@ async def customer_conversation(
     response.headers["X-Pagination-Mode"] = "keyset"
     messages.reverse()
     messages = await _customer_conversation_message_attachments(repo, principal["id"], conversation_id, messages)
+    messages = await _customer_conversation_message_citations(repo, principal["id"], messages)
     return {"conversation": conversation, "messages": messages}
 
 
@@ -404,6 +479,7 @@ async def customer_conversation_messages(
     response.headers["X-Pagination-Mode"] = "keyset"
     rows.reverse()
     items = await _customer_conversation_message_attachments(repo, principal["id"], conversation_id, rows)
+    items = await _customer_conversation_message_citations(repo, principal["id"], items)
     return {"items": items, "count": len(items)}
 
 
