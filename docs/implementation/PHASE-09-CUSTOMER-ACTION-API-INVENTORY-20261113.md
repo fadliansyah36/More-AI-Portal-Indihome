@@ -18,7 +18,7 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Customer screen / action | Frontend contract | FastAPI contract | Source status |
 |---|---|---|---|
 | Login, registration, password recovery, Auth session | Supabase Auth browser client | Supabase Auth | Connected; OAuth availability remains provider configuration-dependent |
-| Home identity | `profileApi.get()` | `GET /api/v1/me` | Connected; profile reads/updates use the configured Customer API origin; Auth-only identity fallback exists for transient API outage |
+| Home identity | `profileApi.get()` | `GET /api/v1/me`, `PATCH /api/v1/me/profile` | Connected; FastAPI response schemas now declare the authenticated user/profile envelope; profile reads/updates use the configured Customer API origin; Auth-only identity fallback remains limited to transient identity outage |
 | Home Agent Run summary | `customerApi.agentRunsPage()` | `GET /api/v1/customer/agent-runs` with keyset cursor | Connected |
 | Home wallet and entitlement | `customerApi.wallets()`, `entitlements()` | `GET /api/v1/customer/wallet`, `GET /api/v1/customer/entitlements` | Connected |
 | Customer context | `customerApi.context()` | `GET /api/v1/customer/context` | Connected |
