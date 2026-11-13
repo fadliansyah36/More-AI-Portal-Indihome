@@ -452,32 +452,30 @@ async def customer_quotas(
     })
     if not policies:
         return []
-    policy_ids = [str(row["id"]) for row in policies]
-    # Usage rows inherit the policy scope. Global/platform policy usage therefore
-    # has a NULL scope_id and must not be filtered to the caller's user scope.
-    usage_rows = await repo.select("quota_usage", {
-        "policy_id": f"in.({','.join(policy_ids)})",
-        "select": "policy_id,used_value,window_start,updated_at",
-        "order": "window_start.desc",
-        "limit": "1000",
-    })
+    # Resolve the exact active window for every policy. This preserves global and
+    # platform-scoped usage and avoids selecting a stale window from long history.
     now = datetime.now(timezone.utc)
-    policy_by_id = {str(policy["id"]): policy for policy in policies}
-    usage_by_policy = {}
-    for row in usage_rows:
-        policy_id = str(row.get("policy_id"))
-        policy = policy_by_id.get(policy_id)
-        if policy is None or policy_id in usage_by_policy:
-            continue
+    usage_conditions = []
+    for policy in policies:
         try:
-            window_start = datetime.fromisoformat(str(row["window_start"]).replace("Z", "+00:00"))
-            if window_start.tzinfo is None:
-                continue
             window_seconds = int(policy.get("window_seconds") or 0)
-        except (KeyError, TypeError, ValueError):
+        except (TypeError, ValueError):
             continue
-        if window_seconds > 0 and window_start <= now < window_start + timedelta(seconds=window_seconds):
-            usage_by_policy[policy_id] = row
+        if window_seconds <= 0:
+            continue
+        window_epoch = (int(now.timestamp()) // window_seconds) * window_seconds
+        window_start = datetime.fromtimestamp(window_epoch, timezone.utc).isoformat()
+        usage_conditions.append(
+            f"and(policy_id.eq.{policy['id']},window_start.eq.{window_start})"
+        )
+    usage_rows = []
+    if usage_conditions:
+        usage_rows = await repo.select("quota_usage", {
+            "or": "(" + ",".join(usage_conditions) + ")",
+            "select": "policy_id,used_value,window_start,updated_at",
+            "limit": "200",
+        })
+    usage_by_policy = {str(row["policy_id"]): row for row in usage_rows if row.get("policy_id")}
     return [{**policy, "usage": usage_by_policy.get(str(policy["id"]))} for policy in policies]
 
 
