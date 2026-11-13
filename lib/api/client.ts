@@ -924,6 +924,9 @@ export const workspaceApi = {
       + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '')
       + (includeDeleted ? '&include_deleted=true' : ''),
   ),
+  fileByPath: (workspaceId: string, path: string) => moreAiCustomerApiPage<CustomerWorkspaceFile>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files?limit=1&include_deleted=true&path=' + encodeURIComponent(path),
+  ),
   deleteFile: (workspaceId: string, fileId: string, expectedVersion: number) =>
     moreAiCustomerApi<CustomerWorkspaceFileLifecycleResult>(
       '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId)
