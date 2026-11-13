@@ -25,6 +25,68 @@ class MessageCreate(BaseModel):
     attachment_ids: list[UUID] = Field(default_factory=list, max_length=10)
 
 
+class ConversationResponse(BaseModel):
+    id: UUID
+    title: str | None = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationMessageResponse(BaseModel):
+    id: UUID
+    role: str
+    content: str
+    model_key: str | None = None
+    run_id: UUID | None = None
+    created_at: datetime
+    attachments: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ConversationDetailResponse(BaseModel):
+    conversation: ConversationResponse
+    messages: list[ConversationMessageResponse]
+
+
+class ConversationSessionResponse(BaseModel):
+    id: UUID
+    conversation_id: UUID
+    status: str
+    attempt: int
+    max_attempts: int
+    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    available_at: datetime | None = None
+    heartbeat_at: datetime | None = None
+    cancel_requested_at: datetime | None = None
+    last_checkpoint_key: str | None = None
+
+
+class ConversationSessionEventResponse(BaseModel):
+    id: UUID
+    event_type: str
+    sequence: int
+    created_at: datetime
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class ConversationSessionEventPageResponse(BaseModel):
+    items: list[ConversationSessionEventResponse]
+    count: int
+    next_after: int
+
+
+class ConversationSessionPageResponse(BaseModel):
+    items: list[ConversationSessionResponse]
+    count: int
+
+
+class ConversationArchiveResponse(BaseModel):
+    id: UUID
+    status: Literal["archived"]
+
+
 class ConversationUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=180)
     status: Literal["active", "archived"] | None = None
@@ -37,12 +99,12 @@ def repository(request: Request) -> SupabaseRepository:
     return SupabaseRepository(url=settings.supabase_url, service_role_key=settings.supabase_service_role_key, http=request.app.state.http)
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, response_model=ConversationResponse)
 async def create_conversation(body: ConversationCreate, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     return await repository(request).insert("conversations", {"user_id": user["id"], "title": body.title, "status": "active", "metadata": {}})
 
 
-@router.get("")
+@router.get("", response_model=list[ConversationResponse])
 async def list_conversations(
     request: Request,
     response: Response,
@@ -70,7 +132,7 @@ async def list_conversations(
     return rows
 
 
-@router.get("/{conversation_id}")
+@router.get("/{conversation_id}", response_model=ConversationDetailResponse)
 async def get_conversation(conversation_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
     conversation = await repo.owned_record("conversations", conversation_id, user["id"])
@@ -103,7 +165,7 @@ async def send_message(
     })
 
 
-@router.patch("/{conversation_id}")
+@router.patch("/{conversation_id}", response_model=ConversationResponse)
 async def update_conversation(
     conversation_id: UUID,
     body: ConversationUpdate,
@@ -128,7 +190,7 @@ async def update_conversation(
     return rows[0]
 
 
-@router.delete("/{conversation_id}")
+@router.delete("/{conversation_id}", response_model=ConversationArchiveResponse)
 async def archive_conversation(
     conversation_id: UUID,
     request: Request,
@@ -144,7 +206,7 @@ async def archive_conversation(
     return {"id": str(conversation_id), "status": "archived"}
 
 
-@router.get("/{conversation_id}/sessions/{run_id}")
+@router.get("/{conversation_id}/sessions/{run_id}", response_model=ConversationSessionResponse)
 async def get_conversation_session(
     conversation_id: UUID,
     run_id: UUID,
@@ -188,7 +250,7 @@ async def cancel_conversation_session(
     })
 
 
-@router.get("/{conversation_id}/sessions/{run_id}/events")
+@router.get("/{conversation_id}/sessions/{run_id}/events", response_model=ConversationSessionEventPageResponse)
 async def get_conversation_session_events(
     conversation_id: UUID,
     run_id: UUID,
@@ -243,7 +305,7 @@ async def stream_conversation_session(websocket: WebSocket, conversation_id: UUI
         await websocket.close(code=1011)
 
 
-@router.get("/{conversation_id}/sessions")
+@router.get("/{conversation_id}/sessions", response_model=ConversationSessionPageResponse)
 async def list_conversation_sessions(
     conversation_id: UUID,
     request: Request,
