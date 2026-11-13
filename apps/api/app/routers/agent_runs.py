@@ -397,13 +397,13 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
                     if item["event_type"] in {
                         "run.started", "run.progress", "tool.started", "tool.completed",
                         "tool.cancelled", "run.completed", "run.failed", "run.cancelled",
-                        "run.timed_out", "worker.checkpoint",
+                        "run.timed_out", "run.expired", "worker.checkpoint",
                     }
                 ]
                 logs = [
                     {
                         **_thinking_message(item),
-                        "level": "ERROR" if item["event_type"] in {"run.failed", "run.timed_out"} else "INFO",
+                        "level": "ERROR" if item["event_type"] in {"run.failed", "run.timed_out", "run.expired"} else "INFO",
                         "event_type": item["event_type"],
                     }
                     for item in activities
@@ -420,7 +420,7 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
             else:
                 idle_rounds += 1
                 run = await repo.owned_record("agent_runs", run_id, principal["id"])
-                if run.get("status") in {"succeeded", "failed", "cancelled", "expired"}:
+                if run.get("status") in _TERMINAL_RUN_STATUSES:
                     await websocket.send_json({
                         "status": run.get("status"),
                         "result": run.get("output"),
