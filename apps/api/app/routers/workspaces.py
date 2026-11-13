@@ -264,7 +264,7 @@ async def archive_customer_workspace(
         raise HTTPException(403, "Only the workspace owner can archive this workspace")
     active_runs = await repo.select("agent_runs", {
         "workspace_id": f"eq.{workspace_id}",
-        "status": "in.(queued,running,waiting_approval)",
+        "status": "in.(queued,pending,running,awaiting_approval,waiting_approval)",
         "select": "id", "limit": "1",
     })
     if active_runs:
