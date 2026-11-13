@@ -418,18 +418,32 @@ async def archive_customer_workspace(
 
 @router.get("/{workspace_id}/members", response_model=CustomerWorkspaceMemberListResponse)
 async def list_customer_workspace_members(
-    workspace_id: UUID, request: Request,
+    workspace_id: UUID, request: Request, response: Response,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(customer_principal),
 ):
+    decoded = decode_timestamp_id_cursor(cursor)
     repo = repository(request)
     await _workspace_access(repo, workspace_id, user["id"])
-    rows = await repo.select("workspace_members", {
+    filters = {
         "workspace_id": f"eq.{workspace_id}",
         "status": "in.(invited,active,suspended)",
         "select": "id,workspace_id,user_id,role_id,status,invited_by,joined_at,created_at",
-        "order": "created_at.asc",
-        "limit": "200",
-    })
+        "order": "created_at.asc,id.asc",
+        "limit": str(limit + 1),
+    }
+    cursor_filter = timestamp_id_filter(decoded, "created_at")
+    if cursor_filter:
+        # Ascending order uses the inverse keyset predicate.
+        timestamp, identifier = decoded
+        filters["or"] = f"(created_at.gt.{timestamp},and(created_at.eq.{timestamp},id.gt.{identifier}))"
+    rows = await repo.select("workspace_members", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(rows[-1], "created_at")
+    response.headers["X-Pagination-Mode"] = "keyset"
     return {"items": rows, "count": len(rows)}
 
 
@@ -466,22 +480,31 @@ async def remove_customer_workspace_member(
 
 @router.get("/{workspace_id}/runs", response_model=CustomerWorkspaceRunListResponse)
 async def list_customer_workspace_runs(
-    workspace_id: UUID, request: Request,
-    limit: int = 50,
+    workspace_id: UUID, request: Request, response: Response,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(customer_principal),
 ):
     """List the caller's durable agent runs associated with an accessible workspace."""
-    if limit < 1 or limit > 100:
-        raise HTTPException(422, "limit must be between 1 and 100")
+    decoded = decode_timestamp_id_cursor(cursor)
     repo = repository(request)
     await _workspace_access(repo, workspace_id, user["id"])
-    rows = await repo.select("agent_runs", {
+    filters = {
         "workspace_id": f"eq.{workspace_id}",
         "user_id": f"eq.{user['id']}",
         "select": "id,conversation_id,status,attempt,max_attempts,created_at,started_at,finished_at,available_at,heartbeat_at,cancel_requested_at,last_checkpoint_key",
-        "order": "created_at.desc",
-        "limit": str(limit),
-    })
+        "order": "created_at.desc,id.desc",
+        "limit": str(limit + 1),
+    }
+    cursor_filter = timestamp_id_filter(decoded, "created_at")
+    if cursor_filter:
+        filters["or"] = cursor_filter
+    rows = await repo.select("agent_runs", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(rows[-1], "created_at")
+    response.headers["X-Pagination-Mode"] = "keyset"
     return {"items": rows, "count": len(rows)}
 
 
