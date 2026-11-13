@@ -19,17 +19,41 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
   const [downloadingArtifactId, setDownloadingArtifactId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nextRunCursor, setNextRunCursor] = useState<string | null>(null);
+  const [loadingMoreRuns, setLoadingMoreRuns] = useState(false);
+  const [runPaginationError, setRunPaginationError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([customerApi.agentRuns(), artifactApi.list()]).then(([runResult, artifactResult]) => {
+    Promise.allSettled([customerApi.agentRunsPage(50), artifactApi.list()]).then(([runResult, artifactResult]) => {
       if (!active) return;
-      if (runResult.status === 'fulfilled') setRuns(runResult.value);
+      if (runResult.status === 'fulfilled') {
+        setRuns(runResult.value.items);
+        setNextRunCursor(runResult.value.nextCursor);
+      }
       else setError(runResult.reason instanceof Error ? runResult.reason.message : 'Riwayat riset tidak dapat dimuat.');
       if (artifactResult.status === 'fulfilled') setArtifacts(artifactResult.value);
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
+  const loadMoreRuns = async () => {
+    if (!nextRunCursor || loadingMoreRuns) return;
+    setLoadingMoreRuns(true);
+    setRunPaginationError(null);
+    try {
+      const page = await customerApi.agentRunsPage(50, nextRunCursor);
+      setRuns((current) => {
+        const known = new Set(current.map((run) => run.id));
+        return [...current, ...page.items.filter((run) => !known.has(run.id))];
+      });
+      setNextRunCursor(page.nextCursor);
+    } catch (cause) {
+      setRunPaginationError(cause instanceof Error ? cause.message : 'Halaman riwayat riset berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreRuns(false);
+    }
+  };
 
   const runTitle = (run: CustomerAgentRun) => {
     const candidate = run.input?.content ?? run.input?.prompt ?? run.input?.message ?? run.input?.task;
@@ -132,6 +156,13 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
               <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
             </button>
           ))}
+          {runPaginationError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{runPaginationError}</div>}
+          {nextRunCursor && (
+            <button type="button" onClick={() => void loadMoreRuns()} disabled={loadingMoreRuns}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+              {loadingMoreRuns ? 'Memuat riwayat…' : 'Muat riwayat berikutnya'}
+            </button>
+          )}
         </div>
       ) : (
         <div className="rounded-3xl border border-slate-100 bg-white p-8 text-center text-xs text-slate-500">Belum ada riwayat agent run yang cocok dengan pencarian ini.</div>
