@@ -20,6 +20,55 @@ from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cur
 router = APIRouter(prefix="/api/v1/customer", tags=["customer"])
 
 
+class CustomerWalletResponse(BaseModel):
+    id: UUID
+    currency: str
+    balance: Decimal
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class CustomerWalletListResponse(BaseModel):
+    wallets: list[CustomerWalletResponse]
+
+
+class CustomerLedgerEntryResponse(BaseModel):
+    id: UUID
+    wallet_id: UUID
+    entry_type: str
+    amount: Decimal
+    balance_after: Decimal
+    reference_type: str | None
+    reference_id: str | None
+    description: str | None
+    created_at: datetime
+
+
+class CustomerUsageRecordResponse(BaseModel):
+    id: UUID
+    run_id: UUID | None
+    provider_key: str
+    model_key: str
+    input_tokens: int
+    output_tokens: int
+    estimated_cost: Decimal
+    actual_cost: Decimal | None
+    status: str
+    latency_ms: int | None
+    created_at: datetime
+
+
+class CustomerEntitlementResponse(BaseModel):
+    id: UUID
+    entitlement_key: str
+    source_type: str
+    status: str
+    starts_at: datetime
+    expires_at: datetime | None
+    metadata: dict[str, Any]
+
+
 class CustomerQuotaUsageResponse(BaseModel):
     used_value: Decimal
     window_start: datetime
@@ -365,7 +414,7 @@ async def customer_network_sessions(
     })
 
 
-@router.get("/wallet")
+@router.get("/wallet", response_model=CustomerWalletListResponse)
 async def customer_wallet(
     request: Request, user: dict[str, Any] = Depends(current_user),
 ):
@@ -378,7 +427,7 @@ async def customer_wallet(
     return {"wallets": rows}
 
 
-@router.get("/wallet/ledger")
+@router.get("/wallet/ledger", response_model=list[CustomerLedgerEntryResponse])
 async def customer_wallet_ledger(
     request: Request,
     limit: int = Query(default=50, ge=1, le=100),
@@ -406,7 +455,7 @@ async def customer_wallet_ledger(
     return await repo.select("credit_ledger", filters)
 
 
-@router.get("/usage")
+@router.get("/usage", response_model=list[CustomerUsageRecordResponse])
 async def customer_usage(
     request: Request,
     limit: int = Query(default=50, ge=1, le=100),
@@ -446,7 +495,7 @@ async def customer_usage_analytics(
     return result
 
 
-@router.get("/entitlements")
+@router.get("/entitlements", response_model=list[CustomerEntitlementResponse])
 async def customer_entitlements(
     request: Request, user: dict[str, Any] = Depends(current_user),
 ):
