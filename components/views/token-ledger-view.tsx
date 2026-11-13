@@ -16,14 +16,25 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
   const [transactions, setTransactions] = useState<CustomerLedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     let active = true;
-    Promise.all([customerApi.wallets(), customerApi.ledger(100)])
-      .then(([walletResult, ledgerResult]) => {
+    customerApi.wallets()
+      .then(async (walletResult) => {
         if (!active) return;
         setWallets(walletResult.wallets);
-        setTransactions(ledgerResult);
+        const primary = walletResult.wallets.find((wallet) => wallet.status === 'active') || walletResult.wallets[0];
+        if (!primary) {
+          setTransactions([]);
+          setNextCursor(null);
+          return;
+        }
+        const ledgerResult = await customerApi.ledgerPage(50, undefined, primary.id);
+        if (!active) return;
+        setTransactions(ledgerResult.items);
+        setNextCursor(ledgerResult.nextCursor);
       })
       .catch((err) => {
         if (active) setError(err instanceof Error ? err.message : 'Data wallet tidak tersedia.');
@@ -42,7 +53,21 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
     return true;
   }), [transactions, filterType]);
 
-  const primaryWallet = wallets[0];
+  const primaryWallet = wallets.find((wallet) => wallet.status === 'active') || wallets[0];
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore || !primaryWallet) return;
+    setLoadingMore(true);
+    try {
+      const page = await customerApi.ledgerPage(50, nextCursor, primaryWallet.id);
+      setTransactions((current) => [...current, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Riwayat transaksi berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
   const formatAmount = (value: string | number, currency: string) =>
     new Intl.NumberFormat('id-ID', { maximumFractionDigits: 4 }).format(Number(value)) + ' ' + currency;
   const formatDate = (value: string) => new Date(value).toLocaleString('id-ID', {
@@ -118,6 +143,12 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
             </div>
           );
         })}
+        {!loading && !error && nextCursor && (
+          <button type="button" onClick={loadMore} disabled={loadingMore}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+            {loadingMore ? 'Memuat transaksi…' : 'Muat transaksi berikutnya'}
+          </button>
+        )}
       </div>
     </div>
   );
