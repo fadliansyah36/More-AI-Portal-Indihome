@@ -173,40 +173,17 @@ async def list_customer_workspaces(
 ):
     decoded = decode_timestamp_id_cursor(cursor)
     repo = repository(request)
-    owned = await repo.select("workspaces", {
-        "owner_user_id": f"eq.{user['id']}", "status": "eq.active",
-        "select": "id,name,slug,owner_user_id,status,created_at,updated_at",
-        "order": "updated_at.desc,id.desc", "limit": "1001",
+    cursor_timestamp = decoded[0] if decoded else None
+    cursor_id = decoded[1] if decoded else None
+    result = await repo.rpc("moreai_customer_workspaces_page", {
+        "p_user_id": user["id"],
+        "p_limit": limit,
+        "p_cursor_updated_at": cursor_timestamp,
+        "p_cursor_id": cursor_id,
     })
-    memberships = await repo.select("workspace_members", {
-        "user_id": f"eq.{user['id']}", "status": "eq.active",
-        "select": "workspace_id", "limit": "1001",
-    })
-    if len(owned) > 1000 or len(memberships) > 1000:
-        raise HTTPException(503, "Workspace collection exceeds the safe owner/member fan-in; a database-side union cursor is required")
-    owned_ids = {str(row["id"]) for row in owned}
-    member_ids = sorted({str(row["workspace_id"]) for row in memberships if str(row.get("workspace_id")) not in owned_ids})
-    shared = []
-    if member_ids:
-        shared = await repo.select("workspaces", {
-            "id": f"in.({','.join(member_ids)})", "status": "eq.active",
-            "select": "id,name,slug,owner_user_id,status,created_at,updated_at",
-            "order": "updated_at.desc,id.desc", "limit": "1001",
-        })
-        if len(shared) > 1000:
-            raise HTTPException(503, "Workspace member collection exceeds the safe fan-in; a database-side union cursor is required")
-    merged = {str(row["id"]): row for row in [*owned, *shared]}
-    rows = list(merged.values())
-    def order_key(row: dict[str, Any]) -> tuple[float, str]:
-        stamp = datetime.fromisoformat(str(row["updated_at"]).replace("Z", "+00:00"))
-        if stamp.tzinfo is None:
-            raise ValueError("workspace_updated_at_must_be_timezone_aware")
-        return stamp.timestamp(), str(row["id"])
-    rows.sort(key=order_key, reverse=True)
-    if decoded:
-        cursor_timestamp, cursor_id = decoded
-        cursor_key = datetime.fromisoformat(cursor_timestamp).timestamp(), cursor_id
-        rows = [row for row in rows if order_key(row) < cursor_key]
+    if not isinstance(result, list):
+        raise HTTPException(502, "Workspace pagination returned an invalid database response")
+    rows = result
     has_more = len(rows) > limit
     rows = rows[:limit]
     if has_more and rows:
