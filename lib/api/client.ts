@@ -360,6 +360,29 @@ export type CustomerConversation = {
   updated_at: string;
 };
 
+export type CustomerConversationSession = {
+  id: string;
+  conversation_id: string;
+  status: string;
+  attempt: number;
+  max_attempts: number;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  available_at?: string | null;
+  heartbeat_at?: string | null;
+  cancel_requested_at?: string | null;
+  last_checkpoint_key: string | null;
+};
+
+export type CustomerConversationSessionEvent = {
+  id: string;
+  event_type: string;
+  sequence: number;
+  created_at: string;
+  payload: Record<string, unknown>;
+};
+
 export type CustomerWorkflowStep = {
   id: string;
   sequence: number;
@@ -569,6 +592,35 @@ export const customerApi = {
   }>(
     '/api/v1/conversations/' + encodeURIComponent(conversationId) + '/sessions/' + encodeURIComponent(runId),
   ),
+  conversationSessions: async (conversationId: string, limit = 50, cursor?: string) => {
+    const response = await moreAiCustomerFetch(
+      '/api/v1/conversations/' + encodeURIComponent(conversationId) + '/sessions?limit='
+        + Math.max(1, Math.min(100, limit))
+        + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
+    );
+    const payload = await response.json() as { items: CustomerConversationSession[]; count: number };
+    return { ...payload, nextCursor: response.headers.get('X-Next-Cursor') };
+  },
+  updateConversation: (conversationId: string, payload: { title?: string | null; status?: 'active' | 'archived' }) =>
+    moreAiCustomerApi<CustomerConversation>(
+      '/api/v1/conversations/' + encodeURIComponent(conversationId),
+      { method: 'PATCH', body: JSON.stringify(payload) },
+    ),
+  archiveConversation: (conversationId: string) =>
+    moreAiCustomerApi<{ id: string; status: 'archived' }>(
+      '/api/v1/conversations/' + encodeURIComponent(conversationId),
+      { method: 'DELETE' },
+    ),
+  cancelConversationSession: (conversationId: string, runId: string) =>
+    moreAiCustomerApi<{ run_id: string; status: string }>(
+      '/api/v1/conversations/' + encodeURIComponent(conversationId) + '/sessions/' + encodeURIComponent(runId) + '/cancel',
+      { method: 'POST' },
+    ),
+  conversationSessionEvents: (conversationId: string, runId: string, after = 0, limit = 200) =>
+    moreAiCustomerApi<{ items: CustomerConversationSessionEvent[]; count: number; next_after: number }>(
+      '/api/v1/conversations/' + encodeURIComponent(conversationId) + '/sessions/' + encodeURIComponent(runId)
+        + '/events?after=' + Math.max(0, after) + '&limit=' + Math.max(1, Math.min(500, limit)),
+    ),
   getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/customer/agent-runs/${runId}`),
   cancelRun: (runId: string) => moreAiCustomerApi<{ run_id: string; status: string }>(`/api/v1/customer/agent-runs/${runId}/cancel`, {
     method: 'POST',
