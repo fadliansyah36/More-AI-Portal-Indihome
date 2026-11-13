@@ -1099,3 +1099,18 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Artifact, Knowledge Library and Code Assistant history selectors use incremental keyset pages. Approval decisions no longer appear failed merely because the independent Agent Run refresh failed.
 - Source commits: `3e5aae18`, `af4b68c2`, `8346c6cc`, `82f812a8`, `7c8646a4`, `15257ace`, `753fa76a`.
 - No tests, lint, typecheck, build, browser/API/worker checks, staging, migrations, provider calls or deployment. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-14 — Phase 09 Customer Dashboard integration continuation
+
+Latest source-only continuation commits on `main`:
+- `c562378b0d5d9e53e4e1f54c086e37f4ef33b1c2`: ChatView lifecycle event taxonomy and safe metadata.
+- `e52a36cd1ec402373d58767c99e87c5332d05366`: expanded REST thinking/WebSocket replay projection for planning, agent, tool and approval lifecycle events.
+- `329a6eeaf490f1de73a9ef56447054f3317ff7a0` and `1a55db2bfca2ea745768638df6b68dcd00c57239`: RAG citations limited to final-response source markers and sanitized to chunk/document provenance.
+- `62512ce02de7a856949b50cf9277708bc3e6ad96`: detailed Phase 09 continuation report and source-level acceptance matrix.
+
+Phase 09 remains **IN PROGRESS**. Customer event consumers now recognize the expanded event family; Workflow and Tasks continue to consume safe run activity logs. Citation provenance is improved at final-output assembly but still requires response/history contract reconciliation and runtime acceptance. The approval decision RPC remains atomic for approval/pause/run/checkpoint state, but decision/resume event rows are not yet appended in that same database transaction. A forward-only migration is still required; no live Supabase schema/data change was made in this increment.
+
+No tests, lint, typecheck, build, browser verification, live API/worker execution, Supabase mutation, staging or deployment were performed. Source implementation and documentation only; runtime behavior remains unverified.
+
+**Next Phase 09 work:** (1) transactionally append approval decision/resume events in the database RPC via a new forward-only migration; (2) finish Customer endpoint authorization/response contract audit; (3) reconcile RAG citation provenance across retrieval, final output, persisted conversation history and Chat restore; (4) finalize the Customer UI/API acceptance matrix. Phase 10 End-to-End Integration Verification is dependency-next only after Phase 09 and must remain unperformed unless runtime verification is authorized. Phase 11 Integration Release Gate follows Phase 10.
