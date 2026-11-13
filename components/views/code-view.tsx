@@ -155,7 +155,7 @@ print(greet("World"))`
   const sampleSnippets = [
     {
       name: 'Greeting Default',
-      code: `def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("MoreAI - Global Partner Network"))`,
+      code: `def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))`,
     },
     {
       name: 'Contoh Kalkulasi',
