@@ -216,3 +216,9 @@ Per explicit instruction, no tests, lint, typecheck, build, browser verification
 3. Carry structured RAG citations from retrieved chunk/document IDs through final Agent Run output persistence and the customer response schema.
 4. Finish endpoint-by-endpoint customer authorization/response contract inventory and reconcile remaining UI actions against supported backend contracts.
 5. Update the acceptance matrix after source implementation; Phase 10/11 verification remains intentionally not performed under the current instruction.
+
+
+### Lifecycle terminal-state completion
+A follow-up worker change adds `agent.execution.timed_out` when the worker run deadline expires, `agent.execution.cancelled` when cancellation wins the dispatch race, and `agent.execution.failed` for classified and unexpected execution failures. These are attempt-scoped idempotent event keys and contain only the agent key, safe error code/classification and retryable flag. Lease-loss paths deliberately emit no terminal event because a stale worker no longer owns the run. Planning events are emitted only for the `planning` runtime key; other agent keys are not mislabeled as planning.
+
+Additional source commit: `52c38e1fac033d5521b4d54969aa9b9b48c82812`.
