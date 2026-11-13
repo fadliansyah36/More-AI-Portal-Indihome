@@ -8,11 +8,12 @@ from typing import Any
 from uuid import UUID, uuid4
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Query, Header
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, Header, Response
 from pydantic import BaseModel, Field
 
 from app.authorization import customer_principal
 from app.routers.conversations import repository
+from app.pagination import decode_timestamp_id_cursor, encode_timestamp_id_cursor, timestamp_id_filter
 
 router = APIRouter(prefix="/api/v1/customer/workspaces", tags=["customer-workspaces"])
 
@@ -208,26 +209,43 @@ async def create_customer_workspace(
 @router.get("/{workspace_id}/files", response_model=CustomerWorkspaceFileListResponse)
 async def list_workspace_files(
     workspace_id: UUID, request: Request,
+    response: Response,
     include_deleted: bool = Query(default=False),
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(customer_principal),
 ):
+    decoded = decode_timestamp_id_cursor(cursor)
     repo = repository(request)
     await _workspace_access(repo, workspace_id, user["id"])
-    rows = await repo.select("agent_workspace_files", {
+    filters = {
         "workspace_id": f"eq.{workspace_id}",
         "select": "id,path,version,storage_path,sha256,size_bytes,updated_at,deleted_at",
         **({} if include_deleted else {"deleted_at": "is.null"}),
-        "order": "updated_at.desc",
-        "limit": "500",
-    })
+        "order": "updated_at.desc,id.desc",
+        "limit": str(limit + 1),
+    }
+    cursor_filter = timestamp_id_filter(decoded, "updated_at")
+    if cursor_filter:
+        filters["or"] = cursor_filter
+    rows = await repo.select("agent_workspace_files", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(rows[-1], "updated_at")
+    response.headers["X-Pagination-Mode"] = "keyset"
     return {"items": rows, "count": len(rows)}
 
 
 @router.get("/{workspace_id}/files/{file_id}/versions", response_model=CustomerWorkspaceFileVersionListResponse)
 async def list_workspace_file_versions(
     workspace_id: UUID, file_id: UUID, request: Request,
+    response: Response,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(customer_principal),
 ):
+    decoded = decode_timestamp_id_cursor(cursor)
     repo = repository(request)
     await _workspace_access(repo, workspace_id, user["id"])
     current = await repo.select("agent_workspace_files", {
@@ -239,24 +257,32 @@ async def list_workspace_file_versions(
     if not current:
         raise HTTPException(404, "Workspace file not found")
     file = current[0]
-    history = await repo.select("agent_workspace_file_versions", {
+    filters = {
         "workspace_id": f"eq.{workspace_id}",
         "path": f"eq.{file['path']}",
         "select": "id,path,version,storage_path,sha256,size_bytes,committed_at",
-        "order": "version.desc",
-        "limit": "100",
-    })
-    if file.get("deleted_at") is None and file.get("version", 0) > 0 and file.get("storage_path") and file.get("sha256"):
-        history.insert(0, {
-            "id": str(file["id"]),
-            "path": file["path"],
-            "version": file["version"],
-            "storage_path": file["storage_path"],
-            "sha256": file["sha256"],
-            "size_bytes": file["size_bytes"],
-            "committed_at": file["updated_at"],
-            "current": True,
+        "order": "committed_at.desc,id.desc",
+        "limit": str(limit + 1),
+    }
+    cursor_filter = timestamp_id_filter(decoded, "committed_at")
+    if cursor_filter:
+        filters["or"] = cursor_filter
+    history = await repo.select("agent_workspace_file_versions", filters)
+    has_more = len(history) > limit
+    history = history[:limit]
+    if cursor is None and file.get("deleted_at") is None and file.get("version", 0) > 0 and file.get("storage_path") and file.get("sha256"):
+        history.append({
+            "id": str(file["id"]), "path": file["path"], "version": file["version"],
+            "storage_path": file["storage_path"], "sha256": file["sha256"],
+            "size_bytes": file["size_bytes"], "committed_at": file["updated_at"], "current": True,
         })
+        history.sort(key=lambda row: (row.get("committed_at") or "", row.get("id") or ""), reverse=True)
+    if len(history) > limit:
+        has_more = True
+        history = history[:limit]
+    if has_more and history:
+        response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(history[-1], "committed_at")
+    response.headers["X-Pagination-Mode"] = "keyset"
     return {"items": history, "count": len(history), "current_version": file["version"]}
 
 @router.post("/{workspace_id}/files/{file_id}/signed-download", response_model=CustomerWorkspaceSignedDownloadResponse)
