@@ -27,7 +27,7 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Chat attachments | `artifactApi.uploadAttachment()` | `POST /api/v1/artifacts` with chat purpose/conversation headers | Connected; private Storage, owner validation and worker extraction |
 | Chat stream and cancellation | `moreAiApiStream()`, `cancelRun()` | `GET /api/v1/customer/agent-runs/{id}/stream`, `POST .../{id}/cancel` | Connected; `run.timed_out` and `run.expired` are terminal in the client and rendered distinctly in Chat |
 | Run detail, steps and events | `getRun()`, `getRunSteps()`, `getRunEvents()` | `GET /api/v1/customer/agent-runs/{id}`, `GET .../{id}/steps`, `GET /api/v1/agent-runs/{id}/events` | Connected |
-| Workflow approvals | `customerToolApprovalApi` | `/api/v1/customer/tool-approvals` | Connected to durable owner/run-scoped approval lifecycle |
+| Workflow approvals | `customerToolApprovalApi` | `/api/v1/customer/tool-approvals` | Connected to durable owner/run-scoped approval lifecycle; Workflow status display includes `timed_out` |
 | Create Studio text/document/translation/presentation | `CreateView → handleStartPrompt → Chat` | Existing Chat message enqueue and Agent Run lifecycle | Connected as an explicit Chat handoff; the run is created when the Chat prompt is submitted |
 | Create Studio image/video generation | No provider client exposed | No verified generation provider contract | Unavailable; must not create mock media or charge credits |
 | Agent Studio catalog | `customerApi.agents()` | `GET /api/v1/agents` | Connected; explicit typed catalog contract on the configured Customer API origin |
@@ -36,7 +36,7 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Analyse selected document with Agent | Knowledge document selection → Chat handoff | Durable Agent Run + `knowledge_search(document_ids)` | Source-integrated; retrieval is restricted to the selected ready document ID |
 | Code Assistant analysis | `CodeView → handleStartPrompt` | Existing Chat Agent Run contract | Connected; no Python execution claim |
 | Code snapshot save/list/download | `artifactApi.upload/list/signedDownload` | `POST/GET /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; optional owner-verified Agent Run link |
-| Tasks / Agent Run history | `customerApi.agentRunsPage()` | `GET /api/v1/customer/agent-runs` | Connected |
+| Tasks / Agent Run history | `customerApi.agentRunsPage()` | `GET /api/v1/customer/agent-runs` | Connected; succeeded/failed/cancelled/timed_out/expired are all treated as terminal for active-vs-finished filtering |
 | Tasks / Run artifacts | `artifactApi.list()/signedDownload()` | `GET /api/v1/artifacts`, `POST /{id}/signed-download` | Newly connected in Tasks view; run relationship displayed |
 | Workspace files | `workspaceApi` | `/api/v1/customer/workspaces` and nested file/version/run routes | Connected to versioned private Storage and CAS |
 | Private artifacts | `artifactApi` | `GET/POST /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; 2 MB object limit and owner checks |
