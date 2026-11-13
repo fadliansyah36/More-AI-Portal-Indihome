@@ -166,3 +166,54 @@ Continue Phase 09. Finish Agent Run/Artifact relationships and the Customer acti
 - No Supabase schema or production data changes were needed.
 - Phase 09 remains IN PROGRESS. Identity fallback and safe API transport recovery are source-implemented, not runtime-accepted.
 - Remaining Phase 09 scope remains: complete Agent Run/Artifact links across all Customer workflows; actual Captive Gateway provider adapters and signed network verification; full Customer action/OpenAPI inventory; provider-backed EduTech, payment, support and validated Analytics.
+
+## 2026-11-13 continuation — Customer workflow linkage, action contract inventory and analytics
+
+### Agent Run ↔ Artifact / Knowledge linkage
+- Tasks view now reads both the paginated Agent Run history and private artifact metadata. Its existing Artifacts tab now lists real artifacts, shows the persisted `run_id` association when present, and downloads through the owner-checked short-lived signed URL API.
+- Analyse view now loads the authenticated user's Knowledge Library, displays persisted ingestion states, and only offers Agent analysis for a document in `ready` state. The selected document ID is passed into the Chat handoff.
+- OpenManus `knowledge_search` now accepts an optional validated list of 1–20 document UUIDs. The worker validates the UUID list and forwards it to the existing `moreai_match_knowledge_chunks` RPC. This allows Analyse to restrict retrieval to the selected ready document instead of searching the entire knowledge collection.
+- Create text/document/translation/presentation remains a Chat handoff; the actual Agent Run is created when Chat submits the prompt. Worker `file_saver` already persists generated artifacts with the current `run_id`. Research, Code and Workflow retain their existing run/artifact links.
+- Existing UI layout is retained; changes are limited to linking and showing persisted backend records.
+
+### Customer action ↔ FastAPI inventory
+- Added `docs/implementation/PHASE-09-CUSTOMER-ACTION-API-INVENTORY-20261113.md` with screen/action → typed client → FastAPI route → source status, and explicit unavailable boundaries for Captive Gateway, EduTech catalog/video, payment and support.
+- Corrected the typed conversation session client method: it now requires both `conversationId` and `runId` and calls the implemented `/api/v1/conversations/{conversation_id}/sessions/{run_id}` route. The previous unused method called a non-existent collection path.
+- Source-level inventory confirms the current Customer read/write routes and identifies remaining unsupported actions; it is not runtime contract acceptance.
+
+### Historical Analytics
+- Added migration `20261113140000_moreai_customer_usage_analytics.sql`, applied successfully to canonical Supabase project `uunfgimtokhucegqbpce`.
+- Migration history records version `20261113051221` / `moreai_customer_usage_analytics`.
+- Added service-role-only, SECURITY INVOKER SQL aggregation over `llm_usage`, returning period summary, model/provider breakdown, daily trend, token totals, success/failure counts, recorded cost and average latency.
+- Added authenticated FastAPI `GET /api/v1/customer/usage/analytics?days=7|30|365`, typed API client contract and Analytics screen binding. The server aggregates all rows in the selected interval; it no longer derives year analytics from only the latest 100 records.
+- Database readback confirms the function exists with signature `(p_user_id uuid, p_since timestamptz, p_until timestamptz)`, is not SECURITY DEFINER, and is recorded in migration history.
+
+### Production API origin configuration
+- Re-read the More AI Vercel project binding and corrected frontend Production/Preview/Development `NEXT_PUBLIC_MOREAI_API_URL` from the unverified project subdomain `https://more-ai-api-more-ai.vercel.app` to the verified canonical API alias `https://more-ai-api.vercel.app`.
+- Vercel environment variable ID `xVvfczzzPtHWdQH0` was updated. This change applies to a future deployment; it does not rewrite the environment baked into the currently READY production deployment.
+- Existing CORS allowlist includes `https://moreai.web.id` and `https://www.moreai.web.id`.
+- Current Production deployment is still the previously READY commit `5501e3c80200f8c3e0d8314a6828a915f5c73305`. Latest `main` source and the corrected environment are not yet live. Previous Vercel deployment attempt returned HTTP 402 `api-deployments-free-per-day`; no retry, alternate team, billing or quota workaround was used in this increment.
+
+### Provider / product-domain reconciliation
+- Supabase production catalog still shows all five network verification methods (`gateway`, `gps`, `isp_api`, `mikrotik_hotspot`, `radius`) with `adapter_ready=false`. Partner config API rejects activation when the adapter is not ready. No gateway/provider secret, supported callback/API contract or secret-vault resolver is configured; Captive Portal remains fail-closed.
+- `customer_learning_progress` is available, but no authoritative course catalog, enrollment or protected video delivery schema/provider is present.
+- Wallet, credit ledger, quotas and entitlements are present, but no checkout/payment settlement/webhook provider contract is present.
+- No support ticket schema, response lifecycle or official support provider is present.
+- These areas remain unavailable rather than simulated; no schema/table was fabricated for a provider that is not configured.
+
+### Source commits in this increment
+- `832cdc8b`, `a2fe1bea`, `4b656c76` — analytics migration authored and corrected.
+- `2a38afac` — Customer historical analytics FastAPI route.
+- `460955c5`, `f8aa2ec3` — typed analytics and corrected conversation session client contracts.
+- `0dc59bd0` — Analytics screen uses server-side historical aggregates.
+- `5f1aa596` — Tasks view lists/downloads run-linked artifacts.
+- `f0e7b6e1`, `4f5b64cc` — document-scoped OpenManus knowledge search schema/runtime.
+- `0e7b8c6d`, `6c67ff93` — Analyse document list and selected-document Agent handoff.
+- `fddbd11e` — Customer action/API contract inventory.
+- Vercel environment correction: `NEXT_PUBLIC_MOREAI_API_URL` now points to `https://more-ai-api.vercel.app`.
+
+### Verification boundary
+- Source readback and read-only Supabase migration/function metadata readback only.
+- No tests, lint, typecheck, build, browser checks, screenshots, API probes, worker execution, provider calls, staging or E2E checks were run.
+- The Supabase analytics migration is applied, but the new analytics API/UI is not runtime-accepted.
+- Phase 09 remains IN PROGRESS; Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
