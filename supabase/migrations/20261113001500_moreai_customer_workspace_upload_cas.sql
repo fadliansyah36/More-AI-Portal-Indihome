@@ -120,6 +120,7 @@ begin
      and pending_token is null
      and pending_version is null
      and pending_run_id is null
+     and deleted_at is null
   returning * into v_file;
 
   if not found then
