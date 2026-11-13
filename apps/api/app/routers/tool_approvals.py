@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
@@ -10,6 +11,18 @@ from app.authorization import customer_principal
 from app.routers.conversations import repository
 
 router = APIRouter(prefix="/api/v1/customer/tool-approvals", tags=["customer-tool-approvals"])
+
+
+class ToolApprovalResponse(BaseModel):
+    id: UUID
+    run_id: UUID
+    tool_key: str
+    summary: str
+    status: Literal["pending", "approved", "denied", "expired", "consumed"]
+    requested_at: datetime
+    expires_at: datetime
+    decided_at: datetime | None
+    consumed_at: datetime | None
 
 
 class ApprovalRequest(BaseModel):
@@ -23,7 +36,7 @@ class ApprovalDecision(BaseModel):
     decision: Literal["approved", "denied"]
 
 
-@router.get("")
+@router.get("", response_model=list[ToolApprovalResponse])
 async def list_tool_approvals(
     request: Request, user: dict[str, Any] = Depends(customer_principal),
 ):
