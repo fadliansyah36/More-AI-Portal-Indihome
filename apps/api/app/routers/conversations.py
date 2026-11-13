@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/v1/conversations", tags=["conversations"])
 
 class ConversationCreate(BaseModel):
     title: str | None = Field(default=None, max_length=180)
+    workspace_id: UUID | None = None
 
 
 class MessageCreate(BaseModel):
@@ -27,6 +28,7 @@ class MessageCreate(BaseModel):
 
 class ConversationResponse(BaseModel):
     id: UUID
+    workspace_id: UUID | None = None
     title: str | None = None
     status: str
     created_at: datetime
@@ -133,7 +135,14 @@ def repository(request: Request) -> SupabaseRepository:
 
 @router.post("", status_code=201, response_model=ConversationResponse)
 async def create_conversation(body: ConversationCreate, request: Request, user: dict[str, Any] = Depends(customer_principal)):
-    return await repository(request).insert("conversations", {"user_id": user["id"], "title": body.title, "status": "active", "metadata": {}})
+    repo = repository(request)
+    if body.workspace_id is not None:
+        from app.routers.workspaces import _workspace_access
+        await _workspace_access(repo, body.workspace_id, user["id"])
+    return await repo.insert("conversations", {
+        "user_id": user["id"], "workspace_id": str(body.workspace_id) if body.workspace_id else None,
+        "title": body.title, "status": "active", "metadata": {},
+    })
 
 
 @router.get("", response_model=list[ConversationResponse])
@@ -148,7 +157,7 @@ async def list_conversations(
     decoded = decode_created_at_id_cursor(cursor)
     params = {
         "user_id": f"eq.{user['id']}",
-        "select": "id,title,status,created_at,updated_at",
+        "select": "id,workspace_id,title,status,created_at,updated_at",
         "order": "created_at.desc,id.desc",
         "limit": str(limit + 1),
     }
