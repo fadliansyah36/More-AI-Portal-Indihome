@@ -173,7 +173,7 @@ Assistant message responses now include a typed `citations` array. FastAPI resol
 Conversation session event replay and Customer Agent Run SSE now share the safe activity metadata contract. Raw tool arguments, tool observations, provider payloads and checkpoint state bodies are not sent to the Customer browser. Terminal SSE sends only final answer text and validated citations plus a bounded error code.
 
 ### Approval decision event contract
-The new forward-only migration source appends approval decision and run-resume events transactionally with approval/pause/run/checkpoint updates. It is committed but not applied to Supabase under the current no-live-mutation instruction; canonical production behavior is unchanged until an authorized migration apply.
+The forward-only migration is applied to canonical Supabase project `uunfgimtokhucegqbpce` as version `20261113182657`. Read-only schema inspection confirms the helper is installed and the decision RPC contains the `run.resume_queued` event path. No runtime approval flow was executed.
 
 
 ### Event-history privacy closure
