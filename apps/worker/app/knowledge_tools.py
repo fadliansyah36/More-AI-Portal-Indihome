@@ -7,6 +7,7 @@ import math
 import os
 import re
 from typing import Any
+from uuid import UUID
 
 import httpx
 
@@ -302,13 +303,24 @@ class SupabaseKnowledgeTools:
             raise ValueError("knowledge_query_invalid")
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 20:
             raise ValueError("knowledge_match_limit_out_of_range")
+        raw_document_ids = arguments.get("document_ids")
+        document_ids: list[str] | None = None
+        if raw_document_ids is not None:
+            if not isinstance(raw_document_ids, list) or not 1 <= len(raw_document_ids) <= 20:
+                raise ValueError("knowledge_document_filter_invalid")
+            try:
+                document_ids = [str(UUID(value)) for value in raw_document_ids if isinstance(value, str)]
+            except (TypeError, ValueError) as exc:
+                raise ValueError("knowledge_document_filter_invalid") from exc
+            if len(document_ids) != len(raw_document_ids) or len(set(document_ids)) != len(document_ids):
+                raise ValueError("knowledge_document_filter_invalid")
         [vector] = await self._embed([query.strip()])
         rows = await self.client.rpc("moreai_match_knowledge_chunks", {
             "p_user_id": user_id,
             "p_workspace_id": workspace_id,
             "p_query_embedding": "[" + ",".join(format(value, ".9g") for value in vector) + "]",
             "p_match_count": limit,
-            "p_document_ids": None,
+            "p_document_ids": document_ids,
         })
         if not isinstance(rows, list):
             raise RuntimeError("knowledge_search_response_invalid")
