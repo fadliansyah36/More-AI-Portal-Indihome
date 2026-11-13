@@ -30,9 +30,9 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Workflow approvals | `customerToolApprovalApi` | `/api/v1/customer/tool-approvals` | Connected to durable owner/run-scoped approval lifecycle; approval creation now pre-verifies run ownership; frontend tool-key union matches backend including `workspace_restore_version`; list and create response schemas declared; decision/recovery lifecycle audit remains |
 | Create Studio text/document/translation/presentation | `CreateView → handleStartPrompt → Chat` | Existing Chat message enqueue and Agent Run lifecycle | Connected as an explicit Chat handoff; the run is created when the Chat prompt is submitted |
 | Create Studio image/video generation | No provider client exposed | No verified generation provider contract | Unavailable; must not create mock media or charge credits |
-| Agent Studio catalog | `customerApi.agents()` | `GET /api/v1/agents` | Connected; explicit typed catalog contract on the configured Customer API origin |
+| Agent Studio catalog | `customerApi.agents()` | `GET /api/v1/agents` | Connected; FastAPI response schema declares enabled agent catalogue; explicit typed client uses configured Customer API origin |
 | Research history and artifacts | `customerApi.agentRuns()`, `artifactApi.list()/signedDownload()` | Agent Run and private Artifact routes | Connected |
-| Analyse document upload | `knowledgeApi.upload()/list()/get()` | `POST /api/v1/customer/knowledge/documents/upload`, `GET /documents`, `GET /documents/{id}` | Connected to private ingestion and owner-scoped Knowledge Library |
+| Analyse document upload | `knowledgeApi.upload()/list()/get()` | `POST /api/v1/customer/knowledge/documents/upload`, `GET /documents`, `GET /documents/{id}` | Connected to private ingestion and owner-scoped Knowledge Library; upload/list/detail/retry/archive response schemas declared; retry and archive remain owner-scoped |
 | Analyse selected document with Agent | Knowledge document selection → Chat handoff | Durable Agent Run + `knowledge_search(document_ids)` | Source-integrated; retrieval is restricted to the selected ready document ID |
 | Code Assistant analysis | `CodeView → handleStartPrompt` | Existing Chat Agent Run contract | Connected; no Python execution claim |
 | Code snapshot save/list/download | `artifactApi.upload/list/signedDownload` | `POST/GET /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; optional owner-verified Agent Run link |
@@ -89,6 +89,9 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 - Tool approval creation checks that the requested run belongs to the authenticated Customer before calling the approval RPC.
 - EduTech Customer screens no longer present local sample courses/lessons as live catalogue data or write progress for a hardcoded sample module. Saved progress remains readable while official catalog/video integration is blocked.
 - See [Conversation, pagination & screen data integrity report](./PHASE-09-CUSTOMER-CONVERSATION-PAGINATION-DATA-INTEGRITY-20261113.md).
+
+
+- Additional FastAPI response models now cover Customer context, network session records, speedtest ping/upload, Knowledge Library document operations, agent/model/tool catalogs, message/session cancellation, workspace member removal and approval decisions. Network session listing is bounded to 100 rows. See [Conversation, pagination & screen data integrity report](./PHASE-09-CUSTOMER-CONVERSATION-PAGINATION-DATA-INTEGRITY-20261113.md).
 
 ## Real-provider blockers — do not bypass
 
