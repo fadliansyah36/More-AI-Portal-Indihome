@@ -258,7 +258,7 @@ async def customer_context(
 @router.post("/conversations", status_code=201, response_model=CustomerConversationResponse)
 async def create_customer_conversation(
     body: ConversationCreate, request: Request,
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     return await repository(request).insert("conversations", {
@@ -274,7 +274,7 @@ async def customer_conversations(
     limit: int = Query(default=50, ge=1, le=100),
     cursor: str | None = Query(default=None, max_length=512),
     before: datetime | None = Query(default=None),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     if cursor and before:
         raise HTTPException(422, "Use either cursor or before, not both")
@@ -346,7 +346,7 @@ async def _customer_conversation_message_attachments(
 @router.get("/conversations/{conversation_id}", response_model=CustomerConversationDetailResponse)
 async def customer_conversation(
     conversation_id: UUID, request: Request, response: Response,
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     repo = repository(request)
@@ -373,7 +373,7 @@ async def customer_conversation_messages(
     response: Response,
     limit: int = Query(default=50, ge=1, le=100),
     cursor: str | None = Query(default=None, max_length=512),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     """Return a chronological page of owner-scoped messages, with cursor moving toward older history."""
     decoded = decode_created_at_id_cursor(cursor)
@@ -405,7 +405,7 @@ async def customer_conversation_messages(
 async def send_customer_message(
     conversation_id: UUID, body: MessageCreate, request: Request,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     if not request.app.state.settings.agent_execution_enabled:
@@ -427,7 +427,7 @@ async def customer_agent_runs(
     limit: int = Query(default=50, ge=1, le=100),
     cursor: str | None = Query(default=None, max_length=512),
     before: datetime | None = Query(default=None),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     """List customer runs with stable keyset pagination and a legacy timestamp cursor."""
     if cursor and before:
@@ -458,7 +458,7 @@ async def customer_agent_runs(
 @router.get("/agent-runs/{run_id}", response_model=CustomerAgentRunResponse)
 async def customer_agent_run(
     run_id: UUID, request: Request,
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     return await repository(request).owned_record("agent_runs", run_id, principal["id"])
@@ -469,7 +469,7 @@ async def customer_agent_run(
 async def customer_cancel_agent_run(
     run_id: UUID,
     request: Request,
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     repo = repository(request)
@@ -486,7 +486,7 @@ async def customer_cancel_agent_run(
 async def customer_agent_run_steps(
     run_id: UUID, request: Request,
     limit: int = Query(default=100, ge=1, le=500),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     """Return safe workflow lifecycle metadata after verifying run ownership.
 
@@ -511,7 +511,7 @@ async def customer_agent_run_stream(
     after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
     wait_seconds: int = Query(default=60, ge=1, le=120),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     repo = repository(request)
@@ -630,7 +630,7 @@ async def customer_network_sessions(
     response: Response,
     limit: int = Query(default=50, ge=1, le=100),
     cursor: str | None = Query(default=None, max_length=512),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     """Return owner-scoped network session history without private device evidence."""
     decoded = decode_timestamp_id_cursor(cursor)
@@ -659,7 +659,7 @@ async def customer_network_sessions(
 
 @router.get("/wallet", response_model=CustomerWalletListResponse)
 async def customer_wallet(
-    request: Request, user: dict[str, Any] = Depends(current_user),
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     rows = await repository(request).select("wallet_accounts", {
@@ -678,7 +678,7 @@ async def customer_wallet_ledger(
     cursor: str | None = Query(default=None, max_length=512),
     before: datetime | None = Query(default=None),
     wallet_id: UUID | None = Query(default=None),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     if cursor and before:
         raise HTTPException(422, "Use either cursor or before, not both")
@@ -725,7 +725,7 @@ async def customer_usage(
     limit: int = Query(default=50, ge=1, le=100),
     cursor: str | None = Query(default=None, max_length=512),
     before: datetime | None = Query(default=None),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     if cursor and before:
         raise HTTPException(422, "Use either cursor or before, not both")
@@ -756,7 +756,7 @@ async def customer_usage(
 async def customer_usage_analytics(
     request: Request,
     days: int = Query(default=30, ge=1, le=365),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     """Return server-aggregated historical usage for the authenticated Customer only."""
     principal = await require_customer_context(request, user)
@@ -774,7 +774,7 @@ async def customer_usage_analytics(
 
 @router.get("/entitlements", response_model=list[CustomerEntitlementResponse])
 async def customer_entitlements(
-    request: Request, user: dict[str, Any] = Depends(current_user),
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     return await repository(request).select("user_entitlements", {
@@ -786,7 +786,7 @@ async def customer_entitlements(
 
 @router.get("/quotas", response_model=list[CustomerQuotaResponse])
 async def customer_quotas(
-    request: Request, user: dict[str, Any] = Depends(current_user),
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     repo = repository(request)
@@ -836,7 +836,7 @@ async def redeem_partner_access_code(
     body: AccessCodeRedeem,
     request: Request,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     import hashlib
     principal = await require_customer_context(request, user)
