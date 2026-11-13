@@ -41,6 +41,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [inputText, setInputText] = useState(initialPrompt);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoringConversation, setIsRestoringConversation] = useState(!initialPrompt.trim());
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
@@ -50,9 +51,43 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    if (initialPrompt.trim()) {
+      setIsRestoringConversation(false);
+      return;
+    }
+    let active = true;
+    const restoreLatestConversation = async () => {
+      try {
+        const conversations = await customerApi.conversations(1);
+        const latest = conversations.find((item) => item.status === 'active') ?? conversations[0];
+        if (!latest || !active) return;
+        const restored = await customerApi.getConversation(latest.id);
+        if (!active) return;
+        setConversationId(restored.conversation.id);
+        setMessages(restored.messages
+          .filter((message) => message.role === 'user' || message.role === 'assistant')
+          .map((message) => ({
+            id: message.id,
+            sender: message.role as 'user' | 'assistant',
+            text: message.content,
+            time: new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            source: message.role === 'assistant' ? 'MoreAI Agent Runtime' : undefined,
+          })));
+      } catch {
+        // Conversation history remains server-authoritative. A failed restore
+        // leaves the composer available to create a fresh conversation.
+      } finally {
+        if (active) setIsRestoringConversation(false);
+      }
+    };
+    void restoreLatestConversation();
+    return () => { active = false; };
+  }, [initialPrompt]);
+
   const handleSendMessage = useCallback(async (textToSend?: string) => {
     const text = (textToSend ?? inputText).trim();
-    if (!text || isLoading) return;
+    if (!text || isLoading || isRestoringConversation) return;
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -172,7 +207,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       setIsCancelling(false);
       setIsLoading(false);
     }
-  }, [inputText, isLoading, conversationId, showToast, initialAgentKey]);
+  }, [inputText, isLoading, isRestoringConversation, conversationId, showToast, initialAgentKey]);
 
   const handleCancelRun = useCallback(async () => {
     if (!activeRunId || isCancelling) return;
@@ -265,9 +300,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             )}
           </article>
         ))}
-        {isLoading && (
+        {(isLoading || isRestoringConversation) && (
           <div className="flex items-center gap-2 pl-10 text-xs text-slate-500">
-            <Loader2 className="h-4 w-4 animate-spin" /> Menghubungkan ke agent runtime…
+            <Loader2 className="h-4 w-4 animate-spin" /> {isRestoringConversation ? 'Memulihkan percakapan tersimpan…' : 'Menghubungkan ke agent runtime…'}
           </div>
         )}
         <div ref={endRef} />
@@ -284,10 +319,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void handleSendMessage(); } }}
             placeholder="Tulis pesan untuk MoreAI…"
             rows={1}
-            disabled={isLoading}
+            disabled={isLoading || isRestoringConversation}
             className="max-h-32 min-h-10 flex-1 resize-y bg-transparent px-2 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:opacity-60"
           />
-          <button type="submit" disabled={isLoading || !inputText.trim()} aria-label="Kirim pesan" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+          <button type="submit" disabled={isLoading || isRestoringConversation || !inputText.trim()} aria-label="Kirim pesan" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300">
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
         </div>
