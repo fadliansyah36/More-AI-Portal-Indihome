@@ -436,7 +436,20 @@ async def get_events(
         "run_id": f"eq.{run_id}", "sequence": f"gt.{cursor}",
         "select": "id,event_type,sequence,payload,created_at", "order": "sequence.asc", "limit": str(limit),
     })
-    return [await _event_with_checkpoint_state(repo, run_id, row) for row in rows]
+    safe_events = []
+    for raw in rows:
+        row = await _event_with_checkpoint_state(repo, run_id, raw)
+        activity = _safe_run_activity(row)
+        safe_payload = {
+            key: value for key, value in activity.items()
+            if key not in {"id", "sequence", "timestamp", "event_type"}
+        }
+        safe_events.append({
+            "id": row.get("id"), "event_type": row.get("event_type"),
+            "sequence": row.get("sequence"), "payload": safe_payload,
+            "created_at": row.get("created_at"), "checkpoint": row.get("checkpoint"),
+        })
+    return safe_events
 
 
 @router.websocket("/{run_id}/ws")
