@@ -235,6 +235,8 @@ async def customer_agent_run_stream(
                     cursor = max(cursor, int(row["sequence"]))
                     payload = json.dumps(row, separators=(",", ":"))
                     yield f"id: {cursor}\nevent: {row['event_type']}\ndata: {payload}\n\n"
+                    if row["event_type"] in {"run.completed", "run.failed", "run.cancelled", "run.timed_out"}:
+                        return
             else:
                 idle_rounds += 1
                 run = await repo.owned_record("agent_runs", run_id, principal["id"])
