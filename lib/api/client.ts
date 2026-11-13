@@ -340,14 +340,14 @@ export type CustomerModelCapability = {
 };
 
 export const platformCatalogApi = {
-  tools: () => moreAiApi<CustomerToolCatalogItem[]>('/api/v1/tools'),
-  modelCapabilities: () => moreAiApi<{ items: CustomerModelCapability[]; count: number; source: string }>('/api/v1/models/capabilities'),
+  tools: () => moreAiCustomerApi<CustomerToolCatalogItem[]>('/api/v1/tools'),
+  modelCapabilities: () => moreAiCustomerApi<{ items: CustomerModelCapability[]; count: number; source: string }>('/api/v1/models/capabilities'),
 };
 
 export const profileApi = {
-  get: () => moreAiApi<{ user: { id: string; email?: string; display_name?: string | null }; profile: CustomerProfile | null }>('/api/v1/me'),
+  get: () => moreAiCustomerApi<{ user: { id: string; email?: string; display_name?: string | null }; profile: CustomerProfile | null }>('/api/v1/me'),
   update: (payload: Partial<Pick<CustomerProfile, 'display_name' | 'avatar_path' | 'locale' | 'timezone'>>) =>
-    moreAiApi<{ user: { id: string; email?: string; display_name?: string | null }; profile: CustomerProfile }>('/api/v1/me/profile', {
+    moreAiCustomerApi<{ user: { id: string; email?: string; display_name?: string | null }; profile: CustomerProfile }>('/api/v1/me/profile', {
       method: 'PATCH', body: JSON.stringify(payload),
     }),
 };
@@ -559,7 +559,17 @@ export type CustomerUsageAnalytics = {
   period: { since: string; until: string };
 };
 
+export type CustomerAgentCatalogItem = {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  version: string;
+  enabled: boolean;
+};
+
 export const customerApi = {
+  agents: () => moreAiCustomerApi<CustomerAgentCatalogItem[]>('/api/v1/agents'),
   context: () => moreAiCustomerApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
   conversations: (limit = 50, before?: string) => moreAiCustomerApi<CustomerConversation[]>(`/api/v1/customer/conversations?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
   getConversation: (conversationId: string) => moreAiCustomerApi<{
@@ -753,17 +763,17 @@ export type CustomerNotificationPreferences = {
 
 export const notificationApi = {
   list: (unreadOnly = false, limit = 30) =>
-    moreAiApi<{ items: CustomerNotification[]; limit: number }>(
+    moreAiCustomerApi<{ items: CustomerNotification[]; limit: number }>(
       `/api/v1/notifications?unread_only=${unreadOnly}&limit=${Math.min(100, Math.max(1, limit))}`,
     ),
-  preferences: () => moreAiApi<CustomerNotificationPreferences>('/api/v1/notifications/preferences'),
+  preferences: () => moreAiCustomerApi<CustomerNotificationPreferences>('/api/v1/notifications/preferences'),
   updatePreferences: (payload: Partial<Omit<CustomerNotificationPreferences, 'updated_at'>>) =>
-    moreAiApi<CustomerNotificationPreferences>('/api/v1/notifications/preferences', {
+    moreAiCustomerApi<CustomerNotificationPreferences>('/api/v1/notifications/preferences', {
       method: 'PUT', body: JSON.stringify(payload),
     }),
   markRead: (notificationId: string) =>
-    moreAiApi<{ id: string; read_at: string }>(`/api/v1/notifications/${notificationId}/read`, { method: 'POST' }),
-  markAllRead: () => moreAiApi<{ updated: number }>('/api/v1/notifications/read-all', { method: 'POST' }),
+    moreAiCustomerApi<{ id: string; read_at: string }>(`/api/v1/notifications/${notificationId}/read`, { method: 'POST' }),
+  markAllRead: () => moreAiCustomerApi<{ updated: number }>('/api/v1/notifications/read-all', { method: 'POST' }),
 };
 
 
