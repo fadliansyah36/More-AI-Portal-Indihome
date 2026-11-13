@@ -77,7 +77,7 @@ def build_agent_registry(
     # OpenManus PlanningFlow is adapted to the durable MoreAI plan store and
     # resumable run/checkpoint contract; upstream process-global log/plan state
     # is intentionally not carried into the worker.
-    flow_factory.register("planning", lambda **deps: PlanningAgentRuntime(**deps))
+    flow_factory.register("planning", lambda **deps: PlanningAgentRuntime(event_publisher=client.append_run_event, **deps))
     planning = flow_factory.create(
         "planning", gateway=gateway, store=plan_store, step_executor=manus,
         approval_gate=client.wait_for_tool_approval,
