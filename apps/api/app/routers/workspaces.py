@@ -37,9 +37,9 @@ class CustomerWorkspaceFileResponse(BaseModel):
     id: UUID
     path: str
     version: int
-    storage_path: str
-    sha256: str
-    size_bytes: int
+    storage_path: str | None = None
+    sha256: str | None = None
+    size_bytes: int | None = None
     updated_at: datetime
     deleted_at: datetime | None = None
 
