@@ -17,6 +17,102 @@ from app.routers.conversations import repository
 router = APIRouter(prefix="/api/v1/customer/workspaces", tags=["customer-workspaces"])
 
 
+class CustomerWorkspaceResponse(BaseModel):
+    id: UUID
+    name: str
+    slug: str
+    owner_user_id: UUID
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class CustomerWorkspaceListResponse(BaseModel):
+    items: list[CustomerWorkspaceResponse]
+    count: int
+
+
+class CustomerWorkspaceFileResponse(BaseModel):
+    id: UUID
+    path: str
+    version: int
+    storage_path: str
+    sha256: str
+    size_bytes: int
+    updated_at: datetime
+    deleted_at: datetime | None = None
+
+
+class CustomerWorkspaceFileListResponse(BaseModel):
+    items: list[CustomerWorkspaceFileResponse]
+    count: int
+
+
+class CustomerWorkspaceFileVersionResponse(BaseModel):
+    id: UUID
+    path: str
+    version: int
+    storage_path: str
+    sha256: str
+    size_bytes: int
+    committed_at: datetime
+    current: bool = False
+
+
+class CustomerWorkspaceFileVersionListResponse(BaseModel):
+    items: list[CustomerWorkspaceFileVersionResponse]
+    count: int
+    current_version: int
+
+
+class CustomerWorkspaceSignedDownloadResponse(BaseModel):
+    file_id: UUID
+    version: int
+    url: str
+    expires_in: int
+
+
+class CustomerWorkspaceMemberResponse(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    user_id: UUID
+    role_id: UUID | None = None
+    status: str
+    invited_by: UUID | None = None
+    joined_at: datetime | None = None
+    created_at: datetime
+
+
+class CustomerWorkspaceMemberListResponse(BaseModel):
+    items: list[CustomerWorkspaceMemberResponse]
+    count: int
+
+
+class CustomerWorkspaceRunResponse(BaseModel):
+    id: UUID
+    conversation_id: UUID | None = None
+    status: str
+    attempt: int
+    max_attempts: int
+    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    available_at: datetime | None = None
+    heartbeat_at: datetime | None = None
+    cancel_requested_at: datetime | None = None
+    last_checkpoint_key: str | None = None
+
+
+class CustomerWorkspaceRunListResponse(BaseModel):
+    items: list[CustomerWorkspaceRunResponse]
+    count: int
+
+
+class CustomerWorkspaceArchiveResponse(BaseModel):
+    workspace: CustomerWorkspaceResponse
+    archived: bool
+
+
 class WorkspaceFileUploadResponse(BaseModel):
     workspace_id: UUID
     file_id: UUID
@@ -61,7 +157,7 @@ async def _workspace_access(repo, workspace_id: UUID, user_id: str) -> dict[str,
     return workspace
 
 
-@router.get("")
+@router.get("", response_model=CustomerWorkspaceListResponse)
 async def list_customer_workspaces(
     request: Request, user: dict[str, Any] = Depends(customer_principal),
 ):
@@ -93,7 +189,7 @@ async def list_customer_workspaces(
     return {"items": owned + shared, "count": len(owned) + len(shared)}
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, response_model=CustomerWorkspaceResponse)
 async def create_customer_workspace(
     body: WorkspaceCreate, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
@@ -109,7 +205,7 @@ async def create_customer_workspace(
     })
 
 
-@router.get("/{workspace_id}/files")
+@router.get("/{workspace_id}/files", response_model=CustomerWorkspaceFileListResponse)
 async def list_workspace_files(
     workspace_id: UUID, request: Request,
     include_deleted: bool = Query(default=False),
@@ -127,7 +223,7 @@ async def list_workspace_files(
     return {"items": rows, "count": len(rows)}
 
 
-@router.get("/{workspace_id}/files/{file_id}/versions")
+@router.get("/{workspace_id}/files/{file_id}/versions", response_model=CustomerWorkspaceFileVersionListResponse)
 async def list_workspace_file_versions(
     workspace_id: UUID, file_id: UUID, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
@@ -163,7 +259,7 @@ async def list_workspace_file_versions(
         })
     return {"items": history, "count": len(history), "current_version": file["version"]}
 
-@router.post("/{workspace_id}/files/{file_id}/signed-download")
+@router.post("/{workspace_id}/files/{file_id}/signed-download", response_model=CustomerWorkspaceSignedDownloadResponse)
 async def create_workspace_file_download(
     workspace_id: UUID, file_id: UUID, request: Request,
     version: int | None = None,
@@ -244,7 +340,7 @@ class WorkspaceUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=160)
 
 
-@router.patch("/{workspace_id}")
+@router.patch("/{workspace_id}", response_model=CustomerWorkspaceResponse)
 async def update_customer_workspace(
     workspace_id: UUID, body: WorkspaceUpdate, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
@@ -267,7 +363,7 @@ async def update_customer_workspace(
     return rows[0]
 
 
-@router.post("/{workspace_id}/archive")
+@router.post("/{workspace_id}/archive", response_model=CustomerWorkspaceArchiveResponse)
 async def archive_customer_workspace(
     workspace_id: UUID, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
@@ -294,7 +390,7 @@ async def archive_customer_workspace(
     return {"workspace": rows[0], "archived": True}
 
 
-@router.get("/{workspace_id}/members")
+@router.get("/{workspace_id}/members", response_model=CustomerWorkspaceMemberListResponse)
 async def list_customer_workspace_members(
     workspace_id: UUID, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
@@ -342,7 +438,7 @@ async def remove_customer_workspace_member(
     return {"member_id": str(member_id), "status": "removed"}
 
 
-@router.get("/{workspace_id}/runs")
+@router.get("/{workspace_id}/runs", response_model=CustomerWorkspaceRunListResponse)
 async def list_customer_workspace_runs(
     workspace_id: UUID, request: Request,
     limit: int = 50,
