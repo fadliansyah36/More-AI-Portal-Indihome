@@ -328,12 +328,18 @@ class SupabaseKnowledgeTools:
         for row in rows:
             if not isinstance(row, dict):
                 continue
+            chunk_id = row.get("chunk_id")
+            try:
+                citation_marker = f"[source:{UUID(str(chunk_id))}]"
+            except (TypeError, ValueError, AttributeError):
+                citation_marker = None
             safe_rows.append({
-                "chunk_id": row.get("chunk_id"),
+                "chunk_id": chunk_id,
                 "document_id": row.get("document_id"),
                 "title": row.get("title"),
                 "content": row.get("content"),
                 "similarity": row.get("similarity"),
+                "citation_marker": citation_marker,
                 "metadata": row.get("metadata") if isinstance(row.get("metadata"), dict) else {},
             })
         return json.dumps({"results": safe_rows, "count": len(safe_rows)}, ensure_ascii=False)
