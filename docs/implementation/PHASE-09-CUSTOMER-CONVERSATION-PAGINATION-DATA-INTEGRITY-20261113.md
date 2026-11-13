@@ -97,3 +97,9 @@ Scope: source-level integration and contract corrections only. Existing Customer
 ### Profile identity contract
 - Added explicit response schemas to `GET /api/v1/me` and `PATCH /api/v1/me/profile`, matching the authenticated Supabase user envelope and owner-scoped profile record.
 - Commit: `0def174f55612520f192872b5fb669d31108b97d` (UUID import correction: `9ebd0e2f2aec39921fb32e2bd0e0a2c17bf9148e`).
+
+### Agent Run history navigation parity
+- Research and Workflow now consume the cursor-based Agent Run page client and can append older runs without duplicating already-loaded IDs.
+- Code Assistant's run selector and project association now use the same keyset page client rather than the legacy timestamp-only list call.
+- Workflow refreshes the first durable run page after an approval decision and resets its cursor to the refreshed snapshot.
+- Commits: `b10375b2fb9960e2b3833a947be78e06b51d3a34`, `3ecab359ccd27428c2b41a2d4e6b4669f9447b3e`, `1bdce9de5a401214151beee752b1b918906f2185`.
