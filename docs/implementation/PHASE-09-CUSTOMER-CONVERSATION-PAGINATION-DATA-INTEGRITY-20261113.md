@@ -93,3 +93,7 @@ Scope: source-level integration and contract corrections only. Existing Customer
 - Approval request is idempotent at the RPC layer. The API now reloads the persisted approval row by approval ID and authenticated user after the RPC returns, then returns the actual persisted status rather than always fabricating `pending`. This preserves already-approved or expired state on duplicate requests.
 - Approval decision now has a response schema matching the RPC JSON fields (`id`, `run_id`, `tool_key`, `status`, `decided_at`, `expires_at`).
 - Commits: `5d80bf59e1c392a61b3cb4595f9d707695f0c4b1`, `3056161f5220b20af80038b1f1b8536c126ca19a`, `d36481af6b137c1ce67d2fda4f53f0153fe7ec31`.
+
+### Profile identity contract
+- Added explicit response schemas to `GET /api/v1/me` and `PATCH /api/v1/me/profile`, matching the authenticated Supabase user envelope and owner-scoped profile record.
+- Commit: `0def174f55612520f192872b5fb669d31108b97d` (UUID import correction: `9ebd0e2f2aec39921fb32e2bd0e0a2c17bf9148e`).
