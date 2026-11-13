@@ -287,8 +287,14 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     if (!activeRunId || isCancelling) return;
     setIsCancelling(true);
     try {
-      await customerApi.cancelRun(activeRunId);
-      showToast('Permintaan penghentian dikirim ke worker. Proses akan berhenti setelah checkpoint aman.', 'success');
+      const result = await customerApi.cancelRun(activeRunId);
+      if (result.status === 'cancelled') {
+        showToast('Agent Run berhasil dibatalkan.', 'success');
+      } else if (result.status === 'cancel_requested') {
+        showToast('Permintaan penghentian diterima worker. Proses akan berhenti pada checkpoint aman.', 'success');
+      } else {
+        showToast('Agent Run sudah berstatus ' + result.status + '. Tidak ada permintaan penghentian baru.', 'info');
+      }
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Tidak dapat menghentikan agent run.', 'error');
       setIsCancelling(false);
