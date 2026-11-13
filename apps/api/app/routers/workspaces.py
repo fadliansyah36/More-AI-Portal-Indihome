@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID, uuid4
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Query, Header, Response
 from pydantic import BaseModel, Field
