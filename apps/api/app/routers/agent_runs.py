@@ -65,6 +65,11 @@ class AgentRunActivityResponse(BaseModel):
     checkpoint_key: str | None = None
     level: str | None = None
     message: str | None = None
+    agent_key: str | None = None
+    step_index: int | None = None
+    risk: str | None = None
+    error_code: str | None = None
+    error_type: str | None = None
 
 
 class AgentRunActivityPageResponse(BaseModel):
@@ -247,7 +252,7 @@ def _safe_run_activity(row: dict[str, Any]) -> dict[str, Any]:
         "timestamp": row.get("created_at"),
         "event_type": event_type,
     }
-    for key in ("tool", "round", "index", "status", "phase", "progress", "tool_count", "next_round", "timeout_seconds", "checkpoint_key"):
+    for key in ("tool", "round", "index", "status", "phase", "progress", "tool_count", "next_round", "timeout_seconds", "checkpoint_key", "agent_key", "step_index", "risk", "error_code", "error_type"):
         value = payload.get(key)
         if isinstance(value, (str, int, float, bool)) and not isinstance(value, str) or (
             isinstance(value, str) and len(value) <= 100
@@ -271,6 +276,25 @@ def _thinking_message(activity: dict[str, Any]) -> dict[str, Any]:
         "run.timed_out": "Agent run timed out",
         "run.expired": "Agent run expired",
         "worker.checkpoint": "Execution checkpoint saved",
+        "agent.execution.started": "Agent execution started",
+        "agent.execution.completed": "Agent execution completed",
+        "agent.execution.failed": "Agent execution failed",
+        "agent.execution.cancelled": "Agent execution cancelled",
+        "agent.execution.timed_out": "Agent execution timed out",
+        "planning.started": "Planning started",
+        "planning.completed": "Planning completed",
+        "planning.step.approval_required": "Planning step awaiting approval",
+        "planning.step.approval_resumed": "Planning step approval resumed",
+        "planning.step.started": "Planning step started",
+        "planning.step.completed": "Planning step completed",
+        "planning.step.failed": "Planning step failed",
+        "tool.timed_out": f"Tool timed out: {tool}" if tool else "Tool timed out",
+        "tool.failed": f"Tool failed: {tool}" if tool else "Tool failed",
+        "tool.approval_requested": f"Tool approval requested: {tool}" if tool else "Tool approval requested",
+        "tool.approval_granted": f"Tool approval granted: {tool}" if tool else "Tool approval granted",
+        "tool.approval_denied": f"Tool approval denied: {tool}" if tool else "Tool approval denied",
+        "tool.approval_expired": f"Tool approval expired: {tool}" if tool else "Tool approval expired",
+        "tool.approval_consumed": f"Tool approval consumed: {tool}" if tool else "Tool approval consumed",
     }
     if event_type == "worker.checkpoint":
         checkpoint_key = activity.get("checkpoint_key")
@@ -341,7 +365,13 @@ async def get_run_thinking(
         for row in rows
         if row.get("event_type") in {
             "run.started", "run.progress", "tool.started", "tool.completed",
-            "tool.cancelled", "run.completed", "run.failed", "run.cancelled",
+            "tool.failed", "tool.timed_out", "tool.cancelled", "tool.approval_requested",
+            "tool.approval_granted", "tool.approval_denied", "tool.approval_expired",
+            "tool.approval_consumed", "agent.execution.started", "agent.execution.completed",
+            "agent.execution.failed", "agent.execution.cancelled", "agent.execution.timed_out",
+            "planning.started", "planning.completed", "planning.step.approval_required",
+            "planning.step.approval_resumed", "planning.step.started", "planning.step.completed",
+            "planning.step.failed", "run.completed", "run.failed", "run.cancelled",
             "run.timed_out", "run.expired", "worker.checkpoint",
         }
     ]
