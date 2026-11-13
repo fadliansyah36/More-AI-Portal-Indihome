@@ -81,14 +81,11 @@ Per instruction, no test suite, lint, typecheck, build, browser run, API probe, 
 4. Continue provider-independent integration where contracts exist. Gateway/OTP, EduTech catalog/video, media generation, payment settlement and support remain fail-closed until official provider contracts and credentials are supplied.
 5. Phase 09 remains IN PROGRESS. Phase 10 and Phase 11 must not be marked complete or started as accepted integration work without authorization for their respective verification gates.
 
-## Main commits
+## Main repository evidence
 
-- Workspace union database migration: `513de` (migration file); database apply succeeded.
-- Workspace union API pagination: `50b1` (source commit).
-- Workspace pagination indexes: `99be` (migration file); database apply succeeded.
-- Workspace file lifecycle database migration: `b0c545`; database apply succeeded.
-- Customer workspace file actions: `826d`, typed client: `e0bf`, Files UI: `0fe49`.
-- Exact path lookup and authoritative CAS upload version: `b8aed`, `61ea`, `fb740`.
-- Immutable Customer restore path: `66d5`, delete-version archive: `3017`, empty-file compatibility: `de96`; database applies succeeded.
-- Worker lease-fenced immutable restore: `5fb1`, worker client: `6bf1`, worker tool: `94d0`, private-bucket guard: `9611`.
-- Session lifecycle projection: `721f`; nested attachment response: `bcf2`; explicit archived-version download: `b12e`.
+- Workspace union pagination migration file: `supabase/migrations/20261113160000_moreai_customer_workspace_union_pagination.sql` (blob `5a4f337687dfbc24832c1d395aa410f03c59615e`); Supabase apply succeeded.
+- Workspace pagination index migration file: `supabase/migrations/20261113180000_moreai_customer_workspace_pagination_indexes.sql` (blob `15c5bd0bc6d475f2cf1991ebcc61ea771e3dd257`); Supabase apply succeeded.
+- Workspace file lifecycle migration file: `supabase/migrations/20261113170000_moreai_customer_workspace_file_lifecycle.sql` (blob `0278942b405b9f6ad3b9a230ca08521d3be4ee37`); Supabase apply succeeded.
+- Customer immutable restore migration: `20261113190000_moreai_customer_workspace_restore_immutable_version.sql` (blob `9740a410506331916b5527c727765b661b78f625`); delete archive migration: `20261113200000_moreai_customer_workspace_delete_version_archive.sql` (blob `498794d75e0f6de1a0d75ca0d40524035c7cbffb`); empty-file compatibility migration: `20261113230000_moreai_customer_workspace_restore_empty_file.sql` (blob `707926e48c9cf59d3f088c8f10970da085ffac37`). Supabase applies succeeded.
+- Worker lease-fenced restore migration: `20261113220000_moreai_worker_workspace_restore_immutable_version.sql` (blob `cbcaef705f423e985f39e2a66d58cd9b5cfdefe6`); Supabase apply succeeded.
+- API/client/UI/worker source changes are committed on `main`; no CI or runtime validation was invoked in this continuation. Exact file revisions are visible in the repository history.
