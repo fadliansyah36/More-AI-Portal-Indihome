@@ -21,12 +21,15 @@ export const AnalyseView: React.FC<AnalyseViewProps> = ({ onNavigateToChat }) =>
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [documentsError, setDocumentsError] = useState<string | null>(null);
   const [refreshingDocuments, setRefreshingDocuments] = useState(false);
+  const [documentsNextCursor, setDocumentsNextCursor] = useState<string | null>(null);
+  const [loadingMoreDocuments, setLoadingMoreDocuments] = useState(false);
 
   useEffect(() => {
     let active = true;
-    knowledgeApi.list({ limit: 50 }).then(({ items }) => {
+    knowledgeApi.listPage({ limit: 50 }).then((page) => {
       if (active) {
-        setDocuments(items);
+        setDocuments(page.items);
+        setDocumentsNextCursor(page.nextCursor);
         setSelectedDocumentId((current) => current || items.find((item) => item.status === 'ready')?.id || items[0]?.id || '');
       }
     }).catch((cause) => {
@@ -39,13 +42,32 @@ export const AnalyseView: React.FC<AnalyseViewProps> = ({ onNavigateToChat }) =>
     setRefreshingDocuments(true);
     setDocumentsError(null);
     try {
-      const result = await knowledgeApi.list({ limit: 50 });
+      const result = await knowledgeApi.listPage({ limit: 50 });
       setDocuments(result.items);
+      setDocumentsNextCursor(result.nextCursor);
       setSelectedDocumentId((current) => current || result.items.find((item) => item.status === 'ready')?.id || result.items[0]?.id || '');
     } catch (cause) {
       setDocumentsError(cause instanceof Error ? cause.message : 'Knowledge Library tidak dapat dimuat.');
     } finally {
       setRefreshingDocuments(false);
+    }
+  };
+
+  const loadMoreDocuments = async () => {
+    if (!documentsNextCursor || loadingMoreDocuments) return;
+    setLoadingMoreDocuments(true);
+    setDocumentsError(null);
+    try {
+      const page = await knowledgeApi.listPage({ limit: 50, cursor: documentsNextCursor });
+      setDocuments((current) => {
+        const known = new Set(current.map((document) => document.id));
+        return [...current, ...page.items.filter((document) => !known.has(document.id))];
+      });
+      setDocumentsNextCursor(page.nextCursor);
+    } catch (cause) {
+      setDocumentsError(cause instanceof Error ? cause.message : 'Halaman dokumen berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreDocuments(false);
     }
   };
 
@@ -184,6 +206,12 @@ export const AnalyseView: React.FC<AnalyseViewProps> = ({ onNavigateToChat }) =>
               </button>
             ))}
           </div>
+        )}
+        {documentsNextCursor && (
+          <button type="button" onClick={() => void loadMoreDocuments()} disabled={loadingMoreDocuments}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
+            {loadingMoreDocuments ? 'Memuat dokumen…' : 'Muat dokumen berikutnya'}
+          </button>
         )}
         <button type="button" onClick={analyzeSelectedDocument} disabled={!onNavigateToChat || !documents.some((item) => item.id === selectedDocumentId && item.status === 'ready')} className="w-full rounded-2xl bg-red-600 py-3 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-40">
           Analisis Dokumen dengan Agent AI
