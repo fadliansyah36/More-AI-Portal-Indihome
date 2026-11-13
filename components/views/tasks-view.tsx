@@ -20,6 +20,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact } from '@/lib/api/client';
+import { agentRunStatusLabel, isTerminalAgentRunStatus } from '@/lib/api/agent-run-status';
 import { TaskItem } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
