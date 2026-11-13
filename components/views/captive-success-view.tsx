@@ -33,7 +33,8 @@ export const CaptiveSuccessView: React.FC<CaptiveSuccessViewProps> = ({
     return () => { active = false; };
   }, []);
   const activeSession = sessions.find((session) => session.status === 'active' && new Date(session.expires_at).getTime() > Date.now()) || null;
-  const balance = useMemo(() => wallets.reduce((total, wallet) => total + Number(wallet.balance || 0), 0), [wallets]);
+  const primaryWallet = wallets.find((wallet) => wallet.status === 'active') || null;
+  const balance = primaryWallet ? Number(primaryWallet.balance || 0) : null;
   const partnerBenefit = entitlements.some((item) => item.status === 'active' && item.source_type === 'partner');
 
   return (
@@ -91,7 +92,7 @@ export const CaptiveSuccessView: React.FC<CaptiveSuccessViewProps> = ({
         <div className="p-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white text-left flex items-center justify-between shadow-xs">
           <div>
             <span className="text-[9px] font-bold uppercase tracking-wider text-red-200 block">Saldo Wallet</span>
-            <span className="text-sm font-black block mt-0.5">{loading ? 'Memuat…' : Number.isFinite(balance) ? balance.toLocaleString('id-ID') + ' ' + (wallets[0]?.currency || 'kredit') : 'Tidak tersedia'}</span>
+            <span className="text-sm font-black block mt-0.5">{loading ? 'Memuat…' : balance !== null && Number.isFinite(balance) ? balance.toLocaleString('id-ID') + ' ' + primaryWallet?.currency : 'Tidak tersedia'}</span>
             <span className="text-[10px] text-white/80">{partnerBenefit ? 'Entitlement Partner aktif tercatat pada akun.' : 'Tidak ada entitlement Partner aktif yang tercatat.'}</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-amber-300">
