@@ -299,6 +299,7 @@ def _thinking_message(activity: dict[str, Any]) -> dict[str, Any]:
         "tool.approval_denied": f"Tool approval denied: {tool}" if tool else "Tool approval denied",
         "tool.approval_expired": f"Tool approval expired: {tool}" if tool else "Tool approval expired",
         "tool.approval_consumed": f"Tool approval consumed: {tool}" if tool else "Tool approval consumed",
+        "run.resume_queued": "Run resumed and queued",
     }
     if event_type == "worker.checkpoint":
         checkpoint_key = activity.get("checkpoint_key")
@@ -375,7 +376,7 @@ async def get_run_thinking(
             "agent.execution.failed", "agent.execution.cancelled", "agent.execution.timed_out",
             "planning.started", "planning.completed", "planning.step.approval_required",
             "planning.step.approval_resumed", "planning.step.started", "planning.step.completed",
-            "planning.step.failed", "run.completed", "run.failed", "run.cancelled",
+            "planning.step.failed", "run.resume_queued", "run.completed", "run.failed", "run.cancelled",
             "run.timed_out", "run.expired", "worker.checkpoint",
         }
     ]
@@ -483,7 +484,7 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
                 "agent.execution.completed", "agent.execution.failed", "agent.execution.cancelled",
                 "agent.execution.timed_out", "planning.started", "planning.completed",
                 "planning.step.approval_required", "planning.step.approval_resumed",
-                "planning.step.started", "planning.step.completed", "planning.step.failed",
+                "planning.step.started", "planning.step.completed", "planning.step.failed", "run.resume_queued",
                 "run.completed", "run.failed", "run.cancelled", "run.timed_out", "run.expired", "worker.checkpoint",
             }
         ]
@@ -539,7 +540,7 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
                     if item["event_type"] in {
                         "run.started", "run.progress", "tool.started", "tool.completed",
                         "tool.cancelled", "run.completed", "run.failed", "run.cancelled",
-                        "run.timed_out", "run.expired", "worker.checkpoint",
+                        "run.timed_out", "run.expired", "worker.checkpoint", "run.resume_queued",
                     }
                 ]
                 logs = [
