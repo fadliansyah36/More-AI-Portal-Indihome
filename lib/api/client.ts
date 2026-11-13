@@ -744,12 +744,15 @@ export type CustomerToolApproval = {
 
 export const customerToolApprovalApi = {
   list: () => moreAiCustomerApi<CustomerToolApproval[]>('/api/v1/customer/tool-approvals'),
+  listPage: (limit = 30, cursor?: string) => moreAiCustomerApiPage<CustomerToolApproval>(
+    `/api/v1/customer/tool-approvals?limit=${Math.max(1, Math.min(100, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
+  ),
   request: (input: { run_id: string; tool_key: 'bash' | 'python_execute' | 'browser_use' | 'planning_step' | 'browser' | 'file_read' | 'file_write' | 'file_edit' | 'workspace_restore_version'; arguments_hash: string; summary: string }) =>
-    moreAiCustomerApi<{ id: string; status: 'pending' }>('/api/v1/customer/tool-approvals', {
+    moreAiCustomerApi<CustomerToolApproval>('/api/v1/customer/tool-approvals', {
       method: 'POST', body: JSON.stringify(input),
     }),
   decide: (approvalId: string, decision: 'approved' | 'denied') =>
-    moreAiCustomerApi<{ id: string; status: string }>(`/api/v1/customer/tool-approvals/${approvalId}/decision`, {
+    moreAiCustomerApi<{ id: string; run_id: string; tool_key: string; status: 'approved' | 'denied' | 'expired'; decided_at: string; expires_at: string }>(`/api/v1/customer/tool-approvals/${approvalId}/decision`, {
       method: 'POST', body: JSON.stringify({ decision }),
     }),
 };
@@ -777,9 +780,12 @@ export type CustomerNotificationPreferences = {
 
 export const notificationApi = {
   list: (unreadOnly = false, limit = 30) =>
-    moreAiCustomerApi<{ items: CustomerNotification[]; limit: number }>(
+    moreAiCustomerApi<{ items: CustomerNotification[]; limit: number; next_cursor?: string | null }>(
       `/api/v1/notifications?unread_only=${unreadOnly}&limit=${Math.min(100, Math.max(1, limit))}`,
     ),
+  listPage: (unreadOnly = false, limit = 30, cursor?: string) => moreAiCustomerApiPage<CustomerNotification>(
+    `/api/v1/notifications?unread_only=${unreadOnly}&limit=${Math.min(100, Math.max(1, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
+  ),
   preferences: () => moreAiCustomerApi<CustomerNotificationPreferences>('/api/v1/notifications/preferences'),
   updatePreferences: (payload: Partial<Omit<CustomerNotificationPreferences, 'updated_at'>>) =>
     moreAiCustomerApi<CustomerNotificationPreferences>('/api/v1/notifications/preferences', {
@@ -849,7 +855,10 @@ export const workspaceApi = {
     method: 'POST', body: JSON.stringify({ name }),
   }),
   files: (workspaceId: string) => moreAiCustomerApi<{ items: CustomerWorkspaceFile[]; count: number }>(
-    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files',
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files?limit=100',
+  ),
+  filesPage: (workspaceId: string, limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspaceFile>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
   ),
   uploadFile: (workspaceId: string, path: string, expectedVersion: number, file: Blob, idempotencyKey: string) =>
     moreAiCustomerApi<CustomerWorkspaceUploadResult>(
@@ -872,6 +881,14 @@ export const workspaceApi = {
     cancel_requested_at: string | null; last_checkpoint_key: string | null;
   }>; count: number }>(
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/runs?limit=' + encodeURIComponent(String(limit)),
+  ),
+  runsPage: (workspaceId: string, limit = 50, cursor?: string) => moreAiCustomerApiPage<{
+    id: string; conversation_id: string | null; status: string; attempt: number;
+    max_attempts: number; created_at: string; started_at: string | null;
+    finished_at: string | null; available_at: string | null; heartbeat_at: string | null;
+    cancel_requested_at: string | null; last_checkpoint_key: string | null;
+  }>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/runs?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
   ),
   versions: (workspaceId: string, fileId: string) => moreAiCustomerApi<{
     items: CustomerWorkspaceFileVersion[]; count: number; current_version: number;
