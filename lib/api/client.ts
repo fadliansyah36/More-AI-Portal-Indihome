@@ -633,6 +633,16 @@ export const customerApi = {
   networkSessions: (limit = 50) => moreAiCustomerApi<CustomerNetworkSession[]>(
     `/api/v1/customer/network-sessions?limit=${Math.min(100, Math.max(1, limit))}`,
   ),
+  networkSpeedtestPing: () => moreAiCustomerApi<{ status: 'ok'; service: 'moreai-api'; timestamp: string }>(
+    '/api/v1/customer/network/speedtest/ping',
+  ),
+  networkSpeedtestDownload: (sizeBytes = 4 * 1024 * 1024) =>
+    moreAiCustomerFetch('/api/v1/customer/network/speedtest/download?size_bytes=' + Math.max(65536, Math.min(8 * 1024 * 1024, sizeBytes))),
+  networkSpeedtestUpload: (payload: BodyInit) =>
+    moreAiCustomerApi<{ received_bytes: number; duration_ms: number }>(
+      '/api/v1/customer/network/speedtest/upload',
+      { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: payload },
+    ),
   wallets: () => moreAiCustomerApi<{ wallets: CustomerWallet[] }>('/api/v1/customer/wallet'),
   ledger: (limit = 50, before?: string) => moreAiCustomerApi<CustomerLedgerEntry[]>(`/api/v1/customer/wallet/ledger?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
   usage: (limit = 50, before?: string) => moreAiCustomerApi<CustomerUsageRecord[]>(`/api/v1/customer/usage?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
