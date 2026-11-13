@@ -23,6 +23,9 @@ import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact 
 import { TaskItem } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
+const isTerminalRunStatus = (status: string) =>
+  ['succeeded', 'failed', 'cancelled', 'timed_out', 'expired'].includes(status);
+
 interface TasksViewProps {
   onOpenWorkspaceFiles?: () => void;
   onOpenWorkflow?: () => void;
@@ -53,7 +56,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
             ? run.input.prompt.trim().slice(0, 100)
             : `Agent Run ${run.id.slice(0, 8)}`,
           time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
-          completed: run.status === 'succeeded',
+          completed: isTerminalRunStatus(run.status),
           category: run.status,
         })));
       } else {
@@ -115,7 +118,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
             ? run.input.prompt.trim().slice(0, 100)
             : `Agent Run ${run.id.slice(0, 8)}`,
           time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
-          completed: run.status === 'succeeded',
+          completed: isTerminalRunStatus(run.status),
           category: run.status,
         }));
         return [...previous, ...additions];
