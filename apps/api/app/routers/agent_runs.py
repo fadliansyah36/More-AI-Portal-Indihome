@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Query, Header, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 from fastapi import Response
 
 from app.authorization import customer_principal, require_customer_context
@@ -15,6 +17,99 @@ from app.routers.conversations import repository
 from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter
 
 router = APIRouter(prefix="/api/v1/agent-runs", tags=["agent-runs"])
+
+
+class AgentRunResponse(BaseModel):
+    id: UUID
+    conversation_id: UUID | None = None
+    status: str
+    input: Any = None
+    output: Any = None
+    error: Any = None
+    attempt: int | None = None
+    max_attempts: int | None = None
+    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+
+
+class AgentRunStepResponse(BaseModel):
+    id: UUID
+    sequence: int
+    step_key: str
+    status: str
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    created_at: datetime
+
+
+class AgentRunActivityResponse(BaseModel):
+    id: UUID
+    sequence: int
+    timestamp: datetime
+    event_type: str
+    tool: str | None = None
+    round: int | None = None
+    index: int | None = None
+    status: str | None = None
+    phase: str | None = None
+    progress: int | float | None = None
+    tool_count: int | None = None
+    next_round: int | None = None
+    timeout_seconds: int | None = None
+    checkpoint_key: str | None = None
+    level: str | None = None
+    message: str | None = None
+
+
+class AgentRunActivityPageResponse(BaseModel):
+    items: list[AgentRunActivityResponse]
+    count: int
+    next_after: int
+
+
+class AgentRunThinkingStepResponse(BaseModel):
+    message: str
+    type: str
+    timestamp: datetime | None = None
+    sequence: int | None = None
+    tool: str | None = None
+    round: int | None = None
+    index: int | None = None
+    status: str | None = None
+    phase: str | None = None
+    progress: int | float | None = None
+
+
+class AgentRunProgressResponse(BaseModel):
+    current_step: str | None = None
+    total_steps: int
+    completed_steps: int
+    percentage: int
+
+
+class AgentRunThinkingResponse(BaseModel):
+    status: str
+    thinking_steps: list[AgentRunThinkingStepResponse]
+    progress: AgentRunProgressResponse
+    next_after: int
+
+
+class AgentRunProgressSnapshotResponse(BaseModel):
+    status: str
+    current_step: str | None = None
+    total_steps: int
+    completed_steps: int
+    percentage: int
+
+
+class AgentRunEventResponse(BaseModel):
+    id: UUID
+    event_type: str
+    sequence: int
+    payload: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+    checkpoint: dict[str, Any] | None = None
 
 
 _MAX_EVENT_SEQUENCE = 9_223_372_036_854_775_807
@@ -72,7 +167,7 @@ async def _event_with_checkpoint_state(repo, run_id: UUID, row: dict[str, Any]) 
     return row
 
 
-@router.get("")
+@router.get("", response_model=list[AgentRunResponse])
 async def list_runs(
     request: Request,
     response: Response,
@@ -100,12 +195,12 @@ async def list_runs(
     return rows
 
 
-@router.get("/{run_id}")
+@router.get("/{run_id}", response_model=AgentRunResponse)
 async def get_run(run_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     return await repository(request).owned_record("agent_runs", run_id, user["id"])
 
 
-@router.get("/{run_id}/steps")
+@router.get("/{run_id}/steps", response_model=list[AgentRunStepResponse])
 async def get_run_steps(
     run_id: UUID,
     request: Request,
@@ -189,7 +284,7 @@ def _thinking_message(activity: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-@router.get("/{run_id}/logs")
+@router.get("/{run_id}/logs", response_model=AgentRunActivityPageResponse)
 async def get_run_logs(
     run_id: UUID, request: Request,
     after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
@@ -214,7 +309,7 @@ async def get_run_logs(
     return {"items": items, "count": len(items), "next_after": items[-1]["sequence"] if items else after}
 
 
-@router.get("/{run_id}/thinking")
+@router.get("/{run_id}/thinking", response_model=AgentRunThinkingResponse)
 async def get_run_thinking(
     run_id: UUID, request: Request,
     after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
@@ -260,7 +355,7 @@ async def get_run_thinking(
     }
 
 
-@router.get("/{run_id}/progress")
+@router.get("/{run_id}/progress", response_model=AgentRunProgressSnapshotResponse)
 async def get_run_progress(
     run_id: UUID, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
@@ -283,7 +378,7 @@ async def get_run_progress(
     }
 
 
-@router.get("/{run_id}/events")
+@router.get("/{run_id}/events", response_model=list[AgentRunEventResponse])
 async def get_events(
     run_id: UUID, request: Request,
     after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
