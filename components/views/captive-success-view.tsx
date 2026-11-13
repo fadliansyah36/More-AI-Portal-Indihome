@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Wifi, Gift, ArrowRight } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { customerApi, type CustomerNetworkSession, type CustomerWallet, type CustomerEntitlement } from '@/lib/api/client';
