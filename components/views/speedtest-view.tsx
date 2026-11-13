@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Wifi, Play, RefreshCw } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
-import { moreAiCustomerFetch } from '@/lib/api/client';
+import { customerApi } from '@/lib/api/client';
 
 interface SpeedtestViewProps {
   onBack: () => void;
@@ -31,14 +31,14 @@ export const SpeedtestView: React.FC<SpeedtestViewProps> = ({ onBack }) => {
       const pingSamples: number[] = [];
       for (let index = 0; index < 5; index += 1) {
         const started = performance.now();
-        await moreAiCustomerFetch('/api/v1/customer/network/speedtest/ping');
+        await customerApi.networkSpeedtestPing();
         pingSamples.push(performance.now() - started);
       }
       const averagePing = pingSamples.reduce((sum, value) => sum + value, 0) / pingSamples.length;
       const averageJitter = pingSamples.slice(1).reduce((sum, value, index) => sum + Math.abs(value - pingSamples[index]), 0) / Math.max(1, pingSamples.length - 1);
 
       const downloadStarted = performance.now();
-      const downloadResponse = await moreAiCustomerFetch('/api/v1/customer/network/speedtest/download?size_bytes=4194304');
+      const downloadResponse = await customerApi.networkSpeedtestDownload(4 * 1024 * 1024);
       const downloadBytes = await downloadResponse.arrayBuffer();
       const downloadElapsed = Math.max(1, performance.now() - downloadStarted);
       const measuredDownload = (downloadBytes.byteLength * 8) / downloadElapsed / 1000;
@@ -48,12 +48,7 @@ export const SpeedtestView: React.FC<SpeedtestViewProps> = ({ onBack }) => {
         crypto.getRandomValues(uploadBytes.subarray(offset, Math.min(offset + 65536, uploadBytes.length)));
       }
       const uploadStarted = performance.now();
-      const uploadResponse = await moreAiCustomerFetch('/api/v1/customer/network/speedtest/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/octet-stream' },
-        body: uploadBytes,
-      });
-      const uploadResult = await uploadResponse.json() as { received_bytes: number };
+      const uploadResult = await customerApi.networkSpeedtestUpload(uploadBytes);
       const uploadElapsed = Math.max(1, performance.now() - uploadStarted);
       if (uploadResult.received_bytes !== uploadBytes.byteLength) {
         throw new Error('Server tidak menerima seluruh data pengujian upload.');
