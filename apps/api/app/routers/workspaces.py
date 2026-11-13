@@ -452,11 +452,10 @@ async def upload_customer_workspace_file(
             "p_size_bytes": len(content),
         })
     except Exception:
-        # A successful Storage write without a committed metadata row is not
-        # exposed as a workspace version. Remove only the object created here.
-        # A pre-existing object is retained for a safe idempotent retry.
-        if uploaded_by_this_request:
-            await request.app.state.http.delete(object_url, headers=headers, timeout=15.0)
+        # The RPC response may be lost after PostgreSQL commits. Never delete an
+        # immutable object on an ambiguous commit result; a retry with the same
+        # idempotency key can replay the committed result, and orphan cleanup is
+        # handled separately from this request path.
         raise
 
     if not isinstance(result, dict) or result.get("file_id") is None or result.get("version") != next_version:
