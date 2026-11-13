@@ -185,3 +185,34 @@ Inspected current customer UI and FastAPI routes:
 
 ### Verification boundary
 Only repository source inspection and source edits were performed. No tests, lint, typecheck, build, browser verification, live API calls, worker execution, Supabase mutations, staging, or deployment were performed. Do not treat this report as runtime acceptance evidence.
+
+
+## Phase 09 continuation — Durable agent/planning and approval-request lifecycle events (2026-11-14)
+
+### Implemented on `main`
+- Worker runtime now emits durable `agent.execution.started` and `agent.execution.completed` events around the registered agent dispatcher boundary.
+- Runs dispatched with the `planning` agent key additionally emit `planning.started` and `planning.completed` phase events.
+- Successful cancellation after dispatch emits `agent.execution.cancelled` before the existing terminal `run.cancelled` event.
+- Worker tool-approval handling now persists `tool.approval_requested` before invoking the pause RPC, while the worker still owns the run lease. The event contains only the canonical tool key and SHA-256 hash of arguments; raw arguments and observations are not published.
+- Event keys include run/attempt identity for agent phase events and a stable arguments hash for approval request deduplication.
+
+### Source files changed
+- `apps/worker/app/runtime.py`
+- `apps/worker/app/client.py`
+
+### Contract and limitations
+- These are durable runtime-boundary and approval-request events. They do not claim that individual OpenManus planner decisions or each tool invocation now emit start/completed/failed events.
+- Approval decision and resume events still need a transactionally durable API/database-side event path. The approval RPC atomically updates approval/run state and releases/requeues execution; appending from the old worker after that point would violate lease ownership, so no unsafe post-pause worker write was added.
+- Tool start/completed/failed events still require instrumentation at the shared tool execution boundary, preserving tool policy checks and approval pause behavior.
+- Manual customer retry remains unsupported until an idempotent new-run contract is implemented. Worker automatic retry and outbox publication retry remain separate.
+- No frontend UI changes, Supabase migrations, production data changes, staging or deployment were made.
+
+### Verification boundary
+Per explicit instruction, no tests, lint, typecheck, build, browser verification, live API calls or worker execution were performed. This report records source edits only; runtime behavior is unverified.
+
+### Next implementation order — Phase 09 remains open
+1. Instrument the shared tool execution boundary to persist safe `tool.started`, `tool.completed`, and `tool.failed` events with stable per-call keys and no raw arguments/observations.
+2. Add approval decision/resume events transactionally in the database RPC or an equivalent lease-safe durable event path.
+3. Carry structured RAG citations from retrieved chunk/document IDs through final Agent Run output persistence and the customer response schema.
+4. Finish endpoint-by-endpoint customer authorization/response contract inventory and reconcile remaining UI actions against supported backend contracts.
+5. Update the acceptance matrix after source implementation; Phase 10/11 verification remains intentionally not performed under the current instruction.
