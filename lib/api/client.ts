@@ -403,6 +403,9 @@ export type CustomerWorkflowStep = {
   created_at: string;
 };
 
+export type CustomerAgentRunCancellationStatus =
+  | 'cancel_requested' | 'cancelled' | 'succeeded' | 'failed' | 'timed_out' | 'expired';
+
 export type CustomerAgentRun = {
   id: string;
   conversation_id: string | null;
@@ -662,7 +665,7 @@ export const customerApi = {
       { method: 'DELETE' },
     ),
   cancelConversationSession: (conversationId: string, runId: string) =>
-    moreAiCustomerApi<{ run_id: string; status: string }>(
+    moreAiCustomerApi<{ run_id: string; status: CustomerAgentRunCancellationStatus }>(
       '/api/v1/conversations/' + encodeURIComponent(conversationId) + '/sessions/' + encodeURIComponent(runId) + '/cancel',
       { method: 'POST' },
     ),
@@ -672,7 +675,7 @@ export const customerApi = {
         + '/events?after=' + Math.max(0, after) + '&limit=' + Math.max(1, Math.min(500, limit)),
     ),
   getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/customer/agent-runs/${runId}`),
-  cancelRun: (runId: string) => moreAiCustomerApi<{ run_id: string; status: string }>(`/api/v1/customer/agent-runs/${runId}/cancel`, {
+  cancelRun: (runId: string) => moreAiCustomerApi<{ run_id: string; status: CustomerAgentRunCancellationStatus }>(`/api/v1/customer/agent-runs/${runId}/cancel`, {
     method: 'POST',
   }),
   getRunSteps: (runId: string) => moreAiCustomerApi<CustomerWorkflowStep[]>(`/api/v1/customer/agent-runs/${runId}/steps`),
