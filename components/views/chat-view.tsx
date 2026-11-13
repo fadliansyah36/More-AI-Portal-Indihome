@@ -54,6 +54,16 @@ interface ChatViewProps {
 
 const timeLabel = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+const toChatCitations = (value: unknown): ChatCitation[] => Array.isArray(value)
+  ? value.filter((item): item is ChatCitation =>
+      !!item && typeof item === 'object'
+      && typeof (item as ChatCitation).id === 'string'
+      && typeof (item as ChatCitation).document_id === 'string'
+      && typeof (item as ChatCitation).title === 'string'
+      && typeof (item as ChatCitation).marker === 'string',
+    )
+  : [];
+
 export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', initialAgentKey = 'manus' }) => {
   const { showToast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -204,7 +214,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
                   const output = data.output as Record<string, unknown> | undefined;
                   const outputText = typeof output?.text === 'string' ? output.text : typeof output?.content === 'string' ? output.content : '';
                   setMessages((current) => current.map((message) =>
-                    message.id === assistantId ? { ...message, text: outputText || message.text, source: 'MoreAI Agent Runtime · selesai' } : message,
+                    message.id === assistantId ? { ...message, text: outputText || message.text, citations: toChatCitations(output?.citations), source: 'MoreAI Agent Runtime · selesai' } : message,
                   ));
                 } else if (event === 'run.failed' || event === 'run.cancelled' || event === 'run.timed_out' || event === 'run.expired') {
                   const labels: Record<string, string> = {
@@ -228,6 +238,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
                   message.id === assistantId ? {
                     ...message,
                     text: outputText || message.text || ('Agent Run berstatus ' + latestRun.status + '.'),
+                    citations: toChatCitations(output?.citations),
                     source: 'MoreAI Agent Runtime · ' + latestRun.status,
                   } : message,
                 ));
