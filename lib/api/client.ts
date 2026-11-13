@@ -514,11 +514,11 @@ export type CustomerNetworkSession = {
   end_reason: string | null;
   network: {
     id: string;
-    name: string;
+    name: string | null;
     ssid_label: string | null;
-    gateway_type: string;
-    status: string;
-    location: { id: string; name: string; address: unknown } | null;
+    gateway_type: string | null;
+    status: string | null;
+    location: { id: string; name: string | null; address: string | null } | null;
   } | null;
 };
 
