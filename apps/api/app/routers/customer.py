@@ -225,7 +225,9 @@ async def customer_agent_run_steps(
 @router.get("/agent-runs/{run_id}/stream")
 async def customer_agent_run_stream(
     run_id: UUID, request: Request,
-    after: int = Query(default=0, ge=0), wait_seconds: int = Query(default=60, ge=1, le=120),
+    after: int = Query(default=0, ge=0, le=9_223_372_036_854_775_807),
+    last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
+    wait_seconds: int = Query(default=60, ge=1, le=120),
     user: dict[str, Any] = Depends(current_user),
 ):
     principal = await require_customer_context(request, user)
@@ -233,9 +235,9 @@ async def customer_agent_run_stream(
     await repo.owned_record("agent_runs", run_id, principal["id"])
 
     async def events():
-        from app.routers.agent_runs import _event_with_checkpoint_state
+        from app.routers.agent_runs import _event_cursor, _event_with_checkpoint_state
 
-        cursor = max(after, 0)
+        cursor = _event_cursor(after, last_event_id)
         idle_rounds = 0
         while idle_rounds < max(1, min(wait_seconds, 120)):
             if await request.is_disconnected():
