@@ -130,7 +130,7 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
               <span className="text-xs font-bold text-red-200">{monthlyQuota ? `sisa ${monthlyQuota.metric_key}` : 'Kuota belum tersedia'}</span>
             </div>
             <span className="text-[11px] text-white/80 block mt-0.5">
-              Saldo wallet aktif: <strong>{loading ? 'Memuat…' : primaryWallet && Number.isFinite(balance) ? `${balance.toLocaleString('id-ID')} ${primaryWallet.currency}` : 'Tidak ada wallet aktif'}</strong>{monthlyQuota && monthlyQuotaRemaining !== null ? <span className="ml-1 text-white/75">· terpakai {monthlyQuotaUsed.toLocaleString('id-ID')} dari {monthlyQuotaLimit?.toLocaleString('id-ID')}</span> : null}
+              Saldo wallet aktif: <strong>{loading ? 'Memuat…' : primaryWallet && balance !== null && Number.isFinite(balance) ? `${balance.toLocaleString('id-ID')} ${primaryWallet.currency}` : 'Tidak ada wallet aktif'}</strong>{monthlyQuota && monthlyQuotaRemaining !== null ? <span className="ml-1 text-white/75">· terpakai {monthlyQuotaUsed.toLocaleString('id-ID')} dari {monthlyQuotaLimit?.toLocaleString('id-ID')}</span> : null}
             </span>
           </div>
 
