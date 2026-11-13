@@ -72,6 +72,8 @@ async def list_artifacts(request: Request, user: dict[str, Any] = Depends(custom
 async def upload_artifact(
     request: Request,
     filename: str = Header(alias="X-Filename", max_length=180),
+    purpose: str | None = Header(default=None, alias="X-Artifact-Purpose"),
+    conversation_id: UUID | None = Header(default=None, alias="X-Conversation-Id"),
     user: dict[str, Any] = Depends(customer_principal),
 ):
     """Upload raw bytes to private owner-scoped Storage, then persist metadata."""
@@ -87,6 +89,31 @@ async def upload_artifact(
     mime_type = request.headers.get("content-type", "application/octet-stream").split(";", 1)[0].strip().lower()
     if not re.fullmatch(r"[a-z0-9.+-]+/[a-z0-9.+-]+", mime_type):
         raise HTTPException(400, "Content-Type is invalid")
+    metadata: dict[str, Any] = {"filename": filename}
+    if purpose is not None:
+        if purpose != "chat_attachment" or conversation_id is None:
+            raise HTTPException(422, "Chat attachments require a conversation and the chat_attachment purpose")
+        await repository(request).owned_record("conversations", conversation_id, user["id"])
+        allowed_types = {
+            "text/plain", "text/markdown", "text/csv", "application/json",
+            "application/pdf", "image/jpeg", "image/png", "image/webp",
+        }
+        if mime_type not in allowed_types:
+            raise HTTPException(415, "Chat attachments support text, PDF, JPEG, PNG, and WebP files")
+        if mime_type in {"text/plain", "text/markdown", "text/csv", "application/json"}:
+            try:
+                content.decode("utf-8", errors="strict")
+            except UnicodeDecodeError as exc:
+                raise HTTPException(415, "Text attachments must use UTF-8 encoding") from exc
+        elif mime_type == "application/pdf" and not content.startswith(b"%PDF-"):
+            raise HTTPException(415, "PDF signature is invalid")
+        elif mime_type == "image/jpeg" and not content.startswith(b"\\xff\\xd8\\xff"):
+            raise HTTPException(415, "JPEG signature is invalid")
+        elif mime_type == "image/png" and not content.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+            raise HTTPException(415, "PNG signature is invalid")
+        elif mime_type == "image/webp" and not (content.startswith(b"RIFF") and content[8:12] == b"WEBP"):
+            raise HTTPException(415, "WebP signature is invalid")
+        metadata.update({"purpose": "chat_attachment", "conversation_id": str(conversation_id)})
     object_url = _storage_url(request, "object/{bucket}/" + quote(storage_path, safe="/"))
     response = await request.app.state.http.post(
         object_url, content=content,
@@ -106,7 +133,7 @@ async def upload_artifact(
             "mime_type": mime_type,
             "size_bytes": len(content),
             "checksum_sha256": checksum,
-            "metadata": {"filename": filename},
+            "metadata": metadata,
         })
     except Exception:
         # Compensate the object write if metadata persistence fails.
