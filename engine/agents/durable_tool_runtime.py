@@ -449,7 +449,7 @@ class DurableOpenManusRuntime:
                         citations.append(citation)
                 # Keep machine citation markers in provenance metadata, not in the
                 # user-visible prose. The structured citation objects retain exact IDs.
-                response_text = re.sub(r"[ \\t]*\\[source:[0-9a-fA-F-]{36}\\]", "", text).strip()
+                response_text = re.sub(r"[ \t]*\[source:[0-9a-fA-F-]{36}\]", "", text).strip()
                 output = {
                     "text": response_text, "provider_key": response_state.get("provider_key"),
                     "model_key": response_state.get("model_key"), "rounds": round_no,
