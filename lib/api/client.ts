@@ -403,6 +403,16 @@ export type CustomerAgentRun = {
   error?: Record<string, unknown>;
 };
 
+export type CustomerChatEnqueueResponse = {
+  run: CustomerAgentRun;
+  message: {
+    id: string; role: string; content: string; model_key?: string | null;
+    run_id: string | null; created_at: string;
+    attachments?: Array<{ id: string; filename: string; mime_type: string | null; size_bytes: number | null }>;
+  } | null;
+  replayed: boolean;
+};
+
 export type PartnerContext = {
   principal: { user_id: string; role: string };
   tenant: { id: string; display_name: string; legal_name: string; status: string };
@@ -594,7 +604,7 @@ export const customerApi = {
   sendMessage: (
     conversationId: string, content: string, idempotencyKey: string,
     agentKey: 'manus' | 'planning' | 'toolcall' = 'manus', attachmentIds: string[] = [],
-  ) => moreAiCustomerApi<{ run: { id: string; status: string } }>(`/api/v1/customer/conversations/${conversationId}/messages`, {
+  ) => moreAiCustomerApi<CustomerChatEnqueueResponse>(`/api/v1/customer/conversations/${conversationId}/messages`, {
     method: 'POST',
     headers: { 'Idempotency-Key': idempotencyKey },
     body: JSON.stringify({ content, agent_key: agentKey, attachment_ids: attachmentIds }),
