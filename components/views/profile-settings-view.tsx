@@ -36,7 +36,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
   onToggleDarkMode,
 }) => {
   const { showToast } = useToast();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [profileLoading, setProfileLoading] = useState(true);
@@ -92,7 +92,8 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
         if (active) setNotificationsEnabled(preferences.in_app_enabled);
       })
       .catch(() => {
-        // Keep the existing preference state; profile identity remains usable.
+        if (active) setNotificationsEnabled(null);
+        // Keep profile identity usable; an unavailable preference is not an enabled preference.
       });
 
     return () => { active = false; };
@@ -102,7 +103,8 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
     let active = true;
     customerApi.wallets().then(({ wallets }) => {
       if (!active) return;
-      const balance = wallets.reduce((sum, wallet) => sum + Number(wallet.balance || 0), 0);
+      const activeWallet = wallets.find((wallet) => wallet.status === 'active') || null;
+      const balance = activeWallet ? Number(activeWallet.balance) : Number.NaN;
       setCreditBalance(Number.isFinite(balance) ? balance : null);
     }).catch(() => { if (active) setCreditBalance(null); });
     return () => { active = false; };
@@ -146,6 +148,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
   };
 
   const toggleNotifications = async () => {
+    if (notificationsEnabled === null) return;
     const next = !notificationsEnabled;
     setSavingPreference(true);
     try {
@@ -227,7 +230,10 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
           </div>
           <button
             onClick={onToggleDarkMode}
-            className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
+            aria-label="Preferensi notifikasi in-app"
+            aria-pressed={notificationsEnabled ?? undefined}
+            title={notificationsEnabled === null ? 'Preferensi notifikasi tidak tersedia dari server' : undefined}
+            className={`w-11 h-6 rounded-full transition-colors relative p-0.5 disabled:opacity-50 ${
               isDarkMode ? 'bg-red-600' : 'bg-slate-200'
             }`}
           >
@@ -247,7 +253,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
             <span className="text-xs font-semibold text-slate-800">Notifikasi</span>
           </div>
           <button
-            onClick={() => void toggleNotifications()} disabled={savingPreference}
+            onClick={() => void toggleNotifications()} disabled={savingPreference || notificationsEnabled === null}
             className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
               notificationsEnabled ? 'bg-red-600' : 'bg-slate-200'
             }`}
