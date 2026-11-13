@@ -88,3 +88,8 @@ Scope: source-level integration and contract corrections only. Existing Customer
 - Private artifact listing now uses stable `created_at + id` keyset pagination, emits `X-Next-Cursor`, and resolves Chat attachment run links only for the current page rather than a fixed global link slice.
 - Added typed `artifactApi.listPage()` and updated the Files screen to load artifact pages incrementally without losing already-loaded items. Legacy Research/Tasks/artifact readers request a bounded first page of 100 items.
 - Commits: `ffc1b645f1a12eb9ca49112df65d0c84915a88f3`, `05f905a01eeba8eb57cdf4c8d2c8d3c2fc0e03ba`, `89a49091aac90d73c375ce8862958f24ce37d5af`, `2e6b0195aa8e477651951b643d82da062073ca42`.
+
+### Approval lifecycle response reconciliation
+- Approval request is idempotent at the RPC layer. The API now reloads the persisted approval row by approval ID and authenticated user after the RPC returns, then returns the actual persisted status rather than always fabricating `pending`. This preserves already-approved or expired state on duplicate requests.
+- Approval decision now has a response schema matching the RPC JSON fields (`id`, `run_id`, `tool_key`, `status`, `decided_at`, `expires_at`).
+- Commits: `5d80bf59e1c392a61b3cb4595f9d707695f0c4b1`, `3056161f5220b20af80038b1f1b8536c126ca19a`, `d36481af6b137c1ce67d2fda4f53f0153fe7ec31`.
