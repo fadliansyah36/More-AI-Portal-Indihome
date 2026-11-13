@@ -469,10 +469,12 @@ async def create_workspace_file_download(
     if not rows:
         raise HTTPException(404, "Workspace file not found")
     current = rows[0]
-    if current.get("deleted_at") is not None and (version is None or version == current.get("version")):
+    if current.get("deleted_at") is not None and version is None:
         raise HTTPException(404, "Workspace file not found")
     selected = current
-    if version is not None and version != current.get("version"):
+    if version is not None and (
+        version != current.get("version") or current.get("deleted_at") is not None
+    ):
         history = await repo.select("agent_workspace_file_versions", {
             "workspace_id": "eq." + str(workspace_id), "path": "eq." + current["path"],
             "version": "eq." + str(version),
