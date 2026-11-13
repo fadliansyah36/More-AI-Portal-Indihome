@@ -31,7 +31,7 @@ class ToolApprovalDecisionResponse(BaseModel):
     run_id: UUID
     tool_key: str
     status: Literal["approved", "denied", "expired", "consumed"]
-    decided_at: datetime
+    decided_at: datetime | None
     expires_at: datetime
 
 
@@ -112,11 +112,12 @@ async def decide_tool_approval(
 ):
     repo = repository(request)
     current = await repo.owned_record("agent_tool_approvals", approval_id, user["id"])
-    projection = lambda row: {
-        "id": row["id"], "run_id": row["run_id"], "tool_key": row["tool_key"],
-        "status": row["status"], "decided_at": row.get("decided_at"),
-        "expires_at": row["expires_at"],
-    }
+    def projection(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "id": row["id"], "run_id": row["run_id"], "tool_key": row["tool_key"],
+            "status": row["status"], "decided_at": row.get("decided_at"),
+            "expires_at": row["expires_at"],
+        }
     current_status = str(current.get("status") or "")
     if current_status in {"approved", "denied", "expired", "consumed"}:
         if current_status == body.decision or current_status in {"expired", "consumed"}:
