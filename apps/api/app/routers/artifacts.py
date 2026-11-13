@@ -74,6 +74,7 @@ async def upload_artifact(
     filename: str = Header(alias="X-Filename", max_length=180),
     purpose: str | None = Header(default=None, alias="X-Artifact-Purpose"),
     conversation_id: UUID | None = Header(default=None, alias="X-Conversation-Id"),
+    agent_run_id: UUID | None = Header(default=None, alias="X-Agent-Run-Id"),
     user: dict[str, Any] = Depends(customer_principal),
 ):
     """Upload raw bytes to private owner-scoped Storage, then persist metadata."""
@@ -99,6 +100,10 @@ async def upload_artifact(
     if not re.fullmatch(r"[a-z0-9.+-]+/[a-z0-9.+-]+", mime_type):
         raise HTTPException(400, "Content-Type is invalid")
     metadata: dict[str, Any] = {"filename": filename}
+    if agent_run_id is not None:
+        # Explicit run linkage is accepted only for a run owned by this principal.
+        await repository(request).owned_record("agent_runs", agent_run_id, user["id"])
+        metadata["run_id"] = str(agent_run_id)
     if purpose is not None:
         if purpose != "chat_attachment" or conversation_id is None:
             raise HTTPException(422, "Chat attachments require a conversation and the chat_attachment purpose")
@@ -138,6 +143,7 @@ async def upload_artifact(
         return await repository(request).insert("artifacts", {
             "id": artifact_id,
             "user_id": user["id"],
+            "run_id": str(agent_run_id) if agent_run_id else None,
             "storage_path": storage_path,
             "mime_type": mime_type,
             "size_bytes": len(content),
