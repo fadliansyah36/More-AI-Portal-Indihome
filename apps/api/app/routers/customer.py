@@ -75,6 +75,31 @@ async def customer_conversation(
         "select": "id,role,content,model_key,run_id,created_at",
         "order": "created_at.asc", "limit": "500",
     })
+    attachment_links = await repo.select("conversation_message_attachments", {
+        "conversation_id": f"eq.{conversation_id}", "user_id": f"eq.{principal['id']}",
+        "select": "message_id,artifact_id", "order": "created_at.asc", "limit": "1000",
+    })
+    artifact_ids = sorted({str(row["artifact_id"]) for row in attachment_links if row.get("artifact_id")})
+    artifact_by_id: dict[str, dict[str, Any]] = {}
+    if artifact_ids:
+        artifacts = await repo.select("artifacts", {
+            "id": f"in.({','.join(artifact_ids)})", "user_id": f"eq.{principal['id']}",
+            "select": "id,mime_type,size_bytes,metadata,created_at", "limit": "100",
+        })
+        artifact_by_id = {str(row["id"]): row for row in artifacts if row.get("id")}
+    attachments_by_message: dict[str, list[dict[str, Any]]] = {}
+    for link in attachment_links:
+        artifact = artifact_by_id.get(str(link.get("artifact_id")))
+        if not artifact:
+            continue
+        metadata = artifact.get("metadata") if isinstance(artifact.get("metadata"), dict) else {}
+        attachments_by_message.setdefault(str(link["message_id"]), []).append({
+            "id": str(artifact["id"]),
+            "filename": str(metadata.get("filename") or "attachment"),
+            "mime_type": artifact.get("mime_type"),
+            "size_bytes": artifact.get("size_bytes"),
+        })
+    messages = [{**message, "attachments": attachments_by_message.get(str(message["id"]), [])} for message in messages]
     return {"conversation": conversation, "messages": messages}
 
 
@@ -89,10 +114,11 @@ async def send_customer_message(
         raise HTTPException(503, "Agent execution is disabled until provider, entitlement and worker gates pass")
     if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
         raise HTTPException(400, "A 12–128 character Idempotency-Key header is required")
-    return await repository(request).rpc("moreai_enqueue_chat_run", {
+    return await repository(request).rpc("moreai_enqueue_chat_run_with_attachments", {
         "p_user_id": principal["id"], "p_conversation_id": str(conversation_id),
         "p_content": body.content, "p_agent_key": body.agent_key,
         "p_idempotency_key": idempotency_key,
+        "p_attachment_ids": [str(item) for item in body.attachment_ids],
     })
 
 
