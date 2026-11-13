@@ -817,6 +817,18 @@ export type CustomerWorkspaceFileVersion = {
   current?: boolean;
 };
 
+export type CustomerWorkspaceUploadResult = {
+  workspace_id: string;
+  file_id: string;
+  path: string;
+  version: number;
+  storage_path: string;
+  sha256: string;
+  size_bytes: number;
+  updated_at: string;
+  replayed: boolean;
+};
+
 export const workspaceApi = {
   list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces'),
   create: (name: string) => moreAiCustomerApi<CustomerWorkspace>('/api/v1/customer/workspaces', {
@@ -826,7 +838,7 @@ export const workspaceApi = {
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files',
   ),
   uploadFile: (workspaceId: string, path: string, expectedVersion: number, file: Blob, idempotencyKey: string) =>
-    moreAiCustomerApi<Record<string, unknown>>(
+    moreAiCustomerApi<CustomerWorkspaceUploadResult>(
       '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files',
       {
         method: 'POST',
