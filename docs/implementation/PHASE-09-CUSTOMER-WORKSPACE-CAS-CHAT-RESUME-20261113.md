@@ -130,3 +130,10 @@ Continue Phase 09. Finish Agent Run/Artifact relationships and the Customer acti
 - A further deployment for the newer source HEAD `ed0eb39ef96267f24c7bfe6024763e1684b3f82d` was rejected by Vercel with HTTP 402 `api-deployments-free-per-day`. The two READY deployments therefore do not yet contain this latest cross-screen source increment. No alternate account, team, or billing/quota workaround was used.
 - No tests, lint, typecheck, browser/API/worker runtime probes, staging or E2E checks were run. Vercel's production build pipeline did compile/type-check the deployed `5501e3c` frontend as part of its own deployment process; this is not end-to-end acceptance evidence.
 - Phase 09 remains IN PROGRESS; Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
+
+
+## 2026-11-13 follow-up — chat attachment run relationship resolution
+
+- Corrected the artifact listing contract to resolve Chat attachment `run_id` through the authoritative `conversation_message_attachments` junction. Chat attachments are uploaded before their Agent Run exists, so the artifact row's nullable `run_id` is not sufficient; this owner-scoped join now exposes the exact run association to Research, Workflow and artifact clients without a schema migration.
+- Source commit: `9e1c64e5de6e2ee33d3ba2e127ebb05413d7c73d`.
+- This latest API source change is not included in the current Vercel Production deployments (both remain at commit `5501e3c`). The attempt to deploy newer source HEAD `ed0eb39` was rejected by Vercel's daily API deployment quota; no new deployment was created for `9e1c64e`.
