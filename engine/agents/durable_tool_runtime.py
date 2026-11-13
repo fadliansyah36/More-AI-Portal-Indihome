@@ -400,6 +400,9 @@ class DurableOpenManusRuntime:
             if not restored_calls:
                 if not isinstance(text, str) or not text.strip():
                     raise RuntimeError("llm_returned_empty_final_response")
+                # A retrieval hit is not automatically a citation. Only persist
+                # chunk identities explicitly cited by the final model response.
+                cited_chunk_ids = set(re.findall(r"\\[source:([0-9a-fA-F-]{36})\\]", text))
                 citations: list[dict[str, Any]] = []
                 seen_citations: set[str] = set()
                 for checkpoint_key, checkpoint_state in states.items():
@@ -423,18 +426,27 @@ class DurableOpenManusRuntime:
                         title = item.get("title")
                         if not all(isinstance(value, str) and value for value in (chunk_id, document_id, title)):
                             continue
-                        if chunk_id in seen_citations:
+                        if chunk_id not in cited_chunk_ids or chunk_id in seen_citations:
                             continue
                         seen_citations.add(chunk_id)
-                        citations.append({
-                            "id": chunk_id, "document_id": document_id,
-                            "title": title, "similarity": item.get("similarity"),
-                            "metadata": item.get("metadata") if isinstance(item.get("metadata"), dict) else {},
-                            "source_page": (item.get("metadata") or {}).get("source_page") if isinstance(item.get("metadata"), dict) else None,
-                            "char_start": (item.get("metadata") or {}).get("char_start") if isinstance(item.get("metadata"), dict) else None,
-                            "char_end": (item.get("metadata") or {}).get("char_end") if isinstance(item.get("metadata"), dict) else None,
+                        metadata = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
+                        source_page = metadata.get("source_page")
+                        char_start = metadata.get("char_start")
+                        char_end = metadata.get("char_end")
+                        similarity = item.get("similarity")
+                        citation = {
+                            "id": chunk_id, "document_id": document_id, "title": title,
                             "marker": f"[source:{chunk_id}]",
-                        })
+                        }
+                        if isinstance(similarity, (int, float)) and not isinstance(similarity, bool):
+                            citation["similarity"] = max(0.0, min(1.0, float(similarity)))
+                        if isinstance(source_page, int) and not isinstance(source_page, bool) and source_page > 0:
+                            citation["source_page"] = source_page
+                        if isinstance(char_start, int) and not isinstance(char_start, bool) and char_start >= 0:
+                            citation["char_start"] = char_start
+                        if isinstance(char_end, int) and not isinstance(char_end, bool) and char_end >= 0:
+                            citation["char_end"] = char_end
+                        citations.append(citation)
                 output = {
                     "text": text, "provider_key": response_state.get("provider_key"),
                     "model_key": response_state.get("model_key"), "rounds": round_no,
