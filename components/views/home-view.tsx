@@ -84,7 +84,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       if (runsResult.status === 'fulfilled') setRecentRuns(runsResult.value.items);
       else setRecentRunsError(true);
       if (walletResult.status === 'fulfilled') {
-        const wallet = walletResult.value.wallets[0];
+        const wallet = walletResult.value.wallets.find((item) => item.status === 'active');
         if (wallet) {
           const amount = Number(wallet.balance);
           setWalletSummary(Number.isFinite(amount)
