@@ -114,3 +114,19 @@ Per the explicit no-real-testing/no-staging instruction, no tests, lint, typeche
 ## Next dependency-ordered work
 
 Continue Phase 09. Finish Agent Run/Artifact relationships and the Customer action-to-OpenAPI inventory, then implement the real provider-backed Captive Gateway and other integrations as their contracts/configuration are made available. Phase 10 and Phase 11 cannot be honestly accepted while the requested no-test constraint remains in force.
+
+
+## 2026-11-13 continuation — Run/artifact linkage and Vercel production recovery
+
+- Added optional `X-Agent-Run-Id` to private artifact uploads. FastAPI re-resolves the supplied Agent Run under the authenticated owner before persisting the artifact's `run_id`; browser clients cannot attach an artifact to another user's run.
+- Added the CORS allowlist entry for `X-Agent-Run-Id` and typed `artifactApi.upload(..., runId?)`.
+- Code Assistant now loads the authenticated user's persisted Agent Runs, allows selecting a run before saving a code snapshot, and displays the associated run ID on saved snapshots. Snapshots without an explicitly selected run remain unlinked.
+- Research AI now loads artifacts alongside Agent Runs and displays signed-download actions for artifacts whose `run_id` matches the selected research run. Existing layout was preserved; additions are limited to the requested run/artifact relationship.
+- Source commits: `6f06afa4`, `9126d358`, `4af10492`, `fe3b2efa`, `26c73d7e`, `828eb868`, `ed0eb39e`.
+- Supabase migration history was read again. All nine migrations previously reported as applied remain present, including workspace atomic execution and Chat attachment lifecycle. No new migration was introduced in this source increment.
+- Vercel More AI binding was re-read and confirmed against the intended team and both linked Git projects. Production deployments for commit `5501e3c80200f8c3e0d8314a6828a915f5c73305` reached `READY`:
+  - Frontend: `dpl_524drp293BpdsxwtRWmEcUScz8p8`, aliases include `moreai.web.id`, `www.moreai.web.id`, and `more-ai-portal-indihome.vercel.app`.
+  - FastAPI: `dpl_2VajdXAEAgmSzfyx5J5WtQKkex88`, alias `more-ai-api.vercel.app`.
+- A further deployment for the newer source HEAD `ed0eb39ef96267f24c7bfe6024763e1684b3f82d` was rejected by Vercel with HTTP 402 `api-deployments-free-per-day`. The two READY deployments therefore do not yet contain this latest cross-screen source increment. No alternate account, team, or billing/quota workaround was used.
+- No tests, lint, typecheck, browser/API/worker runtime probes, staging or E2E checks were run. Vercel's production build pipeline did compile/type-check the deployed `5501e3c` frontend as part of its own deployment process; this is not end-to-end acceptance evidence.
+- Phase 09 remains IN PROGRESS; Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
