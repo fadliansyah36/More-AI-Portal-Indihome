@@ -1143,3 +1143,11 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Renamed the repository migration file to `supabase/migrations/20261113182657_moreai_atomic_approval_decision_events.sql` to match the recorded database version.
 - Read-only post-apply schema inspection confirms `moreai_append_approval_lifecycle_event` exists and the deployed `moreai_decide_tool_approval` definition calls it and contains `run.resume_queued`.
 - No approval workflow/runtime execution, tests, staging, deployment or browser verification was performed.
+
+
+### PRD-aligned Customer Dashboard acceptance matrix
+- Added [Phase 09 Customer Dashboard Acceptance Matrix](./PHASE-09-CUSTOMER-DASHBOARD-ACCEPTANCE-MATRIX-20261114.md), reconciling Customer navigation and workflows against Master PRD sections 6.1, 16, 17.1, 18.1, 21.5 and 34.
+- The matrix separates CONNECTED, PARTIAL/GATED and UNAVAILABLE/FAIL-CLOSED capabilities; it explicitly avoids presenting unavailable connector OAuth, Memory privacy controls, manual retry, payment/subscription settlement or partner OTP/gateway activation as working.
+- 77 Customer/shared API route handlers were source-scanned for Customer principal protection. Direct Agent Run event history and Customer SSE are now sanitized; conversation history restores structured RAG citations.
+- Approval decision/resume migration is applied to canonical Supabase as version `20261113182657`.
+- Phase 09 remains IN PROGRESS because the PRD still includes unavailable provider/domain contracts and runtime acceptance is intentionally not performed. No tests, build, browser/API/worker verification, staging or deployment.
