@@ -92,7 +92,7 @@ export const TokenLedgerView: React.FC<TokenLedgerViewProps> = ({ onBack }) => {
         <div className="flex items-baseline justify-between">
           <div>
             <span className="text-3xl font-black tracking-tight text-white font-mono">
-              {loading ? '—' : primaryWallet ? formatAmount(primaryWallet.balance, primaryWallet.currency) : '0'}
+              {loading ? '—' : primaryWallet ? formatAmount(primaryWallet.balance, primaryWallet.currency) : 'Tidak tersedia'}
             </span>
             <span className="text-xs font-bold text-red-400 ml-1.5">{primaryWallet?.status ?? 'Wallet'}</span>
           </div>
