@@ -1,4 +1,4 @@
-| 09 | Existing Frontend API Integration | IN PROGRESS — Source-level Customer screen/action audit continued. Profile/preferences, notifications, wallet/ledger/entitlements, usage, learning progress, Agent Chat/Research/Create/Analyse and workflow APIs remain connected where supported. Files screen now uploads private artifacts (2 MB cap), lists/downloads artifacts, and displays workspace file history/downloads with partial-workspace resilience; Artifact Results has signed download; Code Assistant persists code snapshots as private artifacts. Captive Portal/terms now fail closed without gateway; false 100K-credit/100-Mbps/connected/consent claims removed from welcome, onboarding, FAQ and partner-access surfaces; local-only device controls removed. Remaining: direct versioned workspace upload contract, Chat attachment/resume lifecycle, gateway verification/consent/OTP, image/video generation, EduTech catalog/video, payment/top-up and support integrations. No tests/staging/runtime checks in this increment |
+| 09 | Existing Frontend API Integration | IN PROGRESS — Added Customer workspace immutable upload via private Storage + service-role CAS/idempotency RPC and version-history trigger; Files UI now selects workspace and uploads with expected-version If-Match; Chat restores the latest persisted conversation on entry. Migration draft committed but not applied. Chat attachments, cross-screen Agent Run/Artifact lifecycle, Captive Gateway verification/consent/OTP/session lifecycle, EduTech catalog/video, image/video generation, payment/top-up, support and full Customer action-to-OpenAPI audit remain open. No tests/staging/runtime checks. [2026-11-13 increment](./PHASE-09-CUSTOMER-WORKSPACE-CAS-CHAT-RESUME-20261113.md)
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -1001,3 +1001,15 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Removed false captive connection/consent/credit/speed claims, disabled unsupported registration/device controls, and corrected onboarding/help/welcome/partner benefit copy.
 - Customer screen/action source inventory documented. Workspace direct upload, Chat attachment/resume, gateway verification, payment, EduTech catalog/video and support integrations remain open. Phase 09 remains IN PROGRESS.
 - Source commits include `ebc2fd6b`, `6a5d5afc`, `da375eda`, `fb358e25`, `89c80599`, `a908baf5`, `29127edc`, `7d2fb99c`. No tests, staging, deployment, or Supabase live writes.
+
+
+## 2026-11-13 Phase 09 continuation — workspace CAS upload and Chat resume
+
+- Report: [PHASE-09-CUSTOMER-WORKSPACE-CAS-CHAT-RESUME-20261113.md](./PHASE-09-CUSTOMER-WORKSPACE-CAS-CHAT-RESUME-20261113.md).
+- Customer workspace upload endpoint uses private version-addressed Storage objects, SHA-256 validation, active owner/member checks, idempotency and expected-version CAS through a server-only RPC. Existing immutable version-history trigger archives prior metadata.
+- Files screen now uploads into a selected accessible workspace and refreshes versioned metadata. Artifact uploads remain a distinct private-artifact path.
+- Chat now restores the most recent persisted conversation and messages when entered without an initial prompt. Attachment upload/reference/worker consumption is still outstanding.
+- Migration `20261113001500_moreai_customer_workspace_upload_cas.sql` is committed but not applied to Supabase.
+- No tests, lint, typecheck, build, browser checks, screenshots, staging, runtime probes or live Supabase changes were performed.
+- Production deployment remains blocked by the controlling `AGENTS.md` Phase 11 release gate. No production deployment was attempted.
+- Phase 09 remains IN PROGRESS.
