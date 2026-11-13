@@ -1018,6 +1018,7 @@ export const customerWorkspaceApi = {
 };
 
 export type CustomerLearningProgress = {
+  id: string;
   module_key: string;
   lesson_key: string;
   completed_at: string;
@@ -1025,7 +1026,14 @@ export type CustomerLearningProgress = {
 };
 
 export const learningApi = {
-  progress: () => moreAiCustomerApi<{ items: CustomerLearningProgress[]; count: number }>('/api/v1/customer/learning/progress'),
+  progress: () => moreAiCustomerApi<{ items: CustomerLearningProgress[]; count: number; total_count: number }>(
+    '/api/v1/customer/learning/progress?limit=100',
+  ),
+  progressPage: (limit = 50, cursor?: string, moduleKey?: string) => moreAiCustomerApiPage<CustomerLearningProgress>(
+    '/api/v1/customer/learning/progress?limit=' + Math.max(1, Math.min(100, limit))
+      + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '')
+      + (moduleKey ? '&module_key=' + encodeURIComponent(moduleKey) : ''),
+  ),
   setProgress: (moduleKey: string, lessonKey: string, completed: boolean) => moreAiCustomerApi<{
     module_key: string; lesson_key: string; completed: boolean; completed_at: string | null;
   }>('/api/v1/customer/learning/progress', {
