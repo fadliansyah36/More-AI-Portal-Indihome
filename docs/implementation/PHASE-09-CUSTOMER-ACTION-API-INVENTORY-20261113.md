@@ -25,7 +25,7 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Chat conversation restore | `customerApi.conversations()`, `getConversation()` | `GET /api/v1/customer/conversations`, `GET /api/v1/customer/conversations/{id}` | Connected |
 | Chat message / Agent Run enqueue | `customerApi.sendMessage()` | `POST /api/v1/customer/conversations/{id}/messages` | Connected; atomic message/run/attachment RPC and idempotency key |
 | Chat attachments | `artifactApi.uploadAttachment()` | `POST /api/v1/artifacts` with chat purpose/conversation headers | Connected; private Storage, owner validation and worker extraction |
-| Chat stream and cancellation | `moreAiApiStream()`, `cancelRun()` | `GET /api/v1/customer/agent-runs/{id}/stream`, `POST .../{id}/cancel` | Connected; `run.timed_out` and `run.expired` are terminal in the client and rendered distinctly in Chat |
+| Chat stream and cancellation | `moreAiApiStream()`, `cancelRun()` | `GET /api/v1/customer/agent-runs/{id}/stream`, `POST .../{id}/cancel` | Connected; `run.timed_out` and `run.expired` are terminal across Chat, Home, Research, Tasks, Workflow and backend logs/thinking |
 | Run detail, steps and events | `getRun()`, `getRunSteps()`, `getRunEvents()` | `GET /api/v1/customer/agent-runs/{id}`, `GET .../{id}/steps`, `GET /api/v1/agent-runs/{id}/events` | Connected |
 | Workflow approvals | `customerToolApprovalApi` | `/api/v1/customer/tool-approvals` | Connected to durable owner/run-scoped approval lifecycle; Workflow status display includes `timed_out` |
 | Create Studio text/document/translation/presentation | `CreateView → handleStartPrompt → Chat` | Existing Chat message enqueue and Agent Run lifecycle | Connected as an explicit Chat handoff; the run is created when the Chat prompt is submitted |
@@ -38,14 +38,14 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Code snapshot save/list/download | `artifactApi.upload/list/signedDownload` | `POST/GET /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; optional owner-verified Agent Run link |
 | Tasks / Agent Run history | `customerApi.agentRunsPage()` | `GET /api/v1/customer/agent-runs` | Connected; succeeded/failed/cancelled/timed_out/expired are all treated as terminal for active-vs-finished filtering |
 | Tasks / Run artifacts | `artifactApi.list()/signedDownload()` | `GET /api/v1/artifacts`, `POST /{id}/signed-download` | Newly connected in Tasks view; run relationship displayed |
-| Workspace files | `workspaceApi` | `/api/v1/customer/workspaces` and nested file/version/run routes | Connected to versioned private Storage and CAS |
+| Workspace files | `workspaceApi`, `customerWorkspaceApi` | `/api/v1/customer/workspaces` and nested file/version/run routes | Connected to versioned private Storage and CAS; upload response is now typed; archive guard blocks queued/pending/running/approval-waiting runs; owner-only rename/archive/member removal retained |
 | Private artifacts | `artifactApi` | `GET/POST /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; 2 MB object limit and owner checks |
 | Profile update | `profileApi.update()` | `PATCH /api/v1/me/profile` | Connected |
 | Security MFA/password | Supabase Auth MFA and password methods | Supabase Auth | TOTP factor management and password update; extended session/device inventory is unavailable |
 | Notifications | `notificationApi` | `GET /api/v1/notifications`, preferences GET/PUT, read POST, read-all POST | Connected; all calls use the configured Customer API origin |
-| EduTech learning progress | `learningApi.progress()/setProgress()` | `GET/PUT /api/v1/customer/learning/progress` | Connected; catalog, enrollment, certificates and protected video delivery are not present |
+| EduTech learning progress | `learningApi.progress()/setProgress()` | `GET/PUT /api/v1/customer/learning/progress` | Connected to owner-scoped persistence; progress state is stored by user/module/lesson; catalog, enrollment, certificates and protected video delivery are not present |
 | Analytics usage | `customerApi.usageAnalytics(days)` | `GET /api/v1/customer/usage/analytics` → server-only SQL aggregate | Newly connected; 7/30/365-day historical aggregation from all matching usage records |
-| Wallet / ledger / quotas | `customerApi.wallets()/ledger()/quotas()` | Customer wallet, ledger and quota read routes | Read-only connected |
+| Wallet / ledger / quotas | `customerApi.wallets()/ledger()/quotas()` | Customer wallet, ledger and quota read routes | Read-only connected; quota reads include platform/global/user policy scope and exact current usage window with a Pydantic response schema; wallet UI selects one active wallet and never adds different currencies |
 | Payment top-up / checkout / subscription | No active payment mutation client | No checkout, payment-intent or verified webhook settlement contract/table/provider | Unavailable; no balance or entitlement mutation is claimed |
 | Wi-Fi session history | `customerApi.networkSessions()` | `GET /api/v1/customer/network-sessions` | Read-only connected |
 | Network speed test | `customerApi.networkSpeedtestPing/Download/Upload()` | `GET /api/v1/customer/network/speedtest/ping`, download, upload | Typed FastAPI client now used by the existing Speedtest screen; measures client ↔ MoreAI API path only, not an ISP throughput guarantee ([report](./PHASE-09-CUSTOMER-SPEEDTEST-TYPED-API-20261113.md)) |
@@ -67,6 +67,16 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 - Customer run streaming now treats both `run.timed_out` and `run.expired` as terminal. Chat maps those events and persisted polling statuses to explicit terminal messages instead of leaving the run in a generic in-progress state (commits `1710a01a`, `750aa794`).
 - Profile, notification, tools catalog and model-capability requests now use the configured Customer API origin, preserving role-specific API routing when `NEXT_PUBLIC_MOREAI_CUSTOMER_API_URL` is configured (commit `00974162`).
 - Agent Studio's `GET /api/v1/agents` request is exposed as the typed `customerApi.agents()` contract rather than an inline generic request (commit `4e709c28`).
+
+
+## Additional reconciliation — 2026-11-13
+
+- Centralized Agent Run status semantics in `lib/api/agent-run-status.ts`; Home, Research, Tasks and Workflow now share terminal/active classifications and localized labels for queued, pending, running, approval-waiting, succeeded, failed, cancelled, timed-out and expired states.
+- Backend Agent Run activity history now includes `run.expired` in logs/thinking and marks it as an error-level terminal event.
+- Workspace archive now refuses to archive while any known active state exists: queued, pending, running, awaiting_approval or waiting_approval.
+- Wallet display now uses one active primary wallet rather than summing balances with potentially different currencies.
+- Workspace CAS upload result is represented by `CustomerWorkspaceUploadResult` rather than `Record<string, unknown>`.
+- Customer quota reads now include both platform/global and user policies, retrieve the exact active window for each policy, and expose a declared FastAPI response schema. Usage lookup is keyed to the policy and its computed active window, not a user-only scope filter.
 
 ## Real-provider blockers — do not bypass
 
