@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.authorization import customer_principal
 from app.routers.conversations import repository
+from app.pagination import decode_timestamp_id_cursor, encode_timestamp_id_cursor, timestamp_id_filter
 
 import hashlib
 import re
@@ -236,23 +237,34 @@ async def upload_knowledge_document(
 @router.get("/documents", response_model=KnowledgeDocumentListResponse)
 async def list_knowledge_documents(
     request: Request,
+    response: Response,
     workspace_id: UUID | None = None,
     status: str | None = Query(default=None, pattern=r"^(processing|ready|failed|archived)$"),
     limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(customer_principal),
 ):
     """List only the authenticated owner's knowledge documents; never expose chunk vectors."""
+    decoded = decode_timestamp_id_cursor(cursor)
     filters = {
         "owner_user_id": f"eq.{user['id']}",
         "select": "id,title,workspace_id,source_type,source_ref,content_sha256,status,metadata,created_at,updated_at",
-        "order": "created_at.desc",
-        "limit": str(limit),
+        "order": "created_at.desc,id.desc",
+        "limit": str(limit + 1),
     }
     if workspace_id:
         filters["workspace_id"] = f"eq.{workspace_id}"
     if status:
         filters["status"] = f"eq.{status}"
+    cursor_filter = timestamp_id_filter(decoded, "created_at")
+    if cursor_filter:
+        filters["or"] = cursor_filter
     rows = await repository(request).select("knowledge_documents", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(rows[-1], "created_at")
+    response.headers["X-Pagination-Mode"] = "keyset"
     return {"items": rows, "count": len(rows)}
 
 
