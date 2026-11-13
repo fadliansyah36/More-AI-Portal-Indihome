@@ -62,7 +62,7 @@ async def list_artifacts(request: Request, user: dict[str, Any] = Depends(custom
     """Return only artifact metadata owned by the authenticated principal."""
     return await repository(request).select("artifacts", {
         "user_id": f"eq.{user['id']}",
-        "select": "id,storage_path,mime_type,size_bytes,checksum_sha256,metadata,created_at",
+        "select": "id,run_id,storage_path,mime_type,size_bytes,checksum_sha256,metadata,created_at",
         "order": "created_at.desc",
         "limit": "200",
     })
