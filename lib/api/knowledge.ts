@@ -48,6 +48,10 @@ export const knowledgeApi = {
     chunks: CustomerKnowledgeChunk[];
     chunk_count: number;
   }>('/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId)),
+  retry: (documentId: string) => moreAiCustomerApi<{ id: string; status: 'processing'; ingestion_state: 'queued' }>(
+    '/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId) + '/retry',
+    { method: 'POST' },
+  ),
   archive: (documentId: string) => moreAiCustomerApi<{ id: string; status: 'archived' }>(
     '/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId) + '/archive',
     { method: 'POST' },
