@@ -511,7 +511,7 @@ export type CustomerArtifact = {
 };
 
 export const artifactApi = {
-  list: () => moreAiCustomerApi<CustomerArtifact[]>('/api/v1/artifacts'),
+  list: () => moreAiCustomerApi<CustomerArtifact[]>('/api/v1/artifacts?limit=100'),
   listPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerArtifact>(
     `/api/v1/artifacts?limit=${Math.max(1, Math.min(100, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
   ),
