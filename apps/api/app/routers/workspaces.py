@@ -165,34 +165,54 @@ async def _workspace_access(repo, workspace_id: UUID, user_id: str) -> dict[str,
 
 @router.get("", response_model=CustomerWorkspaceListResponse)
 async def list_customer_workspaces(
-    request: Request, user: dict[str, Any] = Depends(customer_principal),
+    request: Request,
+    response: Response,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
+    decoded = decode_timestamp_id_cursor(cursor)
     repo = repository(request)
     owned = await repo.select("workspaces", {
-        "owner_user_id": f"eq.{user['id']}",
-        "status": "eq.active",
+        "owner_user_id": f"eq.{user['id']}", "status": "eq.active",
         "select": "id,name,slug,owner_user_id,status,created_at,updated_at",
-        "order": "updated_at.desc",
-        "limit": "100",
+        "order": "updated_at.desc,id.desc", "limit": "1001",
     })
     memberships = await repo.select("workspace_members", {
-        "user_id": f"eq.{user['id']}",
-        "status": "eq.active",
-        "select": "workspace_id",
-        "limit": "100",
+        "user_id": f"eq.{user['id']}", "status": "eq.active",
+        "select": "workspace_id", "limit": "1001",
     })
-    known = {str(row["id"]) for row in owned}
-    member_ids = [str(row["workspace_id"]) for row in memberships if str(row["workspace_id"]) not in known]
+    if len(owned) > 1000 or len(memberships) > 1000:
+        raise HTTPException(503, "Workspace collection exceeds the safe owner/member fan-in; a database-side union cursor is required")
+    owned_ids = {str(row["id"]) for row in owned}
+    member_ids = sorted({str(row["workspace_id"]) for row in memberships if str(row.get("workspace_id")) not in owned_ids})
     shared = []
     if member_ids:
         shared = await repo.select("workspaces", {
-            "id": f"in.({','.join(member_ids)})",
-            "status": "eq.active",
+            "id": f"in.({','.join(member_ids)})", "status": "eq.active",
             "select": "id,name,slug,owner_user_id,status,created_at,updated_at",
-            "order": "updated_at.desc",
-            "limit": "100",
+            "order": "updated_at.desc,id.desc", "limit": "1001",
         })
-    return {"items": owned + shared, "count": len(owned) + len(shared)}
+        if len(shared) > 1000:
+            raise HTTPException(503, "Workspace member collection exceeds the safe fan-in; a database-side union cursor is required")
+    merged = {str(row["id"]): row for row in [*owned, *shared]}
+    rows = list(merged.values())
+    def order_key(row: dict[str, Any]) -> tuple[float, str]:
+        stamp = datetime.fromisoformat(str(row["updated_at"]).replace("Z", "+00:00"))
+        if stamp.tzinfo is None:
+            raise ValueError("workspace_updated_at_must_be_timezone_aware")
+        return stamp.timestamp(), str(row["id"])
+    rows.sort(key=order_key, reverse=True)
+    if decoded:
+        cursor_timestamp, cursor_id = decoded
+        cursor_key = datetime.fromisoformat(cursor_timestamp).timestamp(), cursor_id
+        rows = [row for row in rows if order_key(row) < cursor_key]
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(rows[-1], "updated_at")
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return {"items": rows, "count": len(rows)}
 
 
 @router.post("", status_code=201, response_model=CustomerWorkspaceResponse)
