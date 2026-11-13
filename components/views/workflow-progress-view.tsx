@@ -20,6 +20,7 @@ const statusLabel: Record<string, string> = {
   failed: 'Gagal',
   cancelled: 'Dibatalkan',
   expired: 'Kedaluwarsa',
+  timed_out: 'Waktu eksekusi habis',
 };
 
 const runSummary = (run: CustomerAgentRun) => {
