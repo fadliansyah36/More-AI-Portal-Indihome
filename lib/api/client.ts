@@ -849,6 +849,11 @@ export type CustomerWorkspaceUploadResult = {
   replayed: boolean;
 };
 
+export type CustomerWorkspaceMember = {
+  id: string; workspace_id: string; user_id: string; role_id: string | null;
+  status: string; invited_by: string | null; joined_at: string | null; created_at: string;
+};
+
 export const workspaceApi = {
   list: () => moreAiCustomerApi<{ items: CustomerWorkspace[]; count: number }>('/api/v1/customer/workspaces'),
   create: (name: string) => moreAiCustomerApi<CustomerWorkspace>('/api/v1/customer/workspaces', {
@@ -893,6 +898,9 @@ export const workspaceApi = {
   versions: (workspaceId: string, fileId: string) => moreAiCustomerApi<{
     items: CustomerWorkspaceFileVersion[]; count: number; current_version: number;
   }>('/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId) + '/versions'),
+  membersPage: (workspaceId: string, limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspaceMember>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/members?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
+  ),
   signedDownload: (workspaceId: string, fileId: string, version?: number) => moreAiCustomerApi<{
     file_id: string; version: number; url: string; expires_in: number;
   }>('/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId) + '/signed-download' + (version === undefined ? '' : '?version=' + version), {
