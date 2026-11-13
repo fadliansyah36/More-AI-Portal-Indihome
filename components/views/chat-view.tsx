@@ -119,7 +119,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         setSelectedWorkspaceId(restored.conversation.workspace_id || '');
         setOlderMessagesCursor(restored.nextCursor);
         setMessageHistoryError(null);
-        setMessages(restored.messages
+        const restoredMessages: ChatMessage[] = restored.messages
           .filter((message) => message.role === 'user' || message.role === 'assistant')
           .map((message) => ({
             id: message.id,
@@ -128,7 +128,99 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             time: new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             source: message.role === 'assistant' ? 'MoreAI Agent Runtime' : undefined,
             attachments: message.attachments ?? [],
-          })));
+          }));
+        setMessages(restoredMessages);
+
+        // A conversation can outlive the browser tab. Recover the latest durable
+        // session and its event cursor before opening SSE so replay starts exactly
+        // after the last persisted event rather than from sequence zero.
+        const sessions = await customerApi.conversationSessions(restored.conversation.id, 50);
+        if (!active) return;
+        const resumable = sessions.items
+          .filter((session) => ['queued', 'pending', 'running', 'awaiting_approval', 'waiting_approval', 'cancel_requested'].includes(session.status))
+          .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())[0];
+        if (resumable) {
+          const [session, eventPage, run] = await Promise.all([
+            customerApi.conversationSession(restored.conversation.id, resumable.id),
+            customerApi.conversationSessionEvents(restored.conversation.id, resumable.id, 0, 500),
+            customerApi.getRun(resumable.id),
+          ]);
+          if (!active) return;
+          const cursor = Math.max(
+            eventPage.next_after || 0,
+            ...eventPage.items.map((item) => item.sequence || 0),
+          );
+          const checkpointEvent = [...eventPage.items].reverse().find((item) => {
+            const checkpoint = item.payload?.checkpoint as Record<string, unknown> | undefined;
+            return typeof checkpoint?.text === 'string';
+          });
+          const checkpoint = checkpointEvent?.payload?.checkpoint as Record<string, unknown> | undefined;
+          const existingAssistant = restored.messages.find((message) => message.role === 'assistant' && message.run_id === resumable.id);
+          const assistantId = existingAssistant?.id || 'run:' + resumable.id;
+          if (!existingAssistant) {
+            setMessages((current) => [...current, {
+              id: assistantId, sender: 'assistant',
+              text: typeof checkpoint?.text === 'string' ? checkpoint.text : '',
+              time: timeLabel(), source: 'MoreAI Agent Runtime · melanjutkan sesi',
+            }]);
+          } else if (typeof checkpoint?.text === 'string') {
+            setMessages((current) => current.map((message) =>
+              message.id === assistantId ? { ...message, text: checkpoint.text as string } : message,
+            ));
+          }
+          const terminalStates = ['succeeded', 'failed', 'cancelled', 'timed_out', 'expired'];
+          if (!terminalStates.includes(run.status) && !terminalStates.includes(session.status)) {
+            setActiveRunId(resumable.id);
+            setIsLoading(true);
+            try {
+              await moreAiApiStream(customerApi.streamRun(resumable.id, cursor), ({ event, data }) => {
+                if (event === 'run.progress' || event === 'worker.checkpoint') {
+                  const nextCheckpoint = data.checkpoint as Record<string, unknown> | undefined;
+                  if (typeof nextCheckpoint?.text === 'string') {
+                    setMessages((current) => current.map((message) =>
+                      message.id === assistantId ? { ...message, text: nextCheckpoint.text as string } : message,
+                    ));
+                  }
+                } else if (event === 'run.completed') {
+                  const output = data.output as Record<string, unknown> | undefined;
+                  const outputText = typeof output?.text === 'string' ? output.text : typeof output?.content === 'string' ? output.content : '';
+                  setMessages((current) => current.map((message) =>
+                    message.id === assistantId ? { ...message, text: outputText || message.text, source: 'MoreAI Agent Runtime · selesai' } : message,
+                  ));
+                } else if (event === 'run.failed' || event === 'run.cancelled' || event === 'run.timed_out' || event === 'run.expired') {
+                  const labels: Record<string, string> = {
+                    'run.failed': 'gagal', 'run.cancelled': 'dibatalkan',
+                    'run.timed_out': 'melewati batas waktu', 'run.expired': 'kedaluwarsa',
+                  };
+                  setMessages((current) => current.map((message) =>
+                    message.id === assistantId ? {
+                      ...message,
+                      text: message.text || 'Sesi Agent ' + labels[event] + '. Periksa riwayat tugas untuk detailnya.',
+                      source: 'MoreAI Agent Runtime · ' + labels[event],
+                    } : message,
+                  ));
+                }
+              });
+              const latestRun = await customerApi.getRun(resumable.id);
+              if (['succeeded', 'failed', 'cancelled', 'timed_out', 'expired'].includes(latestRun.status)) {
+                const output = latestRun.output as Record<string, unknown> | undefined;
+                const outputText = typeof output?.text === 'string' ? output.text : typeof output?.content === 'string' ? output.content : '';
+                setMessages((current) => current.map((message) =>
+                  message.id === assistantId ? {
+                    ...message,
+                    text: outputText || message.text || ('Agent Run berstatus ' + latestRun.status + '.'),
+                    source: 'MoreAI Agent Runtime · ' + latestRun.status,
+                  } : message,
+                ));
+              }
+            } finally {
+              if (active) {
+                setActiveRunId(null);
+                setIsLoading(false);
+              }
+            }
+          }
+        }
       } catch {
         // Conversation history remains server-authoritative. A failed restore
         // leaves the composer available to create a fresh conversation.
