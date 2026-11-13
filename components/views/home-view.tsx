@@ -293,11 +293,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
         ) : (
           recentRuns.slice(0, 1).map((run) => {
             const prompt = typeof run.input?.prompt === 'string' ? run.input.prompt.trim() : '';
-            const statusLabel: Record<string, string> = {
-              queued: 'Menunggu', running: 'Berjalan', waiting_approval: 'Menunggu Persetujuan',
-              succeeded: 'Selesai', failed: 'Gagal', cancelled: 'Dibatalkan', expired: 'Kedaluwarsa',
-            };
-            const completed = run.status === 'succeeded';
             return (
               <div
                 key={run.id}
@@ -313,7 +308,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       {prompt ? prompt.slice(0, 90) : 'Agent Run ' + run.id.slice(0, 8)}
                     </h3>
                     <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-full border border-slate-200 shrink-0">
-                      {statusLabel[run.status] ?? run.status}
+                      {agentRunStatusLabel(run.status)}
                     </span>
                   </div>
                   <div className="mt-1 text-[11px] text-slate-500">
