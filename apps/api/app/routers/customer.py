@@ -842,6 +842,10 @@ async def redeem_partner_access_code(
         message = str(exc)
         if "NETWORK_VERIFICATION_REQUIRED" in message:
             raise HTTPException(403, "Network verification is required before redeeming this code")
+        if "ACCESS_CODE_INVALID" in message:
+            raise HTTPException(422, "Access code is invalid")
+        if "REWARD_QUOTA_EXHAUSTED" in message:
+            raise HTTPException(409, "The reward redemption quota has been reached")
         if "IDEMPOTENCY_KEY_CONFLICT" in message:
             raise HTTPException(409, "Idempotency key was already used for another access code")
         if "ACCESS_CODE_EXPIRED" in message:
