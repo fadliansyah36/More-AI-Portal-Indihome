@@ -20,11 +20,16 @@ export const KnowledgeLibraryView: React.FC = () => {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [paginationError, setPaginationError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const result = await knowledgeApi.list({ limit: 100, ...(status === 'all' ? {} : { status }) });
+      const result = await knowledgeApi.listPage({ limit: 50, ...(status === 'all' ? {} : { status }) });
       setDocuments(result.items);
+      setNextCursor(result.nextCursor);
+      setPaginationError(null);
       setError(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Knowledge Library tidak dapat dimuat.');
@@ -39,6 +44,26 @@ export const KnowledgeLibraryView: React.FC = () => {
     return () => { active = false; };
   }, [load]);
 
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setPaginationError(null);
+    try {
+      const page = await knowledgeApi.listPage({
+        limit: 50, cursor: nextCursor, ...(status === 'all' ? {} : { status }),
+      });
+      setDocuments((current) => {
+        const known = new Set(current.map((item) => item.id));
+        return [...current, ...page.items.filter((item) => !known.has(item.id))];
+      });
+      setNextCursor(page.nextCursor);
+    } catch (cause) {
+      setPaginationError(cause instanceof Error ? cause.message : 'Halaman dokumen berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -49,7 +74,7 @@ export const KnowledgeLibraryView: React.FC = () => {
       await knowledgeApi.upload(file);
       setStatus('all');
       setLoading(true);
-      await knowledgeApi.list({ limit: 100 }).then((result) => setDocuments(result.items));
+      await knowledgeApi.listPage({ limit: 50 }).then((result) => { setDocuments(result.items); setNextCursor(result.nextCursor); });
     } catch (cause) {
       setUploadError(cause instanceof Error ? cause.message : 'File tidak dapat diunggah.');
     } finally {
@@ -147,6 +172,13 @@ export const KnowledgeLibraryView: React.FC = () => {
           )}
         </article>
       ))}
+      {paginationError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{paginationError}</div>}
+      {!loading && nextCursor && (
+        <button type="button" onClick={() => void loadMore()} disabled={loadingMore}
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
+          {loadingMore ? 'Memuat dokumen…' : 'Muat dokumen berikutnya'}
+        </button>
+      )}
     </section>
   );
 };
