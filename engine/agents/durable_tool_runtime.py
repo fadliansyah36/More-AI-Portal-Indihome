@@ -518,8 +518,12 @@ class DurableOpenManusRuntime:
                         }, separators=(",", ":"))
                         outcome = "failed"
                     if self.event_publisher is not None:
+                        lifecycle_type = {
+                            "succeeded": "tool.completed",
+                            "timed_out": "tool.timed_out",
+                        }.get(outcome, "tool.failed")
                         await self.event_publisher(
-                            context.run_id, f"{event_prefix}:{outcome}", "tool.completed",
+                            context.run_id, f"{event_prefix}:{outcome}", lifecycle_type,
                             {"tool": function.name, "round": round_no, "index": index, "status": outcome},
                         )
                     observation = observation[:60_000]
