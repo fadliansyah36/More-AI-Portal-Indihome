@@ -222,6 +222,7 @@ async def list_workspace_files(
     workspace_id: UUID, request: Request,
     response: Response,
     include_deleted: bool = Query(default=False),
+    path: str | None = Query(default=None, max_length=512),
     limit: int = Query(default=50, ge=1, le=100),
     cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(customer_principal),
@@ -239,6 +240,8 @@ async def list_workspace_files(
     cursor_filter = timestamp_id_filter(decoded, "updated_at")
     if cursor_filter:
         filters["or"] = cursor_filter
+    if path is not None:
+        filters["path"] = f"eq.{path}"
     rows = await repo.select("agent_workspace_files", filters)
     has_more = len(rows) > limit
     rows = rows[:limit]
