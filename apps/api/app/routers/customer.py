@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from app.authorization import customer_principal, require_customer_context
 from app.dependencies import current_user
 from app.routers.conversations import ConversationCreate, MessageCreate, repository
-from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter, decode_updated_at_id_cursor, encode_updated_at_id_cursor, updated_at_id_filter
+from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter, decode_updated_at_id_cursor, encode_updated_at_id_cursor, updated_at_id_filter, decode_timestamp_id_cursor, encode_timestamp_id_cursor, timestamp_id_filter
 
 
 router = APIRouter(prefix="/api/v1/customer", tags=["customer"])
