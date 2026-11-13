@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Search, TrendingUp, BookOpen, ChevronRight, ArrowLeft } from 'lucide-react';
-import { customerApi, type CustomerAgentRun } from '@/lib/api/client';
+import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact } from '@/lib/api/client';
 
 interface ResearchViewProps {
   onBack?: () => void;
@@ -14,14 +14,19 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<CustomerAgentRun | null>(null);
   const [runs, setRuns] = useState<CustomerAgentRun[]>([]);
+  const [artifacts, setArtifacts] = useState<CustomerArtifact[]>([]);
+  const [downloadingArtifactId, setDownloadingArtifactId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    customerApi.agentRuns().then((items) => { if (active) setRuns(items); })
-      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Riwayat riset tidak dapat dimuat.'); })
-      .finally(() => { if (active) setLoading(false); });
+    Promise.allSettled([customerApi.agentRuns(), artifactApi.list()]).then(([runResult, artifactResult]) => {
+      if (!active) return;
+      if (runResult.status === 'fulfilled') setRuns(runResult.value);
+      else setError(runResult.reason instanceof Error ? runResult.reason.message : 'Riwayat riset tidak dapat dimuat.');
+      if (artifactResult.status === 'fulfilled') setArtifacts(artifactResult.value);
+    }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
 
@@ -33,6 +38,19 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
   const resultText = (run: CustomerAgentRun) => {
     const value = run.output?.text ?? run.output?.content ?? run.output?.result;
     return typeof value === 'string' ? value : run.status === 'failed' ? 'Run gagal. Detail error dapat dilihat pada Workflow.' : 'Belum ada output final yang tersimpan.';
+  };
+
+  const downloadArtifact = async (artifactId: string) => {
+    if (downloadingArtifactId) return;
+    setDownloadingArtifactId(artifactId);
+    try {
+      const result = await artifactApi.signedDownload(artifactId);
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Artefak hasil riset tidak dapat diunduh.');
+    } finally {
+      setDownloadingArtifactId(null);
+    }
   };
 
   return (
@@ -140,6 +158,28 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
             <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100">
               {resultText(selectedTopic)}
             </p>
+
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold text-slate-900">Artefak hasil Agent Run</div>
+              {artifacts.filter((artifact) => artifact.run_id === selectedTopic.id).length ? (
+                artifacts.filter((artifact) => artifact.run_id === selectedTopic.id).map((artifact) => {
+                  const filename = typeof artifact.metadata?.filename === 'string' ? artifact.metadata.filename : 'Hasil riset';
+                  return (
+                    <div key={artifact.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 p-2.5">
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-semibold text-slate-800">{filename}</p>
+                        <p className="text-[10px] text-slate-500">{artifact.mime_type || 'Tipe file tidak tersedia'}</p>
+                      </div>
+                      <button type="button" onClick={() => void downloadArtifact(artifact.id)} disabled={downloadingArtifactId === artifact.id} className="shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
+                        {downloadingArtifactId === artifact.id ? 'Memuat…' : 'Unduh'}
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="rounded-xl bg-slate-50 p-3 text-[10px] text-slate-500">Belum ada artefak yang tercatat untuk run ini.</p>
+              )}
+            </div>
 
             <div className="space-y-1.5 text-xs text-slate-700">
               <div className="font-bold text-slate-900 text-[11px]">Metode Riset:</div>
