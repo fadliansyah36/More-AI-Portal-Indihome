@@ -13,12 +13,13 @@ import {
   FileSpreadsheet,
   Image as ImageIcon,
   Download,
+  Loader2,
   Share2,
   ChevronRight,
   Layers,
   ArrowLeft,
 } from 'lucide-react';
-import { customerApi, type CustomerAgentRun } from '@/lib/api/client';
+import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact } from '@/lib/api/client';
 import { TaskItem } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
@@ -33,26 +34,33 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   const [activeTab, setActiveTab] = useState<'semua' | 'aktif' | 'selesai' | 'workflow' | 'artifacts'>('semua');
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [runs, setRuns] = useState<CustomerAgentRun[]>([]);
+  const [artifacts, setArtifacts] = useState<CustomerArtifact[]>([]);
+  const [downloadingArtifactId, setDownloadingArtifactId] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
-    customerApi.agentRunsPage(50).then((page) => {
+    Promise.allSettled([customerApi.agentRunsPage(50), artifactApi.list()]).then(([runResult, artifactResult]) => {
       if (!active) return;
-      setRuns(page.items);
-      setNextCursor(page.nextCursor);
-      setTasks(page.items.map((run) => ({
-        id: run.id,
-        title: typeof run.input?.prompt === 'string' && run.input.prompt.trim()
-          ? run.input.prompt.trim().slice(0, 100)
-          : `Agent Run ${run.id.slice(0, 8)}`,
-        time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
-        completed: run.status === 'succeeded',
-        category: run.status,
-      })));
-    }).catch((error) => {
-      if (active) setLoadError(error instanceof Error ? error.message : 'Riwayat run tidak dapat dimuat.');
+      if (runResult.status === 'fulfilled') {
+        const page = runResult.value;
+        setRuns(page.items);
+        setNextCursor(page.nextCursor);
+        setTasks(page.items.map((run) => ({
+          id: run.id,
+          title: typeof run.input?.prompt === 'string' && run.input.prompt.trim()
+            ? run.input.prompt.trim().slice(0, 100)
+            : `Agent Run ${run.id.slice(0, 8)}`,
+          time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
+          completed: run.status === 'succeeded',
+          category: run.status,
+        })));
+      } else {
+        setLoadError(runResult.reason instanceof Error ? runResult.reason.message : 'Riwayat run tidak dapat dimuat.');
+      }
+      if (artifactResult.status === 'fulfilled') setArtifacts(artifactResult.value);
+      else setLoadError((previous) => previous || (artifactResult.reason instanceof Error ? artifactResult.reason.message : 'Artefak tidak dapat dimuat.'));
     });
     return () => { active = false; };
   }, []);
@@ -72,6 +80,19 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
       onStartPrompt(prompt, 'manus');
     } else {
       showToast('Chat AI belum tersedia untuk membuat Agent Run.', 'error');
+    }
+  };
+
+  const downloadArtifact = async (artifactId: string) => {
+    if (downloadingArtifactId) return;
+    setDownloadingArtifactId(artifactId);
+    try {
+      const result = await artifactApi.signedDownload(artifactId);
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Artefak gagal diunduh.', 'error');
+    } finally {
+      setDownloadingArtifactId(null);
     }
   };
 
@@ -174,7 +195,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
           <span>Workflow AI</span>
         </button>
         <button
-          onClick={() => onOpenWorkspaceFiles?.()}
+          onClick={() => setActiveTab('artifacts')}
           className={`flex-1 min-w-[95px] py-1.5 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1 ${
             activeTab === 'artifacts'
               ? 'bg-red-600 text-white shadow-xs'
@@ -285,10 +306,39 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
         </div>
       )}
 
-      {/* Artifact access is delegated to the authenticated Files API view. */}
+      {/* Run-linked artifacts from the authenticated private Artifact API. */}
       {activeTab === 'artifacts' && (
         <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-3">
-          <p className="text-xs text-slate-600">Artefak hanya ditampilkan dari penyimpanan workspace yang terhubung ke backend.</p>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Artefak Agent Run</h2>
+            <p className="text-xs text-slate-500 mt-1">Hasil kerja privat ditampilkan bersama hubungan Agent Run yang tercatat di backend.</p>
+          </div>
+          {loadError && <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{loadError}</p>}
+          {artifacts.length === 0 ? (
+            <p className="rounded-xl bg-slate-50 p-4 text-xs text-slate-500">Belum ada artefak privat yang tersimpan untuk akun ini.</p>
+          ) : (
+            <div className="space-y-2">
+              {artifacts.map((artifact) => {
+                const run = artifact.run_id ? runs.find((item) => item.id === artifact.run_id) : undefined;
+                const filename = typeof artifact.metadata?.filename === 'string' ? artifact.metadata.filename : artifact.storage_path.split('/').pop();
+                const prompt = run?.input?.prompt;
+                return (
+                  <div key={artifact.id} className="rounded-2xl border border-slate-200 p-3 flex items-start gap-3">
+                    <div className="w-9 h-9 shrink-0 rounded-xl bg-red-50 text-red-600 flex items-center justify-center"><FileText className="w-4 h-4" /></div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-slate-900">{filename}</p>
+                      <p className="mt-1 text-[10px] text-slate-500">{artifact.mime_type || 'File'} · {new Date(artifact.created_at).toLocaleString('id-ID')}</p>
+                      <p className="mt-1 text-[10px] text-slate-500">{artifact.run_id ? 'Agent Run ' + artifact.run_id.slice(0, 8) + (typeof prompt === 'string' ? ' · ' + prompt.slice(0, 72) : '') : 'Belum ditautkan ke Agent Run'}</p>
+                    </div>
+                    <button type="button" onClick={() => void downloadArtifact(artifact.id)} disabled={downloadingArtifactId === artifact.id} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
+                      {downloadingArtifactId === artifact.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                      Unduh
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <button onClick={() => onOpenWorkspaceFiles?.()} className="w-full py-3 rounded-2xl bg-red-600 text-white text-xs font-bold">Buka Workspace File</button>
         </div>
       )}
