@@ -165,6 +165,7 @@ def _thinking_message(activity: dict[str, Any]) -> dict[str, Any]:
         "run.failed": "Agent run failed",
         "run.cancelled": "Agent run cancelled",
         "run.timed_out": "Agent run timed out",
+        "run.expired": "Agent run expired",
         "worker.checkpoint": "Execution checkpoint saved",
     }
     if event_type == "worker.checkpoint":
@@ -178,7 +179,7 @@ def _thinking_message(activity: dict[str, Any]) -> dict[str, Any]:
             labels[event_type] = f"Planning step {step_number} {phase}"
     return {
         "message": labels.get(event_type, "Agent activity"),
-        "type": "error" if event_type in {"run.failed", "run.timed_out"} else (
+        "type": "error" if event_type in {"run.failed", "run.timed_out", "run.expired"} else (
             "conclusion" if event_type == "run.completed" else "thinking"
         ),
         "timestamp": activity.get("timestamp"),
@@ -204,7 +205,7 @@ async def get_run_logs(
     items = []
     for row in rows:
         activity = _safe_run_activity(row)
-        activity["level"] = "ERROR" if activity["event_type"] in {"run.failed", "run.timed_out"} else (
+        activity["level"] = "ERROR" if activity["event_type"] in {"run.failed", "run.timed_out", "run.expired"} else (
             "WARNING" if activity.get("status") in {"failed", "timed_out", "cancelled"} else "INFO"
         )
         activity["message"] = _thinking_message(activity)["message"]
@@ -237,7 +238,7 @@ async def get_run_thinking(
         if row.get("event_type") in {
             "run.started", "run.progress", "tool.started", "tool.completed",
             "tool.cancelled", "run.completed", "run.failed", "run.cancelled",
-            "run.timed_out", "worker.checkpoint",
+            "run.timed_out", "run.expired", "worker.checkpoint",
         }
     ]
     completed = sum(1 for step in steps if step.get("status") == "succeeded")
