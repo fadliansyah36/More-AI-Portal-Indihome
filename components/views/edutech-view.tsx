@@ -13,8 +13,8 @@ export const EdutechView: React.FC = () => {
   useEffect(() => {
     let active = true;
     learningApi.progress()
-      .then(({ items }) => {
-        if (active) setSavedProgressCount(items.length);
+      .then(({ total_count }) => {
+        if (active) setSavedProgressCount(total_count);
       })
       .catch((error) => {
         if (active) showToast(error instanceof Error ? error.message : 'Progress belajar gagal dimuat.', 'error');
