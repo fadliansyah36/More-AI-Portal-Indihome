@@ -51,6 +51,9 @@ export const FilesView: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<ArtifactFile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [artifactNextCursor, setArtifactNextCursor] = useState<string | null>(null);
+  const [loadingMoreArtifacts, setLoadingMoreArtifacts] = useState(false);
+  const [artifactPaginationError, setArtifactPaginationError] = useState<string | null>(null);
   const [workspaces, setWorkspaces] = useState<CustomerWorkspace[]>([]);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
   const [uploadingWorkspaceFile, setUploadingWorkspaceFile] = useState(false);
@@ -68,25 +71,28 @@ export const FilesView: React.FC = () => {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [downloadingVersion, setDownloadingVersion] = useState<number | null>(null);
 
+  const mapArtifactRows = (rows: ArtifactRecord[]): ArtifactFile[] => rows.map((row) => {
+    const metadata = row.metadata || {};
+    const name = typeof metadata.filename === 'string'
+      ? metadata.filename
+      : row.storage_path.split('/').pop() || row.storage_path;
+    return {
+      id: row.id,
+      name,
+      size: formatSize(row.size_bytes),
+      date: new Date(row.created_at).toLocaleString('id-ID'),
+      type: categoryFor(row.mime_type, row.storage_path),
+      checksum: row.checksum_sha256,
+    };
+  });
+
   useEffect(() => {
     let active = true;
-    artifactApi.list()
-      .then((rows) => {
+    artifactApi.listPage(50)
+      .then((page) => {
         if (!active) return;
-        setFiles(rows.map((row) => {
-          const metadata = row.metadata || {};
-          const name = typeof metadata.filename === 'string'
-            ? metadata.filename
-            : row.storage_path.split('/').pop() || row.storage_path;
-          return {
-            id: row.id,
-            name,
-            size: formatSize(row.size_bytes),
-            date: new Date(row.created_at).toLocaleString('id-ID'),
-            type: categoryFor(row.mime_type, row.storage_path),
-            checksum: row.checksum_sha256,
-          };
-        }));
+        setFiles(mapArtifactRows(page.items));
+        setArtifactNextCursor(page.nextCursor);
         setError(null);
       })
       .catch((cause) => {
@@ -262,6 +268,21 @@ export const FilesView: React.FC = () => {
     }
   };
 
+  const loadMoreArtifacts = async () => {
+    if (!artifactNextCursor || loadingMoreArtifacts) return;
+    setLoadingMoreArtifacts(true);
+    setArtifactPaginationError(null);
+    try {
+      const page = await artifactApi.listPage(50, artifactNextCursor);
+      setFiles((current) => [...current, ...mapArtifactRows(page.items)]);
+      setArtifactNextCursor(page.nextCursor);
+    } catch (cause) {
+      setArtifactPaginationError(cause instanceof Error ? cause.message : 'Halaman artefak berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreArtifacts(false);
+    }
+  };
+
   const filteredFiles = useMemo(() => files.filter((file) => {
     const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch && (filterType === 'semua' || file.type === filterType);
@@ -350,6 +371,13 @@ export const FilesView: React.FC = () => {
             <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
           </button>
         ))}
+        {artifactPaginationError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{artifactPaginationError}</div>}
+        {!loading && !error && artifactNextCursor && (
+          <button type="button" onClick={() => void loadMoreArtifacts()} disabled={loadingMoreArtifacts}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+            {loadingMoreArtifacts ? 'Memuat artefak…' : 'Muat artefak berikutnya'}
+          </button>
+        )}
       </div>
 
 
