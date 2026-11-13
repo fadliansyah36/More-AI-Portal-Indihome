@@ -42,3 +42,8 @@ Scope: source-level Customer dashboard integration corrections. Existing visual 
 - Close only provider-independent API gaps where a real backend contract exists.
 - Keep Captive Gateway, EduTech catalog/video, payment settlement, and support workflows fail-closed until their authoritative provider contracts, configuration, and server-side adapters exist.
 - Provider adapters remain blocked by missing real credentials/configuration and contracts; no mock integrations are acceptable.
+
+4. **Terminal run classification in Customer history**
+   - Tasks now classifies `succeeded`, `failed`, `cancelled`, `timed_out`, and `expired` as terminal so these runs no longer remain in the active filter.
+   - Workflow history now gives `timed_out` a clear Indonesian status label.
+   - Commits: `49a7eb5d164f89a843960b0a3d27fbd1cc8b8281`, `195c2a90228adcda042e4be61907e1ec08fa3cd7`.
