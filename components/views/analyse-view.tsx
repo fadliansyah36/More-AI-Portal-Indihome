@@ -1,19 +1,68 @@
 'use client';
 
-import React, { useState } from 'react';
-import { knowledgeApi } from '@/lib/api/knowledge';
+import React, { useEffect, useState } from 'react';
+import { knowledgeApi, type CustomerKnowledgeDocument } from '@/lib/api/knowledge';
 import {
   UploadCloud,
     CheckCircle2,
   Sparkles,
 } from 'lucide-react';
 
-export const AnalyseView: React.FC = () => {
+interface AnalyseViewProps { onNavigateToChat?: (prompt: string) => void; }
+
+export const AnalyseView: React.FC<AnalyseViewProps> = ({ onNavigateToChat }) => {
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<'idle' | 'queued' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [documents, setDocuments] = useState<CustomerKnowledgeDocument[]>([]);
+  const [selectedDocumentId, setSelectedDocumentId] = useState('');
+  const [documentsLoading, setDocumentsLoading] = useState(true);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
+  const [refreshingDocuments, setRefreshingDocuments] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    knowledgeApi.list({ limit: 50 }).then(({ items }) => {
+      if (active) {
+        setDocuments(items);
+        setSelectedDocumentId((current) => current || items.find((item) => item.status === 'ready')?.id || items[0]?.id || '');
+      }
+    }).catch((cause) => {
+      if (active) setDocumentsError(cause instanceof Error ? cause.message : 'Knowledge Library tidak dapat dimuat.');
+    }).finally(() => { if (active) setDocumentsLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const refreshDocuments = async () => {
+    setRefreshingDocuments(true);
+    setDocumentsError(null);
+    try {
+      const result = await knowledgeApi.list({ limit: 50 });
+      setDocuments(result.items);
+      setSelectedDocumentId((current) => current || result.items.find((item) => item.status === 'ready')?.id || result.items[0]?.id || '');
+    } catch (cause) {
+      setDocumentsError(cause instanceof Error ? cause.message : 'Knowledge Library tidak dapat dimuat.');
+    } finally {
+      setRefreshingDocuments(false);
+    }
+  };
+
+  const analyzeSelectedDocument = () => {
+    const document = documents.find((item) => item.id === selectedDocumentId);
+    if (!document || document.status !== 'ready') {
+      setDocumentsError('Dokumen harus selesai diindeks sebelum dapat dianalisis oleh Agent.');
+      return;
+    }
+    if (!onNavigateToChat) {
+      setDocumentsError('Chat AI belum terhubung. Tidak ada Agent Run yang dibuat.');
+      return;
+    }
+    onNavigateToChat(
+      'Lakukan analisis mendalam terhadap dokumen Knowledge Library yang dipilih. Wajib gunakan tool knowledge_search dengan query yang relevan dan document_ids berisi hanya ID berikut: [' + document.id + ']. Gunakan isi chunk sebagai sumber utama, kutip temuan secara jelas, pisahkan fakta dan inferensi, serta jangan mengarang isi yang tidak ditemukan. Judul dokumen: ' + document.title + '.'
+    );
+  };
 
   const handleStartAnalysis = async () => {
     if (!selectedFile || isAnalyzing) return;
@@ -31,6 +80,8 @@ export const AnalyseView: React.FC = () => {
             ? 'File identik sudah berada dalam antrean ingestion.'
             : 'File tersimpan secara privat dan masuk antrean ingestion. Status ekstraksi dan indexing dapat dipantau di Knowledge Library.');
       setSelectedFileName(result.upload.filename);
+      setSelectedDocumentId(result.document.id);
+      void refreshDocuments();
     } catch (cause) {
       setUploadState('error');
       setUploadMessage(cause instanceof Error ? cause.message : 'File gagal dikirim ke backend.');
@@ -107,6 +158,38 @@ export const AnalyseView: React.FC = () => {
           {uploadMessage}
         </div>
       )}
+
+      <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-xs space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-xs font-bold text-slate-900">Dokumen Knowledge Library</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5">Pilih dokumen yang sudah terindeks untuk ditautkan ke Agent Run analisis.</p>
+          </div>
+          <button type="button" onClick={() => void refreshDocuments()} disabled={refreshingDocuments} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-semibold text-slate-600 disabled:opacity-50">
+            {refreshingDocuments ? 'Memuat…' : 'Perbarui'}
+          </button>
+        </div>
+        {documentsError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-[10px] text-red-700">{documentsError}</p>}
+        {documentsLoading ? <p className="text-[11px] text-slate-500">Memuat dokumen…</p> : documents.length === 0 ? (
+          <p className="rounded-xl bg-slate-50 p-3 text-[11px] text-slate-500">Belum ada dokumen. Unggah PDF atau gambar di atas untuk memulai.</p>
+        ) : (
+          <div className="space-y-2">
+            {documents.map((document) => (
+              <button key={document.id} type="button" onClick={() => setSelectedDocumentId(document.id)} className={`w-full rounded-xl border p-3 text-left transition ${selectedDocumentId === document.id ? 'border-red-300 bg-red-50/50' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-[11px] font-semibold text-slate-800">{document.title}</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${document.status === 'ready' ? 'bg-emerald-50 text-emerald-700' : document.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{document.status}</span>
+                </div>
+                <p className="mt-1 text-[9px] text-slate-400">ID {document.id.slice(0, 8)} · {new Date(document.updated_at).toLocaleString('id-ID')}</p>
+              </button>
+            ))}
+          </div>
+        )}
+        <button type="button" onClick={analyzeSelectedDocument} disabled={!onNavigateToChat || !documents.some((item) => item.id === selectedDocumentId && item.status === 'ready')} className="w-full rounded-2xl bg-red-600 py-3 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-40">
+          Analisis Dokumen dengan Agent AI
+        </button>
+        <p className="text-[10px] text-slate-500">Analisis membuat Agent Run baru melalui Chat. Retrieval dibatasi ke ID dokumen terpilih; hasil dan artefak run mengikuti lifecycle backend.</p>
+      </div>
 
     </div>
   );
