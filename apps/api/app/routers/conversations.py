@@ -252,6 +252,9 @@ async def get_conversation_session(
         "created_at": run.get("created_at"),
         "started_at": run.get("started_at"),
         "finished_at": run.get("finished_at"),
+        "available_at": run.get("available_at"),
+        "heartbeat_at": run.get("heartbeat_at"),
+        "cancel_requested_at": run.get("cancel_requested_at"),
         "last_checkpoint_key": run.get("last_checkpoint_key"),
     }
 
