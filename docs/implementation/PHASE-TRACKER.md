@@ -1118,7 +1118,7 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 ## 2026-11-14 — Phase 09 Customer Dashboard continuation (latest source-only increment)
 
-- Atomic approval decision and resume event migration source committed: `supabase/migrations/20261114090000_moreai_atomic_approval_decision_events.sql` (commit `dd67833335b925ea3fbc4754fff4f5cf44b37f12`). It appends decision and `run.resume_queued` events to the durable event table and canonical outbox in the same transaction as approval/pause/run/checkpoint updates. **Not applied to Supabase**; production does not yet use this new RPC definition.
+- Atomic approval decision and resume event migration source committed: `supabase/migrations/20261114090000_moreai_atomic_approval_decision_events.sql` (commit `dd67833335b925ea3fbc4754fff4f5cf44b37f12`). It appends decision and `run.resume_queued` events to the durable event table and canonical outbox in the same transaction as approval/pause/run/checkpoint updates. Applied to canonical Supabase project `uunfgimtokhucegqbpce` as migration version `20261113182657`; read-only schema inspection confirms the helper and `run.resume_queued` are present. No runtime approval flow was executed.
 - FastAPI and Chat consumers now surface `run.resume_queued`; worker no longer duplicates atomic grant/deny/expire events. Consumption event remains worker-observed.
 - Customer API source audit: 77 route handlers across ten Customer/shared router modules; all 77 route signatures require `customer_principal`, while Customer WebSockets explicitly resolve `require_customer_context`. JSON endpoints use explicit response models except SSE/binary/WebSocket transport-specific routes. Live RLS/cross-tenant proof remains outstanding.
 - Customer session replay and SSE now use allowlisted activity metadata; terminal SSE returns final answer text and validated citations, not raw run output/error objects.
@@ -1135,4 +1135,11 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - RAG tool results now include validated per-chunk citation markers; final prompt requires exact markers; the runtime persists chunk/document provenance and removes machine markers from visible prose. Customer conversation detail and keyset history hydrate citations from the owner-scoped run output.
 - Worker approval decision labels are no longer duplicated after the atomic decision event; successful single-use consumption remains separately recorded.
 - Latest report: [Phase 09 Customer Chat/session/citation continuation](./PHASE-09-CUSTOMER-CHAT-DURABLE-SESSION-RECOVERY-20261113.md), commit `ebb40fe6eca095a33c283edc81c273f38c6a1e8c`.
-- New approval migration remains source-only and unapplied. No tests, build, browser/API/worker verification, Supabase mutation, staging or deployment were performed. Phase 09 remains open.
+- Approval decision/resume migration is now applied to canonical Supabase as `20261113182657`. No tests, build, browser/API/worker verification, Supabase mutation, staging or deployment were performed. Phase 09 remains open.
+
+
+### Supabase migration application (2026-11-14)
+- Applied `moreai_atomic_approval_decision_events` to canonical project `uunfgimtokhucegqbpce`; Supabase migration history records version `20261113182657`.
+- Renamed the repository migration file to `supabase/migrations/20261113182657_moreai_atomic_approval_decision_events.sql` to match the recorded database version.
+- Read-only post-apply schema inspection confirms `moreai_append_approval_lifecycle_event` exists and the deployed `moreai_decide_tool_approval` definition calls it and contains `run.resume_queued`.
+- No approval workflow/runtime execution, tests, staging, deployment or browser verification was performed.
