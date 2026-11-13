@@ -259,3 +259,38 @@ No tests, lint, typecheck, build, browser verification, live API calls, worker e
 
 ### Phase status and next phase
 Phase 09 remains **in progress**. Continue Phase 09 until the remaining API/UI contract and authorization inventory, citation provenance review, and approval event durability gaps are resolved. After Phase 09 is complete, the dependency-ordered next phase is Phase 10 — End-to-End Integration Verification; Phase 11 — Integration Release Gate follows Phase 10. Neither phase is being marked complete or executed under the current no-test/no-staging instruction.
+
+
+## Phase 09 continuation — Customer event consumers and citation provenance (2026-11-14)
+
+### Source changes committed to `main`
+- `c562378b0d5d9e53e4e1f54c086e37f4ef33b1c2` — ChatView now labels the durable agent execution, planning-step, tool outcome, and approval lifecycle event taxonomy. Safe metadata fields (agent key, step index, risk and error code) are retained in the activity model; raw event payloads remain excluded.
+- `e52a36cd1ec402373d58767c99e87c5332d05366` — FastAPI thinking projection and authenticated WebSocket replay now include the expanded lifecycle event family and safe metadata fields. This closes the earlier mismatch where REST `/thinking` included expanded events but WebSocket initial/replay projections omitted them.
+- `329a6eeaf490f1de73a9ef56447054f3317ff7a0` — RAG final-output citation assembly now includes only retrieved chunk IDs explicitly referenced by the final response marker `[source:<chunk_id>]`. Persisted citation objects contain the stable chunk/document IDs, title, marker, bounded similarity and validated page/character offsets; arbitrary retrieval metadata is no longer copied into the public citation object.
+- `1a55db2bfca2ea745768638df6b68dcd00c57239` — corrected the source-marker parser so bracketed citation markers are matched as intended.
+
+### Updated source-level acceptance matrix
+
+| Area | Source-level state | Runtime acceptance |
+|---|---|---|
+| Chat durable conversation/session recovery | Implemented against owner-scoped API, checkpoint restore and resumable SSE cursor | Not run |
+| Chat agent/planning/tool/approval activity | Expanded event labels and safe metadata consumer implemented | Not run |
+| Workflow activity and durable steps | Safe logs projection, step listing, approval history and cancellation wired | Not run |
+| Tasks run detail | Owner-scoped run/step/log detail and cancellation wired; no unsupported manual retry | Not run |
+| Approval decision transaction | Decision and pause/resume state are committed by existing RPC; event publication is still worker-observed after resume, not in the same DB transaction | Open |
+| RAG citations | Final citations are filtered by exact final-response source markers and carry chunk/document provenance | Not run; all retrieval response variants and API/UI path still need runtime acceptance |
+| Customer API authorization/response contracts | Existing inventory covers many Customer routes; endpoint-by-endpoint review across all shared and Customer routers remains open | Not run |
+| Supabase data/RLS/schema | No schema/data/RLS changes in this increment | Not run |
+
+### Approval transaction boundary — explicit remaining blocker
+The current `moreai_decide_tool_approval` RPC atomically updates the approval row, approval-pause row, run status/resume flag and checkpoint state. The durable event stream is not yet updated in that same transaction. Worker publication after it reclaims the resumed run is lease-safe but can be delayed by a crash before the worker observes the committed decision. Closing this gap requires a forward-only Supabase migration that adds the approval decision/resume event rows inside the existing RPC transaction while preserving the current pause/resume and worker lease invariants. No applied migration was edited and no live Supabase schema was changed in this increment.
+
+### Verification and release boundary
+No tests, lint, typecheck, build, browser checks, API probes, worker execution, Supabase schema/data mutation, staging or deployment were run. All entries above are source inspection/implementation only. Existing UI files changed only to surface backend lifecycle events in the current Chat activity area; no layout, color, typography, spacing or navigation redesign was made. Screenshot regression evidence is intentionally absent under the no-browser-verification instruction.
+
+### Next implementation order
+1. Add the forward-only database migration for transactionally appending approval decision/resume events in `moreai_decide_tool_approval`; keep service-role-only execution and owner/run consistency checks.
+2. Finish endpoint-by-endpoint authorization and response-schema audit for Customer, shared Agent Run, workspace, artifacts, Knowledge, approvals, billing/usage and notifications.
+3. Reconcile all retrieval/tool response variants to the structured citation provenance contract and ensure Chat history restoration receives the same citation envelope.
+4. Complete the UI-to-API action inventory and source-level acceptance matrix, marking unavailable provider-backed actions as unavailable rather than simulated.
+5. Phase 09 remains open until the above source work is complete. Phase 10 — End-to-End Integration Verification is next only after Phase 09, and is not authorized/performed under the current no-test instruction; Phase 11 follows Phase 10.
