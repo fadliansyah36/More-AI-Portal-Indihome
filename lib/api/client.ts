@@ -512,6 +512,9 @@ export type CustomerArtifact = {
 
 export const artifactApi = {
   list: () => moreAiCustomerApi<CustomerArtifact[]>('/api/v1/artifacts'),
+  listPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerArtifact>(
+    `/api/v1/artifacts?limit=${Math.max(1, Math.min(100, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
+  ),
   upload: (filename: string, content: Blob, mimeType = content.type || 'application/octet-stream', runId?: string) =>
     moreAiCustomerApi<CustomerArtifact>('/api/v1/artifacts', {
       method: 'POST',
