@@ -529,7 +529,7 @@ export type CustomerArtifact = {
   mime_type: string | null;
   size_bytes: number | null;
   checksum_sha256: string | null;
-  metadata: Record<string, unknown> | null;
+  metadata: Record<string, unknown>;
   created_at: string;
 };
 
