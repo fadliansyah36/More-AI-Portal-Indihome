@@ -105,6 +105,10 @@ class WorkerRuntime:
                 if lease_lost.is_set():
                     return True
                 await self.rpc.append_run_event(
+                    run_id, f"{lifecycle_identity}:agent.timed_out",
+                    "agent.execution.timed_out", {"agent_key": agent_key[:80]},
+                )
+                await self.rpc.append_run_event(
                     run_id, "worker:run.timed_out", "run.timed_out",
                     {"timeout_seconds": run_timeout_seconds},
                 )
@@ -125,6 +129,10 @@ class WorkerRuntime:
             if cancel_wait_task in done and cancelled.is_set():
                 dispatch_task.cancel()
                 await asyncio.gather(dispatch_task, return_exceptions=True)
+                await self.rpc.append_run_event(
+                    run_id, f"{lifecycle_identity}:agent.cancelled",
+                    "agent.execution.cancelled", {"agent_key": agent_key[:80]},
+                )
                 await self.rpc.append_run_event(
                     run_id, "worker:run.cancelled", "run.cancelled", {},
                 )
@@ -161,6 +169,11 @@ class WorkerRuntime:
                 await self.rpc.finish(run_id, "cancelled")
             else:
                 await self.rpc.append_run_event(
+                    run_id, f"worker:{run_id}:{int(run.get('attempt') or 0)}:agent.failed",
+                    "agent.execution.failed",
+                    {"agent_key": str((run.get("input") or {}).get("agent_key", "manus"))[:80], "code": exc.code, "retryable": exc.retryable},
+                )
+                await self.rpc.append_run_event(
                     run_id, f"worker:run.failed:{exc.code}", "run.failed",
                     {"code": exc.code, "retryable": exc.retryable},
                 )
@@ -184,6 +197,11 @@ class WorkerRuntime:
                 await self.rpc.append_run_event(run_id, "worker:run.cancelled", "run.cancelled", {})
                 await self.rpc.finish(run_id, "cancelled")
             else:
+                await self.rpc.append_run_event(
+                    run_id, f"worker:{run_id}:{int(run.get('attempt') or 0)}:agent.failed",
+                    "agent.execution.failed",
+                    {"agent_key": str((run.get("input") or {}).get("agent_key", "manus"))[:80], "code": "agent_execution_failed", "retryable": True},
+                )
                 await self.rpc.append_run_event(run_id, "worker:run.failed", "run.failed", {"code": "agent_execution_failed"})
                 await self.rpc.finish(
                     run_id, "failed", error={"code": "agent_execution_failed"},
