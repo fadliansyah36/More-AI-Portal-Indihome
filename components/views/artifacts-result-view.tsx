@@ -33,15 +33,36 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [paginationError, setPaginationError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    artifactApi.list()
-      .then((rows) => { if (active) setFiles(rows); })
+    artifactApi.listPage(50)
+      .then((page) => { if (active) { setFiles(page.items); setNextCursor(page.nextCursor); } })
       .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Artefak tidak dapat dimuat.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setPaginationError(null);
+    try {
+      const page = await artifactApi.listPage(50, nextCursor);
+      setFiles((current) => {
+        const known = new Set(current.map((file) => file.id));
+        return [...current, ...page.items.filter((file) => !known.has(file.id))];
+      });
+      setNextCursor(page.nextCursor);
+    } catch (cause) {
+      setPaginationError(cause instanceof Error ? cause.message : 'Halaman artefak berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const filtered = useMemo(() => files.filter((file) => filter === 'semua' || categoryFor(file.mime_type, file.storage_path) === filter), [files, filter]);
 
@@ -122,6 +143,13 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
         })}
       </div>
 
+      {paginationError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{paginationError}</div>}
+      {!loading && nextCursor && (
+        <button type="button" onClick={() => void loadMore()} disabled={loadingMore}
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
+          {loadingMore ? 'Memuat artefak…' : 'Muat artefak berikutnya'}
+        </button>
+      )}
       <button onClick={() => onNavigateTab('files')} className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2">
         <span>Buka di Workspace</span><ArrowRight className="w-4 h-4" />
       </button>
