@@ -64,8 +64,51 @@ class SupabaseWorkspaceTool:
         if operation == "restore_deleted":
             if deleted_at is None or not storage_path:
                 raise ValueError("workspace_deleted_file_not_found")
+            expected_sha = current.get("sha256")
+            expected_size = current.get("size_bytes")
+            if (
+                not isinstance(expected_sha, str)
+                or not re.fullmatch(r"[0-9a-f]{64}", expected_sha)
+                or isinstance(expected_size, bool)
+                or not isinstance(expected_size, int)
+                or expected_size < 0
+                or expected_size > 2_000_000
+            ):
+                raise RuntimeError("workspace_restore_metadata_invalid")
+            source_prefix = f"{user_id}/workspaces/{workspace_id}/versions/"
+            if not storage_path.startswith(source_prefix) or storage_path.startswith("/") or ".." in storage_path.split("/"):
+                raise RuntimeError("workspace_restore_source_path_invalid")
+            source_response = await self.client.client.get(
+                self._object_url(storage_path), headers=self._headers(), timeout=20.0,
+            )
+            source_response.raise_for_status()
+            raw = source_response.content
+            if len(raw) != expected_size or hashlib.sha256(raw).hexdigest() != expected_sha:
+                raise RuntimeError("workspace_restore_source_integrity_mismatch")
+
+            next_version = version + 1
+            restored_path = f"{user_id}/workspaces/{workspace_id}/versions/{next_version}/{path}"
+            upload = await self.client.client.post(
+                self._object_url(restored_path),
+                content=raw,
+                headers=self._headers("application/octet-stream", False),
+                timeout=25.0,
+            )
+            if upload.status_code >= 400:
+                # An immutable destination may already exist after a lost commit response.
+                existing = await self.client.client.get(
+                    self._object_url(restored_path), headers=self._headers(), timeout=20.0,
+                )
+                if (
+                    existing.status_code != 200
+                    or len(existing.content) != expected_size
+                    or hashlib.sha256(existing.content).hexdigest() != expected_sha
+                ):
+                    upload.raise_for_status()
+                    raise RuntimeError("workspace_restore_immutable_object_collision")
             result = await self.client.workspace_restore_deleted_file(
-                run_id,user_id,workspace_id,path,version,
+                run_id, user_id, workspace_id, path, version,
+                restored_path, expected_sha, expected_size, self.bucket,
             )
             return json.dumps(result,separators=(",",":"))
         if operation == "delete":
