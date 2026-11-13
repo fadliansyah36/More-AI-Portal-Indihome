@@ -446,20 +446,38 @@ async def customer_quotas(
     repo = repository(request)
     policies = await repo.select("quota_policies", {
         "enabled": "eq.true",
-        "or": f"(and(scope_type.eq.global,scope_id.is.null),and(scope_type.eq.user,scope_id.eq.{principal['id']}))",
+        "or": f"(and(scope_type.in.(platform,global),scope_id.is.null),and(scope_type.eq.user,scope_id.eq.{principal['id']}))",
         "select": "id,scope_type,scope_id,metric_key,limit_value,window_seconds",
         "order": "metric_key.asc", "limit": "200",
     })
     if not policies:
         return []
     policy_ids = [str(row["id"]) for row in policies]
+    # Usage rows inherit the policy scope. Global/platform policy usage therefore
+    # has a NULL scope_id and must not be filtered to the caller's user scope.
     usage_rows = await repo.select("quota_usage", {
         "policy_id": f"in.({','.join(policy_ids)})",
-        "scope_type": "eq.user", "scope_id": f"eq.{principal['id']}",
         "select": "policy_id,used_value,window_start,updated_at",
-        "limit": "500",
+        "order": "window_start.desc",
+        "limit": "1000",
     })
-    usage_by_policy = {str(row["policy_id"]): row for row in usage_rows}
+    now = datetime.now(timezone.utc)
+    policy_by_id = {str(policy["id"]): policy for policy in policies}
+    usage_by_policy = {}
+    for row in usage_rows:
+        policy_id = str(row.get("policy_id"))
+        policy = policy_by_id.get(policy_id)
+        if policy is None or policy_id in usage_by_policy:
+            continue
+        try:
+            window_start = datetime.fromisoformat(str(row["window_start"]).replace("Z", "+00:00"))
+            if window_start.tzinfo is None:
+                continue
+            window_seconds = int(policy.get("window_seconds") or 0)
+        except (KeyError, TypeError, ValueError):
+            continue
+        if window_seconds > 0 and window_start <= now < window_start + timedelta(seconds=window_seconds):
+            usage_by_policy[policy_id] = row
     return [{**policy, "usage": usage_by_policy.get(str(policy["id"]))} for policy in policies]
 
 
