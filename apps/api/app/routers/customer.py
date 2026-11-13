@@ -14,10 +14,54 @@ from pydantic import BaseModel, Field
 from app.authorization import customer_principal, require_customer_context
 from app.dependencies import current_user
 from app.routers.conversations import ConversationCreate, MessageCreate, repository
-from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter
+from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter, decode_updated_at_id_cursor, encode_updated_at_id_cursor, updated_at_id_filter
 
 
 router = APIRouter(prefix="/api/v1/customer", tags=["customer"])
+
+
+class CustomerConversationResponse(BaseModel):
+    id: UUID
+    title: str | None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class CustomerConversationMessageAttachmentResponse(BaseModel):
+    id: UUID
+    filename: str
+    mime_type: str | None
+    size_bytes: int | None
+
+
+class CustomerConversationMessageResponse(BaseModel):
+    id: UUID
+    role: str
+    content: str
+    model_key: str | None
+    run_id: UUID | None
+    created_at: datetime
+    attachments: list[CustomerConversationMessageAttachmentResponse] = Field(default_factory=list)
+
+
+class CustomerConversationDetailResponse(BaseModel):
+    conversation: CustomerConversationResponse
+    messages: list[CustomerConversationMessageResponse]
+
+
+class CustomerAgentRunResponse(BaseModel):
+    id: UUID
+    conversation_id: UUID | None
+    status: str
+    input: dict[str, Any] | None = None
+    output: dict[str, Any] | None = None
+    error: dict[str, Any] | None = None
+    attempt: int | None = None
+    max_attempts: int | None = None
+    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
 
 
 class CustomerWalletResponse(BaseModel):
@@ -96,7 +140,7 @@ async def customer_context(
     }
 
 
-@router.post("/conversations", status_code=201)
+@router.post("/conversations", status_code=201, response_model=CustomerConversationResponse)
 async def create_customer_conversation(
     body: ConversationCreate, request: Request,
     user: dict[str, Any] = Depends(current_user),
@@ -108,27 +152,41 @@ async def create_customer_conversation(
     })
 
 
-@router.get("/conversations")
+@router.get("/conversations", response_model=list[CustomerConversationResponse])
 async def customer_conversations(
     request: Request,
+    response: Response,
     limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     before: datetime | None = Query(default=None),
     user: dict[str, Any] = Depends(current_user),
 ):
+    if cursor and before:
+        raise HTTPException(422, "Use either cursor or before, not both")
+    decoded = decode_updated_at_id_cursor(cursor)
     principal = await require_customer_context(request, user)
     filters = {
         "user_id": f"eq.{principal['id']}",
         "select": "id,title,status,created_at,updated_at",
-        "order": "updated_at.desc", "limit": str(limit),
+        "order": "updated_at.desc,id.desc", "limit": str(limit + 1),
     }
+    cursor_filter = updated_at_id_filter(decoded)
+    if cursor_filter:
+        filters["or"] = cursor_filter
     if before:
         if before.tzinfo is None:
             raise HTTPException(422, "before must include a timezone")
-        filters["updated_at"] = f"lt.{before.isoformat()}"
-    return await repository(request).select("conversations", filters)
+        filters["updated_at"] = f"lt.{before.astimezone(timezone.utc).isoformat()}"
+    rows = await repository(request).select("conversations", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_updated_at_id_cursor(rows[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return rows
 
 
-@router.get("/conversations/{conversation_id}")
+@router.get("/conversations/{conversation_id}", response_model=CustomerConversationDetailResponse)
 async def customer_conversation(
     conversation_id: UUID, request: Request,
     user: dict[str, Any] = Depends(current_user),
@@ -188,7 +246,7 @@ async def send_customer_message(
     })
 
 
-@router.get("/agent-runs")
+@router.get("/agent-runs", response_model=list[CustomerAgentRunResponse])
 async def customer_agent_runs(
     request: Request,
     response: Response,
@@ -223,7 +281,7 @@ async def customer_agent_runs(
     return rows
 
 
-@router.get("/agent-runs/{run_id}")
+@router.get("/agent-runs/{run_id}", response_model=CustomerAgentRunResponse)
 async def customer_agent_run(
     run_id: UUID, request: Request,
     user: dict[str, Any] = Depends(current_user),
