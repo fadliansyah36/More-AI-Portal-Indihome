@@ -18,18 +18,19 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Customer screen / action | Frontend contract | FastAPI contract | Source status |
 |---|---|---|---|
 | Login, registration, password recovery, Auth session | Supabase Auth browser client | Supabase Auth | Connected; OAuth availability remains provider configuration-dependent |
-| Home identity | `profileApi.get()` | `GET /api/v1/me` | Connected; Auth-only identity fallback exists for transient API outage |
+| Home identity | `profileApi.get()` | `GET /api/v1/me` | Connected; profile reads/updates use the configured Customer API origin; Auth-only identity fallback exists for transient API outage |
 | Home Agent Run summary | `customerApi.agentRunsPage()` | `GET /api/v1/customer/agent-runs` with keyset cursor | Connected |
 | Home wallet and entitlement | `customerApi.wallets()`, `entitlements()` | `GET /api/v1/customer/wallet`, `GET /api/v1/customer/entitlements` | Connected |
 | Customer context | `customerApi.context()` | `GET /api/v1/customer/context` | Connected |
 | Chat conversation restore | `customerApi.conversations()`, `getConversation()` | `GET /api/v1/customer/conversations`, `GET /api/v1/customer/conversations/{id}` | Connected |
 | Chat message / Agent Run enqueue | `customerApi.sendMessage()` | `POST /api/v1/customer/conversations/{id}/messages` | Connected; atomic message/run/attachment RPC and idempotency key |
 | Chat attachments | `artifactApi.uploadAttachment()` | `POST /api/v1/artifacts` with chat purpose/conversation headers | Connected; private Storage, owner validation and worker extraction |
-| Chat stream and cancellation | `moreAiApiStream()`, `cancelRun()` | `GET /api/v1/customer/agent-runs/{id}/stream`, `POST .../{id}/cancel` | Connected |
+| Chat stream and cancellation | `moreAiApiStream()`, `cancelRun()` | `GET /api/v1/customer/agent-runs/{id}/stream`, `POST .../{id}/cancel` | Connected; `run.timed_out` and `run.expired` are terminal in the client and rendered distinctly in Chat |
 | Run detail, steps and events | `getRun()`, `getRunSteps()`, `getRunEvents()` | `GET /api/v1/customer/agent-runs/{id}`, `GET .../{id}/steps`, `GET /api/v1/agent-runs/{id}/events` | Connected |
 | Workflow approvals | `customerToolApprovalApi` | `/api/v1/customer/tool-approvals` | Connected to durable owner/run-scoped approval lifecycle |
 | Create Studio text/document/translation/presentation | `CreateView → handleStartPrompt → Chat` | Existing Chat message enqueue and Agent Run lifecycle | Connected as an explicit Chat handoff; the run is created when the Chat prompt is submitted |
 | Create Studio image/video generation | No provider client exposed | No verified generation provider contract | Unavailable; must not create mock media or charge credits |
+| Agent Studio catalog | `customerApi.agents()` | `GET /api/v1/agents` | Connected; explicit typed catalog contract on the configured Customer API origin |
 | Research history and artifacts | `customerApi.agentRuns()`, `artifactApi.list()/signedDownload()` | Agent Run and private Artifact routes | Connected |
 | Analyse document upload | `knowledgeApi.upload()/list()/get()` | `POST /api/v1/customer/knowledge/documents/upload`, `GET /documents`, `GET /documents/{id}` | Connected to private ingestion and owner-scoped Knowledge Library |
 | Analyse selected document with Agent | Knowledge document selection → Chat handoff | Durable Agent Run + `knowledge_search(document_ids)` | Source-integrated; retrieval is restricted to the selected ready document ID |
@@ -41,7 +42,7 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 | Private artifacts | `artifactApi` | `GET/POST /api/v1/artifacts`, `POST /{id}/signed-download` | Connected; 2 MB object limit and owner checks |
 | Profile update | `profileApi.update()` | `PATCH /api/v1/me/profile` | Connected |
 | Security MFA/password | Supabase Auth MFA and password methods | Supabase Auth | TOTP factor management and password update; extended session/device inventory is unavailable |
-| Notifications | `notificationApi` | `GET /api/v1/notifications`, preferences GET/PUT, read POST, read-all POST | Connected |
+| Notifications | `notificationApi` | `GET /api/v1/notifications`, preferences GET/PUT, read POST, read-all POST | Connected; all calls use the configured Customer API origin |
 | EduTech learning progress | `learningApi.progress()/setProgress()` | `GET/PUT /api/v1/customer/learning/progress` | Connected; catalog, enrollment, certificates and protected video delivery are not present |
 | Analytics usage | `customerApi.usageAnalytics(days)` | `GET /api/v1/customer/usage/analytics` → server-only SQL aggregate | Newly connected; 7/30/365-day historical aggregation from all matching usage records |
 | Wallet / ledger / quotas | `customerApi.wallets()/ledger()/quotas()` | Customer wallet, ledger and quota read routes | Read-only connected |
@@ -61,6 +62,11 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 - Added `GET /api/v1/customer/usage/analytics?days=7|30|365` and its typed response contract.
 - Added optional document ID filtering to the OpenManus `knowledge_search` tool schema/runtime. Analyse sends the selected ready document ID into the new Chat Agent Run, and the worker passes that exact ID to the existing owner/workspace-scoped pgvector RPC.
 - Tasks now lists persisted private artifacts and downloads them using short-lived signed URLs.
+
+
+- Customer run streaming now treats both `run.timed_out` and `run.expired` as terminal. Chat maps those events and persisted polling statuses to explicit terminal messages instead of leaving the run in a generic in-progress state (commits `1710a01a`, `750aa794`).
+- Profile, notification, tools catalog and model-capability requests now use the configured Customer API origin, preserving role-specific API routing when `NEXT_PUBLIC_MOREAI_CUSTOMER_API_URL` is configured (commit `00974162`).
+- Agent Studio's `GET /api/v1/agents` request is exposed as the typed `customerApi.agents()` contract rather than an inline generic request (commit `4e709c28`).
 
 ## Real-provider blockers — do not bypass
 
