@@ -157,3 +157,20 @@ Read-only production counts at the time of this inventory: `network_providers=0`
 - Report: [Customer authorization, pagination & lifecycle continuation](./PHASE-09-CUSTOMER-AUTH-PAGINATION-LIFECYCLE-20261113.md).
 
 This remains a source-level inventory. It is not proof of runtime authorization, Supabase RLS behavior, complete pagination under concurrent writes, or Customer-to-Worker E2E. No tests, builds, lint, typecheck, browser/API probes, staging, migrations, live Supabase writes, provider calls or deployment were performed in this continuation.
+
+
+## 2026-11-14 source audit addendum
+
+### Customer authorization/response contract coverage
+A source-level scan of the 10 Customer/shared router modules counted 77 route handlers. All 77 route signatures require `customer_principal`; the Customer WebSocket handlers resolve the bearer token and then call `require_customer_context`. That principal rejects active Partner memberships and privileged Platform assignments. Owner checks and membership/permission checks remain enforced by the individual route services.
+
+JSON routes declare Pydantic response models. The intentional transport exceptions are Customer Agent Run SSE, shared run-event SSE, binary speed-test download and WebSocket message envelopes. This scan is not a live authorization/RLS test and does not prove cross-tenant denial at runtime.
+
+### Chat RAG citations
+Assistant message responses now include a typed `citations` array. FastAPI resolves each assistant message's `run_id` to an owner-scoped `agent_runs.output.citations` record, validates UUID chunk/document IDs, exact `[source:<chunk_id>]` marker, title, similarity and source offsets, and returns only the safe citation projection. The same enrichment is used for conversation detail and older-message keyset pages. Chat initial restore, older history and resumed-run completion restore the structured citations.
+
+### Activity transport privacy
+Conversation session event replay and Customer Agent Run SSE now share the safe activity metadata contract. Raw tool arguments, tool observations, provider payloads and checkpoint state bodies are not sent to the Customer browser. Terminal SSE sends only final answer text and validated citations plus a bounded error code.
+
+### Approval decision event contract
+The new forward-only migration source appends approval decision and run-resume events transactionally with approval/pause/run/checkpoint updates. It is committed but not applied to Supabase under the current no-live-mutation instruction; canonical production behavior is unchanged until an authorized migration apply.
