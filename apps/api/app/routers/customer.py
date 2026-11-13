@@ -319,7 +319,7 @@ async def customer_conversations(
     return rows
 
 
-async async def _customer_conversation_message_citations(
+async def _customer_conversation_message_citations(
     repo: Any, user_id: str, messages: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     run_ids = sorted({
