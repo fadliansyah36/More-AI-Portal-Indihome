@@ -38,11 +38,14 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   const [artifacts, setArtifacts] = useState<CustomerArtifact[]>([]);
   const [downloadingArtifactId, setDownloadingArtifactId] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [nextArtifactCursor, setNextArtifactCursor] = useState<string | null>(null);
+  const [loadingMoreArtifacts, setLoadingMoreArtifacts] = useState(false);
+  const [artifactPaginationError, setArtifactPaginationError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
-    Promise.allSettled([customerApi.agentRunsPage(50), artifactApi.list()]).then(([runResult, artifactResult]) => {
+    Promise.allSettled([customerApi.agentRunsPage(50), artifactApi.listPage(50)]).then(([runResult, artifactResult]) => {
       if (!active) return;
       if (runResult.status === 'fulfilled') {
         const page = runResult.value;
@@ -60,7 +63,10 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
       } else {
         setLoadError(runResult.reason instanceof Error ? runResult.reason.message : 'Riwayat run tidak dapat dimuat.');
       }
-      if (artifactResult.status === 'fulfilled') setArtifacts(artifactResult.value);
+      if (artifactResult.status === 'fulfilled') {
+        setArtifacts(artifactResult.value.items);
+        setNextArtifactCursor(artifactResult.value.nextCursor);
+      }
       else setLoadError((previous) => previous || (artifactResult.reason instanceof Error ? artifactResult.reason.message : 'Artefak tidak dapat dimuat.'));
     });
     return () => { active = false; };
@@ -126,6 +132,24 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
       showToast(error instanceof Error ? error.message : 'Riwayat run berikutnya tidak dapat dimuat.', 'error');
     } finally {
       setLoadingMore(false);
+    }
+  };
+
+  const handleLoadMoreArtifacts = async () => {
+    if (!nextArtifactCursor || loadingMoreArtifacts) return;
+    setLoadingMoreArtifacts(true);
+    setArtifactPaginationError(null);
+    try {
+      const page = await artifactApi.listPage(50, nextArtifactCursor);
+      setArtifacts((current) => {
+        const known = new Set(current.map((artifact) => artifact.id));
+        return [...current, ...page.items.filter((artifact) => !known.has(artifact.id))];
+      });
+      setNextArtifactCursor(page.nextCursor);
+    } catch (cause) {
+      setArtifactPaginationError(cause instanceof Error ? cause.message : 'Halaman artefak berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreArtifacts(false);
     }
   };
 
@@ -339,6 +363,13 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                 );
               })}
             </div>
+          )}
+          {artifactPaginationError && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{artifactPaginationError}</p>}
+          {nextArtifactCursor && (
+            <button type="button" onClick={() => void handleLoadMoreArtifacts()} disabled={loadingMoreArtifacts}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-50">
+              {loadingMoreArtifacts ? 'Memuat artefak…' : 'Muat artefak berikutnya'}
+            </button>
           )}
           <button onClick={() => onOpenWorkspaceFiles?.()} className="w-full py-3 rounded-2xl bg-red-600 text-white text-xs font-bold">Buka Workspace File</button>
         </div>
