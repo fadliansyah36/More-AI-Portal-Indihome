@@ -89,6 +89,10 @@ class AgentRunThinkingStepResponse(BaseModel):
     status: str | None = None
     phase: str | None = None
     progress: int | float | None = None
+    agent_key: str | None = None
+    step_index: int | None = None
+    risk: str | None = None
+    error_code: str | None = None
 
 
 class AgentRunProgressResponse(BaseModel):
@@ -312,7 +316,7 @@ def _thinking_message(activity: dict[str, Any]) -> dict[str, Any]:
         ),
         "timestamp": activity.get("timestamp"),
         "sequence": activity.get("sequence"),
-        **{key: activity[key] for key in ("tool", "round", "index", "status", "phase", "progress") if key in activity},
+        **{key: activity[key] for key in ("tool", "round", "index", "status", "phase", "progress", "agent_key", "step_index", "risk", "error_code") if key in activity},
     }
 
 
@@ -473,9 +477,14 @@ async def stream_run_websocket(websocket: WebSocket, run_id: UUID):
         initial_thinking = [
             _thinking_message(item) for item in initial_activities
             if item["event_type"] in {
-                "run.started", "run.progress", "tool.started", "tool.completed",
-                "tool.cancelled", "run.completed", "run.failed", "run.cancelled",
-                "run.timed_out", "run.expired", "worker.checkpoint",
+                "run.started", "run.progress", "tool.started", "tool.completed", "tool.failed", "tool.timed_out",
+                "tool.cancelled", "tool.approval_requested", "tool.approval_granted", "tool.approval_denied",
+                "tool.approval_expired", "tool.approval_consumed", "agent.execution.started",
+                "agent.execution.completed", "agent.execution.failed", "agent.execution.cancelled",
+                "agent.execution.timed_out", "planning.started", "planning.completed",
+                "planning.step.approval_required", "planning.step.approval_resumed",
+                "planning.step.started", "planning.step.completed", "planning.step.failed",
+                "run.completed", "run.failed", "run.cancelled", "run.timed_out", "run.expired", "worker.checkpoint",
             }
         ]
         initial_logs = [
