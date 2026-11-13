@@ -30,25 +30,33 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
   const [networkSessions, setNetworkSessions] = useState<CustomerNetworkSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [usageNextCursor, setUsageNextCursor] = useState<string | null>(null);
+  const [ledgerNextCursor, setLedgerNextCursor] = useState<string | null>(null);
+  const [sessionNextCursor, setSessionNextCursor] = useState<string | null>(null);
+  const [loadingMoreHistory, setLoadingMoreHistory] = useState(false);
+  const [historyPaginationError, setHistoryPaginationError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     customerApi.wallets().then(async (walletResult) => {
-      const primary = walletResult.wallets.find((wallet) => wallet.status === 'active') || walletResult.wallets[0];
+      const primary = walletResult.wallets.find((wallet) => wallet.status === 'active') || null;
       const [entitlementResult, quotaResult, usageResult, ledgerResult, sessionResult] = await Promise.all([
         customerApi.entitlements(),
         customerApi.quotas(),
         customerApi.usagePage(50),
         primary ? customerApi.ledgerPage(50, undefined, primary.id) : Promise.resolve({ items: [], nextCursor: null }),
-        customerApi.networkSessions(50),
+        customerApi.networkSessionsPage(50),
       ]);
       if (!active) return;
       setWallets(walletResult.wallets || []);
       setEntitlements(entitlementResult || []);
       setQuotas(quotaResult || []);
       setUsage(usageResult.items || []);
+      setUsageNextCursor(usageResult.nextCursor);
       setLedger(ledgerResult.items || []);
-      setNetworkSessions(sessionResult || []);
+      setLedgerNextCursor(ledgerResult.nextCursor);
+      setNetworkSessions(sessionResult.items || []);
+      setSessionNextCursor(sessionResult.nextCursor);
       setError(null);
     }).catch((err: unknown) => {
       if (!active) return;
@@ -59,8 +67,46 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
     return () => { active = false; };
   }, []);
 
+  const loadMoreHistory = async () => {
+    if (loadingMoreHistory) return;
+    const hasMore = Boolean(usageNextCursor || ledgerNextCursor || sessionNextCursor);
+    if (!hasMore) return;
+    setLoadingMoreHistory(true);
+    setHistoryPaginationError(null);
+    const [usagePage, ledgerPage, sessionPage] = await Promise.allSettled([
+      usageNextCursor ? customerApi.usagePage(50, usageNextCursor) : Promise.resolve(null),
+      ledgerNextCursor && primaryWalletId ? customerApi.ledgerPage(50, ledgerNextCursor, primaryWalletId) : Promise.resolve(null),
+      sessionNextCursor ? customerApi.networkSessionsPage(50, sessionNextCursor) : Promise.resolve(null),
+    ]);
+    let failed = false;
+    if (usagePage.status === 'fulfilled' && usagePage.value) {
+      setUsage((current) => {
+        const known = new Set(current.map((item) => item.id));
+        return [...current, ...usagePage.value!.items.filter((item) => !known.has(item.id))];
+      });
+      setUsageNextCursor(usagePage.value.nextCursor);
+    } else if (usagePage.status === 'rejected') failed = true;
+    if (ledgerPage.status === 'fulfilled' && ledgerPage.value) {
+      setLedger((current) => {
+        const known = new Set(current.map((item) => item.id));
+        return [...current, ...ledgerPage.value!.items.filter((item) => !known.has(item.id))];
+      });
+      setLedgerNextCursor(ledgerPage.value.nextCursor);
+    } else if (ledgerPage.status === 'rejected') failed = true;
+    if (sessionPage.status === 'fulfilled' && sessionPage.value) {
+      setNetworkSessions((current) => {
+        const known = new Set(current.map((item) => item.id));
+        return [...current, ...sessionPage.value!.items.filter((item) => !known.has(item.id))];
+      });
+      setSessionNextCursor(sessionPage.value.nextCursor);
+    } else if (sessionPage.status === 'rejected') failed = true;
+    if (failed) setHistoryPaginationError('Sebagian riwayat gagal dimuat. Anda dapat mencoba memuat halaman berikutnya lagi.');
+    setLoadingMoreHistory(false);
+  };
+
   // Wallet balances are currency-scoped; never add unlike currencies into one total.
   const primaryWallet = wallets.find((wallet) => wallet.status === 'active') || null;
+  const primaryWalletId = primaryWallet?.id || null;
   const balance = primaryWallet ? Number(primaryWallet.balance || 0) : null;
   const activeEntitlements = entitlements.filter((item) => item.status === 'active');
   const monthlyQuota = quotas.find((item) => /month|monthly|llm|token|credit/i.test(item.metric_key)) || quotas[0];
@@ -279,6 +325,13 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
             </div>
           ))}
         </div>
+        {historyPaginationError && <p role="alert" className="text-xs text-amber-800">{historyPaginationError}</p>}
+        {(usageNextCursor || ledgerNextCursor || sessionNextCursor) && (
+          <button type="button" onClick={() => void loadMoreHistory()} disabled={loadingMoreHistory}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
+            {loadingMoreHistory ? 'Memuat riwayat…' : 'Muat riwayat berikutnya'}
+          </button>
+        )}
       </div>
     </div>
   );
