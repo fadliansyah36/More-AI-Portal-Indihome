@@ -77,7 +77,7 @@ async def request_tool_approval(
     return {"id": approval_id, "status": "pending"}
 
 
-@router.post("/{approval_id}/decision")
+@router.post("/{approval_id}/decision", response_model=dict[str, Any])
 async def decide_tool_approval(
     approval_id: UUID, body: ApprovalDecision, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
