@@ -88,7 +88,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       setApprovalError(null);
       const result = await customerToolApprovalApi.decide(approvalId, decision);
       setApprovals((current) => current.map((item) => item.id === approvalId
-        ? { ...item, status: result.status }
+        ? { ...item, status: result.status, decided_at: result.decided_at }
         : item));
       // The decision RPC atomically re-queues a paused run. Keep the durable
       // approval decision visible even if the independent run-list refresh fails.
@@ -191,7 +191,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         <div className="w-5" />
       </div>
 
-      {(approvals.some((item) => item.status === 'pending') || approvalError || nextApprovalCursor) && (
+      {(approvals.length > 0 || approvalError || nextApprovalCursor) && (
         <section className="p-4 rounded-3xl bg-amber-50/70 border border-amber-200 space-y-3">
           <div>
             <h2 className="text-sm font-bold text-slate-900">Persetujuan Tool Agent</h2>
@@ -211,6 +211,30 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
               </div>
             </div>
           ))}
+          {approvals.some((item) => item.status !== 'pending') && (
+            <div className="space-y-2 border-t border-amber-200 pt-3">
+              <h3 className="text-[11px] font-bold text-slate-700">Riwayat keputusan</h3>
+              {approvals.filter((item) => item.status !== 'pending').map((item) => {
+                const statusLabel = item.status === 'approved' ? 'Disetujui'
+                  : item.status === 'denied' ? 'Ditolak'
+                    : item.status === 'expired' ? 'Kedaluwarsa' : 'Sudah dikonsumsi worker';
+                const statusClass = item.status === 'approved' ? 'bg-emerald-50 text-emerald-700'
+                  : item.status === 'denied' ? 'bg-rose-50 text-rose-700'
+                    : 'bg-slate-100 text-slate-600';
+                const eventAt = item.consumed_at || item.decided_at || item.expires_at;
+                return (
+                  <div key={item.id} className="rounded-xl border border-slate-100 bg-white p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-xs font-semibold text-slate-800">{item.tool_key}</span>
+                      <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${statusClass}`}>{statusLabel}</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-600">{item.summary}</p>
+                    <p className="mt-1 text-[10px] text-slate-400">{new Date(eventAt).toLocaleString('id-ID')}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           {approvalError && <p className="text-xs text-rose-700">{approvalError}</p>}
           {nextApprovalCursor && (
             <button type="button" onClick={() => void loadMoreApprovals()} disabled={loadingMoreApprovals}
