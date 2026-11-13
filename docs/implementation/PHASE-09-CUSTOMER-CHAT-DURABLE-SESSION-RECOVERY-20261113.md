@@ -294,3 +294,76 @@ No tests, lint, typecheck, build, browser checks, API probes, worker execution, 
 3. Reconcile all retrieval/tool response variants to the structured citation provenance contract and ensure Chat history restoration receives the same citation envelope.
 4. Complete the UI-to-API action inventory and source-level acceptance matrix, marking unavailable provider-backed actions as unavailable rather than simulated.
 5. Phase 09 remains open until the above source work is complete. Phase 10 — End-to-End Integration Verification is next only after Phase 09, and is not authorized/performed under the current no-test instruction; Phase 11 follows Phase 10.
+
+
+## Phase 09 continuation — atomic approval events, Customer authorization and RAG history (2026-11-14)
+
+### Approval decision/resume transaction
+- Added forward-only migration source `supabase/migrations/20261114090000_moreai_atomic_approval_decision_events.sql`.
+- The replacement `moreai_decide_tool_approval` RPC now appends `tool.approval_granted`, `tool.approval_denied`, or `tool.approval_expired` to `agent_run_events` and the canonical `outbox_events` in the same database transaction as approval/pause/run/checkpoint updates.
+- When the run transitions from `waiting_approval` to `queued`, the same transaction also appends `run.resume_queued`. The helper serializes per-run sequence allocation, uses stable event keys, checks idempotency conflicts, and writes the same outbox envelope used by the worker event publisher.
+- The worker no longer republishes decision/grant/deny/expire events after resuming. It only publishes `tool.approval_consumed` after the single-use consume RPC succeeds. Consumption is still worker-observed, not transactionally emitted by the consume RPC.
+- FastAPI REST thinking, initial/replay WebSocket projections, and Chat activity labels now include `run.resume_queued`.
+- **Migration is committed but NOT applied to Supabase.** No live schema mutation was performed. Until the migration is applied through an authorized database-change workflow, production still uses the previously deployed RPC and atomic event behavior is not active there.
+
+### Customer API authorization and response-contract source audit
+A source-level route inventory was performed across the Customer/shared Customer API routers:
+- 77 route handlers were found across `agent_runs.py`, `artifacts.py`, `catalog.py`, `conversations.py`, `customer.py`, `knowledge.py`, `learning.py`, `notifications.py`, `tool_approvals.py`, and `workspaces.py`.
+- All 77 declared route signatures require `customer_principal`; the two Customer WebSocket paths authenticate the bearer token and explicitly resolve `require_customer_context` before accessing run/conversation data.
+- The Customer principal rejects active Partner memberships and privileged Platform roles, so those identities must use their own API namespaces.
+- Owner-scoped access is enforced through authenticated user filters/owned-record checks for conversations, runs, approvals, artifacts, knowledge documents, notifications, learning progress, wallet/usage and customer network sessions. Workspace access additionally resolves owner/member membership and permission keys.
+- Every JSON Customer route has an explicit response model except the two SSE streaming transports. The binary speed-test download route is intentionally transport-specific. WebSockets also use their message envelope rather than JSON response models.
+- This is a source review, not a live cross-tenant/RLS proof. The canonical service-role repository bypasses browser RLS by design, so backend owner checks remain security-critical; live RLS and cross-tenant denial evidence is still outstanding.
+
+### Event payload and SSE privacy correction
+- Conversation session event replay now preserves only the safe allowlist, including agent key, step index, risk and error code.
+- Customer Agent Run SSE now projects event payloads through the same safe activity allowlist used by FastAPI logs/thinking. Private tool arguments, observations, raw checkpoint bodies and worker internals are not serialized to the browser.
+- Terminal SSE output is restricted to final user-visible text and validated structured citations; error output is reduced to a bounded error code.
+- These are source-level changes only; no browser/API verification was run.
+
+### RAG retrieval → final response → conversation history
+- The Knowledge Search tool now returns an explicit `citation_marker` for each valid chunk UUID, and the runtime prompt requires the model to use that exact marker adjacent to claims grounded in retrieval.
+- The final-output assembler accepts only marker IDs actually present in the final model response, matches them to the retrieved chunk records, and persists the exact chunk ID, document ID, title, similarity and validated page/character offsets.
+- Machine markers are removed from user-visible prose after citation extraction; the structured citations remain in Agent Run output.
+- Customer conversation detail and paged message endpoints now join assistant messages to owner-scoped Agent Run output by `run_id`, validate citation identity/marker/metadata, and return a typed `citations` array. Chat restore and older-message pagination restore the citations; resumed Chat stream completion also restores final citations.
+- This preserves provenance through the persisted run output and conversation message's run link; it does not duplicate citation JSON into the conversation_messages row.
+
+### UI changes and preservation
+- UI files changed: `components/views/chat-view.tsx` and `lib/api/client.ts`. These changes only add lifecycle labels, typed citation metadata, and restoration of citations for historical/resumed Chat messages.
+- No page/layout/navigation, color, typography, spacing, component hierarchy or existing interaction redesign was made. Screenshot comparison was not performed because browser verification is explicitly prohibited in this execution.
+
+### Source commits in this increment
+- `dd67833335b925ea3fbc4754fff4f5cf44b37f12` — atomic approval decision/resume migration source.
+- `7f24463448c1403f3011774ca9b63e8d68105342` — FastAPI run resume event projection.
+- `c68cb1e5eb94da27b33f51441610c5155de26658` — Chat resume activity label.
+- `b4c61f1f9c607532e40075f50a5ba594bb9e9e1e` — safe metadata in conversation session replay.
+- `da032140feff29cec644d86bc2d9051a58e13290` — safe Customer SSE activity projection.
+- `2a85c4d441731618d07baed7065f2250b65e9515`, `fe451a2ecc49c5a39c2d7b1702cf292152e0df1a`, `65b61cd6cd0d8f1bb8640a490657b9b534f56784` — owner-scoped conversation citation history and safe terminal output.
+- `d3d0011ff97743b6cceebfa74191936bf774969f`, `c7cc9a1ef0a4fd15f0f010bdf2e7349f7435c977`, `174f8c120220faa5ff375fc78b733d992f72d948` — typed and restored citations in Chat.
+- `49457b1d7cfeb99c73c4bb2f0877fbffce22505a`, `f386c89628d5195bd566e8cebe84b6efc17f4868`, `eb4c829707dbe754a147909d42f2344b80f15c14`, `e129c47a481aa0a13c80de7c8085b495e73d3a91` — exact retrieval markers, prompt contract and marker-free user-visible final text.
+- `f242bc10e49145d4b9bcc5e54066af8aabaeaf48` — avoid duplicate worker approval decision events.
+
+### Updated source-level acceptance matrix
+
+| Area | Source-level state | Runtime acceptance |
+|---|---|---|
+| Approval decision event | Migration source atomically appends decision event with approval state | Not applied; not run |
+| Approval resume event | Migration source appends `run.resume_queued` in same transaction as run queue/checkpoint state | Not applied; not run |
+| Approval consumption event | Worker emits after successful one-time consume; not atomic with consume RPC | Not run |
+| Customer route authentication | 77/77 route signatures use customer principal; WebSockets explicitly resolve Customer context | Not run |
+| Customer response contracts | JSON routes typed; SSE and binary transports intentionally custom | Not run |
+| Customer SSE privacy | Safe event projection and bounded terminal output implemented in source | Not run |
+| RAG retrieval marker | Tool returns exact marker and prompt requires exact marker | Not run |
+| RAG final output provenance | Final response markers resolve to exact retrieved chunk/document metadata | Not run |
+| Chat history citations | Owner-scoped Agent Run output joined to assistant message by run_id; citations restored in initial and paged history | Not run |
+| Workflow/Tasks lifecycle | Safe run activity projection contains new event family; Workflow/Tasks use run activity contracts | Not run |
+
+### Remaining Phase 09 blockers
+1. The new Supabase migration must be reviewed/applied through an authorized migration process before atomic approval events are active in the canonical database. This execution deliberately did not mutate Supabase.
+2. The Customer API review is source-level only. Live owner/member/partner/platform and cross-tenant denial proof remains outstanding.
+3. Citation behavior still needs provider/worker execution acceptance across manus, planning, toolcall and checkpoint recovery variants. No real tests or provider runs were performed.
+4. Complete the remaining screen/action inventory against the latest PRD and ensure every visible action is either connected to a real endpoint or explicitly unavailable; no simulated provider features.
+5. Finalize acceptance matrix and implementation report after the remaining source gaps are closed.
+
+### Verification boundary
+No tests, lint, typecheck, build, browser checks, API probes, worker execution, migration application, Supabase schema/data changes, staging or deployment were performed. Phase 09 remains **IN PROGRESS**, not complete. Phase 10 is dependency-next only after Phase 09 source completion and when runtime verification is separately authorized; Phase 11 follows Phase 10.
