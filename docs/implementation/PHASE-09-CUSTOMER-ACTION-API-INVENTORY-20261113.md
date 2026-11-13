@@ -71,6 +71,8 @@ Scope: source-level reconciliation of Customer dashboard actions against the Fas
 
 ## Additional reconciliation — 2026-11-13
 
+- FastAPI response models now explicitly cover wallet, ledger, usage, entitlement, quota, artifact, workspace CAS upload, learning progress, tool approval list and notification contracts (see [workspace/quota/run reconciliation](./PHASE-09-CUSTOMER-WORKSPACE-QUOTA-RUN-RECONCILIATION-20261113.md)).
+
 - Centralized Agent Run status semantics in `lib/api/agent-run-status.ts`; Home, Research, Tasks and Workflow now share terminal/active classifications and localized labels for queued, pending, running, approval-waiting, succeeded, failed, cancelled, timed-out and expired states.
 - Backend Agent Run activity history now includes `run.expired` in logs/thinking and marks it as an error-level terminal event.
 - Workspace archive now refuses to archive while any known active state exists: queued, pending, running, awaiting_approval or waiting_approval.
