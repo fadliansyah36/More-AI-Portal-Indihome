@@ -76,7 +76,7 @@ Supabase migration applied:
 
 The post-migration Supabase advisor reported:
 - Security: one existing warning — leaked-password protection is disabled. No new function/RPC exposure warning was returned.
-- Performance: 61 unindexed foreign-key findings across the project and 47 unused-index findings. The newly added workspace pagination indexes appear in the unused-index snapshot because they were created moments before the advisor read; usage should be assessed after normal workload, not removed on this snapshot.
+- Performance: 61 unindexed foreign-key findings across the project and 49 unused-index findings. The newly added workspace and learning pagination indexes appear in the unused-index snapshot because they were created moments before the advisor read; usage should be assessed after normal workload, not removed on this snapshot.
 - These advisor results are static schema observations, not runtime tests.
 
 ## Verification boundary
