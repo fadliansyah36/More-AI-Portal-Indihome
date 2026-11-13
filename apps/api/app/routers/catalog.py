@@ -4,16 +4,43 @@ from typing import Any
 import os
 
 from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel
+from uuid import UUID
 
 from app.dependencies import current_user
 from app.routers.conversations import repository
 from engine.tools.catalog import tool_catalog
 from engine.llm.router import ModelRouter
 
+class AgentCatalogItemResponse(BaseModel):
+    id: UUID
+    key: str
+    name: str
+    description: str | None = None
+    version: str
+    enabled: bool
+
+
+class ModelCapabilityItemResponse(BaseModel):
+    provider_key: str
+    provider_name: str
+    model_key: str
+    model_name: str
+    capabilities: list[str]
+    max_input_tokens: int | None = None
+    max_output_tokens: int | None = None
+
+
+class ModelCapabilityListResponse(BaseModel):
+    items: list[ModelCapabilityItemResponse]
+    count: int
+    source: str
+
+
 router = APIRouter(prefix="/api/v1", tags=["catalog"])
 
 
-@router.get("/agents")
+@router.get("/agents", response_model=list[AgentCatalogItemResponse])
 async def list_agents(request: Request, user: dict[str, Any] = Depends(current_user)):
     rows = await repository(request).select("agent_definitions", {
         "enabled": "eq.true", "select": "id,key,name,description,version,enabled",
@@ -31,7 +58,7 @@ async def list_agents(request: Request, user: dict[str, Any] = Depends(current_u
     return [row for row in rows if str(row.get("key", "")).lower() in supported]
 
 
-@router.get("/models/capabilities")
+@router.get("/models/capabilities", response_model=ModelCapabilityListResponse)
 async def list_model_capabilities(request: Request, user: dict[str, Any] = Depends(current_user)):
     """Expose only enabled provider/model capabilities; never return provider secrets/config."""
     repo = repository(request)
@@ -65,7 +92,7 @@ async def list_model_capabilities(request: Request, user: dict[str, Any] = Depen
     return {"items": items, "count": len(items), "source": "enabled_provider_model_registry"}
 
 
-@router.get("/tools")
+@router.get("/tools", response_model=list[dict[str, Any]])
 async def list_tools(user: dict[str, Any] = Depends(current_user)):
     # The catalog describes upstream tools; availability remains false until a safe adapter is enabled.
     return tool_catalog()
