@@ -27,16 +27,16 @@ class CustomerContextResponse(BaseModel):
 
 class CustomerNetworkLocationResponse(BaseModel):
     id: UUID
-    name: str | None = None
-    address: dict[str, Any] | None = None
+    name: str
+    address: dict[str, Any]
 
 
 class CustomerNetworkDetailsResponse(BaseModel):
     id: UUID
-    name: str | None = None
+    name: str
     ssid_label: str | None = None
-    gateway_type: str | None = None
-    status: str | None = None
+    gateway_type: str
+    status: str
     location: CustomerNetworkLocationResponse | None = None
 
 
