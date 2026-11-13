@@ -122,8 +122,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
             ? run.input.prompt.trim().slice(0, 100)
             : `Agent Run ${run.id.slice(0, 8)}`,
           time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
-          completed: isTerminalRunStatus(run.status),
-          category: run.status,
+          completed: isTerminalAgentRunStatus(run.status),
+          category: agentRunStatusLabel(run.status),
         }));
         return [...previous, ...additions];
       });
