@@ -447,8 +447,11 @@ class DurableOpenManusRuntime:
                         if isinstance(char_end, int) and not isinstance(char_end, bool) and char_end >= 0:
                             citation["char_end"] = char_end
                         citations.append(citation)
+                # Keep machine citation markers in provenance metadata, not in the
+                # user-visible prose. The structured citation objects retain exact IDs.
+                response_text = re.sub(r"[ \\t]*\\[source:[0-9a-fA-F-]{36}\\]", "", text).strip()
                 output = {
-                    "text": text, "provider_key": response_state.get("provider_key"),
+                    "text": response_text, "provider_key": response_state.get("provider_key"),
                     "model_key": response_state.get("model_key"), "rounds": round_no,
                     "citations": citations,
                 }
@@ -456,7 +459,7 @@ class DurableOpenManusRuntime:
                     await self.memory_store.append(
                         conversation_id=context.conversation_id, user_id=context.user_id,
                         workspace_id=context.workspace_id, run_id=context.run_id,
-                        message=Message.assistant_message(text),
+                        message=Message.assistant_message(response_text),
                         message_key=f"{context.run_id}:assistant:final",
                     )
                 await save("openmanus.final", {"output": output})
