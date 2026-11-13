@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 from typing import Any
 from uuid import UUID, uuid4
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, Header
 from pydantic import BaseModel, Field
 
 from app.authorization import customer_principal
@@ -345,3 +346,119 @@ async def list_customer_workspace_runs(
         "limit": str(limit),
     })
     return {"items": rows, "count": len(rows)}
+
+
+_MAX_CUSTOMER_WORKSPACE_UPLOAD = 2_000_000
+_WORKSPACE_PATH = re.compile(r"^[A-Za-z0-9._ -]+(?:/[A-Za-z0-9._ -]+)*$")
+
+
+def _customer_workspace_path(value: str) -> str:
+    if (
+        not value or len(value) > 512 or value.startswith("/")
+        or "\\" in value or "\x00" in value
+        or any(part in {"", ".", ".."} for part in value.split("/"))
+        or not _WORKSPACE_PATH.fullmatch(value)
+    ):
+        raise HTTPException(422, "Workspace path contains unsupported characters")
+    return value
+
+
+@router.post("/{workspace_id}/files", status_code=201)
+async def upload_customer_workspace_file(
+    workspace_id: UUID,
+    request: Request,
+    path: str = Header(alias="X-Workspace-Path", max_length=512),
+    expected_version: str = Header(alias="If-Match", min_length=1, max_length=24),
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=12, max_length=128),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Commit a customer upload as a new immutable workspace version using CAS."""
+    normalized_path = _customer_workspace_path(path)
+    if not expected_version.isascii() or not expected_version.isdecimal() or len(expected_version) > 19:
+        raise HTTPException(400, "If-Match must contain the expected non-negative workspace file version")
+    current_version = int(expected_version)
+    if current_version > 9_223_372_036_854_775_806:
+        raise HTTPException(422, "Workspace version is outside the supported range")
+
+    repo = repository(request)
+    await _workspace_access(repo, workspace_id, user["id"])
+    content = await request.body()
+    if not content or len(content) > _MAX_CUSTOMER_WORKSPACE_UPLOAD:
+        raise HTTPException(413, "Workspace files must contain between 1 byte and 2 MB")
+
+    mime_type = request.headers.get("content-type", "application/octet-stream").split(";", 1)[0].strip().lower()
+    if not re.fullmatch(r"[a-z0-9.+-]+/[a-z0-9.+-]+", mime_type):
+        raise HTTPException(400, "Content-Type is invalid")
+
+    settings = request.app.state.settings
+    if not settings.supabase_data_ready or not settings.supabase_service_role_key:
+        raise HTTPException(503, "Workspace Storage is not configured")
+    bucket = os.getenv("MOREAI_WORKSPACE_BUCKET", "moreai-artifacts")
+    base_url = settings.supabase_url.rstrip("/")
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": "Bearer " + settings.supabase_service_role_key,
+    }
+    bucket_response = await request.app.state.http.get(
+        base_url + "/storage/v1/bucket/" + quote(bucket, safe=""),
+        headers=headers,
+        timeout=8.0,
+    )
+    if bucket_response.status_code >= 400:
+        raise HTTPException(503, "Workspace Storage bucket is unavailable")
+    bucket_payload = bucket_response.json()
+    if not isinstance(bucket_payload, dict) or bucket_payload.get("public") is not False:
+        raise HTTPException(503, "Workspace Storage bucket must be private")
+
+    next_version = current_version + 1
+    storage_path = (
+        user["id"] + "/workspaces/" + str(workspace_id)
+        + "/versions/" + str(next_version) + "/" + normalized_path
+    )
+    object_url = (
+        base_url + "/storage/v1/object/" + quote(bucket, safe="")
+        + "/" + quote(storage_path, safe="/")
+    )
+    checksum = hashlib.sha256(content).hexdigest()
+    upload_response = await request.app.state.http.post(
+        object_url,
+        content=content,
+        headers={
+            **headers,
+            "Content-Type": mime_type,
+            "x-upsert": "false",
+        },
+        timeout=30.0,
+    )
+    uploaded_by_this_request = upload_response.status_code < 400
+    if upload_response.status_code == 409:
+        # Idempotent retries may find the immutable object already present.
+        # Reuse it only when the stored bytes exactly match this request.
+        existing = await request.app.state.http.get(object_url, headers=headers, timeout=20.0)
+        if existing.status_code >= 400 or len(existing.content) != len(content) or hashlib.sha256(existing.content).hexdigest() != checksum:
+            raise HTTPException(409, "Workspace version object already exists with different content")
+    elif upload_response.status_code >= 400:
+        raise HTTPException(502, "Workspace Storage upload failed")
+
+    try:
+        result = await repo.rpc("moreai_customer_workspace_commit_upload", {
+            "p_user_id": user["id"],
+            "p_workspace_id": str(workspace_id),
+            "p_path": normalized_path,
+            "p_expected_version": current_version,
+            "p_idempotency_key": idempotency_key,
+            "p_storage_path": storage_path,
+            "p_sha256": checksum,
+            "p_size_bytes": len(content),
+        })
+    except Exception:
+        # A successful Storage write without a committed metadata row is not
+        # exposed as a workspace version. Remove only the object created here.
+        # A pre-existing object is retained for a safe idempotent retry.
+        if uploaded_by_this_request:
+            await request.app.state.http.delete(object_url, headers=headers, timeout=15.0)
+        raise
+
+    if not isinstance(result, dict) or result.get("file_id") is None or result.get("version") != next_version:
+        raise HTTPException(502, "Workspace upload commit returned an invalid result")
+    return result
