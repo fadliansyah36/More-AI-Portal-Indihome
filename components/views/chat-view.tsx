@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Bot, Copy, Loader2, Paperclip, Send, ShieldCheck, Sparkles, StopCircle, User } from 'lucide-react';
+import { ArrowLeft, Bot, Copy, Loader2, Paperclip, Send, ShieldCheck, Sparkles, StopCircle, User, X } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 import { NavigationTab } from '@/types/moreai';
-import { customerApi, moreAiApiStream } from '@/lib/api/client';
+import { artifactApi, customerApi, moreAiApiStream } from '@/lib/api/client';
 
 interface ChatCitation {
   id: string;
@@ -24,6 +24,7 @@ interface ChatMessage {
   time: string;
   source?: string;
   citations?: ChatCitation[];
+  attachments?: Array<{ id: string; filename: string; mime_type?: string | null; size_bytes?: number | null }>;
 }
 
 interface ChatViewProps {
@@ -42,6 +43,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
   const [inputText, setInputText] = useState(initialPrompt);
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoringConversation, setIsRestoringConversation] = useState(!initialPrompt.trim());
+  const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
@@ -87,13 +90,21 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
 
   const handleSendMessage = useCallback(async (textToSend?: string) => {
     const text = (textToSend ?? inputText).trim();
-    if (!text || isLoading || isRestoringConversation) return;
+    const filesToUpload = textToSend === undefined ? [...pendingAttachments] : [];
+    if ((!text && filesToUpload.length === 0) || isLoading || isRestoringConversation) return;
+    const prompt = text || 'Tolong analisis file yang saya lampirkan dan jelaskan temuan pentingnya.';
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       sender: 'user',
-      text,
+      text: prompt,
       time: timeLabel(),
+      attachments: filesToUpload.map((file) => ({
+        id: file.name + ':' + file.size,
+        filename: file.name,
+        mime_type: file.type,
+        size_bytes: file.size,
+      })),
     };
     const assistantId = crypto.randomUUID();
     setMessages((previous) => [...previous, userMessage]);
@@ -107,13 +118,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     try {
       let activeConversationId = conversationId;
       if (!activeConversationId) {
-        const created = await customerApi.createConversation(text.slice(0, 120));
+        const created = await customerApi.createConversation(prompt.slice(0, 120));
         activeConversationId = created.id;
         setConversationId(created.id);
       }
 
+      const uploadedAttachments = await Promise.all(
+        filesToUpload.map((file) => artifactApi.uploadAttachment(activeConversationId as string, file)),
+      );
+      if (filesToUpload.length > 0) setPendingAttachments([]);
       const queued = await customerApi.sendMessage(
-        activeConversationId, text, crypto.randomUUID(), initialAgentKey,
+        activeConversationId, prompt, crypto.randomUUID(), initialAgentKey,
+        uploadedAttachments.map((attachment) => attachment.id),
       );
       setActiveRunId(queued.run.id);
 
@@ -207,7 +223,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       setIsCancelling(false);
       setIsLoading(false);
     }
-  }, [inputText, isLoading, isRestoringConversation, conversationId, showToast, initialAgentKey]);
+  }, [inputText, pendingAttachments, isLoading, isRestoringConversation, conversationId, showToast, initialAgentKey]);
 
   const handleCancelRun = useCallback(async () => {
     if (!activeRunId || isCancelling) return;
@@ -269,6 +285,16 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             )}
             <div className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-xs ${message.sender === 'user' ? 'rounded-tr-sm bg-red-600 text-white' : 'rounded-tl-sm border border-slate-100 bg-white text-slate-800'}`}>
               <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.text || 'Agent sedang memproses…'}</p>
+              {message.attachments && message.attachments.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {message.attachments.map((attachment) => (
+                    <span key={attachment.id} className={`inline-flex max-w-full items-center gap-1 rounded-lg px-2 py-1 text-[10px] ${message.sender === 'user' ? 'bg-red-500 text-red-50' : 'bg-slate-100 text-slate-600'}`}>
+                      <Paperclip className="h-3 w-3 shrink-0" />
+                      <span className="max-w-40 truncate">{attachment.filename}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className={`mt-2 flex items-center justify-between gap-4 text-[10px] ${message.sender === 'user' ? 'text-red-100' : 'text-slate-400'}`}>
                 <span>{message.source ?? (message.sender === 'user' ? 'Anda' : 'MoreAI')}</span>
                 <span>{message.time}</span>
@@ -309,8 +335,48 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       </div>
 
       <form onSubmit={(event) => { event.preventDefault(); void handleSendMessage(); }} className="border-t border-slate-100 bg-white p-3">
+        {pendingAttachments.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {pendingAttachments.map((file, index) => (
+              <span key={file.name + ':' + file.size + ':' + index} className="inline-flex max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700">
+                <Paperclip className="h-3 w-3 shrink-0 text-slate-400" />
+                <span className="max-w-48 truncate">{file.name}</span>
+                <button type="button" onClick={() => setPendingAttachments((items) => items.filter((_, itemIndex) => itemIndex !== index))} disabled={isLoading} aria-label={'Hapus lampiran ' + file.name} className="rounded p-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".txt,.md,.csv,.json,.pdf,.jpg,.jpeg,.png,.webp,text/plain,text/markdown,text/csv,application/json,application/pdf,image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(event) => {
+            const incoming = Array.from(event.target.files ?? []);
+            event.currentTarget.value = '';
+            const allowed = new Set(['text/plain', 'text/markdown', 'text/csv', 'application/json', 'application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
+            const accepted = incoming.filter((file) => {
+              if (!allowed.has(file.type) || file.size < 1 || file.size > 2_000_000 || !/^[A-Za-z0-9][A-Za-z0-9._ -]{0,179}$/.test(file.name)) {
+                showToast('Lampiran harus berupa TXT, MD, CSV, JSON, PDF, JPG, PNG, atau WebP dengan ukuran maksimal 2 MB.', 'error');
+                return false;
+              }
+              return true;
+            });
+            setPendingAttachments((current) => {
+              const combined = [...current, ...accepted];
+              if (combined.length > 10 || combined.reduce((sum, file) => sum + file.size, 0) > 10_000_000) {
+                showToast('Maksimal 10 lampiran dengan total ukuran 10 MB.', 'error');
+                return current;
+              }
+              return combined;
+            });
+          }}
+        />
         <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-red-300">
-          <button type="button" disabled aria-label="Lampiran belum tersedia" className="rounded-xl p-2 text-slate-300">
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isRestoringConversation || pendingAttachments.length >= 10} aria-label="Tambah lampiran" className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-200 disabled:opacity-40">
             <Paperclip className="h-5 w-5" />
           </button>
           <textarea
@@ -322,7 +388,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             disabled={isLoading || isRestoringConversation}
             className="max-h-32 min-h-10 flex-1 resize-y bg-transparent px-2 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:opacity-60"
           />
-          <button type="submit" disabled={isLoading || isRestoringConversation || !inputText.trim()} aria-label="Kirim pesan" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+          <button type="submit" disabled={isLoading || isRestoringConversation || (!inputText.trim() && pendingAttachments.length === 0)} aria-label="Kirim pesan" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300">
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
         </div>
