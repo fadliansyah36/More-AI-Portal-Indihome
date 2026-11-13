@@ -38,11 +38,16 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [paginationError, setPaginationError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const result = await notificationApi.list(false, 100);
+      const result = await notificationApi.listPage(false, 50);
       setItems(result.items);
+      setNextCursor(result.nextCursor);
+      setPaginationError(null);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Notifikasi tidak dapat dimuat.');
@@ -56,6 +61,24 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
     void Promise.resolve().then(() => { if (active) void load(); });
     return () => { active = false; };
   }, [load]);
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setPaginationError(null);
+    try {
+      const page = await notificationApi.listPage(false, 50, nextCursor);
+      setItems((current) => {
+        const known = new Set(current.map((item) => item.id));
+        return [...current, ...page.items.filter((item) => !known.has(item.id))];
+      });
+      setNextCursor(page.nextCursor);
+    } catch (cause) {
+      setPaginationError(cause instanceof Error ? cause.message : 'Halaman notifikasi berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const markAllRead = async () => {
     setBusy(true);
@@ -123,6 +146,13 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
             );
           })}
         </div>}
+      {paginationError && <div role="alert" className="p-3 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-800">{paginationError}</div>}
+      {!loading && nextCursor && (
+        <button type="button" onClick={() => void loadMore()} disabled={loadingMore}
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
+          {loadingMore ? 'Memuat notifikasi…' : 'Muat notifikasi berikutnya'}
+        </button>
+      )}
     </div>
   );
 };
