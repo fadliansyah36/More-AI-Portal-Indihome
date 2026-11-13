@@ -272,7 +272,7 @@ async def readiness(request: Request):
     }
 
 
-@app.get("/v1/me", tags=["identity"], include_in_schema=False)
+@app.get("/v1/me", tags=["identity"], include_in_schema=False, response_model=MyProfileResponse)
 @app.get("/api/v1/me", tags=["identity"], response_model=MyProfileResponse)
 async def get_me(request: Request, user=Depends(current_user)):
     settings = request.app.state.settings
