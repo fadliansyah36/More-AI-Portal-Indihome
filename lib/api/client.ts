@@ -572,6 +572,9 @@ export const customerApi = {
   agents: () => moreAiCustomerApi<CustomerAgentCatalogItem[]>('/api/v1/agents'),
   context: () => moreAiCustomerApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
   conversations: (limit = 50, before?: string) => moreAiCustomerApi<CustomerConversation[]>(`/api/v1/customer/conversations?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
+  conversationsPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerConversation>(
+    `/api/v1/customer/conversations?limit=${Math.max(1, Math.min(100, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
+  ),
   getConversation: (conversationId: string) => moreAiCustomerApi<{
     conversation: CustomerConversation;
     messages: Array<{
@@ -655,7 +658,13 @@ export const customerApi = {
     ),
   wallets: () => moreAiCustomerApi<{ wallets: CustomerWallet[] }>('/api/v1/customer/wallet'),
   ledger: (limit = 50, before?: string) => moreAiCustomerApi<CustomerLedgerEntry[]>(`/api/v1/customer/wallet/ledger?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
+  ledgerPage: (limit = 50, cursor?: string, walletId?: string) => moreAiCustomerApiPage<CustomerLedgerEntry>(
+    `/api/v1/customer/wallet/ledger?limit=${Math.max(1, Math.min(100, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}${walletId ? '&wallet_id=' + encodeURIComponent(walletId) : ''}`,
+  ),
   usage: (limit = 50, before?: string) => moreAiCustomerApi<CustomerUsageRecord[]>(`/api/v1/customer/usage?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
+  usagePage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerUsageRecord>(
+    `/api/v1/customer/usage?limit=${Math.max(1, Math.min(100, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
+  ),
   usageAnalytics: (days = 30) => moreAiCustomerApi<CustomerUsageAnalytics>(`/api/v1/customer/usage/analytics?days=${Math.max(1, Math.min(365, days))}`),
   entitlements: () => moreAiCustomerApi<CustomerEntitlement[]>('/api/v1/customer/entitlements'),
   quotas: () => moreAiCustomerApi<CustomerQuota[]>('/api/v1/customer/quotas'),
