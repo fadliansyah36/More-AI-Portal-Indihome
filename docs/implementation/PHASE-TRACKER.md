@@ -1044,3 +1044,10 @@ Current implementation commit at this report: `d5983ea19ac9ae6432ceaee51b40c3839
 - Supabase migration history re-read: the nine previously applied migrations remain recorded; no migration was added in this increment.
 - No real tests, staging, browser/API/worker runtime checks or E2E verification. Phase 09 IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
 - Detailed report: [PHASE-09-CUSTOMER-WORKSPACE-CAS-CHAT-RESUME-20261113.md](./PHASE-09-CUSTOMER-WORKSPACE-CAS-CHAT-RESUME-20261113.md).
+
+
+## 2026-11-13 follow-up — chat attachment run relationship resolution
+
+- Corrected the artifact listing contract to resolve Chat attachment `run_id` through the authoritative `conversation_message_attachments` junction. Chat attachments are uploaded before their Agent Run exists, so the artifact row's nullable `run_id` is not sufficient; this owner-scoped join now exposes the exact run association to Research, Workflow and artifact clients without a schema migration.
+- Source commit: `9e1c64e5de6e2ee33d3ba2e127ebb05413d7c73d`.
+- This latest API source change is not included in the current Vercel Production deployments (both remain at commit `5501e3c`). The attempt to deploy newer source HEAD `ed0eb39` was rejected by Vercel's daily API deployment quota; no new deployment was created for `9e1c64e`.
