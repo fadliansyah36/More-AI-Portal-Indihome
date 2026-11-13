@@ -70,3 +70,10 @@ Scope: source-level integration corrections across existing Customer UI, FastAPI
 - The existing Files screen now refreshes the selected workspace file list after a failed CAS upload attempt. This reconciles the client version after a version conflict or an ambiguous response where the server may already have committed the immutable version.
 - No layout or visual behavior was changed.
 - Commit: `937fb8c4283d0ffd73257710a20d263ba1bbfa0f`.
+
+### 8. Durable stream lifecycle parity
+- Added one terminal-run status set to the backend Agent Run WebSocket transport. Initial snapshots, incremental updates and idle polling now close on `timed_out` as well as succeeded/failed/cancelled/expired.
+- WebSocket thinking/log projections include `run.expired` and classify it as an error-level event.
+- Customer SSE now honors the `Last-Event-ID` header on reconnect using the same validated cursor parser as the general Agent Run stream.
+- Customer SSE now terminates on `run.expired` and synthesizes the correct `run.expired` event for persisted expired status instead of mapping it to `run.failed`.
+- Commits: `9e8524842aeaf69eea65faec5681523381c2ca11`, `8e68d8de34aa6594ca200b8ee9a0ce6c0aa2e712`, `80d77589aa3a45e81cdc22cfb5a9430e28d6177e`, `3a922da740aaf9d60186eba251eeb09cc39980b7`.
