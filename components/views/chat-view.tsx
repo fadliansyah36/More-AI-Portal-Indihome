@@ -59,8 +59,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     let active = true;
     const restoreLatestConversation = async () => {
       try {
-        const conversations = await customerApi.conversations(1);
-        const latest = conversations.find((item) => item.status === 'active') ?? conversations[0];
+        const conversations = await customerApi.conversations(50);
+        const latest = conversations.find((item) => item.status === 'active');
         if (!latest || !active) return;
         const restored = await customerApi.getConversation(latest.id);
         if (!active) return;
