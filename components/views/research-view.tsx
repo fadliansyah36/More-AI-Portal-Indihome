@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search, TrendingUp, BookOpen, ChevronRight, ArrowLeft } from 'lucide-react';
 import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact } from '@/lib/api/client';
+import { agentRunStatusLabel } from '@/lib/api/agent-run-status';
 
 interface ResearchViewProps {
   onBack?: () => void;
@@ -37,7 +38,7 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
   const filteredRuns = runs.filter((run) => runTitle(run).toLowerCase().includes(searchQuery.toLowerCase()));
   const resultText = (run: CustomerAgentRun) => {
     const value = run.output?.text ?? run.output?.content ?? run.output?.result;
-    return typeof value === 'string' ? value : run.status === 'failed' ? 'Run gagal. Detail error dapat dilihat pada Workflow.' : 'Belum ada output final yang tersimpan.';
+    return typeof value === 'string' ? value : ['failed', 'timed_out', 'expired', 'cancelled'].includes(run.status) ? 'Run tidak menghasilkan output final. Detail status dan error dapat dilihat pada Workflow.' : 'Belum ada output final yang tersimpan.';
   };
 
   const downloadArtifact = async (artifactId: string) => {
@@ -126,7 +127,7 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-red-100 bg-red-50 text-red-600"><TrendingUp className="h-5 w-5" /></div>
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-xs font-bold text-slate-900">{runTitle(run)}</h3>
-                <p className="mt-1 text-[11px] text-slate-500">Status: {run.status} · {run.created_at ? new Date(run.created_at).toLocaleString('id-ID') : 'Waktu tidak tersedia'}</p>
+                <p className="mt-1 text-[11px] text-slate-500">Status: {agentRunStatusLabel(run.status)} · {run.created_at ? new Date(run.created_at).toLocaleString('id-ID') : 'Waktu tidak tersedia'}</p>
               </div>
               <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
             </button>
@@ -141,7 +142,7 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
           <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-slate-100 text-slate-800 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
-                Run · {selectedTopic.status}
+                Run · {agentRunStatusLabel(selectedTopic.status)}
               </span>
               <button
                 onClick={() => setSelectedTopic(null)}
