@@ -25,6 +25,11 @@ class ToolApprovalResponse(BaseModel):
     consumed_at: datetime | None
 
 
+class ToolApprovalMutationResponse(BaseModel):
+    id: UUID
+    status: Literal["pending", "approved", "denied", "expired", "consumed"]
+
+
 class ApprovalRequest(BaseModel):
     run_id: UUID
     tool_key: Literal["bash", "python_execute", "browser_use", "planning_step", "browser", "file_read", "file_write", "file_edit", "workspace_restore_version"]
@@ -49,13 +54,15 @@ async def list_tool_approvals(
     })
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, response_model=ToolApprovalMutationResponse)
 async def request_tool_approval(
     body: ApprovalRequest, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
 ):
+    repo = repository(request)
+    await repo.owned_record("agent_runs", body.run_id, user["id"])
     try:
-        approval_id = await repository(request).rpc("moreai_request_tool_approval", {
+        approval_id = await repo.rpc("moreai_request_tool_approval", {
             "p_run_id": str(body.run_id),
             "p_user_id": user["id"],
             "p_tool_key": body.tool_key,
