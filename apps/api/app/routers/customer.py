@@ -74,6 +74,11 @@ class CustomerConversationMessageResponse(BaseModel):
     attachments: list[CustomerConversationMessageAttachmentResponse] = Field(default_factory=list)
 
 
+class CustomerConversationMessagePageResponse(BaseModel):
+    items: list[CustomerConversationMessageResponse]
+    count: int
+
+
 class CustomerConversationDetailResponse(BaseModel):
     conversation: CustomerConversationResponse
     messages: list[CustomerConversationMessageResponse]
@@ -273,6 +278,48 @@ async def customer_conversations(
     return rows
 
 
+async def _customer_conversation_message_attachments(
+    repo: Any, user_id: str, conversation_id: UUID, messages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    message_ids = [str(row["id"]) for row in messages if row.get("id")]
+    if not message_ids:
+        return [{**message, "attachments": []} for message in messages]
+    links = await repo.select("conversation_message_attachments", {
+        "conversation_id": f"eq.{conversation_id}",
+        "user_id": f"eq.{user_id}",
+        "message_id": f"in.({','.join(message_ids)})",
+        "select": "message_id,artifact_id",
+        "order": "created_at.asc",
+        "limit": str(max(1, len(message_ids) * 10)),
+    })
+    artifact_ids = sorted({str(row["artifact_id"]) for row in links if row.get("artifact_id")})
+    artifact_by_id: dict[str, dict[str, Any]] = {}
+    if artifact_ids:
+        artifacts = await repo.select("artifacts", {
+            "id": f"in.({','.join(artifact_ids)})",
+            "user_id": f"eq.{user_id}",
+            "select": "id,mime_type,size_bytes,metadata,created_at",
+            "limit": str(len(artifact_ids)),
+        })
+        artifact_by_id = {str(row["id"]): row for row in artifacts if row.get("id")}
+    attachments_by_message: dict[str, list[dict[str, Any]]] = {}
+    for link in links:
+        artifact = artifact_by_id.get(str(link.get("artifact_id")))
+        if not artifact:
+            continue
+        metadata = artifact.get("metadata") if isinstance(artifact.get("metadata"), dict) else {}
+        attachments_by_message.setdefault(str(link["message_id"]), []).append({
+            "id": str(artifact["id"]),
+            "filename": str(metadata.get("filename") or "attachment"),
+            "mime_type": artifact.get("mime_type"),
+            "size_bytes": artifact.get("size_bytes"),
+        })
+    return [
+        {**message, "attachments": attachments_by_message.get(str(message["id"]), [])}
+        for message in messages
+    ]
+
+
 @router.get("/conversations/{conversation_id}", response_model=CustomerConversationDetailResponse)
 async def customer_conversation(
     conversation_id: UUID, request: Request,
@@ -284,34 +331,46 @@ async def customer_conversation(
     messages = await repo.select("conversation_messages", {
         "conversation_id": f"eq.{conversation_id}", "user_id": f"eq.{principal['id']}",
         "select": "id,role,content,model_key,run_id,created_at",
-        "order": "created_at.asc", "limit": "500",
+        "order": "created_at.desc,id.desc", "limit": "50",
     })
-    attachment_links = await repo.select("conversation_message_attachments", {
-        "conversation_id": f"eq.{conversation_id}", "user_id": f"eq.{principal['id']}",
-        "select": "message_id,artifact_id", "order": "created_at.asc", "limit": "1000",
-    })
-    artifact_ids = sorted({str(row["artifact_id"]) for row in attachment_links if row.get("artifact_id")})
-    artifact_by_id: dict[str, dict[str, Any]] = {}
-    if artifact_ids:
-        artifacts = await repo.select("artifacts", {
-            "id": f"in.({','.join(artifact_ids)})", "user_id": f"eq.{principal['id']}",
-            "select": "id,mime_type,size_bytes,metadata,created_at", "limit": "100",
-        })
-        artifact_by_id = {str(row["id"]): row for row in artifacts if row.get("id")}
-    attachments_by_message: dict[str, list[dict[str, Any]]] = {}
-    for link in attachment_links:
-        artifact = artifact_by_id.get(str(link.get("artifact_id")))
-        if not artifact:
-            continue
-        metadata = artifact.get("metadata") if isinstance(artifact.get("metadata"), dict) else {}
-        attachments_by_message.setdefault(str(link["message_id"]), []).append({
-            "id": str(artifact["id"]),
-            "filename": str(metadata.get("filename") or "attachment"),
-            "mime_type": artifact.get("mime_type"),
-            "size_bytes": artifact.get("size_bytes"),
-        })
-    messages = [{**message, "attachments": attachments_by_message.get(str(message["id"]), [])} for message in messages]
+    messages.reverse()
+    messages = await _customer_conversation_message_attachments(repo, principal["id"], conversation_id, messages)
     return {"conversation": conversation, "messages": messages}
+
+
+@router.get("/conversations/{conversation_id}/messages", response_model=CustomerConversationMessagePageResponse)
+async def customer_conversation_messages(
+    conversation_id: UUID,
+    request: Request,
+    response: Response,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
+    user: dict[str, Any] = Depends(current_user),
+):
+    """Return a chronological page of owner-scoped messages, with cursor moving toward older history."""
+    decoded = decode_created_at_id_cursor(cursor)
+    principal = await require_customer_context(request, user)
+    repo = repository(request)
+    await repo.owned_record("conversations", conversation_id, principal["id"])
+    filters = {
+        "conversation_id": f"eq.{conversation_id}",
+        "user_id": f"eq.{principal['id']}",
+        "select": "id,role,content,model_key,run_id,created_at",
+        "order": "created_at.desc,id.desc",
+        "limit": str(limit + 1),
+    }
+    cursor_filter = created_at_id_filter(decoded)
+    if cursor_filter:
+        filters["or"] = cursor_filter
+    rows = await repo.select("conversation_messages", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(rows[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
+    rows.reverse()
+    items = await _customer_conversation_message_attachments(repo, principal["id"], conversation_id, rows)
+    return {"items": items, "count": len(items)}
 
 
 @router.post("/conversations/{conversation_id}/messages", status_code=202, response_model=CustomerMessageEnqueueResponse)
