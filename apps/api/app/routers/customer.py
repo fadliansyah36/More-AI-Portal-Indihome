@@ -28,7 +28,7 @@ class CustomerContextResponse(BaseModel):
 class CustomerNetworkLocationResponse(BaseModel):
     id: UUID
     name: str | None = None
-    address: str | None = None
+    address: dict[str, Any] | None = None
 
 
 class CustomerNetworkDetailsResponse(BaseModel):
