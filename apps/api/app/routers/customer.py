@@ -266,7 +266,7 @@ async def customer_conversation(
     return {"conversation": conversation, "messages": messages}
 
 
-@router.post("/conversations/{conversation_id}/messages", status_code=202)
+@router.post("/conversations/{conversation_id}/messages", status_code=202, response_model=dict[str, Any])
 async def send_customer_message(
     conversation_id: UUID, body: MessageCreate, request: Request,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -330,7 +330,7 @@ async def customer_agent_run(
 
 
 
-@router.post("/agent-runs/{run_id}/cancel")
+@router.post("/agent-runs/{run_id}/cancel", response_model=dict[str, Any])
 async def customer_cancel_agent_run(
     run_id: UUID,
     request: Request,
@@ -606,7 +606,7 @@ async def customer_usage(
     return rows
 
 
-@router.get("/usage/analytics")
+@router.get("/usage/analytics", response_model=dict[str, Any])
 async def customer_usage_analytics(
     request: Request,
     days: int = Query(default=30, ge=1, le=365),
@@ -685,7 +685,7 @@ class AccessCodeRedeem(BaseModel):
     verification_session_id: UUID
 
 
-@router.post("/access-codes/redeem")
+@router.post("/access-codes/redeem", response_model=dict[str, Any])
 async def redeem_partner_access_code(
     body: AccessCodeRedeem,
     request: Request,
