@@ -50,6 +50,16 @@ class CustomerConversationDetailResponse(BaseModel):
     messages: list[CustomerConversationMessageResponse]
 
 
+class CustomerAgentRunStepResponse(BaseModel):
+    id: UUID
+    sequence: int
+    step_key: str
+    status: str
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    created_at: datetime
+
+
 class CustomerAgentRunResponse(BaseModel):
     id: UUID
     conversation_id: UUID | None
@@ -306,7 +316,7 @@ async def customer_cancel_agent_run(
     })
 
 
-@router.get("/agent-runs/{run_id}/steps")
+@router.get("/agent-runs/{run_id}/steps", response_model=list[CustomerAgentRunStepResponse])
 async def customer_agent_run_steps(
     run_id: UUID, request: Request,
     limit: int = Query(default=100, ge=1, le=500),
