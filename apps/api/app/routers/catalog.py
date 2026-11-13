@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from uuid import UUID
 
-from app.dependencies import current_user
+from app.authorization import customer_principal
 from app.routers.conversations import repository
 from engine.tools.catalog import tool_catalog
 from engine.llm.router import ModelRouter
@@ -59,7 +59,7 @@ router = APIRouter(prefix="/api/v1", tags=["catalog"])
 
 
 @router.get("/agents", response_model=list[AgentCatalogItemResponse])
-async def list_agents(request: Request, user: dict[str, Any] = Depends(current_user)):
+async def list_agents(request: Request, user: dict[str, Any] = Depends(customer_principal)):
     rows = await repository(request).select("agent_definitions", {
         "enabled": "eq.true", "select": "id,key,name,description,version,enabled",
         "order": "display_name.asc", "limit": "200",
