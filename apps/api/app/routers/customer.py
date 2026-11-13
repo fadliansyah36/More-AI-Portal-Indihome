@@ -538,25 +538,34 @@ async def customer_network_speedtest_upload(
 @router.get("/network-sessions", response_model=list[CustomerNetworkSessionResponse])
 async def customer_network_sessions(
     request: Request,
+    response: Response,
     limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(current_user),
 ):
-    """Return the authenticated customer's own network session history.
-
-    The response intentionally excludes gateway identifiers, IP addresses,
-    device fingerprints and private verification evidence.
-    """
+    """Return owner-scoped network session history without private device evidence."""
+    decoded = decode_timestamp_id_cursor(cursor)
     principal = await require_customer_context(request, user)
-    return await repository(request).select("network_sessions", {
+    filters = {
         "user_id": f"eq.{principal['id']}",
         "select": (
             "id,network_id,status,started_at,last_heartbeat_at,expires_at,ended_at,end_reason,"
             "network:partner_networks(id,name,ssid_label,gateway_type,status,"
             "location:partner_locations(id,name,address))"
         ),
-        "order": "started_at.desc",
-        "limit": str(limit),
-    })
+        "order": "started_at.desc,id.desc",
+        "limit": str(limit + 1),
+    }
+    cursor_filter = timestamp_id_filter(decoded, "started_at")
+    if cursor_filter:
+        filters["or"] = cursor_filter
+    rows = await repository(request).select("network_sessions", filters)
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    if has_more and rows:
+        response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(rows[-1], "started_at")
+    response.headers["X-Pagination-Mode"] = "keyset"
+    return rows
 
 
 @router.get("/wallet", response_model=CustomerWalletListResponse)
