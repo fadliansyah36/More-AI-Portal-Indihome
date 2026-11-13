@@ -12,17 +12,41 @@ export const DevicesConnectedView: React.FC<DevicesConnectedViewProps> = ({ onBa
   const [sessions, setSessions] = useState<CustomerNetworkSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [paginationError, setPaginationError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setSessions(await customerApi.networkSessions(100));
+      const page = await customerApi.networkSessionsPage(50);
+      setSessions(page.items);
+      setNextCursor(page.nextCursor);
       setError(null);
+      setPaginationError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Riwayat jaringan tidak dapat dimuat.');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setPaginationError(null);
+    try {
+      const page = await customerApi.networkSessionsPage(50, nextCursor);
+      setSessions((current) => {
+        const known = new Set(current.map((session) => session.id));
+        return [...current, ...page.items.filter((session) => !known.has(session.id))];
+      });
+      setNextCursor(page.nextCursor);
+    } catch (cause) {
+      setPaginationError(cause instanceof Error ? cause.message : 'Halaman sesi jaringan berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -53,6 +77,13 @@ export const DevicesConnectedView: React.FC<DevicesConnectedViewProps> = ({ onBa
               <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold ${session.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{session.status}</span>
             </article>
           ))}</div>
+        )}
+        {paginationError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{paginationError}</div>}
+        {!loading && nextCursor && (
+          <button type="button" onClick={() => void loadMore()} disabled={loadingMore}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
+            {loadingMore ? 'Memuat sesi…' : 'Muat sesi sebelumnya'}
+          </button>
         )}
       </div>
     </div>
