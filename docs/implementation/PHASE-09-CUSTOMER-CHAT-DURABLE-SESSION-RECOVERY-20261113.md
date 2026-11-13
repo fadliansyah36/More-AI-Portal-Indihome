@@ -222,3 +222,40 @@ Per explicit instruction, no tests, lint, typecheck, build, browser verification
 A follow-up worker change adds `agent.execution.timed_out` when the worker run deadline expires, `agent.execution.cancelled` when cancellation wins the dispatch race, and `agent.execution.failed` for classified and unexpected execution failures. These are attempt-scoped idempotent event keys and contain only the agent key, safe error code/classification and retryable flag. Lease-loss paths deliberately emit no terminal event because a stale worker no longer owns the run. Planning events are emitted only for the `planning` runtime key; other agent keys are not mislabeled as planning.
 
 Additional source commit: `52c38e1fac033d5521b4d54969aa9b9b48c82812`.
+
+
+## Phase 09 continuation — Planning steps, tool outcomes, approval decisions, and API activity projection (2026-11-14)
+
+### Implemented on `main`
+- `PlanningAgentRuntime` now publishes durable step events: `planning.step.approval_required`, `planning.step.approval_resumed`, `planning.step.started`, `planning.step.completed`, and `planning.step.failed`. Payloads contain bounded step index, executor agent key, risk/status and exception class only; objective text, prompts, tool arguments and model observations are excluded.
+- `apps/worker/app/registry_factory.py` wires the existing durable `WorkerRpcClient.append_run_event` publisher into the Planning runtime.
+- Durable OpenManus tool execution now distinguishes `tool.completed`, `tool.failed`, and `tool.timed_out` instead of reporting every settled tool outcome as `tool.completed`. Existing `tool.started` and `tool.cancelled` remain.
+- Approval lifecycle now persists `tool.approval_requested` before the pause RPC releases the worker lease. When the durable run resumes and the worker observes the canonical approval status, it publishes `tool.approval_granted`, `tool.approval_denied`, `tool.approval_expired`, or `tool.approval_consumed` before continuing/settling the approval.
+- FastAPI safe run-activity projection now allowlists agent key, planning step index/risk and safe error code/type fields, and maps the expanded agent/planning/tool/approval event taxonomy to customer-safe activity labels. The `/thinking` projection includes the new event types. Raw event payloads remain private.
+
+### Source files changed
+- `engine/agents/planning_runtime.py`
+- `apps/worker/app/registry_factory.py`
+- `engine/agents/durable_tool_runtime.py`
+- `apps/worker/app/client.py`
+- `apps/api/app/routers/agent_runs.py`
+
+### Commit sequence
+- `0c299f540889fe4b5b1ca03f0f5f14cba7d05454` — planning step lifecycle publisher
+- `a194ea73cf4632bfc9ad5c002c23c7597d039c0b` — worker planning publisher wiring
+- `9ee8365c73b345116c458d06ec5e6a6aa33e2d69` — distinct tool failure/timeout event types
+- `0956647345f7692a93e79e5f7c3412e9020da246` — approval decision/resume event publication
+- `ee33e5509be4abe5355872efef208be24e0e7988` — safe FastAPI activity projection
+
+### Remaining gaps
+- Customer-facing activity consumers must be reconciled with the expanded event contract and any event types not currently rendered should receive a clear, non-sensitive label. Chat's SSE path receives raw event types but uses a safe metadata allowlist; Workflow/Tasks use the safe logs projection.
+- Approval decision events are published by the resumed worker after it observes the committed approval status, not atomically inside the decision RPC. A crash between decision commit and worker resume can delay the activity event; durable approval state remains canonical. A future transactional DB-side event write would close this observability gap.
+- Manual customer retry is still intentionally not implemented; there is no verified safe replay/new-run contract.
+- Structured RAG citations are assembled by the runtime from retrieved chunk/document IDs and persisted in the final output where present; remaining work is to verify the customer API output contract and source markers against all retrieval/tool response variants, without fabricating citations.
+- Full endpoint-by-endpoint customer authorization and response contract inventory remains open.
+
+### Verification boundary
+No tests, lint, typecheck, build, browser verification, live API calls, worker execution, Supabase schema/data mutation, staging or deployment were performed, as explicitly instructed. Changes are source-level implementation only and are not runtime-verified.
+
+### Phase status and next phase
+Phase 09 remains **in progress**. Continue Phase 09 until the remaining API/UI contract and authorization inventory, citation provenance review, and approval event durability gaps are resolved. After Phase 09 is complete, the dependency-ordered next phase is Phase 10 — End-to-End Integration Verification; Phase 11 — Integration Release Gate follows Phase 10. Neither phase is being marked complete or executed under the current no-test/no-staging instruction.
