@@ -60,6 +60,7 @@ def build_agent_registry(
         gateway,
         memory_store=memory_store,
         knowledge_tools=knowledge_tools,
+        attachment_loader=attachment_loader,
         plan_store=plan_store,
         search_tools=search_tools,
         storage_tools=storage_tools,
