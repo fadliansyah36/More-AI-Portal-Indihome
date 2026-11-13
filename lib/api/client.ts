@@ -360,6 +360,16 @@ export type CustomerConversation = {
   updated_at: string;
 };
 
+export type CustomerConversationMessage = {
+  id: string;
+  role: string;
+  content: string;
+  model_key: string | null;
+  run_id: string | null;
+  created_at: string;
+  attachments?: Array<{ id: string; filename: string; mime_type: string | null; size_bytes: number | null }>;
+};
+
 export type CustomerConversationSession = {
   id: string;
   conversation_id: string;
@@ -590,14 +600,17 @@ export const customerApi = {
   conversationsPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerConversation>(
     `/api/v1/customer/conversations?limit=${Math.max(1, Math.min(100, limit))}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`,
   ),
-  getConversation: (conversationId: string) => moreAiCustomerApi<{
-    conversation: CustomerConversation;
-    messages: Array<{
-      id: string; role: string; content: string; model_key: string | null;
-      run_id: string | null; created_at: string;
-      attachments?: Array<{ id: string; filename: string; mime_type: string | null; size_bytes: number | null }>;
-    }>;
-  }>(`/api/v1/customer/conversations/${conversationId}`),
+  getConversation: async (conversationId: string) => {
+    const response = await moreAiCustomerFetch('/api/v1/customer/conversations/' + encodeURIComponent(conversationId));
+    const payload = await response.json() as { conversation: CustomerConversation; messages: CustomerConversationMessage[] };
+    return { ...payload, nextCursor: response.headers.get('X-Next-Cursor') };
+  },
+  conversationMessagesPage: (conversationId: string, limit = 50, cursor?: string) =>
+    moreAiCustomerApiPage<CustomerConversationMessage>(
+      '/api/v1/customer/conversations/' + encodeURIComponent(conversationId) + '/messages?limit='
+        + Math.max(1, Math.min(100, limit))
+        + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
+    ),
   createConversation: (title: string) => moreAiCustomerApi<{ id: string }>('/api/v1/customer/conversations', {
     method: 'POST', body: JSON.stringify({ title }),
   }),
