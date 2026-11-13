@@ -11,8 +11,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel, Field
 
-from app.authorization import customer_principal, require_customer_context
-from app.dependencies import current_user
+from app.authorization import customer_principal
 from app.routers.conversations import ConversationCreate, MessageCreate, repository
 from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cursor, created_at_id_filter, decode_updated_at_id_cursor, encode_updated_at_id_cursor, updated_at_id_filter, decode_timestamp_id_cursor, encode_timestamp_id_cursor, timestamp_id_filter
 
@@ -247,7 +246,7 @@ class CustomerQuotaResponse(BaseModel):
 
 @router.get("/context", response_model=CustomerContextResponse)
 async def customer_context(
-    request: Request, user: dict[str, Any] = Depends(current_user),
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
     return {
