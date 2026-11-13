@@ -25,11 +25,6 @@ class ToolApprovalResponse(BaseModel):
     consumed_at: datetime | None
 
 
-class ToolApprovalMutationResponse(BaseModel):
-    id: UUID
-    status: Literal["pending", "approved", "denied", "expired", "consumed"]
-
-
 class ToolApprovalDecisionResponse(BaseModel):
     id: UUID
     run_id: UUID
