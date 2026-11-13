@@ -61,6 +61,8 @@ export const FilesView: React.FC = () => {
   const [workspaceFiles, setWorkspaceFiles] = useState<Array<CustomerWorkspaceFile & { workspaceId: string; workspaceName: string }>>([]);
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [workspaceFileCursors, setWorkspaceFileCursors] = useState<Record<string, string | null>>({});
+  const [loadingMoreWorkspaceFiles, setLoadingMoreWorkspaceFiles] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   const [downloadingArtifact, setDownloadingArtifact] = useState<string | null>(null);
   const [uploadingArtifact, setUploadingArtifact] = useState(false);
@@ -69,6 +71,8 @@ export const FilesView: React.FC = () => {
   const [fileVersions, setFileVersions] = useState<CustomerWorkspaceFileVersion[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyNextCursor, setHistoryNextCursor] = useState<string | null>(null);
+  const [loadingMoreVersions, setLoadingMoreVersions] = useState(false);
   const [downloadingVersion, setDownloadingVersion] = useState<number | null>(null);
 
   const mapArtifactRows = (rows: ArtifactRecord[]): ArtifactFile[] => rows.map((row) => {
@@ -112,11 +116,17 @@ export const FilesView: React.FC = () => {
           setSelectedWorkspaceId((current) => current || items[0]?.id || '');
         }
         const groups = await Promise.allSettled(items.map(async (workspace) => {
-          const result = await workspaceApi.files(workspace.id);
-          return result.items.map((file) => ({ ...file, workspaceId: workspace.id, workspaceName: workspace.name }));
+          const result = await workspaceApi.filesPage(workspace.id, 50);
+          return {
+            workspaceId: workspace.id,
+            nextCursor: result.nextCursor,
+            items: result.items.map((file) => ({ ...file, workspaceId: workspace.id, workspaceName: workspace.name })),
+          };
         }));
         if (active) {
-          setWorkspaceFiles(groups.flatMap((group) => group.status === 'fulfilled' ? group.value : []));
+          setWorkspaceFiles(groups.flatMap((group) => group.status === 'fulfilled' ? group.value.items : []));
+          setWorkspaceFileCursors(Object.fromEntries(groups.flatMap((group) => group.status === 'fulfilled'
+            ? [[group.value.workspaceId, group.value.nextCursor]] : [])));
           setWorkspaceError(groups.some((group) => group.status === 'rejected')
             ? 'Sebagian file workspace gagal dimuat. File dari workspace lain yang berhasil tetap ditampilkan.'
             : null);
@@ -128,6 +138,39 @@ export const FilesView: React.FC = () => {
       .finally(() => { if (active) setWorkspaceLoading(false); });
     return () => { active = false; };
   }, []);
+
+  const loadMoreWorkspaceFiles = async () => {
+    const pending = workspaces.filter((workspace) => workspaceFileCursors[workspace.id]);
+    if (!pending.length || loadingMoreWorkspaceFiles) return;
+    setLoadingMoreWorkspaceFiles(true);
+    try {
+      const results = await Promise.allSettled(pending.map(async (workspace) => {
+        const cursor = workspaceFileCursors[workspace.id];
+        const page = await workspaceApi.filesPage(workspace.id, 50, cursor || undefined);
+        return { workspaceId: workspace.id, workspaceName: workspace.name, page };
+      }));
+      setWorkspaceFiles((current) => {
+        const known = new Set(current.map((file) => file.workspaceId + ':' + file.id));
+        return [...current, ...results.flatMap((result) => result.status === 'fulfilled'
+          ? result.value.page.items
+            .map((file) => ({ ...file, workspaceId: result.value.workspaceId, workspaceName: result.value.workspaceName }))
+            .filter((file) => !known.has(file.workspaceId + ':' + file.id))
+          : [])];
+      });
+      setWorkspaceFileCursors((current) => {
+        const next = { ...current };
+        results.forEach((result) => {
+          if (result.status === 'fulfilled') next[result.value.workspaceId] = result.value.page.nextCursor;
+        });
+        return next;
+      });
+      if (results.some((result) => result.status === 'rejected')) {
+        setWorkspaceError('Sebagian halaman file workspace gagal dimuat. Coba muat halaman berikutnya lagi.');
+      }
+    } finally {
+      setLoadingMoreWorkspaceFiles(false);
+    }
+  };
 
   const uploadWorkspaceFile = async (file: File) => {
     if (!selectedWorkspaceId) {
@@ -159,7 +202,7 @@ export const FilesView: React.FC = () => {
         file,
         crypto.randomUUID(),
       );
-      const refreshed = await workspaceApi.files(selectedWorkspaceId);
+      const refreshed = await workspaceApi.filesPage(selectedWorkspaceId, 100);
       setWorkspaceFiles((current) => [
         ...current.filter((item) => item.workspaceId !== selectedWorkspaceId),
         ...refreshed.items.map((item) => ({
@@ -168,6 +211,7 @@ export const FilesView: React.FC = () => {
           workspaceName: workspace.name,
         })),
       ]);
+      setWorkspaceFileCursors((current) => ({ ...current, [selectedWorkspaceId]: refreshed.nextCursor }));
       setWorkspaceUploadMessage('File tersimpan sebagai versi baru pada workspace yang dipilih.');
     } catch (cause) {
       // Reconcile local CAS version after conflicts or ambiguous network failures.
@@ -205,9 +249,27 @@ export const FilesView: React.FC = () => {
 
   const openVersionHistory = async (file: CustomerWorkspaceFile & { workspaceId: string; workspaceName: string }) => {
     setHistoryFile(file); setHistoryLoading(true); setHistoryError(null); setFileVersions([]);
-    try { const result = await workspaceApi.versions(file.workspaceId, file.id); setFileVersions(result.items); }
+    try { const result = await workspaceApi.versionsPage(file.workspaceId, file.id, 50); setFileVersions(result.items); setHistoryNextCursor(result.nextCursor); }
     catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Gagal memuat riwayat versi file.'); }
     finally { setHistoryLoading(false); }
+  };
+
+  const loadMoreVersions = async () => {
+    if (!historyFile || !historyNextCursor || loadingMoreVersions) return;
+    setLoadingMoreVersions(true);
+    setHistoryError(null);
+    try {
+      const page = await workspaceApi.versionsPage(historyFile.workspaceId, historyFile.id, 50, historyNextCursor);
+      setFileVersions((current) => {
+        const known = new Set(current.map((version) => version.id + ':' + version.version));
+        return [...current, ...page.items.filter((version) => !known.has(version.id + ':' + version.version))];
+      });
+      setHistoryNextCursor(page.nextCursor);
+    } catch (cause) {
+      setHistoryError(cause instanceof Error ? cause.message : 'Halaman riwayat versi berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreVersions(false);
+    }
   };
 
   const downloadWorkspaceVersion = async (version: number) => {
@@ -437,6 +499,12 @@ export const FilesView: React.FC = () => {
             </div>
           </div>
         ))}
+        {Object.values(workspaceFileCursors).some(Boolean) && (
+          <button type="button" onClick={() => void loadMoreWorkspaceFiles()} disabled={loadingMoreWorkspaceFiles}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
+            {loadingMoreWorkspaceFiles ? 'Memuat file workspace…' : 'Muat file workspace berikutnya'}
+          </button>
+        )}
       </section>
 
       {historyFile && (
@@ -447,6 +515,12 @@ export const FilesView: React.FC = () => {
               {historyLoading ? <div className="flex items-center gap-2 rounded-2xl bg-slate-50 p-5 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Memuat riwayat versi…</div> : historyError ? <div role="alert" className="rounded-2xl border border-red-100 bg-red-50 p-4 text-xs text-red-600">{historyError}</div> : fileVersions.length === 0 ? <div className="rounded-2xl bg-slate-50 p-5 text-xs text-slate-500">Belum ada riwayat versi tersimpan.</div> : fileVersions.map((version) => (
                 <div key={version.id + ':' + version.version} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 p-3"><div className="min-w-0"><p className="text-xs font-semibold text-slate-900">Versi {version.version}{version.current ? ' · Saat ini' : ''}</p><p className="mt-1 text-[10px] text-slate-500">{formatSize(version.size_bytes)} · {new Date(version.committed_at).toLocaleString('id-ID')}</p><p className="mt-1 truncate text-[10px] text-slate-400">SHA-256: {version.sha256}</p></div><button type="button" disabled={downloadingVersion === version.version} onClick={() => void downloadWorkspaceVersion(version.version)} className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">{downloadingVersion === version.version ? 'Menyiapkan…' : 'Unduh'}</button></div>
               ))}
+              {historyNextCursor && (
+                <button type="button" onClick={() => void loadMoreVersions()} disabled={loadingMoreVersions}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50">
+                  {loadingMoreVersions ? 'Memuat versi…' : 'Muat versi sebelumnya'}
+                </button>
+              )}
             </div>
             <div className="mt-4 flex justify-end"><button type="button" onClick={() => setHistoryFile(null)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">Tutup</button></div>
           </div>
