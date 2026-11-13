@@ -88,8 +88,6 @@ class CustomerChatAttachmentLoader:
                 "mime_type": mime_type,
                 "content": extracted,
             })
-            if total_chars >= self.MAX_EXTRACTED_TOTAL:
-                break
         return output
 
     async def _download(self, path: str) -> bytes:
