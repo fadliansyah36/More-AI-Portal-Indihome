@@ -354,6 +354,7 @@ export const profileApi = {
 
 export type CustomerConversation = {
   id: string;
+  workspace_id: string | null;
   title: string | null;
   status: string;
   created_at: string;
@@ -623,8 +624,8 @@ export const customerApi = {
         + Math.max(1, Math.min(100, limit))
         + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
     ),
-  createConversation: (title: string) => moreAiCustomerApi<{ id: string }>('/api/v1/customer/conversations', {
-    method: 'POST', body: JSON.stringify({ title }),
+  createConversation: (title: string, workspaceId?: string | null) => moreAiCustomerApi<{ id: string; workspace_id: string | null }>('/api/v1/customer/conversations', {
+    method: 'POST', body: JSON.stringify({ title, workspace_id: workspaceId || null }),
   }),
   sendMessage: (
     conversationId: string, content: string, idempotencyKey: string,
