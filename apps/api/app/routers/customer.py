@@ -529,7 +529,7 @@ async def customer_agent_run_stream(
     await repo.owned_record("agent_runs", run_id, principal["id"])
 
     async def events():
-        from app.routers.agent_runs import _event_cursor, _event_with_checkpoint_state
+        from app.routers.agent_runs import _event_cursor, _event_with_checkpoint_state, _safe_run_activity
 
         cursor = _event_cursor(after, last_event_id)
         idle_rounds = 0
@@ -546,7 +546,19 @@ async def customer_agent_run_stream(
                 for raw in rows:
                     row = await _event_with_checkpoint_state(repo, run_id, raw)
                     cursor = max(cursor, int(row["sequence"]))
-                    payload = json.dumps(row, separators=(",", ":"))
+                    safe_activity = _safe_run_activity(row)
+                    safe_payload = {
+                        key: value for key, value in safe_activity.items()
+                        if key not in {"id", "sequence", "timestamp", "event_type"}
+                    }
+                    public_row = {
+                        "id": row.get("id"), "event_type": row.get("event_type"),
+                        "sequence": row.get("sequence"), "created_at": row.get("created_at"),
+                        "payload": safe_payload,
+                    }
+                    if isinstance(row.get("checkpoint"), dict):
+                        public_row["checkpoint"] = row["checkpoint"]
+                    payload = json.dumps(public_row, separators=(",", ":"))
                     yield f"id: {cursor}\nevent: {row['event_type']}\ndata: {payload}\n\n"
                     if row["event_type"] in {"run.completed", "run.failed", "run.cancelled", "run.timed_out", "run.expired"}:
                         return
