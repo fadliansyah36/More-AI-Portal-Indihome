@@ -42,3 +42,23 @@ def created_at_id_filter(cursor: tuple[str, str] | None) -> str | None:
         return None
     timestamp, identifier = cursor
     return f"(created_at.lt.{timestamp},and(created_at.eq.{timestamp},id.lt.{identifier}))"
+
+def decode_updated_at_id_cursor(value: str | None) -> tuple[str, str] | None:
+    """Decode an opaque keyset cursor for records ordered by updated_at, id."""
+    return decode_created_at_id_cursor(value)
+
+
+def encode_updated_at_id_cursor(row: dict) -> str:
+    timestamp = row.get("updated_at")
+    identifier = row.get("id")
+    if not isinstance(timestamp, str) or not isinstance(identifier, str):
+        raise ValueError("pagination_row_missing_updated_cursor_fields")
+    raw = f"{timestamp}|{identifier}".encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def updated_at_id_filter(cursor: tuple[str, str] | None) -> str | None:
+    if cursor is None:
+        return None
+    timestamp, identifier = cursor
+    return f"(updated_at.lt.{timestamp},and(updated_at.eq.{timestamp},id.lt.{identifier}))"
