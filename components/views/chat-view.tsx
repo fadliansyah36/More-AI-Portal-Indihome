@@ -17,6 +17,19 @@ interface ChatCitation {
   marker: string;
 }
 
+interface ChatRunActivity {
+  id: string;
+  sequence: number;
+  event_type: string;
+  label: string;
+  timestamp?: string;
+  tool?: string;
+  phase?: string;
+  status?: string;
+  progress?: number;
+  checkpoint_key?: string;
+}
+
 interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
@@ -24,6 +37,7 @@ interface ChatMessage {
   time: string;
   source?: string;
   citations?: ChatCitation[];
+  activity?: ChatRunActivity[];
   attachments?: Array<{ id: string; filename: string; mime_type?: string | null; size_bytes?: number | null }>;
 }
 
@@ -287,6 +301,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     let streamedText = '';
     let terminalStatus: string | null = null;
     let finalOutput: Record<string, unknown> | undefined;
+    const lifecycleActivity: ChatRunActivity[] = [];
 
     try {
       let activeConversationId = conversationId;
@@ -316,18 +331,64 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       }]);
 
       await moreAiApiStream(customerApi.streamRun(queued.run.id), ({ event, data }) => {
-        // FastAPI streams the durable agent_run_events.event_type value. Worker
-        // checkpoints are published as run.progress (not worker.checkpoint).
+        // The SSE envelope carries a durable event row. Only allowlisted lifecycle
+        // metadata is copied into the customer UI; raw payload/tool arguments are never rendered.
+        const payload = data.payload && typeof data.payload === 'object'
+          ? data.payload as Record<string, unknown>
+          : data;
+        const sequence = typeof data.sequence === 'number' ? data.sequence : lifecycleActivity.length + 1;
+        const tool = typeof payload.tool === 'string' ? payload.tool : undefined;
+        const phase = typeof payload.phase === 'string' ? payload.phase : undefined;
+        const status = typeof payload.status === 'string' ? payload.status : undefined;
+        const progress = typeof payload.progress === 'number' ? payload.progress : undefined;
+        const checkpointKey = typeof payload.checkpoint_key === 'string' ? payload.checkpoint_key : undefined;
+        if (!['run.completed', 'run.failed', 'run.cancelled', 'run.timed_out', 'run.expired', 'stream.timeout'].includes(event)) {
+          const labels: Record<string, string> = {
+            'agent.planning': 'Perencanaan agent',
+            'planning.started': 'Perencanaan dimulai',
+            'planning.completed': 'Perencanaan selesai',
+            'tool.started': 'Tool mulai dijalankan',
+            'tool.completed': 'Tool selesai dijalankan',
+            'tool.failed': 'Tool gagal dijalankan',
+            'tool.approval_required': 'Menunggu persetujuan tool',
+            'tool.approval_granted': 'Persetujuan tool diberikan',
+            'tool.approval_denied': 'Persetujuan tool ditolak',
+            'run.progress': 'Progress eksekusi',
+            'worker.checkpoint': 'Checkpoint tersimpan',
+            'run.awaiting_approval': 'Menunggu persetujuan',
+            'run.cancel_requested': 'Permintaan pembatalan diterima',
+          };
+          const activity: ChatRunActivity = {
+            id: typeof data.id === 'string' ? data.id : queued.run.id + ':' + sequence,
+            sequence,
+            event_type: event,
+            label: labels[event] || event.replace(/[._]/g, ' '),
+            timestamp: typeof data.created_at === 'string' ? data.created_at : undefined,
+            ...(tool ? { tool } : {}),
+            ...(phase ? { phase } : {}),
+            ...(status ? { status } : {}),
+            ...(progress !== undefined ? { progress } : {}),
+            ...(checkpointKey ? { checkpoint_key: checkpointKey } : {}),
+          };
+          lifecycleActivity.push(activity);
+          setMessages((previous) => previous.map((message) =>
+            message.id === assistantId ? { ...message, activity: [...lifecycleActivity] } : message,
+          ));
+        }
+        // FastAPI streams durable agent_run_events. Checkpoint snapshots replace
+        // text instead of appending, so replay cannot duplicate rendered output.
         if (event === 'run.progress' || event === 'worker.checkpoint') {
-          const checkpoint = data.checkpoint as Record<string, unknown> | undefined;
+          const checkpoint = (data.checkpoint || payload.checkpoint) as Record<string, unknown> | undefined;
           if (typeof checkpoint?.text === 'string') {
-            // Checkpoint text is a persisted snapshot; replace rather than append
-            // so Last-Event-ID replay cannot duplicate already-rendered content.
             streamedText = checkpoint.text;
             setMessages((previous) => previous.map((message) =>
               message.id === assistantId ? { ...message, text: streamedText } : message,
             ));
           }
+        } else if (event === 'run.awaiting_approval' || event === 'tool.approval_required') {
+          setMessages((previous) => previous.map((message) =>
+            message.id === assistantId ? { ...message, source: 'MoreAI Agent Runtime · menunggu persetujuan' } : message,
+          ));
         } else if (event === 'run.completed') {
           terminalStatus = 'succeeded';
           finalOutput = data.output as Record<string, unknown> | undefined;
@@ -372,7 +433,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             )
           : [];
         setMessages((previous) => previous.map((message) =>
-          message.id === assistantId ? { ...message, text: outputText, citations } : message,
+          message.id === assistantId ? { ...message, text: outputText, citations, activity: [...lifecycleActivity] } : message,
         ));
       } else if (terminalStatus === 'cancelled') {
         setMessages((previous) => previous.map((message) =>
@@ -505,6 +566,28 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
                 <span>{message.source ?? (message.sender === 'user' ? 'Anda' : 'MoreAI')}</span>
                 <span>{message.time}</span>
               </div>
+              {message.sender === 'assistant' && message.activity && message.activity.length > 0 && (
+                <details className="mt-3 border-t border-slate-100 pt-2">
+                  <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    Aktivitas Agent · {message.activity.length} event
+                  </summary>
+                  <ol className="mt-2 space-y-1.5">
+                    {message.activity.map((activity) => (
+                      <li key={activity.id} className="rounded-lg bg-slate-50 px-2.5 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-medium text-slate-700">#{activity.sequence} · {activity.label}</span>
+                          {activity.status && <span className="text-[10px] text-slate-500">{activity.status}</span>}
+                        </div>
+                        {(activity.tool || activity.phase || activity.progress !== undefined || activity.checkpoint_key) && (
+                          <p className="mt-0.5 text-[10px] text-slate-500">
+                            {[activity.tool ? 'Tool: ' + activity.tool : '', activity.phase, activity.progress !== undefined ? activity.progress + '%' : '', activity.checkpoint_key ? 'Checkpoint: ' + activity.checkpoint_key : ''].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </details>
+              )}
               {message.sender === 'assistant' && message.citations && message.citations.length > 0 && (
                 <div className="mt-3 border-t border-slate-100 pt-2">
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Sumber pengetahuan</p>
