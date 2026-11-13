@@ -3,7 +3,7 @@
 **Date:** 2026-11-13  
 **Execution branch:** `main`  
 **Baseline commit:** `dc514ded8711a59c248b1d657d871be832114225`  
-**Latest source commit at report time:** `07bc4716c145a0c360e9947bdb26886ec890e899`  
+**Latest source commit at report time:** `575e193fd7f1a38310b4b6ca63da44446b9e0fde`  
 **Status:** IN PROGRESS — Phase 09 is not complete.
 
 ## Scope delivered in this continuation
@@ -56,7 +56,7 @@
 - `apps/api/app/routers/artifacts.py`
 - `apps/api/app/routers/conversations.py`
 - `apps/api/app/routers/customer.py`
-- `apps/api/app/main.py`
+- `apps/api/app/main.py` — CORS allowlist for workspace CAS and chat attachment headers
 - `apps/worker/app/attachment_loader.py`
 - `apps/worker/app/registry_factory.py`
 - `engine/agents/durable_tool_runtime.py`
