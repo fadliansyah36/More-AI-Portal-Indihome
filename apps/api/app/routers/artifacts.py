@@ -26,7 +26,7 @@ class CustomerArtifactResponse(BaseModel):
     mime_type: str | None
     size_bytes: int | None
     checksum_sha256: str | None
-    metadata: dict[str, Any] | None
+    metadata: dict[str, Any]
     created_at: datetime
 
 
