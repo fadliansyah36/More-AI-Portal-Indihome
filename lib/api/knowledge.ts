@@ -1,4 +1,4 @@
-import { moreAiCustomerApi } from '@/lib/api/client';
+import { moreAiCustomerApi, moreAiCustomerApiPage } from '@/lib/api/client';
 
 export type CustomerKnowledgeDocument = {
   id: string;
@@ -41,6 +41,16 @@ export const knowledgeApi = {
     const query = params.toString();
     return moreAiCustomerApi<{ items: CustomerKnowledgeDocument[]; count: number }>(
       '/api/v1/customer/knowledge/documents' + (query ? '?' + query : ''),
+    );
+  },
+  listPage: (options: { workspaceId?: string; status?: CustomerKnowledgeDocument['status']; limit?: number; cursor?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (options.workspaceId) params.set('workspace_id', options.workspaceId);
+    if (options.status) params.set('status', options.status);
+    params.set('limit', String(Math.min(100, Math.max(1, options.limit ?? 50))));
+    if (options.cursor) params.set('cursor', options.cursor);
+    return moreAiCustomerApiPage<CustomerKnowledgeDocument>(
+      '/api/v1/customer/knowledge/documents?' + params.toString(),
     );
   },
   get: (documentId: string) => moreAiCustomerApi<{
