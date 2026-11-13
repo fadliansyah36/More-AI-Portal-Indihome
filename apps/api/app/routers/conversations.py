@@ -195,6 +195,10 @@ async def send_message(
         raise HTTPException(400, "A 12–128 character Idempotency-Key header is required")
 
     repo = repository(request)
+    conversation = await repo.owned_record("conversations", conversation_id, user["id"])
+    if conversation.get("workspace_id"):
+        from app.routers.workspaces import _workspace_access
+        await _workspace_access(repo, UUID(str(conversation["workspace_id"])), user["id"], "agent.run.create")
     # The SECURITY DEFINER RPC performs ownership validation and atomically inserts
     # the user message, queued run, and message.run_id relationship in one transaction.
     return await repo.rpc("moreai_enqueue_chat_run", {
