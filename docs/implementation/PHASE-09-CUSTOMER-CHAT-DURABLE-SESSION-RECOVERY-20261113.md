@@ -56,3 +56,26 @@ Updated `components/views/workflow-progress-view.tsx`:
 - Reused the existing API client contracts; no new route, schema, or direct browser-to-Supabase access was introduced.
 
 No tests/build/lint/typecheck/browser/API/worker execution, staging or deployment were run. The added actions are source-level integrations only and require later authorized runtime acceptance.
+
+
+## Incremental continuation — Runtime key contract alignment
+
+Commits:
+- `13733be8ca95747a99077b2c8bd2411e0119c42b` — app-level selected runtime key propagation
+- `491217a0dfe581ea69111d4f4852ad6365c31b48` — ChatView transport type
+- `fe5b9d3584fa4293000e7d30db77ff4693cac069` — Agent Studio catalog/runtime alignment
+
+Source inspection confirmed the FastAPI `MessageCreate.agent_key` contract is currently constrained to `manus | planning | toolcall`. The Agent Studio now only offers enabled catalog entries whose keys are accepted by that transport contract, and the parent navigation preserves all three supported keys rather than coercing every non-planning agent to `manus`. ChatView's selected key type now matches the backend contract.
+
+This is a compatibility alignment, not proof that every upstream OpenManus agent type has been exposed through the customer message API. Any additional catalog/runtime key requires a coordinated FastAPI request schema, enqueue/RPC and worker dispatch update before the frontend may advertise it as runnable.
+
+## Remaining Phase 09 acceptance gaps (source inspection only)
+
+- Agent Runtime: inspect and reconcile planner/tool event payload contracts against the customer-safe event stream; ensure planning decisions, tool progress, approvals, checkpoints and final output render from persisted events, not inferred client state.
+- Tasks: task list is currently a projection of Agent Runs; there is no independently evidenced customer task CRUD/retry contract in the inspected surface. Keep it truthful as run-backed work until a durable task API is confirmed. Do not implement retry against an unverified route.
+- Workflow: durable step listing and cancellation are wired; retry remains unavailable in the inspected customer run routes. Tool approval decisions exist, but event-to-run refresh and lifecycle parity still need source reconciliation.
+- Files: workspace file and artifact surfaces already use authenticated API clients; finish checking upload/download authorization, run linkage, lifecycle and error contracts across every customer path.
+- Knowledge/RAG: ingestion list/upload/retry/archive is present. Confirm document detail/chunk retrieval and ingestion lifecycle exposure, workspace scoping, and how retrieval citations/evidence are represented in Chat UI before claiming RAG is fully integrated.
+- Authorization: reconcile all customer routes, shared `/api/v1/agent-runs` endpoints, workspace membership checks, artifact ownership and knowledge workspace access. Do not assume a route is customer-safe solely because a frontend API method exists.
+
+No test, lint, typecheck, build, browser, API, worker, staging or deployment activity was performed, per owner instruction. The evidence here is repository source and API contract inspection only.
