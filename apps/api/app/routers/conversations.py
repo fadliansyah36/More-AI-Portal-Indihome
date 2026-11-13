@@ -87,9 +87,23 @@ class ConversationSessionCancellationResponse(BaseModel):
     status: str
 
 
+class ConversationEnqueuedRunResponse(BaseModel):
+    id: UUID
+    conversation_id: UUID | None = None
+    status: str
+    input: Any = None
+    output: Any = None
+    error: Any = None
+    attempt: int | None = None
+    max_attempts: int | None = None
+    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+
+
 class ConversationMessageEnqueueResponse(BaseModel):
-    run: dict[str, Any]
-    message: dict[str, Any] | None
+    run: ConversationEnqueuedRunResponse
+    message: ConversationMessageResponse | None
     replayed: bool
 
 
