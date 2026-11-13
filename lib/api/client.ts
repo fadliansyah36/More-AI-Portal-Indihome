@@ -471,6 +471,8 @@ export type CustomerEntitlement = {
 
 export type CustomerQuota = {
   id: string;
+  scope_type: 'platform' | 'global' | 'user';
+  scope_id: string | null;
   metric_key: string;
   limit_value: string | number;
   window_seconds: number;
