@@ -649,7 +649,7 @@ export const customerApi = {
   networkSpeedtestDownload: (sizeBytes = 4 * 1024 * 1024) =>
     moreAiCustomerFetch('/api/v1/customer/network/speedtest/download?size_bytes=' + Math.max(65536, Math.min(8 * 1024 * 1024, sizeBytes))),
   networkSpeedtestUpload: (payload: BodyInit) =>
-    moreAiCustomerApi<{ received_bytes: number; duration_ms: number }>(
+    moreAiCustomerApi<{ status: 'ok'; received_bytes: number; server_receive_ms: number }>(
       '/api/v1/customer/network/speedtest/upload',
       { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: payload },
     ),
