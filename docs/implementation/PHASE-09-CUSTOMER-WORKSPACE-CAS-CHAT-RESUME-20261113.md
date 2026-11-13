@@ -137,3 +137,11 @@ Continue Phase 09. Finish Agent Run/Artifact relationships and the Customer acti
 - Corrected the artifact listing contract to resolve Chat attachment `run_id` through the authoritative `conversation_message_attachments` junction. Chat attachments are uploaded before their Agent Run exists, so the artifact row's nullable `run_id` is not sufficient; this owner-scoped join now exposes the exact run association to Research, Workflow and artifact clients without a schema migration.
 - Source commit: `9e1c64e5de6e2ee33d3ba2e127ebb05413d7c73d`.
 - This latest API source change is not included in the current Vercel Production deployments (both remain at commit `5501e3c`). The attempt to deploy newer source HEAD `ed0eb39` was rejected by Vercel's daily API deployment quota; no new deployment was created for `9e1c64e`.
+
+
+## Vercel alias assignment readback — 2026-11-13
+
+- Production aliases were explicitly reassigned from the older deployments to the two newly READY deployments for commit `5501e3c80200f8c3e0d8314a6828a915f5c73305`.
+- Readback confirms `moreai.web.id` and `www.moreai.web.id` resolve to frontend deployment `dpl_524drp293BpdsxwtRWmEcUScz8p8`; `moreai.web.id` retains its 308 redirect to `www.moreai.web.id`.
+- Readback confirms `more-ai-api.vercel.app` resolves to FastAPI deployment `dpl_2VajdXAEAgmSzfyx5J5WtQKkex88`.
+- These alias updates make the READY deployment the current domain target. They do not deploy later source commits; current source HEAD remains ahead of the deployed SHA.
