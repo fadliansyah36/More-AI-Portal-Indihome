@@ -464,10 +464,14 @@ export type CustomerArtifact = {
 
 export const artifactApi = {
   list: () => moreAiCustomerApi<CustomerArtifact[]>('/api/v1/artifacts'),
-  upload: (filename: string, content: Blob, mimeType = content.type || 'application/octet-stream') =>
+  upload: (filename: string, content: Blob, mimeType = content.type || 'application/octet-stream', runId?: string) =>
     moreAiCustomerApi<CustomerArtifact>('/api/v1/artifacts', {
       method: 'POST',
-      headers: { 'X-Filename': filename, 'Content-Type': mimeType },
+      headers: {
+        'X-Filename': filename,
+        'Content-Type': mimeType,
+        ...(runId ? { 'X-Agent-Run-Id': runId } : {}),
+      },
       body: content,
     }),
   uploadAttachment: (conversationId: string, file: File) =>
