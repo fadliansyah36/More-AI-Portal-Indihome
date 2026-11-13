@@ -7,7 +7,6 @@ import { learningApi } from '@/lib/api/client';
 
 export const EdutechView: React.FC = () => {
   const { showToast } = useToast();
-  const [activeCategory, setActiveCategory] = useState<'semua' | 'ai' | 'produktivitas' | 'karier'>('semua');
   const [savedProgressCount, setSavedProgressCount] = useState(0);
   const [progressLoading, setProgressLoading] = useState(true);
 
