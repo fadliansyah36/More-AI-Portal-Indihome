@@ -30,6 +30,15 @@ class ToolApprovalMutationResponse(BaseModel):
     status: Literal["pending", "approved", "denied", "expired", "consumed"]
 
 
+class ToolApprovalDecisionResponse(BaseModel):
+    id: UUID
+    run_id: UUID
+    tool_key: str
+    status: Literal["approved", "denied", "expired"]
+    decided_at: datetime
+    expires_at: datetime
+
+
 class ApprovalRequest(BaseModel):
     run_id: UUID
     tool_key: Literal["bash", "python_execute", "browser_use", "planning_step", "browser", "file_read", "file_write", "file_edit", "workspace_restore_version"]
@@ -77,7 +86,7 @@ async def request_tool_approval(
     return {"id": approval_id, "status": "pending"}
 
 
-@router.post("/{approval_id}/decision", response_model=dict[str, Any])
+@router.post("/{approval_id}/decision", response_model=ToolApprovalDecisionResponse)
 async def decide_tool_approval(
     approval_id: UUID, body: ApprovalDecision, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
