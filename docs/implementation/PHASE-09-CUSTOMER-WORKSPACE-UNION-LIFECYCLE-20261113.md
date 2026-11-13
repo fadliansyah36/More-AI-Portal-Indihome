@@ -49,6 +49,7 @@ Supabase migration applied:
 - Removed the 1,000-row learning progress cap. The endpoint now uses a stable `(completed_at, id)` keyset cursor and returns an exact total count separately from the current page count.
 - Added matching indexes for owner-scoped progress ordering with and without module filtering.
 - The EduTech overview reads `total_count` rather than treating the first page length as the total saved progress count. Typed `progressPage` is available for incremental consumers.
+- Progress writes now return an explicit `503 learning_catalog_unavailable` until the official EduTech catalog supplies verified module/lesson identifiers; arbitrary caller-provided identifiers cannot be persisted.
 
 Supabase migration applied:
 - `moreai_customer_learning_progress_pagination`
