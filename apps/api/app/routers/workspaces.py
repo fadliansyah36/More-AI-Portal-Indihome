@@ -407,7 +407,7 @@ async def list_customer_workspace_members(
     return {"items": rows, "count": len(rows)}
 
 
-@router.delete("/{workspace_id}/members/{member_id}")
+@router.delete("/{workspace_id}/members/{member_id}", response_model=dict[str, Any])
 async def remove_customer_workspace_member(
     workspace_id: UUID, member_id: UUID, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
