@@ -398,11 +398,21 @@ async def restore_customer_workspace_file(
         base_parts = urlsplit(base_url)
         signed_parts = urlsplit(signed_path)
         if signed_parts.scheme or signed_parts.netloc:
-            if signed_parts.scheme != "https" or signed_parts.netloc.lower() != (base_parts.netloc or "").lower():
+            if (
+                signed_parts.scheme != "https"
+                or signed_parts.netloc.lower() != (base_parts.netloc or "").lower()
+                or signed_parts.username is not None
+                or signed_parts.password is not None
+            ):
                 raise HTTPException(502, "Storage returned a signed object URL outside the configured Supabase origin")
             signed_url = signed_path
         else:
-            if not signed_path.startswith("/") or signed_path.startswith("//") or "\\" in signed_path:
+            if (
+                not signed_path.startswith("/")
+                or signed_path.startswith("//")
+                or "\\" in signed_path
+                or any(ord(char) < 32 for char in signed_path)
+            ):
                 raise HTTPException(502, "Storage returned an invalid signed object path")
             signed_url = base_url + "/storage/v1" + signed_path
         object_response = await request.app.state.http.get(signed_url, timeout=30.0)
@@ -431,12 +441,13 @@ async def restore_customer_workspace_file(
         },
         timeout=30.0,
     )
-    if upload_response.status_code == 409:
-        destination_response = await read_private_object(restored_path)
+    if upload_response.status_code >= 400:
+        try:
+            destination_response = await read_private_object(restored_path)
+        except HTTPException as exc:
+            raise HTTPException(502, "Restored workspace object could not be written to private Storage") from exc
         if hashlib.sha256(destination_response.content).hexdigest() != checksum or len(destination_response.content) != size_bytes:
             raise HTTPException(409, "A different object already occupies the next workspace version path")
-    elif upload_response.status_code >= 400:
-        raise HTTPException(502, "Restored workspace object could not be written to private Storage")
 
     result = await repo.rpc("moreai_customer_workspace_restore_file", {
         "p_user_id": user["id"],
