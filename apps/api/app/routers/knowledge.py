@@ -63,6 +63,8 @@ class KnowledgeDocumentDetailResponse(BaseModel):
     document: KnowledgeDocumentResponse
     chunks: list[KnowledgeChunkResponse]
     chunk_count: int
+    total_chunk_count: int
+    next_after_chunk_index: int | None = None
 
 
 class KnowledgeDocumentStateResponse(BaseModel):
@@ -272,9 +274,13 @@ async def list_knowledge_documents(
 async def get_knowledge_document(
     document_id: UUID,
     request: Request,
+    response: Response,
+    limit: int = Query(default=100, ge=1, le=200),
+    after_chunk_index: int | None = Query(default=None, ge=0),
     user: dict[str, Any] = Depends(customer_principal),
 ):
-    rows = await repository(request).select("knowledge_documents", {
+    repo = repository(request)
+    rows = await repo.select("knowledge_documents", {
         "id": f"eq.{document_id}",
         "owner_user_id": f"eq.{user['id']}",
         "select": "id,title,workspace_id,source_type,source_ref,content_sha256,status,metadata,created_at,updated_at",
@@ -282,14 +288,35 @@ async def get_knowledge_document(
     })
     if not rows:
         raise HTTPException(404, "Knowledge document not found")
-    chunk_rows = await repository(request).select("knowledge_chunks", {
+    chunk_filters = {
         "document_id": f"eq.{document_id}",
         "owner_user_id": f"eq.{user['id']}",
         "select": "id,chunk_index,token_count,created_at",
         "order": "chunk_index.asc",
-        "limit": "500",
+        "limit": str(limit + 1),
+    }
+    if after_chunk_index is not None:
+        chunk_filters["chunk_index"] = f"gt.{after_chunk_index}"
+    chunk_rows = await repo.select("knowledge_chunks", chunk_filters)
+    has_more = len(chunk_rows) > limit
+    chunk_rows = chunk_rows[:limit]
+    next_after = chunk_rows[-1]["chunk_index"] if has_more and chunk_rows else None
+    if next_after is not None:
+        response.headers["X-Next-Cursor"] = str(next_after)
+    response.headers["X-Pagination-Mode"] = "keyset"
+    total_count = await repo.rpc("moreai_customer_knowledge_chunk_count", {
+        "p_user_id": user["id"],
+        "p_document_id": str(document_id),
     })
-    return {"document": rows[0], "chunks": chunk_rows, "chunk_count": len(chunk_rows)}
+    if isinstance(total_count, bool) or not isinstance(total_count, int):
+        raise HTTPException(502, "Knowledge chunk count returned an invalid database response")
+    return {
+        "document": rows[0],
+        "chunks": chunk_rows,
+        "chunk_count": len(chunk_rows),
+        "total_chunk_count": total_count,
+        "next_after_chunk_index": next_after,
+    }
 
 
 @router.post("/documents/{document_id}/retry", status_code=202, response_model=KnowledgeDocumentStateResponse)
