@@ -38,6 +38,9 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   const [loadingMoreRuns, setLoadingMoreRuns] = useState(false);
   const [runPaginationError, setRunPaginationError] = useState<string | null>(null);
   const [nextApprovalCursor, setNextApprovalCursor] = useState<string | null>(null);
+  const [nextArtifactCursor, setNextArtifactCursor] = useState<string | null>(null);
+  const [loadingMoreArtifacts, setLoadingMoreArtifacts] = useState(false);
+  const [artifactPaginationError, setArtifactPaginationError] = useState<string | null>(null);
   const [loadingMoreApprovals, setLoadingMoreApprovals] = useState(false);
 
   useEffect(() => {
@@ -49,7 +52,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         const [runsResult, approvalsResult, artifactsResult] = await Promise.allSettled([
           customerApi.agentRunsPage(50),
           customerToolApprovalApi.listPage(50),
-          artifactApi.list(),
+          artifactApi.listPage(50),
         ]);
         if (active) {
           if (runsResult.status === 'fulfilled') {
@@ -62,7 +65,11 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
             setNextApprovalCursor(approvalsResult.value.nextCursor);
           }
           else setApprovalError(approvalsResult.reason instanceof Error ? approvalsResult.reason.message : 'Persetujuan tidak dapat dimuat.');
-          if (artifactsResult.status === 'fulfilled') setArtifacts(artifactsResult.value);
+          if (artifactsResult.status === 'fulfilled') {
+            setArtifacts(artifactsResult.value.items);
+            setNextArtifactCursor(artifactsResult.value.nextCursor);
+          }
+          else setArtifactPaginationError(artifactsResult.reason instanceof Error ? artifactsResult.reason.message : 'Artefak workflow tidak dapat dimuat.');
 
         }
       } catch (cause) {
@@ -127,6 +134,24 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       setRunPaginationError(cause instanceof Error ? cause.message : 'Halaman workflow berikutnya tidak dapat dimuat.');
     } finally {
       setLoadingMoreRuns(false);
+    }
+  };
+
+  const loadMoreArtifacts = async () => {
+    if (!nextArtifactCursor || loadingMoreArtifacts) return;
+    setLoadingMoreArtifacts(true);
+    setArtifactPaginationError(null);
+    try {
+      const page = await artifactApi.listPage(50, nextArtifactCursor);
+      setArtifacts((current) => {
+        const known = new Set(current.map((artifact) => artifact.id));
+        return [...current, ...page.items.filter((artifact) => !known.has(artifact.id))];
+      });
+      setNextArtifactCursor(page.nextCursor);
+    } catch (cause) {
+      setArtifactPaginationError(cause instanceof Error ? cause.message : 'Halaman artefak workflow berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreArtifacts(false);
     }
   };
 
@@ -274,6 +299,13 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
               <button type="button" onClick={() => void loadMoreRuns()} disabled={loadingMoreRuns}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
                 {loadingMoreRuns ? 'Memuat workflow…' : 'Muat workflow berikutnya'}
+              </button>
+            )}
+            {artifactPaginationError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{artifactPaginationError}</div>}
+            {nextArtifactCursor && (
+              <button type="button" onClick={() => void loadMoreArtifacts()} disabled={loadingMoreArtifacts}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                {loadingMoreArtifacts ? 'Memuat artefak…' : 'Muat artefak berikutnya'}
               </button>
             )}
           </div>
