@@ -89,7 +89,7 @@ Target team: `More AI` / `team_wHMjZ5NapyaF8aYYVs4UUY36`.
 Frontend project: `more-ai-portal-indihome` / `prj_2ge37Xd5uBSUGhn3wPsaHfFcW1UV`.  
 Backend project: `more-ai-api` / `prj_L6i6j0ERPcdpZNM1c53hcdPaP9Nn`.
 
-A Production deployment request for the frontend at the then-current `main` commit was rejected by Vercel with HTTP `402 payment_required`, resource `api-deployments-free-per-day`, and `retryAfter=86400`. The API project deployment was not submitted after that quota response. No billing, plan, quota or team settings were changed. The latest attachment/run-artifact commits were made after the rejected deployment request and are therefore not deployed.
+A Production deployment request for the frontend at the then-current `main` commit was rejected by Vercel with HTTP `402 payment_required`, resource `api-deployments-free-per-day`, and `retryAfter=86400`. The API project deployment was not submitted after that quota response. I also attempted the mapped Vercel CLI fallback in a disposable Vercel sandbox: the CLI was not preinstalled, `npx vercel` installed it, but the CLI session was logged out and had no authenticated Vercel credentials. No temporary/preview deployment was substituted for Production. The sandbox was removed. No billing, plan, quota or team settings were changed. The latest attachment/run-artifact commits are therefore not deployed.
 
 ## Verification policy and release state
 
