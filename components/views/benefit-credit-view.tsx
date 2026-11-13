@@ -33,20 +33,21 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
 
   useEffect(() => {
     let active = true;
-    Promise.all([
-      customerApi.wallets(),
-      customerApi.entitlements(),
-      customerApi.quotas(),
-      customerApi.usage(50),
-      customerApi.ledger(50),
-      customerApi.networkSessions(50),
-    ]).then(([walletResult, entitlementResult, quotaResult, usageResult, ledgerResult, sessionResult]) => {
+    customerApi.wallets().then(async (walletResult) => {
+      const primary = walletResult.wallets.find((wallet) => wallet.status === 'active') || walletResult.wallets[0];
+      const [entitlementResult, quotaResult, usageResult, ledgerResult, sessionResult] = await Promise.all([
+        customerApi.entitlements(),
+        customerApi.quotas(),
+        customerApi.usagePage(50),
+        primary ? customerApi.ledgerPage(50, undefined, primary.id) : Promise.resolve({ items: [], nextCursor: null }),
+        customerApi.networkSessions(50),
+      ]);
       if (!active) return;
       setWallets(walletResult.wallets || []);
       setEntitlements(entitlementResult || []);
       setQuotas(quotaResult || []);
-      setUsage(usageResult || []);
-      setLedger(ledgerResult || []);
+      setUsage(usageResult.items || []);
+      setLedger(ledgerResult.items || []);
       setNetworkSessions(sessionResult || []);
       setError(null);
     }).catch((err: unknown) => {
