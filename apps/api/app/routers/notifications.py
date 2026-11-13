@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 
-from app.dependencies import current_user
+from app.authorization import customer_principal
 from app.routers.conversations import repository
 from app.pagination import decode_timestamp_id_cursor, encode_timestamp_id_cursor, timestamp_id_filter
 
@@ -62,7 +62,7 @@ async def list_notifications(
     unread_only: bool = False,
     limit: int = Query(default=30, ge=1, le=100),
     cursor: str | None = Query(default=None, max_length=512),
-    user: dict[str, Any] = Depends(current_user),
+    user: dict[str, Any] = Depends(customer_principal),
 ):
     decoded = decode_timestamp_id_cursor(cursor)
     filters = {
