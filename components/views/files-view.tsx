@@ -76,6 +76,7 @@ export const FilesView: React.FC = () => {
   const [historyNextCursor, setHistoryNextCursor] = useState<string | null>(null);
   const [loadingMoreVersions, setLoadingMoreVersions] = useState(false);
   const [downloadingVersion, setDownloadingVersion] = useState<number | null>(null);
+  const [fileLifecycleBusy, setFileLifecycleBusy] = useState<string | null>(null);
 
   const mapArtifactRows = (rows: ArtifactRecord[]): ArtifactFile[] => rows.map((row) => {
     const metadata = row.metadata || {};
@@ -121,7 +122,7 @@ export const FilesView: React.FC = () => {
           setSelectedWorkspaceId((current) => current || items[0]?.id || '');
         }
         const groups = await Promise.allSettled(items.map(async (workspace) => {
-          const result = await workspaceApi.filesPage(workspace.id, 50);
+          const result = await workspaceApi.filesPage(workspace.id, 50, undefined, true);
           return {
             workspaceId: workspace.id,
             nextCursor: result.nextCursor,
@@ -153,7 +154,7 @@ export const FilesView: React.FC = () => {
       const known = new Set(workspaces.map((workspace) => workspace.id));
       const additions = page.items.filter((workspace) => !known.has(workspace.id));
       const groups = await Promise.allSettled(additions.map(async (workspace) => {
-        const files = await workspaceApi.filesPage(workspace.id, 50);
+        const files = await workspaceApi.filesPage(workspace.id, 50, undefined, true);
         return {
           workspaceId: workspace.id,
           nextCursor: files.nextCursor,
@@ -191,7 +192,7 @@ export const FilesView: React.FC = () => {
     try {
       const results = await Promise.allSettled(pending.map(async (workspace) => {
         const cursor = workspaceFileCursors[workspace.id];
-        const page = await workspaceApi.filesPage(workspace.id, 50, cursor || undefined);
+        const page = await workspaceApi.filesPage(workspace.id, 50, cursor || undefined, true);
         return { workspaceId: workspace.id, workspaceName: workspace.name, page };
       }));
       setWorkspaceFiles((current) => {
@@ -247,7 +248,7 @@ export const FilesView: React.FC = () => {
         file,
         crypto.randomUUID(),
       );
-      const refreshed = await workspaceApi.filesPage(selectedWorkspaceId, 100);
+      const refreshed = await workspaceApi.filesPage(selectedWorkspaceId, 100, undefined, true);
       setWorkspaceFiles((current) => [
         ...current.filter((item) => item.workspaceId !== selectedWorkspaceId),
         ...refreshed.items.map((item) => ({
@@ -281,9 +282,43 @@ export const FilesView: React.FC = () => {
     }
   };
 
+  const refreshWorkspaceFiles = async (workspaceId: string) => {
+    const workspace = workspaces.find((item) => item.id === workspaceId);
+    if (!workspace) return;
+    const page = await workspaceApi.filesPage(workspaceId, 100, undefined, true);
+    setWorkspaceFiles((current) => [
+      ...current.filter((item) => item.workspaceId !== workspaceId),
+      ...page.items.map((item) => ({ ...item, workspaceId, workspaceName: workspace.name })),
+    ]);
+    setWorkspaceFileCursors((current) => ({ ...current, [workspaceId]: page.nextCursor }));
+  };
+
+  const changeWorkspaceFileLifecycle = async (
+    file: CustomerWorkspaceFile & { workspaceId: string },
+    action: 'delete' | 'restore',
+  ) => {
+    const key = file.workspaceId + ':' + file.id;
+    setFileLifecycleBusy(key);
+    setWorkspaceError(null);
+    setWorkspaceUploadMessage(null);
+    try {
+      if (action === 'delete') await workspaceApi.deleteFile(file.workspaceId, file.id, file.version);
+      else await workspaceApi.restoreFile(file.workspaceId, file.id, file.version);
+      await refreshWorkspaceFiles(file.workspaceId);
+      setWorkspaceUploadMessage(action === 'delete'
+        ? 'File dihapus secara soft-delete. Riwayat dan versi immutable tetap dipertahankan.'
+        : 'File dipulihkan sebagai versi baru. Riwayat versi sebelumnya tetap tersedia.');
+    } catch (cause) {
+      setWorkspaceError(cause instanceof Error ? cause.message : 'Lifecycle file workspace gagal diproses.');
+    } finally {
+      setFileLifecycleBusy(null);
+    }
+  };
+
   const downloadWorkspaceFile = async (file: CustomerWorkspaceFile & { workspaceId: string }) => {
     setDownloadingFile(file.id);
     try {
+      if (file.deleted_at) throw new Error('File yang sudah dihapus harus dipulihkan sebelum diunduh.');
       const result = await workspaceApi.signedDownload(file.workspaceId, file.id);
       window.open(result.url, '_blank', 'noopener,noreferrer');
     } catch (cause) {
@@ -524,12 +559,20 @@ export const FilesView: React.FC = () => {
           <div key={file.workspaceId + ':' + file.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white p-3">
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-slate-900">{file.path}</p>
-              <p className="mt-1 truncate text-[10px] text-slate-500">{file.workspaceName} · v{file.version} · {formatSize(file.size_bytes)}</p>
+              <p className="mt-1 truncate text-[10px] text-slate-500">{file.workspaceName} · v{file.version} · {formatSize(file.size_bytes)}{file.deleted_at ? ' · Dihapus' : ''}</p>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               <button type="button" onClick={() => void openVersionHistory(file)} className="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-50">Riwayat</button>
-              <button type="button" disabled={!file.storage_path || downloadingFile === file.id} onClick={() => void downloadWorkspaceFile(file)} className="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40">
+              <button type="button" disabled={!!file.deleted_at || !file.storage_path || downloadingFile === file.id} onClick={() => void downloadWorkspaceFile(file)} className="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40">
                 {downloadingFile === file.id ? 'Menyiapkan…' : 'Unduh'}
+              </button>
+              <button type="button"
+                disabled={fileLifecycleBusy === file.workspaceId + ':' + file.id}
+                onClick={() => void changeWorkspaceFileLifecycle(file, file.deleted_at ? 'restore' : 'delete')}
+                className={`rounded-xl border px-3 py-2 text-[10px] font-semibold disabled:opacity-40 ${file.deleted_at ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' : 'border-red-200 text-red-700 hover:bg-red-50'}`}>
+                {fileLifecycleBusy === file.workspaceId + ':' + file.id
+                  ? 'Memproses…'
+                  : file.deleted_at ? 'Pulihkan' : 'Hapus'}
               </button>
             </div>
           </div>
