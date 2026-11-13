@@ -94,3 +94,31 @@ Workflow now requests the owner-scoped `/api/v1/agent-runs/{run_id}/logs` safe a
 Knowledge Library now exposes document ingestion detail and paginated chunk metadata through the existing `knowledgeApi.get/chunksPage` contract. It shows chunk index and token count only; it does not expose private chunk content or embeddings.
 
 No test, lint, typecheck, build, browser, API, worker, staging or deployment activity was performed. Source changes remain unverified at runtime.
+
+## Phase 09 continuation — Tasks durable run inspection (2026-11-14)
+
+### Implemented
+- Connected each existing Tasks list item to its persisted Agent Run detail instead of leaving the checklist row inert.
+- Detail view loads the owner-scoped run record, durable workflow steps, and the safe `/api/v1/agent-runs/{run_id}/logs` activity projection through the existing typed API client.
+- Displays backend status/attempts, durable step status, event sequence, safe tool/phase/progress metadata, checkpoint key, and textual output only when the backend output contract supplies `output.text`.
+- Cancellation uses the existing customer run cancellation endpoint and refreshes the durable run record; task status is reconciled from the refreshed backend state.
+- Retry remains intentionally unavailable in the UI: source inspection did not establish a supported customer retry endpoint or worker retry contract that can be safely invoked from this screen. The UI explicitly explains this rather than inventing a route or simulating retry.
+- Existing Tasks layout and visual system were retained; the change adds an in-place detail modal to the existing page.
+
+### Contract and security notes
+- Run detail is fetched through owner-scoped customer API; steps expose lifecycle metadata only.
+- Activity uses the safe projection endpoint, not raw event payloads or private tool arguments/observations.
+- Cancellation remains backend-authoritative; the UI does not mark a run cancelled until the API returns and the current run is refreshed.
+- No Supabase schema, migration, RLS, storage policy, or production data was changed.
+
+### Verification boundary
+- Source inspection only. Per product-owner instruction, no build, lint, typecheck, automated tests, browser verification, live API/worker execution, staging, or deployment was performed.
+- Tasks lifecycle UI is connected to existing durable run APIs; independent task CRUD and supported retry remain gaps until backend contracts exist and are documented.
+
+### Next work (Phase 09 remains open)
+1. Complete Files/artifacts lifecycle and authorization audit: workspace membership scope, immutable version history, soft-delete/restore, artifact ownership, run linkage, signed download scope and retention.
+2. Connect safe RAG retrieval/citations to Chat UI only after confirming the actual persisted response and citation contract.
+3. Audit every remaining Customer endpoint for principal/tenant authorization, response schema, pagination, and error consistency.
+4. Complete lifecycle event coverage for planning, tool execution, approval decisions, checkpoints, and final outputs across Chat and Workflow screens.
+5. Resolve durable retry contract from worker/outbox semantics before adding any retry action; do not replay a completed or ambiguous mutation from the client.
+6. Update final Phase 09 acceptance matrix and unresolved-gap register. Phase 10/11 release verification remains blocked by the explicit no-test/no-staging instruction.
