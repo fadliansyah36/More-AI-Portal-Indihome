@@ -369,24 +369,20 @@ class WorkerRpcClient:
         status = state["status"]
         if status == "pending":
             raise RunPausedForApproval("run_paused_for_tool_approval")
-        if status in {"approved", "denied", "expired", "consumed"}:
-            event_type = {
-                "approved": "tool.approval_granted",
-                "denied": "tool.approval_denied",
-                "expired": "tool.approval_expired",
-                "consumed": "tool.approval_consumed",
-            }[status]
-            await self.append_run_event(
-                run_id, f"worker:approval:{arguments_hash}:{status}",
-                event_type,
-                {"tool": approval_tool_key[:80], "arguments_hash": arguments_hash},
-            )
         if status == "approved":
             consumed = await self.rpc("moreai_consume_tool_approval", {
                 "p_run_id": run_id, "p_user_id": user_id,
                 "p_tool_key": approval_tool_key, "p_arguments_hash": arguments_hash,
             })
-            return bool(consumed)
+            if consumed is True:
+                # Decision events are committed atomically by the decision RPC.
+                # Only the later one-time consumption event remains worker-observed.
+                await self.append_run_event(
+                    run_id, f"worker:approval:{arguments_hash}:consumed",
+                    "tool.approval_consumed",
+                    {"tool": approval_tool_key[:80], "arguments_hash": arguments_hash},
+                )
+            return consumed is True
         if status in {"denied", "expired", "consumed"}:
             return False
         raise RuntimeError("tool_approval_state_invalid")
