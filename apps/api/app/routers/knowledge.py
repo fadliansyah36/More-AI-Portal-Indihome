@@ -13,10 +13,61 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import File, Form, UploadFile
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/v1/customer/knowledge", tags=["customer-knowledge"])
 
 
+
+
+class KnowledgeDocumentResponse(BaseModel):
+    id: UUID
+    title: str
+    workspace_id: UUID | None = None
+    source_type: str
+    source_ref: str | None = None
+    content_sha256: str | None = None
+    status: str
+    metadata: dict[str, Any]
+    created_at: datetime
+    updated_at: datetime
+
+
+class KnowledgeUploadInfoResponse(BaseModel):
+    filename: str
+    size_bytes: int
+    mime_type: str
+
+
+class KnowledgeUploadResponse(BaseModel):
+    document: KnowledgeDocumentResponse
+    status: str
+    reused: bool
+    upload: KnowledgeUploadInfoResponse
+
+
+class KnowledgeDocumentListResponse(BaseModel):
+    items: list[KnowledgeDocumentResponse]
+    count: int
+
+
+class KnowledgeChunkResponse(BaseModel):
+    id: UUID
+    chunk_index: int
+    token_count: int
+    created_at: datetime
+
+
+class KnowledgeDocumentDetailResponse(BaseModel):
+    document: KnowledgeDocumentResponse
+    chunks: list[KnowledgeChunkResponse]
+    chunk_count: int
+
+
+class KnowledgeDocumentStateResponse(BaseModel):
+    id: UUID
+    status: str
+    ingestion_state: str | None = None
 
 
 MAX_KNOWLEDGE_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -57,7 +108,7 @@ async def _validate_workspace_access(request: Request, workspace_id: UUID, user_
             raise HTTPException(404, "Workspace not found")
 
 
-@router.post("/documents/upload", status_code=202)
+@router.post("/documents/upload", status_code=202, response_model=KnowledgeUploadResponse)
 async def upload_knowledge_document(
     request: Request,
     file: UploadFile = File(...),
@@ -182,7 +233,7 @@ async def upload_knowledge_document(
     }
 
 
-@router.get("/documents")
+@router.get("/documents", response_model=KnowledgeDocumentListResponse)
 async def list_knowledge_documents(
     request: Request,
     workspace_id: UUID | None = None,
@@ -205,7 +256,7 @@ async def list_knowledge_documents(
     return {"items": rows, "count": len(rows)}
 
 
-@router.get("/documents/{document_id}")
+@router.get("/documents/{document_id}", response_model=KnowledgeDocumentDetailResponse)
 async def get_knowledge_document(
     document_id: UUID,
     request: Request,
@@ -229,7 +280,7 @@ async def get_knowledge_document(
     return {"document": rows[0], "chunks": chunk_rows, "chunk_count": len(chunk_rows)}
 
 
-@router.post("/documents/{document_id}/retry", status_code=202)
+@router.post("/documents/{document_id}/retry", status_code=202, response_model=KnowledgeDocumentStateResponse)
 async def retry_knowledge_document(
     document_id: UUID,
     request: Request,
@@ -280,7 +331,7 @@ async def retry_knowledge_document(
     return {"id": str(document_id), "status": "processing", "ingestion_state": "queued"}
 
 
-@router.post("/documents/{document_id}/archive")
+@router.post("/documents/{document_id}/archive", response_model=KnowledgeDocumentStateResponse)
 async def archive_knowledge_document(
     document_id: UUID,
     request: Request,
