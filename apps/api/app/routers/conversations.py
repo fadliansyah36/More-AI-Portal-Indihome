@@ -33,6 +33,13 @@ class ConversationResponse(BaseModel):
     updated_at: datetime
 
 
+class ConversationMessageAttachmentResponse(BaseModel):
+    id: UUID
+    filename: str
+    mime_type: str | None = None
+    size_bytes: int | None = None
+
+
 class ConversationMessageResponse(BaseModel):
     id: UUID
     role: str
@@ -40,7 +47,7 @@ class ConversationMessageResponse(BaseModel):
     model_key: str | None = None
     run_id: UUID | None = None
     created_at: datetime
-    attachments: list[dict[str, Any]] = Field(default_factory=list)
+    attachments: list[ConversationMessageAttachmentResponse] = Field(default_factory=list)
 
 
 class ConversationDetailResponse(BaseModel):
