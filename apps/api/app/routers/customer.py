@@ -322,7 +322,7 @@ async def _customer_conversation_message_attachments(
 
 @router.get("/conversations/{conversation_id}", response_model=CustomerConversationDetailResponse)
 async def customer_conversation(
-    conversation_id: UUID, request: Request,
+    conversation_id: UUID, request: Request, response: Response,
     user: dict[str, Any] = Depends(current_user),
 ):
     principal = await require_customer_context(request, user)
@@ -331,8 +331,13 @@ async def customer_conversation(
     messages = await repo.select("conversation_messages", {
         "conversation_id": f"eq.{conversation_id}", "user_id": f"eq.{principal['id']}",
         "select": "id,role,content,model_key,run_id,created_at",
-        "order": "created_at.desc,id.desc", "limit": "50",
+        "order": "created_at.desc,id.desc", "limit": "51",
     })
+    has_more = len(messages) > 50
+    messages = messages[:50]
+    if has_more and messages:
+        response.headers["X-Next-Cursor"] = encode_created_at_id_cursor(messages[-1])
+    response.headers["X-Pagination-Mode"] = "keyset"
     messages.reverse()
     messages = await _customer_conversation_message_attachments(repo, principal["id"], conversation_id, messages)
     return {"conversation": conversation, "messages": messages}
