@@ -34,7 +34,7 @@ as $function$
       count(*) filter (where status in ('succeeded', 'completed'))::bigint as successful_requests,
       count(*) filter (where status in ('failed', 'error'))::bigint as failed_requests,
       coalesce(sum(cost), 0)::numeric as total_cost,
-      coalesce(round(avg(latency_ms) filter (where latency_ms is not null), 0)::bigint as average_latency_ms
+      coalesce(round(avg(latency_ms) filter (where latency_ms is not null)), 0)::bigint as average_latency_ms
     from scoped
   ),
   model_rows as (
