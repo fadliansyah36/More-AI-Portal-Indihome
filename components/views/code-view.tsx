@@ -25,6 +25,8 @@ print(greet("MoreAI - Global Partner Network"))`
   const [selectedRunId, setSelectedRunId] = useState('');
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [projectsNextCursor, setProjectsNextCursor] = useState<string | null>(null);
+  const [loadingMoreProjects, setLoadingMoreProjects] = useState(false);
   const [downloadingProject, setDownloadingProject] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,10 +56,11 @@ print(greet("MoreAI - Global Partner Network"))`
     if (activeSubTab !== 'projects') return;
     let active = true;
     setProjectsLoading(true);
-    Promise.allSettled([artifactApi.list(), customerApi.agentRunsPage(50)]).then(([artifacts, runs]) => {
+    Promise.allSettled([artifactApi.listPage(50), customerApi.agentRunsPage(50)]).then(([artifacts, runs]) => {
       if (!active) return;
       if (artifacts.status === 'fulfilled') {
-        setSavedProjects(artifacts.value);
+        setSavedProjects(artifacts.value.items);
+        setProjectsNextCursor(artifacts.value.nextCursor);
         setProjectsError(null);
       } else {
         setProjectsError(artifacts.reason instanceof Error ? artifacts.reason.message : 'Snapshot kode tidak dapat dimuat.');
@@ -78,7 +81,9 @@ print(greet("MoreAI - Global Partner Network"))`
     setIsSaving(true);
     try {
       await artifactApi.upload('main.py', new Blob([code], { type: 'text/x-python' }), 'text/x-python', selectedRunId || undefined);
-      setSavedProjects((await artifactApi.listPage(100)).items);
+      const page = await artifactApi.listPage(50);
+      setSavedProjects(page.items);
+      setProjectsNextCursor(page.nextCursor);
       setProjectsError(null);
       setOutput(selectedRunId
         ? 'Snapshot main.py tersimpan dan ditautkan ke Agent Run ' + selectedRunId.slice(0, 8) + '. Kode tidak dieksekusi.'
@@ -87,6 +92,24 @@ print(greet("MoreAI - Global Partner Network"))`
       setOutput(cause instanceof Error ? cause.message : 'Snapshot kode gagal disimpan.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const loadMoreProjects = async () => {
+    if (!projectsNextCursor || loadingMoreProjects) return;
+    setLoadingMoreProjects(true);
+    setProjectsError(null);
+    try {
+      const page = await artifactApi.listPage(50, projectsNextCursor);
+      setSavedProjects((current) => {
+        const known = new Set(current.map((artifact) => artifact.id));
+        return [...current, ...page.items.filter((artifact) => !known.has(artifact.id))];
+      });
+      setProjectsNextCursor(page.nextCursor);
+    } catch (cause) {
+      setProjectsError(cause instanceof Error ? cause.message : 'Halaman snapshot kode berikutnya tidak dapat dimuat.');
+    } finally {
+      setLoadingMoreProjects(false);
     }
   };
 
@@ -308,6 +331,12 @@ print(greet("MoreAI - Global Partner Network"))`
                 );
               })}
             </div>
+          )}
+          {projectsNextCursor && (
+            <button type="button" onClick={() => void loadMoreProjects()} disabled={loadingMoreProjects}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
+              {loadingMoreProjects ? 'Memuat snapshot…' : 'Muat snapshot berikutnya'}
+            </button>
           )}
           <button type="button" onClick={() => setActiveSubTab('editor')} className="text-xs font-semibold text-red-600 hover:text-red-700">Kembali ke editor</button>
         </div>
