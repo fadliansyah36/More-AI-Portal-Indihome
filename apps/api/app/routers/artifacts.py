@@ -59,13 +59,35 @@ def _validate_owner_path(user_id: str, path: str) -> str:
 
 @router.get("")
 async def list_artifacts(request: Request, user: dict[str, Any] = Depends(customer_principal)):
-    """Return only artifact metadata owned by the authenticated principal."""
-    return await repository(request).select("artifacts", {
+    """Return owned artifacts with their durable Agent Run relationship."""
+    repo = repository(request)
+    rows = await repo.select("artifacts", {
         "user_id": f"eq.{user['id']}",
         "select": "id,run_id,storage_path,mime_type,size_bytes,checksum_sha256,metadata,created_at",
         "order": "created_at.desc",
         "limit": "200",
     })
+    # Chat attachments are linked atomically through the message/run junction.
+    # Their upload necessarily precedes run creation, so resolve the relationship
+    # from that authoritative junction rather than trusting client metadata.
+    attachment_links = await repo.select("conversation_message_attachments", {
+        "user_id": f"eq.{user['id']}",
+        "select": "artifact_id,run_id",
+        "order": "created_at.desc",
+        "limit": "1000",
+    })
+    linked_run_by_artifact = {
+        str(link["artifact_id"]): str(link["run_id"])
+        for link in attachment_links
+        if link.get("artifact_id") and link.get("run_id")
+    }
+    return [
+        {
+            **row,
+            "run_id": row.get("run_id") or linked_run_by_artifact.get(str(row.get("id"))),
+        }
+        for row in rows
+    ]
 
 
 @router.post("", status_code=201)
