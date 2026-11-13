@@ -474,7 +474,9 @@ async def customer_cancel_agent_run(
 ):
     principal = await require_customer_context(request, user)
     repo = repository(request)
-    await repo.owned_record("agent_runs", run_id, principal["id"])
+    run = await repo.owned_record("agent_runs", run_id, principal["id"])
+    if str(run.get("status") or "") in {"succeeded", "failed", "cancelled", "timed_out", "expired"}:
+        return {"run_id": str(run_id), "status": str(run["status"])}
     return await repo.rpc("moreai_worker_request_cancel", {
         "p_run_id": str(run_id),
         "p_user_id": principal["id"],
