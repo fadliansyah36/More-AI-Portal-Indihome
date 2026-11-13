@@ -100,20 +100,30 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     if (!customPrompt.trim()) return;
     const selected = tools.find((tool) => tool.id === selectedTool);
     if (!selected) return;
-    if (selected.category !== 'teks') {
-      setHandoffNotice(
-        selected.category === 'gambar'
-          ? 'Generasi gambar belum tersedia pada runtime OpenManus yang terhubung. Tidak ada gambar atau kredit yang dibuat.'
-          : 'Generasi video belum tersedia pada runtime OpenManus yang terhubung. Tidak ada video atau kredit yang dibuat.'
-      );
+
+    // Image generation requires a configured media provider and remains
+    // unavailable until that provider is integrated. The existing video tool
+    // describes script/storyboard authoring, which is text work supported by
+    // the current OpenManus Chat path. Do not claim a rendered video exists.
+    if (selected.category === 'gambar') {
+      setHandoffNotice('Generasi gambar belum tersedia pada runtime OpenManus yang terhubung. Tidak ada gambar atau kredit yang dibuat.');
       return;
     }
     if (!onNavigateToChat) {
       setHandoffNotice('Chat AI belum terhubung pada halaman ini. Prompt belum dikirim dan tidak ada proses yang dijalankan.');
       return;
     }
-    setHandoffNotice('Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.');
-    onNavigateToChat('Gunakan kemampuan AI MoreAI untuk tugas ' + selected.name + '.\n\nInstruksi pengguna:\n' + customPrompt.trim());
+
+    const isVideoScript = selected.id === 'video-gen';
+    const taskInstruction = isVideoScript
+      ? 'Buat naskah, storyboard per adegan, arahan visual, voice-over, dan timing untuk video. Hasilkan dokumen teks saja; jangan mengklaim membuat atau merender file video.'
+      : 'Gunakan kemampuan AI MoreAI untuk tugas ' + selected.name + '.';
+    setHandoffNotice(
+      isVideoScript
+        ? 'Brief naskah dan storyboard dibuka di Chat AI. Kirim pesan untuk menjalankan Agent; file video tidak dibuat.'
+        : 'Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.'
+    );
+    onNavigateToChat(taskInstruction + '\\n\\nInstruksi pengguna:\\n' + customPrompt.trim());
   };
 
   return (
