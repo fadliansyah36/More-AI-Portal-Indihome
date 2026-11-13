@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api/v1/agent-runs", tags=["agent-runs"])
 
 class AgentRunCancellationResponse(BaseModel):
     run_id: UUID
-    status: str
+    status: Literal["cancel_requested", "cancelled", "succeeded", "failed", "timed_out", "expired"]
 
 
 class AgentRunResponse(BaseModel):
