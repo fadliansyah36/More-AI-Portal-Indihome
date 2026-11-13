@@ -65,3 +65,8 @@ Scope: source-level integration corrections across existing Customer UI, FastAPI
 ### 6. Deleted workspace file download semantics
 - Workspace file signed-download now reads `deleted_at` and refuses to issue a link for a deleted current version. Explicit prior immutable versions remain addressable through version history.
 - Commit: `2b54081947a234194e8d759e1a2ba2379d0b0771`.
+
+### 7. Customer workspace CAS recovery
+- The existing Files screen now refreshes the selected workspace file list after a failed CAS upload attempt. This reconciles the client version after a version conflict or an ambiguous response where the server may already have committed the immutable version.
+- No layout or visual behavior was changed.
+- Commit: `937fb8c4283d0ffd73257710a20d263ba1bbfa0f`.
