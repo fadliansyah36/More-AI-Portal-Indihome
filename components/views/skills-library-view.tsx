@@ -37,7 +37,7 @@ export function SkillsLibraryView() {
     finally { setBusy(null); }
   };
 
-  const importSkill = async (event: React.FormEvent) => {
+  const install = async (id: string) => { setBusy(id); setError(null); try { await customerSkillApi.install(id); await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Instalasi ditolak oleh gate registry.'); } finally { setBusy(null); } };\n\n  const requestPermissions = async (skill: CustomerSkillPackage) => { setBusy(skill.id); setError(null); try { await customerSkillApi.requestPermissions(skill.id, skill.requested_permissions); await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Permintaan permission gagal.'); } finally { setBusy(null); } };\n\n  const importSkill = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy('import'); setError(null);
     try {
       await customerSkillApi.import({
@@ -95,7 +95,7 @@ export function SkillsLibraryView() {
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1 text-[10px] text-slate-500"><LockKeyhole className="h-3 w-3"/>Eksekusi: nonaktif</span>
-          <button disabled={busy === skill.id} onClick={() => void validate(skill.id)} className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3 py-2 text-[11px] font-semibold text-white hover:bg-red-700 disabled:opacity-50"><ShieldCheck className="h-3.5 w-3.5"/>{busy === skill.id ? 'Memproses…' : 'Validasi metadata'}</button>
+          <div className="flex flex-wrap gap-2"><button disabled={busy === skill.id} onClick={() => void validate(skill.id)} className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3 py-2 text-[11px] font-semibold text-white hover:bg-red-700 disabled:opacity-50"><ShieldCheck className="h-3.5 w-3.5"/>{busy === skill.id ? 'Memproses…' : 'Validasi metadata'}</button>{skill.publication_status === 'published' && !skill.installation && <button disabled={busy === skill.id} onClick={() => void install(skill.id)} className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-semibold text-slate-700 disabled:opacity-50">Install</button>}{skill.installation && skill.installation.permission_status !== 'pending_review' && skill.installation.permission_status !== 'approved' && <button disabled={busy === skill.id || skill.requested_permissions.length === 0} onClick={() => void requestPermissions(skill)} className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-semibold text-slate-700 disabled:opacity-50">Ajukan permission</button>}</div>
         </div>
       </article>)}</div>}
     <p className="text-[10px] text-slate-400">Validasi ini hanya metadata. Pemindaian file, dependency/SBOM, hak cipta, sandbox compatibility, dan persetujuan keamanan belum dilakukan oleh endpoint ini.</p>
