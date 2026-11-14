@@ -181,6 +181,8 @@ class RunwayVideoGenerationAdapter:
         request_id = str(claim["id"])
         if claim.get("status") == "succeeded" and isinstance(claim.get("response_text"), str):
             return claim["response_text"]
+        if claim.get("status") in {"failed", "unknown"}:
+            raise RuntimeError("runway_video_usage_request_not_recoverable")
         if state.get("request_hash") != request_hash:
             raise RuntimeError("runway_video_checkpoint_payload_conflict")
         if state.get("status") in {"submitting", "submission_unknown"} and not state.get("task_id"):
