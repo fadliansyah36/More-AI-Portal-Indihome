@@ -65,10 +65,21 @@ class ConnectionSummary(BaseModel):
     token_updated_at: datetime
 
 
-def _crypto_key() -> bytes:
-    encoded = os.getenv("MOREAI_CONNECTIONS_ENCRYPTION_KEY", "")
+def _crypto_key(version: int) -> bytes:
+    raw_keyring = os.getenv("MOREAI_CONNECTIONS_ENCRYPTION_KEYS", "")
+    keyring: dict[str, str] = {}
+    if raw_keyring:
+        try:
+            parsed = json.loads(raw_keyring)
+            if isinstance(parsed, dict):
+                keyring = {str(key): value for key, value in parsed.items() if isinstance(value, str)}
+        except Exception as exc:
+            raise HTTPException(503, "connections_encryption_keyring_invalid") from exc
+    if not keyring and os.getenv("MOREAI_CONNECTIONS_ENCRYPTION_KEY"):
+        keyring["1"] = os.environ["MOREAI_CONNECTIONS_ENCRYPTION_KEY"]
+    encoded = keyring.get(str(version))
     if not encoded:
-        raise HTTPException(503, "connections_encryption_key_not_configured")
+        raise HTTPException(503, "connections_encryption_key_version_unavailable")
     try:
         key = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
     except Exception as exc:
@@ -78,19 +89,35 @@ def _crypto_key() -> bytes:
     return key
 
 
+def _active_key_version() -> int:
+    try:
+        version = int(os.getenv("MOREAI_CONNECTIONS_ACTIVE_KEY_VERSION", "1"))
+    except ValueError as exc:
+        raise HTTPException(503, "connections_active_key_version_invalid") from exc
+    if version < 1:
+        raise HTTPException(503, "connections_active_key_version_invalid")
+    return version
+
+
 def _encrypt(value: dict[str, Any], aad: str) -> str:
+    version = _active_key_version()
     nonce = secrets.token_bytes(12)
-    ciphertext = AESGCM(_crypto_key()).encrypt(nonce, json.dumps(value, separators=(",", ":")).encode(), aad.encode())
-    return "v1." + base64.urlsafe_b64encode(nonce + ciphertext).decode().rstrip("=")
+    ciphertext = AESGCM(_crypto_key(version)).encrypt(nonce, json.dumps(value, separators=(",", ":")).encode(), aad.encode())
+    return f"v{version}." + base64.urlsafe_b64encode(nonce + ciphertext).decode().rstrip("=")
 
 
 def _decrypt(value: str, aad: str) -> dict[str, Any]:
-    if not value.startswith("v1."):
+    match = re.fullmatch(r"v(\\d+)\\.([A-Za-z0-9_-]+)", value)
+    if not match:
         raise HTTPException(409, "connection_credential_version_unsupported")
+    version = int(match.group(1))
     try:
-        raw = base64.urlsafe_b64decode(value[3:] + "=" * (-len(value[3:]) % 4))
-        plaintext = AESGCM(_crypto_key()).decrypt(raw[:12], raw[12:], aad.encode())
+        encoded = match.group(2)
+        raw = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+        plaintext = AESGCM(_crypto_key(version)).decrypt(raw[:12], raw[12:], aad.encode())
         decoded = json.loads(plaintext)
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(503, "connection_credential_decryption_failed") from exc
     if not isinstance(decoded, dict):
