@@ -57,7 +57,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
             ? run.input.prompt.trim().slice(0, 100)
             : `Agent Run ${run.id.slice(0, 8)}`,
           time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
-          completed: isTerminalAgentRunStatus(run.status),
+          completed: run.status === 'succeeded',
+          status: run.status,
           category: agentRunStatusLabel(run.status),
         })));
       } else {
@@ -135,7 +136,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
         setSelectedRun(fresh);
         setRuns(current => current.map(item => item.id === runId ? fresh : item));
         setTasks(current => current.map(task => task.id === runId
-          ? { ...task, completed: isTerminalAgentRunStatus(fresh.status), category: agentRunStatusLabel(fresh.status) }
+          ? { ...task, completed: fresh.status === 'succeeded', status: fresh.status, category: agentRunStatusLabel(fresh.status) }
           : task));
       }
       if (stepsResult.status === 'fulfilled') setRunSteps(stepsResult.value);
@@ -172,7 +173,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
       setSelectedRun(refreshed);
       setRuns((current) => current.map((item) => item.id === refreshed.id ? refreshed : item));
       setTasks((current) => current.map((task) => task.id === refreshed.id
-        ? { ...task, completed: isTerminalAgentRunStatus(refreshed.status), category: agentRunStatusLabel(refreshed.status) }
+        ? { ...task, completed: refreshed.status === 'succeeded', status: refreshed.status, category: agentRunStatusLabel(refreshed.status) }
         : task));
       showToast(result.status === 'cancel_requested' ? 'Permintaan pembatalan diteruskan ke worker.' : 'Status Agent Run diperbarui.', 'success');
     } catch (cause) {
@@ -247,7 +248,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
             ? run.input.prompt.trim().slice(0, 100)
             : `Agent Run ${run.id.slice(0, 8)}`,
           time: run.created_at ? new Date(run.created_at).toLocaleString() : run.status,
-          completed: isTerminalAgentRunStatus(run.status),
+          completed: run.status === 'succeeded',
+          status: run.status,
           category: agentRunStatusLabel(run.status),
         }));
         return [...previous, ...additions];
@@ -279,8 +281,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   };
 
   const filteredTasks = tasks.filter((t) => {
-    if (activeTab === 'aktif') return !t.completed;
-    if (activeTab === 'selesai') return t.completed;
+    if (activeTab === 'aktif') return !isTerminalAgentRunStatus(t.status || (t.completed ? 'succeeded' : 'running'));
+    if (activeTab === 'selesai') return isTerminalAgentRunStatus(t.status || (t.completed ? 'succeeded' : 'running'));
     return true;
   });
 
@@ -383,8 +385,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                     : 'bg-white border-slate-200/90 hover:border-red-200 shadow-xs'
                 }`}
               >
-                <button
-                  type="button"
+                <span
+                  aria-hidden="true"
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition shrink-0 ${
                     task.completed
                       ? 'bg-red-600 text-white'
@@ -396,7 +398,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                   ) : (
                     <Circle className="w-5 h-5" />
                   )}
-                </button>
+                </span>
 
                 <div className="flex-1 min-w-0">
                   <h3
