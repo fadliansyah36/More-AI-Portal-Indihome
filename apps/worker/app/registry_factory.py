@@ -3,6 +3,7 @@ import os
 from app.client import WorkerRpcClient
 from app.sandbox_tools import IsolatedSandboxToolAdapter
 from app.llm_gateway import create_metered_gateway
+from app.llm_accounting import ConfiguredCreditEstimator, SupabaseUsageAccounting
 from app.memory_store import SupabaseConversationMemoryStore, SupabasePersonalMemoryStore
 from app.knowledge_tools import SupabaseKnowledgeTools
 from app.attachment_loader import CustomerChatAttachmentLoader
@@ -11,6 +12,7 @@ from engine.agents.durable_tool_runtime import DurableOpenManusRuntime
 from engine.agents.planning_runtime import PlanningAgentRuntime
 from engine.tools.search_provider import TavilySearchAdapter
 from engine.tools.storage import SupabaseArtifactTool
+from engine.tools.media import OpenAIImageGenerationAdapter
 from engine.tools.workspace import SupabaseWorkspaceTool
 from apps.sandbox.app.browser_supervisor import BrowserSupervisor
 from engine.orchestration.registry import AgentRegistry
@@ -31,6 +33,15 @@ def build_agent_registry(
     search_tools = TavilySearchAdapter(http_client) if os.getenv("TAVILY_API_KEY") else None
     # The default bucket is provisioned by the Phase 05 migration; deployments may override it.
     storage_tools = SupabaseArtifactTool(client) if os.getenv("MOREAI_ARTIFACTS_BUCKET", "moreai-artifacts") else None
+    image_tools = (
+        OpenAIImageGenerationAdapter.from_environment(
+            http=http_client,
+            artifacts=storage_tools,
+            accounting=SupabaseUsageAccounting(client),
+            estimator=ConfiguredCreditEstimator(),
+        )
+        if storage_tools is not None else None
+    )
     workspace_tools = SupabaseWorkspaceTool(client) if os.getenv("MOREAI_WORKSPACE_BUCKET", "moreai-artifacts") else None
     if sandbox_tools is not None:
         if workspace_tools is None:
@@ -65,6 +76,7 @@ def build_agent_registry(
         plan_store=plan_store,
         search_tools=search_tools,
         storage_tools=storage_tools,
+        image_tools=image_tools,
         workspace_tools=workspace_tools,
         browser_tools=browser_tools,
         event_publisher=client.append_run_event,
@@ -93,7 +105,7 @@ def build_agent_registry(
     toolcall = DurableOpenManusRuntime(
         gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, knowledge_tools=knowledge_tools,
         plan_store=plan_store, search_tools=search_tools, storage_tools=storage_tools,
-        workspace_tools=workspace_tools, browser_tools=browser_tools,
+        image_tools=image_tools, workspace_tools=workspace_tools, browser_tools=browser_tools,
         attachment_loader=attachment_loader,
         event_publisher=client.append_run_event, sandbox_tools=sandbox_tools,
         approval_gate=client.wait_for_tool_approval,
