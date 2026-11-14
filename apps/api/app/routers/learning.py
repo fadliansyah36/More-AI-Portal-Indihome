@@ -88,6 +88,6 @@ async def set_learning_progress(
         status_code=503,
         detail={
             "code": "learning_catalog_unavailable",
-            "message": "Learning progress can only be updated after an official EduTech catalogue supplies verified module and lesson identifiers.",
+            "message": "Learning progress can only be updated after a first-party MoreAI learning path supplies an owner-scoped canonical module and lesson record.",
         },
     )
