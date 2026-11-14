@@ -120,6 +120,56 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
       </div>
 
       <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">Kurikulum tersimpan</h2>
+            <p className="mt-1 text-[11px] text-slate-500">Learning path, modul, lesson, dan progress yang tersimpan dari Agent Run MoreAI.</p>
+          </div>
+          <BookOpen className="h-5 w-5 text-red-600" />
+        </div>
+        {pathsLoading ? <p className="text-xs text-slate-500">Memuat kurikulum...</p> : savedPaths.length === 0 ? (
+          <p className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-500">Belum ada learning path tersimpan. Mulai sesi belajar untuk membuat kurikulum pertama.</p>
+        ) : (
+          <div className="space-y-2">
+            {savedPaths.map((path) => (
+              <button key={path.id} type="button" onClick={() => openLearningPath(path.id)} className="w-full rounded-2xl border border-slate-200 p-3 text-left transition hover:border-red-200 hover:bg-red-50/30">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-xs font-bold text-slate-900">{path.title}</span>
+                  <span className="shrink-0 text-[10px] font-semibold text-red-600">{path.progress.lessons_completed}/{path.progress.lessons_started} lesson selesai</span>
+                </div>
+                <p className="mt-1 line-clamp-2 text-[11px] text-slate-500">{path.description || path.learning_goal || 'Kurikulum personal MoreAI'}</p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-full rounded-full bg-red-500" style={{ width: path.progress.average_percent + '%' }} />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+        {selectedPath && (
+          <div className="space-y-3 border-t border-slate-100 pt-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-bold text-slate-900">{selectedPath.path.title}</h3>
+              <button type="button" onClick={() => setSelectedPath(null)} className="text-[11px] font-semibold text-slate-500">Tutup</button>
+            </div>
+            {selectedPath.modules.map((module) => (
+              <div key={module.id} className="rounded-2xl bg-slate-50 p-3">
+                <div className="text-xs font-bold text-slate-800">{module.module_index + 1}. {module.title}</div>
+                <p className="mt-1 text-[10px] text-slate-500">{module.summary} · {module.estimated_minutes} menit</p>
+                <div className="mt-2 space-y-1.5">
+                  {module.lessons.map((lesson) => (
+                    <button key={lesson.id} type="button" onClick={() => startLesson(selectedPath.path, module.title, lesson)} className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left">
+                      <span className="min-w-0"><span className="block text-[11px] font-semibold text-slate-800">{lesson.lesson_index + 1}. {lesson.title}</span><span className="text-[10px] text-slate-500">{lesson.progress?.status === 'completed' ? 'Selesai' : lesson.progress?.status === 'in_progress' ? 'Sedang dipelajari' : 'Belum dimulai'} · v{lesson.content_version}</span></span>
+                      <span className="shrink-0 text-[10px] font-semibold text-red-600">Lanjutkan</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-2xs space-y-3">
         <div className="flex items-center gap-2 text-slate-800">
           <Sparkles className="w-4 h-4 text-red-600" />
           <h2 className="text-xs font-bold uppercase tracking-wider">Mulai sesi belajar dengan AI Agent</h2>
