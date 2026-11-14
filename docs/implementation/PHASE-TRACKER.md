@@ -1151,3 +1151,13 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - 77 Customer/shared API route handlers were source-scanned for Customer principal protection. Direct Agent Run event history and Customer SSE are now sanitized; conversation history restores structured RAG citations.
 - Approval decision/resume migration is applied to canonical Supabase as version `20261113182657`.
 - Phase 09 remains IN PROGRESS because the PRD still includes unavailable provider/domain contracts and runtime acceptance is intentionally not performed. No tests, build, browser/API/worker verification, staging or deployment.
+
+
+## 2026-11-14 — Customer Auth and Vercel build recovery
+- Report: [Phase 09 Auth Recovery & Vercel Build Recovery](./PHASE-09-AUTH-AND-VERCEL-RECOVERY-20261114.md).
+- Fixed Customer workspace version-history client mismatch (`versionsPage` → actual `versions` contract) and removed the stale pagination action that Vercel's next type-check reported.
+- Customer login now distinguishes Supabase `invalid_credentials`, unconfirmed email, banned account, rate limits and transport failures rather than labeling every failure as a wrong password.
+- Read-only Supabase Auth logs show successful password signup/login/refresh events, one `invalid_credentials` password-grant failure and one recovery email rate-limit response (HTTP 429). Vercel project environment metadata confirms required Supabase URL/publishable-key/API URL variable names exist; no secret values were decrypted. No account or Auth settings were modified.
+- Vercel API deployment for `fb4929b` reached READY. Frontend deployment for `557c7eb` failed on a stale pagination callback; after correction, the latest `c5eb19a` frontend deployment was QUEUED at report time. The API deployment for `c5eb19a` was also QUEUED; the API deployment at `fb4929b` is READY.
+- No tests, lint, typecheck, local build, browser/API/worker runtime checks, staging or E2E were run. Vercel's own Git deployment build is not Phase 10/11 acceptance evidence.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT STARTED/BLOCKED; Phase 11 BLOCKED by the controlling AGENTS.md release gate. No production release at the latest source HEAD is yet verified.
