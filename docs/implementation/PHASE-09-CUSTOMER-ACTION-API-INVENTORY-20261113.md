@@ -220,5 +220,13 @@ Knowledge Search returns an explicit validated `citation_marker` for each chunk.
 - Tool Catalog now exposes actual live worker registration and worker count instead of presenting static `enabled_by_default` as if the tool were running. Create Studio media/file cards display live capability status.
 - Current deployment has not been supplied with the required OpenAI API key or media billing configuration. The source adapter is implemented but not registered/active until those values are configured. No key was created/read and no provider request was made.
 - Image cost configuration must be populated from current official pricing. GPT Image 2 official docs currently show $0.006/$0.053/$0.211 for 1024×1024 low/medium/high output; do not hardcode these values as perpetual pricing. Organization verification may be required.
-- OpenAI Sora Video API remains unavailable after the 2026-09-24 removal of Sora 2 API models. A replacement provider must be selected; Runway Dev is a documented async task API candidate, not yet selected or connected.
+- OpenAI Sora Video API remains unavailable after the 2026-09-24 removal of Sora 2 API models. Runway Dev is now the selected video adapter and its durable async task/checkpoint source implementation is present; it remains gated until its secret, price map, provider-credit conversion, media entitlement/quota and output host allowlist are configured.
 - See [OpenAI Image Generation adapter report](./PHASE-09-AGENT-CONFIGURATION-CAPABILITY-REGISTRY-CREATE-STUDIO-20261114.md) and [Customer Workflow & Task Progress / Dependency Projection](./PHASE-09-CUSTOMER-WORKFLOW-TASK-PROGRESS-DEPENDENCY-20261114.md).
+
+
+### Runway Dev video adapter source integration
+
+- Added `video_generate` to the canonical tool catalog and the durable OpenManus runtime. The worker registers it only when the Runway secret, media billing/entitlement/quota, wallet conversion, explicit per-model/duration/ratio max-price map, provider-credit USD conversion and HTTPS output host allowlist are configured.
+- Runway task submission uses durable checkpoint intent/reservation/submitting/task-id/polling/artifact/completed states. If provider submission outcome is ambiguous before task ID persistence, the adapter retains the reservation and refuses to submit a duplicate task.
+- Successful MP4 output is stored in private Supabase Storage with deterministic artifact identity; worker recovery can re-use the same task ID and artifact.
+- Tool catalog and Create Studio now report provider-specific live capability. No provider secret was created/read and no Runway API request was made.
