@@ -280,8 +280,10 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
                   <span className="text-[10px] text-slate-500">{selectedAgent.specialty}</span>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Enabled
+              <span className={selectedAgent.runtimeAvailable
+                ? "text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"
+                : "text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"}>
+                {selectedAgent.runtimeAvailable ? "Runtime aktif" : "Worker offline"}
               </span>
             </div>
 
