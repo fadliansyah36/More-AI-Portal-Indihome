@@ -25,7 +25,7 @@ create or replace function public.moreai_begin_connection_action(
  p_user_id uuid,p_connection_id uuid,p_action_type text,p_idempotency_key text,p_payload_sha256 text
 ) returns jsonb language plpgsql security definer set search_path=''
 as $function$
-declare v_action public.moreai_connection_actions%rowtype;
+declare v_action public.moreai_connection_actions%rowtype; v_inserted integer;
 begin
  if p_action_type not in ('gmail.send','calendar.create') or
     p_idempotency_key is null or length(p_idempotency_key) not between 12 and 128 or
@@ -38,12 +38,13 @@ begin
  insert into public.moreai_connection_actions(user_id,connection_id,provider,action_type,idempotency_key,payload_sha256,status)
  values(p_user_id,p_connection_id,'google',p_action_type,p_idempotency_key,p_payload_sha256,'started')
  on conflict(user_id,idempotency_key) do nothing;
+ get diagnostics v_inserted = row_count;
  select * into v_action from public.moreai_connection_actions
   where user_id=p_user_id and idempotency_key=p_idempotency_key for update;
  if v_action.connection_id<>p_connection_id or v_action.action_type<>p_action_type or v_action.payload_sha256<>p_payload_sha256 then
   raise exception 'connection_action_idempotency_conflict' using errcode='22023';
  end if;
- if v_action.status<>'started' or v_action.created_at < now()-interval '2 minutes' then
+ if v_inserted=0 or v_action.status<>'started' then
   return jsonb_build_object('action_id',v_action.id,'status',v_action.status,'replay',true,
    'provider_resource_id',v_action.provider_resource_id,'result_metadata',v_action.result_metadata);
  end if;
