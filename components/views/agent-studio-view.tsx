@@ -185,6 +185,16 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
             <p className="text-xs text-slate-600 leading-relaxed">
               {selectedAgent.description}
             </p>
+            {selectedAgent.capabilityTags && selectedAgent.capabilityTags.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Kapabilitas runtime</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedAgent.capabilityTags.map((tag) => (
+                    <span key={tag} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-medium text-slate-700">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
             <section className="rounded-2xl border border-slate-100 bg-slate-50 p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h5 className="text-[11px] font-bold text-slate-800">Tool Policy · OpenManus</h5>
