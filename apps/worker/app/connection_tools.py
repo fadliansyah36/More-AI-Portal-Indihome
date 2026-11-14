@@ -10,7 +10,7 @@ import httpx
 
 
 class GoogleConnectionTools:
-    """Read-only Google Workspace tools delegated through the FastAPI trust boundary."""
+    """Google Workspace tools delegated through FastAPI; writes are gated by durable run approval."""
 
     def __init__(self, http: httpx.AsyncClient, api_url: str, worker_token: str):
         self.http = http
