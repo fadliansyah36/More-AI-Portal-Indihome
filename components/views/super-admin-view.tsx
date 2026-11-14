@@ -50,7 +50,7 @@ type SkillReviewRow = {
   source_repository: string; source_commit: string; source_path: string;
   license_id: string; license_url: string | null; license_evidence: string | null;
   license_status: string; validation_status: string; publication_status: string;
-  validation_report: { findings?: string[]; file_count?: number; total_bytes?: number; source_inventory?: { license_files?: Array<{path:string;sha256:string}>; manifest_files?: string[]; dependency_manifests?: string[]; dependency_count?: number; exact_version_count?: number; unresolved_dependency_count?: number; warning?: string; registry_resolution?: { exact_version_count?: number; registry_metadata_resolved_count?: number; license_assertion_count?: number; unresolved_count?: number; note?: string } } };
+  validation_report: { findings?: string[]; file_count?: number; total_bytes?: number; source_inventory?: { license_files?: Array<{path:string;sha256:string}>; manifest_files?: string[]; dependency_manifests?: string[]; dependency_count?: number; exact_version_count?: number; unresolved_dependency_count?: number; warning?: string; dependencies?: Array<{ecosystem?:string;name?:string;exact_version?:string|null;license_declared?:string;license_declared_raw?:string|null;registry_metadata_status?:string}>; registry_resolution?: { exact_version_count?: number; registry_metadata_resolved_count?: number; license_assertion_count?: number; unresolved_count?: number; note?: string } } };
   requested_permissions: string[];
   installations: Array<{
     id: string; owner_user_id: string; status: string;
@@ -181,6 +181,10 @@ export default function SuperAdminPage() {
               <p>Dependencies: {skill.validation_report.source_inventory.exact_version_count||0} exact-version / {skill.validation_report.source_inventory.dependency_count||0} terdeteksi · {skill.validation_report.source_inventory.unresolved_dependency_count||0} belum exact</p>
               <p>Registry metadata: {skill.validation_report.source_inventory.registry_resolution?.registry_metadata_resolved_count||0} ter-resolve · {skill.validation_report.source_inventory.registry_resolution?.license_assertion_count||0} deklarasi lisensi · {skill.validation_report.source_inventory.registry_resolution?.unresolved_count||0} belum terselesaikan</p>
               {skill.validation_report.source_inventory.warning&&<p className="mt-1 text-amber-800">{skill.validation_report.source_inventory.warning}</p>}
+              {(skill.validation_report.source_inventory.dependencies||[]).length>0&&<div className="mt-2 max-h-44 space-y-1 overflow-y-auto border-t border-slate-200 pt-2">
+                <p className="font-bold text-slate-700">Dependency evidence (maks. 100)</p>
+                {(skill.validation_report.source_inventory.dependencies||[]).slice(0,100).map((dependency,index)=><p key={index} className="break-all">{dependency.ecosystem} · {dependency.name} · {dependency.exact_version||'versi tidak exact'} · {dependency.license_declared||'NOASSERTION'} · {dependency.registry_metadata_status||'unresolved'}{dependency.license_declared_raw?' · raw: '+dependency.license_declared_raw:''}</p>)}
+              </div>}
             </div>}
 
             <div className="flex flex-wrap gap-2"><button disabled={skillReviewBusy===skill.id || skill.validation_status!=='validated'} onClick={()=>void reviewPackage(skill,'approved')} className="rounded-xl bg-red-600 px-3 py-2 text-[11px] font-bold text-white disabled:opacity-40">Setujui lisensi & publikasikan</button><button disabled={skillReviewBusy===skill.id} onClick={()=>void reviewPackage(skill,'rejected')} className="rounded-xl border border-rose-200 px-3 py-2 text-[11px] font-semibold text-rose-700 disabled:opacity-40">Tolak lisensi</button></div>
