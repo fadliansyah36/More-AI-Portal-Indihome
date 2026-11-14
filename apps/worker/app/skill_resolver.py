@@ -72,7 +72,7 @@ class SupabaseSkillResolver:
                     raise PermissionError("skill_source_file_content_missing")
                 if len(raw) != size or hashlib.sha256(raw).hexdigest() != source_file.get("content_sha256"):
                     raise PermissionError("skill_source_sha256_mismatch")
-                git_blob = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\\0" + raw).hexdigest()
+                git_blob = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
                 if git_blob != source_file.get("git_blob_sha"):
                     raise PermissionError("skill_source_git_blob_mismatch")
                 if relative_path == package.get("source_path"):
