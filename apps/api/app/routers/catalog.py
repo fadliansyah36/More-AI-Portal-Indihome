@@ -19,8 +19,8 @@ class AgentCatalogItemResponse(BaseModel):
     description: str | None = None
     version: str
     enabled: bool
-    capability_tags: list[str] = []
-    tool_keys: list[str] = []
+    capability_tags: list[str]
+    tool_keys: list[str]
 
 
 class ToolCatalogItemResponse(BaseModel):
