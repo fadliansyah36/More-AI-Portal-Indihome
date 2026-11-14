@@ -37,7 +37,13 @@ export function SkillsLibraryView() {
     finally { setBusy(null); }
   };
 
-  const ingest = async (id: string) => { setBusy(id); setError(null); try { const result = await customerSkillApi.ingest(id); setError(null); window.alert('Integritas sumber diverifikasi: ' + result.file_count + ' file, ' + result.total_bytes + ' bytes. Status eksekusi tetap nonaktif.'); await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Source ingestion gagal. Pastikan repository, commit, path dan hash cocok dengan sumber pinned.'); } finally { setBusy(null); } };\n\n  const install = async (id: string) => { setBusy(id); setError(null); try { await customerSkillApi.install(id); await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Instalasi ditolak oleh gate registry.'); } finally { setBusy(null); } };\n\n  const requestPermissions = async (skill: CustomerSkillPackage) => { setBusy(skill.id); setError(null); try { await customerSkillApi.requestPermissions(skill.id, skill.requested_permissions); await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Permintaan permission gagal.'); } finally { setBusy(null); } };\n\n  const importSkill = async (event: React.FormEvent) => {
+  const ingest = async (id: string) => { setBusy(id); setError(null); try { const result = await customerSkillApi.ingest(id); setError(null); window.alert('Integritas sumber diverifikasi: ' + result.file_count + ' file, ' + result.total_bytes + ' bytes. Status eksekusi tetap nonaktif.'); await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Source ingestion gagal. Pastikan repository, commit, path dan hash cocok dengan sumber pinned.'); } finally { setBusy(null); } };
+
+  const install = async (id: string) => { setBusy(id); setError(null); try { await customerSkillApi.install(id); await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Instalasi ditolak oleh gate registry.'); } finally { setBusy(null); } };
+
+  const requestPermissions = async (skill: CustomerSkillPackage) => { setBusy(skill.id); setError(null); try { await customerSkillApi.requestPermissions(skill.id, skill.requested_permissions); await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Permintaan permission gagal.'); } finally { setBusy(null); } };
+
+  const importSkill = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy('import'); setError(null);
     try {
       await customerSkillApi.import({
