@@ -24,7 +24,7 @@ create table if not exists public.moreai_customer_memories (
   constraint moreai_customer_memory_content_length check (length(btrim(content)) between 1 and 4000),
   constraint moreai_customer_memory_source_check check (source_type = 'user_created'),
   constraint moreai_customer_memory_scope_check check (scope = 'personal'),
-  constraint moreai_customer_memory_expiry_check check (expires_at > created_at and expires_at <= created_at + interval '366 days')
+  constraint moreai_customer_memory_expiry_check check (expires_at > created_at and expires_at <= updated_at + interval '366 days')
 );
 
 create index if not exists moreai_customer_memories_owner_expiry_idx
@@ -45,8 +45,8 @@ create policy moreai_customer_memories_owner_all
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 
-grant select, insert, update, delete on public.moreai_customer_memory_preferences to authenticated;
-grant select, insert, update, delete on public.moreai_customer_memories to authenticated;
+revoke all on public.moreai_customer_memory_preferences from anon, authenticated;
+revoke all on public.moreai_customer_memories from anon, authenticated;
 grant all on public.moreai_customer_memory_preferences to service_role;
 grant all on public.moreai_customer_memories to service_role;
 
@@ -85,3 +85,27 @@ $function$;
 
 revoke all on function public.moreai_customer_set_memory_consent(uuid, boolean, text) from public, anon, authenticated;
 grant execute on function public.moreai_customer_set_memory_consent(uuid, boolean, text) to service_role;
+
+
+create or replace function public.moreai_customer_clear_personal_memory(p_user_id uuid)
+returns bigint
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+declare v_deleted bigint;
+begin
+  if p_user_id is null then
+    raise exception 'memory_clear_user_required' using errcode = '22023';
+  end if;
+  update public.moreai_customer_memory_preferences
+     set enabled = false, disabled_at = now(), updated_at = now()
+   where user_id = p_user_id;
+  delete from public.moreai_customer_memories where user_id = p_user_id;
+  get diagnostics v_deleted = row_count;
+  return v_deleted;
+end;
+$function$;
+
+revoke all on function public.moreai_customer_clear_personal_memory(uuid) from public, anon, authenticated;
+grant execute on function public.moreai_customer_clear_personal_memory(uuid) to service_role;
