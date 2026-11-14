@@ -45,6 +45,7 @@ import { ResearchView } from '@/components/views/research-view';
 import { AnalyseView } from '@/components/views/analyse-view';
 import { CodeView } from '@/components/views/code-view';
 import { AgentStudioView } from '@/components/views/agent-studio-view';
+import { SkillsLibraryView } from '@/components/views/skills-library-view';
 import { WifiManagementView } from '@/components/views/wifi-management-view';
 import { EdutechView } from '@/components/views/edutech-view';
 import { BenefitCreditView } from '@/components/views/benefit-credit-view';
@@ -284,6 +285,8 @@ export default function App() {
               {currentTab === 'analyse' && <AnalyseView onNavigateToChat={handleStartPrompt} />}
 
               {currentTab === 'code' && <CodeView onNavigateToChat={handleStartPrompt} />}
+
+              {currentTab === 'skills' && <SkillsLibraryView />}
 
               {currentTab === 'agents' && (
                 <AgentStudioView
