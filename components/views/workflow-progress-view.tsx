@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Clock, Loader2, AlertCircle, Download } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { artifactApi, customerApi, customerToolApprovalApi, type CustomerAgentRun, type CustomerToolApproval, type CustomerArtifact } from '@/lib/api/client';
+import { artifactApi, customerApi, customerToolApprovalApi, moreAiApiStream, type CustomerAgentRun, type CustomerToolApproval, type CustomerArtifact } from '@/lib/api/client';
 import { agentRunStatusLabel, isActiveAgentRunStatus, isTerminalAgentRunStatus } from '@/lib/api/agent-run-status';
 
 interface WorkflowProgressViewProps {
@@ -173,6 +173,53 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       setActivityLoadingId(null);
     }
   };
+
+  // Keep the expanded workflow synchronized with the same durable SSE event stream
+  // used by the Task detail. Persisted run/step/activity reads remain authoritative.
+  useEffect(() => {
+    if (!expandedRunId) return;
+    const controller = new AbortController();
+    let active = true;
+    const refreshSnapshot = async () => {
+      const [runResult, stepsResult, activityResult] = await Promise.allSettled([
+        customerApi.getRun(expandedRunId),
+        customerApi.getRunSteps(expandedRunId),
+        customerApi.getRunActivity(expandedRunId, 0, 200),
+      ]);
+      if (!active) return;
+      if (runResult.status === 'fulfilled') {
+        const fresh = runResult.value;
+        setRuns((current) => current.map((run) => run.id === expandedRunId ? fresh : run));
+        if (isTerminalAgentRunStatus(fresh.status)) controller.abort();
+      }
+      if (stepsResult.status === 'fulfilled') {
+        setRunSteps((current) => ({ ...current, [expandedRunId]: stepsResult.value }));
+      }
+      if (activityResult.status === 'fulfilled') {
+        setRunActivity((current) => ({ ...current, [expandedRunId]: activityResult.value }));
+      }
+    };
+    void moreAiApiStream(customerApi.streamRun(expandedRunId), ({ event }) => {
+      if (
+        event === 'run.started' || event === 'run.progress' || event === 'worker.checkpoint'
+        || event.startsWith('planning.step.') || event.startsWith('tool.')
+        || event.startsWith('approval.') || event === 'run.awaiting_approval'
+        || event === 'run.resume_queued' || event.startsWith('run.')
+      ) {
+        void refreshSnapshot();
+      }
+    }, { signal: controller.signal, maxReconnects: 20 }).catch((cause) => {
+      if (active && !(cause instanceof DOMException && cause.name === 'AbortError')) {
+        setRunPaginationError(cause instanceof Error
+          ? 'Live workflow stream terputus: ' + cause.message
+          : 'Live workflow stream terputus. Status tersimpan tetap dapat dimuat ulang.');
+      }
+    });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [expandedRunId]);
 
   const cancelAgentRun = async (runId: string) => {
     if (runActionId) return;
