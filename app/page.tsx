@@ -300,7 +300,7 @@ export default function App() {
 
               {currentTab === 'wifi' && <WifiManagementView onNavigateTab={handleNavigate} />}
 
-              {currentTab === 'edutech' && <EdutechView />}
+              {currentTab === 'edutech' && <EdutechView onStartPrompt={handleStartPrompt} />}
 
               {currentTab === 'benefits' && <BenefitCreditView onNavigateTab={handleNavigate} />}
 
