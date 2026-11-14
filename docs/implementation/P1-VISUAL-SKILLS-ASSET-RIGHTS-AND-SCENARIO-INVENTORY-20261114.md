@@ -63,7 +63,7 @@ The repository tree also contains extensive non-Markdown assets (including Godot
 
 ### Scenario review decision
 
-**Scenario Skills are NOT CLOSED.** Tree enumeration is complete for the pinned commit, but the 172 entrypoint bodies and 519 references, 898 scripts, 54 assets and 20 test files have not all received per-file content/provenance/license dispositions. The 179-versus-172 mismatch must be reconciled first. Do not copy wholesale or mark supporting files approved.
+**Scenario Skills are NOT CLOSED.** Tree enumeration is complete for the pinned commit. The 172 product entrypoint bodies and their 519 references, 898 scripts, 54 assets and 20 test files have not all received per-file content/provenance/license dispositions. The 7 internal maintainer entrypoints are archive-only. Do not copy wholesale or mark supporting files approved.
 
 ## P1 gate and next steps
 
