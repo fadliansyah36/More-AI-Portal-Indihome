@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle2, FileText, Image as ImageIcon, FileSpreadsheet, ArrowRight, Loader2, AlertCircle, Download } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, FileText, Image as ImageIcon, FileSpreadsheet, ArrowRight, Loader2, AlertCircle, Download, Video } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { artifactApi } from '@/lib/api/client';
 
@@ -20,16 +20,17 @@ interface ArtifactsResultViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
 }
 
-const categoryFor = (mime: string | null, path: string): 'pdf' | 'image' | 'xlsx' | 'other' => {
+const categoryFor = (mime: string | null, path: string): 'pdf' | 'image' | 'video' | 'xlsx' | 'other' => {
   const ext = path.split('.').pop()?.toLowerCase();
   if (mime === 'application/pdf' || ext === 'pdf') return 'pdf';
   if (mime?.startsWith('image/')) return 'image';
+  if (mime?.startsWith('video/') || ['mp4', 'webm', 'mov', 'm4v'].includes(ext || '')) return 'video';
   if (mime?.includes('spreadsheet') || ['xlsx', 'xls', 'csv'].includes(ext || '')) return 'xlsx';
   return 'other';
 };
 
 export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack, onNavigateTab }) => {
-  const [filter, setFilter] = useState<'semua' | 'pdf' | 'image' | 'xlsx'>('semua');
+  const [filter, setFilter] = useState<'semua' | 'pdf' | 'image' | 'video' | 'xlsx'>('semua');
   const [files, setFiles] = useState<ArtifactRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +111,7 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
       </div>
 
       <div className="flex items-center gap-1 p-1 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-        {([{ id: 'semua', label: 'Semua' }, { id: 'pdf', label: 'Dokumen' }, { id: 'image', label: 'Gambar' }, { id: 'xlsx', label: 'Data' }] as const).map((tab) => (
+        {([{ id: 'semua', label: 'Semua' }, { id: 'pdf', label: 'Dokumen' }, { id: 'image', label: 'Gambar' }, { id: 'video', label: 'Video' }, { id: 'xlsx', label: 'Data' }] as const).map((tab) => (
           <button key={tab.id} onClick={() => setFilter(tab.id)} className={`flex-1 py-1.5 text-xs font-semibold rounded-xl transition ${filter === tab.id ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>{tab.label}</button>
         ))}
       </div>
@@ -128,7 +129,7 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
             <div key={file.id} className="p-3.5 rounded-2xl bg-white border border-slate-100 shadow-2xs flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0">
-                  {category === 'pdf' ? <FileText className="w-5 h-5 text-red-600" /> : category === 'image' ? <ImageIcon className="w-5 h-5 text-amber-600" /> : <FileSpreadsheet className="w-5 h-5 text-emerald-600" />}
+                  {category === 'pdf' ? <FileText className="w-5 h-5 text-red-600" /> : category === 'image' ? <ImageIcon className="w-5 h-5 text-amber-600" /> : category === 'video' ? <Video className="w-5 h-5 text-blue-600" /> : <FileSpreadsheet className="w-5 h-5 text-emerald-600" />}
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs font-bold text-slate-900 truncate">{nameOf(file)}</h4>
