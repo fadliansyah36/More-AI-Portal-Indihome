@@ -215,11 +215,11 @@ Knowledge Search returns an explicit validated `citation_marker` for each chunk.
 
 ## 2026-11-14 media adapter source follow-up
 
-- Added the metered OpenAI Images API adapter (`gpt-image-2`) to the worker tool registry and added private binary artifact persistence. The `image_generate` tool is only registered when the worker has `OPENAI_API_KEY`, media billing enabled, explicit size/quality USD price map, active media entitlement/quota keys, wallet currency and credit conversion.
+- Added the metered OpenAI Images API adapter (`gpt-image-2.5-flare`) to the worker tool registry and added private binary artifact persistence. The `image_generate` tool is only registered when the worker has `OPENAI_API_KEY`, media billing enabled, explicit size/quality USD price map, active media entitlement/quota keys, wallet currency and credit conversion.
 - Image provider request is not issued unless wallet/quota reservation succeeds. Ambiguous provider timeouts retain the reservation and prevent duplicate provider calls for the same run/payload. The adapter persists the binary output to private Supabase Storage and returns an artifact reference.
 - Tool Catalog now exposes actual live worker registration and worker count instead of presenting static `enabled_by_default` as if the tool were running. Create Studio media/file cards display live capability status.
 - Current deployment has not been supplied with the required OpenAI API key or media billing configuration. The source adapter is implemented but not registered/active until those values are configured. No key was created/read and no provider request was made.
-- Image cost configuration must be populated from current official pricing. GPT Image 2 official docs currently show $0.006/$0.053/$0.211 for 1024×1024 low/medium/high output; do not hardcode these values as perpetual pricing. Organization verification may be required.
+- Image cost configuration must be populated from current official pricing. GPT Image 2.5 Flare/Sunburst official docs currently show $0.006/$0.053/$0.211 for 1024×1024 low/medium/high output; do not hardcode these values as perpetual pricing. Organization verification may be required.
 - OpenAI Sora Video API remains unavailable after the 2026-09-24 removal of Sora 2 API models. Runway Dev is now the selected video adapter and its durable async task/checkpoint source implementation is present; it remains gated until its secret, price map, provider-credit conversion, media entitlement/quota and output host allowlist are configured.
 - See [OpenAI Image Generation adapter report](./PHASE-09-AGENT-CONFIGURATION-CAPABILITY-REGISTRY-CREATE-STUDIO-20261114.md) and [Customer Workflow & Task Progress / Dependency Projection](./PHASE-09-CUSTOMER-WORKFLOW-TASK-PROGRESS-DEPENDENCY-20261114.md).
 
@@ -246,3 +246,5 @@ Knowledge Search returns an explicit validated `citation_marker` for each chunk.
 - Account Upgrade reads actual entitlements and keeps checkout/activation disabled. Replaced unverified “unlimited AI” plan marketing copy with a statement that benefits and quotas will follow backend-confirmed packages.
 - Captive OTP inputs and verification are disabled until gateway send/verify contracts exist; no demo OTP is accepted. Captive Portal remains explicitly labelled as a preview, and the success screen independently checks for a real active network session before displaying connected status.
 - Support screen does not invent a contact address or create a fake ticket; it explicitly reports that the official support channel is not configured.
+
+- Image adapter model alignment was updated to current documented `gpt-image-2.5-flare` by default, with `gpt-image-2.5-sunburst` as the precision-focused alternative. The tool schema supports the current quality options `low/medium/high/xhigh/max/auto` and background `auto/opaque/transparent`; the operator's price map remains mandatory.
