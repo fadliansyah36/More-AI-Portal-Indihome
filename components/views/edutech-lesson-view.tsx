@@ -56,7 +56,7 @@ export const EdutechLessonView: React.FC<EdutechLessonViewProps> = ({ onBack, pa
       'Pertanyaan learner-safe (tanpa answer key):',
       JSON.stringify(safeQuestions),
       'Alur wajib: tampilkan satu pertanyaan pada satu waktu, tunggu jawaban aktual student, catat jawaban per question_id, lalu lanjutkan sampai semua pertanyaan terjawab. Jangan memberi atau menebak answer key. Jangan membuat skor, feedback, atau rubric sendiri. Setelah jawaban lengkap, panggil tool answer_assess dengan quiz_id dan array answers berisi question_id serta jawaban aktual student. Worker akan mengambil answer key canonical dan melakukan deterministic grading. Laporkan score, feedback, dan status lulus hanya dari hasil tool. Jangan mengklaim assessment tersimpan jika tool gagal. Hasil Agent Run dan assessment harus dapat ditelusuri dari Tasks.',
-    ].join('\\n');
+    ].join('\n');
     onStartPrompt(prompt, 'planning');
   };
 
