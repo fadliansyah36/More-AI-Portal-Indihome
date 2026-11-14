@@ -258,3 +258,58 @@ async def create_or_update_llm_route(
         "p_enabled": body.enabled,
         "p_correlation_id": getattr(request.state, "correlation_id", None),
     })
+
+
+class SkillRegistryReviewRequest(BaseModel):
+    license_status: Literal["approved", "rejected"]
+    publication_status: Literal["private", "published", "deprecated"] = "private"
+    review_note: str = Field(min_length=3, max_length=2000)
+
+
+async def skill_registry_reviewer(request: Request, user: dict[str, Any] = Depends(current_user)):
+    return await require_platform_permission(request, user, "skills.registry.review")
+
+
+@router.get("/skills/pending")
+async def pending_skill_reviews(request: Request, principal=Depends(skill_registry_reviewer)):
+    rows = await repository(request).select("moreai_skill_packages", {
+        "or": "(license_status.eq.unverified,license_status.eq.review_required,validation_status.eq.review_required,publication_status.eq.pending_review)",
+        "select": "id,owner_user_id,slug,name,source_repository,source_commit,source_path,source_blob_sha,content_sha256,license_id,license_url,license_evidence,manifest,requested_permissions,license_status,validation_status,validation_report,publication_status,created_at",
+        "order": "created_at.asc", "limit": "100",
+    })
+    return {"items": rows, "count": len(rows)}
+
+
+@router.patch("/skills/{skill_id}/review")
+async def review_skill_package(skill_id: UUID, body: SkillRegistryReviewRequest, request: Request, principal=Depends(skill_registry_reviewer)):
+    repo = repository(request)
+    rows = await repo.select("moreai_skill_packages", {
+        "id": f"eq.{skill_id}",
+        "select": "id,validation_status,license_status,publication_status,license_evidence,manifest",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "skill_not_found")
+    current = rows[0]
+    if body.license_status == "approved" and (not current.get("license_evidence") or current.get("validation_status") != "validated"):
+        raise HTTPException(409, "skill_requires_validation_and_license_evidence")
+    if body.publication_status == "published" and body.license_status != "approved":
+        raise HTTPException(409, "license_approval_required_before_publication")
+    if body.publication_status == "published" and not current.get("manifest"):
+        raise HTTPException(409, "skill_manifest_required_before_publication")
+    updated = await repo.update("moreai_skill_packages", {"id": f"eq.{skill_id}"}, {
+        "license_status": body.license_status,
+        "publication_status": body.publication_status,
+        "validation_report": {
+            **(current.get("validation_report") if isinstance(current.get("validation_report"), dict) else {}),
+            "review": {
+                "reviewer_user_id": principal["id"],
+                "review_note": body.review_note,
+                "reviewed_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+            },
+        },
+        "updated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+    })
+    if not updated:
+        raise HTTPException(409, "skill_review_conflict")
+    return updated[0]
