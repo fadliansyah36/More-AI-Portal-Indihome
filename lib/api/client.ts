@@ -1295,6 +1295,11 @@ export const customerSkillApi = {
   }) => moreAiCustomerApi<CustomerSkillPackage>('/api/v1/customer/skills', {
     method: 'POST', body: JSON.stringify(payload),
   }),
+
+  ingest: (skillId: string) => moreAiCustomerApi<{
+    skill_id: string; source_commit: string; file_count: number;
+    total_bytes: number; integrity: string; execution_enabled: boolean;
+  }>(`/api/v1/customer/skills/${encodeURIComponent(skillId)}/ingest`, { method: 'POST' }),
   validate: (skillId: string) => moreAiCustomerApi<{
     skill_id: string; validation_status: string; license_status: string; findings: string[];
   }>(`/api/v1/customer/skills/${encodeURIComponent(skillId)}/validate`, { method: 'POST' }),
