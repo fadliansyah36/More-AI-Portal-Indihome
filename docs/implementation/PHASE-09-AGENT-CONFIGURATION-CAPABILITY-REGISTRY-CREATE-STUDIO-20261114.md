@@ -150,7 +150,7 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 
 - Provider-specific tool execution bounds were added: image generation defaults to 360 seconds (HTTP timeout 300 seconds); video generation defaults to 600 seconds with a maximum 420-second provider poll window to leave time for download, private artifact storage and usage settlement. These bounds are independent from the general 120-second tool timeout.
 
-- The current Runway adapter is intentionally limited to model `gen4.5` and durations `5` or `10` seconds; other model/duration combinations remain unavailable until their API parameters and price map are explicitly added.
+- The current Runway adapter is intentionally limited to model `gen4.5` and durations from `2` to `10` seconds; other model/duration combinations remain unavailable until their API parameters and price map are explicitly added.
 
 
 ## Supabase media artifact bucket capacity
@@ -161,3 +161,5 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 - No generated media was requested from a provider; no tests or runtime checks were run.
 
 - Image adapter model alignment was updated to current documented `gpt-image-2.5-flare` by default, with `gpt-image-2.5-sunburst` as the precision-focused alternative. The tool schema supports the current quality options `low/medium/high/xhigh/max/auto` and background `auto/opaque/transparent`; the operator's price map remains mandatory.
+
+- Runway Dev's official Text-to-Video reference confirms Gen-4.5 accepts 2–10 second duration and `1280:720` / `720:1280` ratios; the worker tool schema and adapter now expose that range. See [Runway Text to Video API](https://docs.dev.runwayml.com/api/) and [input/ratio constraints](https://docs.dev.runwayml.com/assets/inputs/).
