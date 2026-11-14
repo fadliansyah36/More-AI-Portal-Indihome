@@ -78,6 +78,7 @@ export default function SuperAdminPage() {
   const [skillReviewBusy, setSkillReviewBusy] = useState<string | null>(null);
   const [skillReviewError, setSkillReviewError] = useState<string | null>(null);
   const [skillPermissionChoices, setSkillPermissionChoices] = useState<Record<string, string[]>>({});
+  const [skillEvidence, setSkillEvidence] = useState<Record<string, Array<{path:string;sha256:string;byte_size:number;text_content:string|null}>>>({});
   const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'runs' | 'audit' | 'providers' | 'skills'>('overview');
   const [principal, setPrincipal] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,6 +188,8 @@ export default function SuperAdminPage() {
               </div>}
             </div>}
 
+            <button disabled={skillReviewBusy==='evidence:'+skill.id} onClick={()=>void loadSkillEvidence(skill.id)} className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-semibold text-slate-700">Lihat bukti LICENSE / NOTICE / manifest</button>
+            {skillEvidence[skill.id]&&<div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">{skillEvidence[skill.id].map(file=><details key={file.path} className="rounded-lg border border-slate-200 bg-white p-2"><summary className="cursor-pointer text-[10px] font-semibold text-slate-800">{file.path} · {file.byte_size} bytes · SHA-256 {file.sha256.slice(0,16)}…</summary><pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-words text-[10px] text-slate-600">{file.text_content || 'Konten teks tidak tersedia; gunakan hash dan referensi sumber untuk review manual.'}</pre></details>)}</div>}
             <div className="flex flex-wrap gap-2"><button disabled={skillReviewBusy===skill.id || skill.validation_status!=='validated'} onClick={()=>void reviewPackage(skill,'approved')} className="rounded-xl bg-red-600 px-3 py-2 text-[11px] font-bold text-white disabled:opacity-40">Setujui lisensi & publikasikan</button><button disabled={skillReviewBusy===skill.id} onClick={()=>void reviewPackage(skill,'rejected')} className="rounded-xl border border-rose-200 px-3 py-2 text-[11px] font-semibold text-rose-700 disabled:opacity-40">Tolak lisensi</button></div>
             {skill.installations.map(install=><div key={install.id} className="space-y-2 rounded-xl border border-slate-200 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold">Install {install.id.slice(0,8)} · {install.permission_status}</p><span className="text-[10px] text-slate-500">Owner {install.owner_user_id.slice(0,8)} · eksekusi {install.execution_enabled?'aktif':'nonaktif'}</span></div>
