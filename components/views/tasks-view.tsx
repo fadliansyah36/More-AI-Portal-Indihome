@@ -19,7 +19,7 @@ import {
   Layers,
   ArrowLeft,
 } from 'lucide-react';
-import { artifactApi, customerApi, moreAiApiStream, type CustomerAgentRun, type CustomerAgentRunActivity, type CustomerWorkflowStep, type CustomerArtifact } from '@/lib/api/client';
+import { artifactApi, customerApi, moreAiApiStream, type CustomerAgentRun, type CustomerAgentRunActivity, type CustomerWorkflowStep, type CustomerAgentRunProgress, type CustomerArtifact } from '@/lib/api/client';
 import { agentRunStatusLabel, isTerminalAgentRunStatus } from '@/lib/api/agent-run-status';
 import { TaskItem } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
@@ -76,6 +76,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   const [selectedRun, setSelectedRun] = useState<CustomerAgentRun | null>(null);
   const [runSteps, setRunSteps] = useState<CustomerWorkflowStep[]>([]);
   const [runActivity, setRunActivity] = useState<CustomerAgentRunActivity[]>([]);
+  const [runProgress, setRunProgress] = useState<CustomerAgentRunProgress | null>(null);
   const [runDetailLoading, setRunDetailLoading] = useState(false);
   const [runDetailError, setRunDetailError] = useState<string | null>(null);
   const [cancellingRun, setCancellingRun] = useState(false);
@@ -85,12 +86,14 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
     setSelectedRun(run);
     setRunSteps([]);
     setRunActivity([]);
+    setRunProgress(null);
     setRunDetailError(null);
     setRunDetailLoading(true);
     const [stepsResult, activityResult, runResult] = await Promise.allSettled([
       customerApi.getRunSteps(run.id),
       customerApi.getRunActivity(run.id, 0, 200),
       customerApi.getRun(run.id),
+      customerApi.getRunProgress(run.id),
     ]);
     if (stepsResult.status === 'fulfilled') setRunSteps(stepsResult.value);
     if (activityResult.status === 'fulfilled') setRunActivity(activityResult.value.items);
@@ -98,7 +101,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
       setSelectedRun(runResult.value);
       setRuns((current) => current.map((item) => item.id === run.id ? runResult.value : item));
     }
-    const errors = [stepsResult, activityResult, runResult]
+    if (progressResult.status === 'fulfilled') setRunProgress(progressResult.value);
+    const errors = [stepsResult, activityResult, runResult, progressResult]
       .filter((result) => result.status === 'rejected')
       .map((result) => result.reason instanceof Error ? result.reason.message : 'Data lifecycle Agent Run tidak dapat dimuat.');
     if (errors.length) setRunDetailError(errors.join(' · '));
@@ -118,6 +122,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
         customerApi.getRun(runId),
         customerApi.getRunSteps(runId),
         customerApi.getRunActivity(runId, 0, 200),
+        customerApi.getRunProgress(runId),
       ]);
       if (!active) return;
       if (runResult.status === 'fulfilled') {
@@ -130,6 +135,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
       }
       if (stepsResult.status === 'fulfilled') setRunSteps(stepsResult.value);
       if (activityResult.status === 'fulfilled') setRunActivity(activityResult.value.items);
+      if (progressResult.status === 'fulfilled') setRunProgress(progressResult.value);
     };
     void moreAiApiStream(customerApi.streamRun(runId), ({ event }) => {
       if (!active) return;
@@ -517,6 +523,18 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                 )}
                 {selectedRun.last_checkpoint_key && (
                   <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-600">Checkpoint terakhir: <span className="font-semibold">{selectedRun.last_checkpoint_key}</span></p>
+                )}
+                {runProgress && (
+                  <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-xs font-bold text-slate-900">Progress eksekusi</h4>
+                      <span className="text-xs font-bold tabular-nums text-slate-700">{runProgress.percentage}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-red-600 transition-all" style={{ width: `${Math.max(0, Math.min(100, runProgress.percentage))}%` }} />
+                    </div>
+                    <p className="text-[10px] text-slate-500">{runProgress.completed_steps} dari {runProgress.total_steps} langkah selesai{runProgress.current_step ? ' · Saat ini: ' + runProgress.current_step : ''}</p>
+                  </section>
                 )}
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-slate-900">Durable workflow steps ({runSteps.length})</h4>
