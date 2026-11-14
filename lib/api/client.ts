@@ -1332,4 +1332,12 @@ export const connectionsApi = {
   disconnect: (connectionId: string) => moreAiCustomerApi<{id:string;status:string}>(
     '/api/v1/customer/connections/' + encodeURIComponent(connectionId), { method: 'DELETE' },
   ),
+  sendGmail: (connectionId: string, to: string[], subject: string, body: string) => moreAiCustomerApi<{status:string;replayed:boolean;receipt?:Record<string,unknown>}>(
+    '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/gmail/send',
+    { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ to, subject, body, confirmed: true }) },
+  ),
+  createCalendarEvent: (connectionId: string, summary: string, start: string, end: string, description = '') => moreAiCustomerApi<{status:string;replayed:boolean;receipt?:Record<string,unknown>}>(
+    '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/calendar/events',
+    { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ summary, description, start, end, timezone: 'Asia/Jakarta', confirmed: true }) },
+  ),
 };
