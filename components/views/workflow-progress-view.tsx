@@ -299,7 +299,8 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   };
 
   const activeCount = runs.filter((run) => isActiveAgentRunStatus(run.status)).length;
-  const completedCount = runs.filter((run) => isTerminalAgentRunStatus(run.status)).length;
+  // Terminal outcomes include failures/cancellations; only succeeded runs count as completed successfully.
+  const completedCount = runs.filter((run) => run.status === 'succeeded').length;
 
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
