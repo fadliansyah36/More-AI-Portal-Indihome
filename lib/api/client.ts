@@ -1311,3 +1311,25 @@ export const customerSkillApi = {
     { method: 'POST', body: JSON.stringify({ permissions }) },
   ),
 };
+
+
+export type CustomerConnection = {
+  id: string; provider: string; display_name: string | null; scopes: string[];
+  status: string; access_token_expires_at: string | null; token_updated_at: string;
+};
+
+export const connectionsApi = {
+  list: () => moreAiCustomerApi<CustomerConnection[]>('/api/v1/customer/connections'),
+  authorize: (permissions: string[]) => moreAiCustomerApi<{ authorization_url: string; expires_in: number; permissions: string[] }>(
+    '/api/v1/customer/connections/google/authorize', { method: 'POST', body: JSON.stringify({ permissions }) },
+  ),
+  gmailMessages: (connectionId: string, query = 'newer_than:30d') => moreAiCustomerApi<{ items: Array<{id:string;thread_id:string;subject?:string;from?:string;date?:string;snippet?:string;unread?:boolean}>; count: number }>(
+    '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/gmail/messages?q=' + encodeURIComponent(query),
+  ),
+  calendarEvents: (connectionId: string, timeMin: string, timeMax: string) => moreAiCustomerApi<{ items: Array<{id:string;summary?:string;status?:string;start?:{dateTime?:string;date?:string};end?:{dateTime?:string;date?:string};html_link?:string}>; count: number }>(
+    '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/calendar/events?time_min=' + encodeURIComponent(timeMin) + '&time_max=' + encodeURIComponent(timeMax),
+  ),
+  disconnect: (connectionId: string) => moreAiCustomerApi<{id:string;status:string}>(
+    '/api/v1/customer/connections/' + encodeURIComponent(connectionId), { method: 'DELETE' },
+  ),
+};
