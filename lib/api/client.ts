@@ -1270,3 +1270,39 @@ export async function moreAiCustomerApiPage<T>(
     nextCursor: response.headers.get('X-Next-Cursor'),
   };
 }
+
+export type CustomerSkillPackage = {
+  id: string; slug: string; name: string; description: string;
+  source_repository: string; source_ref: string; source_commit: string; source_path: string;
+  source_blob_sha: string; content_sha256: string; version: string; license_id: string;
+  license_url: string | null; license_status: string; manifest: Record<string, unknown>;
+  requested_permissions: string[]; validation_status: string;
+  validation_report: { findings?: string[]; scope?: string; checked_at?: string };
+  publication_status: string; created_at: string; updated_at: string;
+  installation: {
+    id: string; status: string; execution_enabled: boolean;
+    permission_request: string[]; permission_status: string;
+  } | null;
+};
+
+export const customerSkillApi = {
+  list: () => moreAiCustomerApi<{ items: CustomerSkillPackage[]; count: number }>('/api/v1/customer/skills'),
+  import: (payload: {
+    slug: string; name: string; description?: string; source_repository: string;
+    source_ref: string; source_commit: string; source_path: string; source_blob_sha: string;
+    content_sha256: string; version: string; license_id: string; license_url?: string;
+    license_evidence?: string; manifest?: Record<string, unknown>; requested_permissions?: string[];
+  }) => moreAiCustomerApi<CustomerSkillPackage>('/api/v1/customer/skills', {
+    method: 'POST', body: JSON.stringify(payload),
+  }),
+  validate: (skillId: string) => moreAiCustomerApi<{
+    skill_id: string; validation_status: string; license_status: string; findings: string[];
+  }>(`/api/v1/customer/skills/${encodeURIComponent(skillId)}/validate`, { method: 'POST' }),
+  install: (skillId: string) => moreAiCustomerApi<Record<string, unknown>>(
+    `/api/v1/customer/skills/${encodeURIComponent(skillId)}/install`, { method: 'POST' },
+  ),
+  requestPermissions: (skillId: string, permissions: string[]) => moreAiCustomerApi<Record<string, unknown>>(
+    `/api/v1/customer/skills/${encodeURIComponent(skillId)}/permissions`,
+    { method: 'POST', body: JSON.stringify({ permissions }) },
+  ),
+};
