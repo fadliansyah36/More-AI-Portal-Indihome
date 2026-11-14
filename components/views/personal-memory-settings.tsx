@@ -132,7 +132,7 @@ export const PersonalMemorySettings: React.FC = () => {
               {state.enabled ? <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" /> : <ShieldOff className="w-4 h-4 text-slate-400 shrink-0" />}
               <div>
                 <p className="text-xs font-semibold text-slate-800">Izinkan penggunaan Personal Memory</p>
-                <p className="text-[10px] text-slate-500">Nonaktif berarti catatan tidak boleh dipakai sebagai konteks AI.</p>
+                <p className="text-[10px] text-slate-500">Nonaktif berarti catatan tidak dimuat ke konteks pada eksekusi berikutnya.</p>
               </div>
             </div>
             <button type="button" onClick={() => void toggleConsent()} disabled={saving}
@@ -212,7 +212,7 @@ export const PersonalMemorySettings: React.FC = () => {
                 ))}
             </div>
           <p className="text-[10px] leading-relaxed text-slate-400">
-            Catatan dibuat secara manual. MoreAI tidak otomatis menyimpan isi chat atau file sebagai Personal Memory. Penghapusan menghapus catatan dari penyimpanan aplikasi.
+            Catatan dibuat secara manual. MoreAI tidak otomatis menyimpan isi chat atau file sebagai Personal Memory. Perubahan consent/penghapusan berlaku untuk eksekusi berikutnya; run aktif mungkin telah memuat konteks sebelumnya.
           </p>
         </>
       )}
