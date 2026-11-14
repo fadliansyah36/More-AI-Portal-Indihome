@@ -101,3 +101,14 @@ Source inspection continued across Tools Catalog, Knowledge Library, Files, Noti
 - Create Studio remains a prompt-to-Chat handoff. It checks worker-reported media capabilities and explicitly avoids claiming image/video/file artifacts before backend tools return persisted results. It does not yet implement a standalone customer media job lifecycle or expose a complete credit reservation/metering ledger for those jobs.
 
 This is source-contract inspection only. It does not establish live Supabase/RLS behavior, worker execution, provider credentials, media billing, UI behavior, or end-to-end success. No tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment were performed. Phase 09 remains IN PROGRESS.
+
+## Workflow retry recovery action — 2026-11-14
+
+- Added an explicit **Retry sebagai run baru** action in Workflow & Agent Runs for only `failed`, `timed_out` and `expired` runs.
+- The action calls the existing authenticated FastAPI `POST /api/v1/customer/agent-runs/{run_id}/retry` contract with a fresh idempotency key. It does not locally reset or mutate persisted checkpoints.
+- After an accepted retry, the UI reloads the canonical run page and clears stale detail projections for the original run. The new run remains authoritative in the server response.
+- Backend replay-safety, execution-enabled, conversation ownership, runtime availability and side-effect checks remain mandatory; a UI-eligible status does not guarantee the backend will accept replay.
+- The action is serialized with the existing per-run action lock and surfaces backend errors without fabricating a new run.
+- Source commit: `913b0cd422ccec76bf82c47c62f90ec91f48599f`.
+- This does not add manual checkpoint rewind. Automatic retry/approval continuation continue to use backend-owned durable recovery semantics.
+- Source-only implementation; no tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment were performed.
