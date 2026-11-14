@@ -97,6 +97,7 @@ export default function App() {
   const [showScreenGallery, setShowScreenGallery] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
   const [chatInitialAgentKey, setChatInitialAgentKey] = useState<'manus' | 'planning' | 'toolcall'>('manus');
+  const [chatInitialAgentConfigurationId, setChatInitialAgentConfigurationId] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [drawerRole, setDrawerRole] = useState<'customer' | 'partner'>('customer');
   const [isBottomNavCollapsed, setIsBottomNavCollapsed] = useState(false);
@@ -215,9 +216,14 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleStartPrompt = (promptText: string, agentKey: 'manus' | 'planning' | 'toolcall' = 'manus') => {
+  const handleStartPrompt = (
+    promptText: string,
+    agentKey: 'manus' | 'planning' | 'toolcall' = 'manus',
+    agentConfigurationId?: string | null,
+  ) => {
     setChatInitialPrompt(promptText);
     setChatInitialAgentKey(agentKey);
+    setChatInitialAgentConfigurationId(agentConfigurationId || null);
     handleNavigate('chat');
   };
 
@@ -249,6 +255,7 @@ export default function App() {
                   onBack={() => handleNavigate('home')}
                   initialPrompt={chatInitialPrompt}
                   initialAgentKey={chatInitialAgentKey}
+                  initialAgentConfigurationId={chatInitialAgentConfigurationId}
                   onNavigateTab={handleNavigate}
                 />
               )}
@@ -284,6 +291,7 @@ export default function App() {
                     handleStartPrompt(
                       `Saya ingin bekerja dengan ${agent.name}. ${agent.description}`,
                       agent.id === 'planning' ? 'planning' : agent.id === 'toolcall' ? 'toolcall' : 'manus',
+                      agent.configurationId,
                     )
                   }
                   onOpenWorkflow={() => handleNavigate('workflow_progress')}
