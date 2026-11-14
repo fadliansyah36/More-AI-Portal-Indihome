@@ -18,6 +18,7 @@ export type NavigationTab =
   | 'analyse'
   | 'code'
   | 'agents'
+  | 'skills'
   // Workflow & Artifacts (Sheet 6)
   | 'workflow_progress'
   | 'artifacts_result'
