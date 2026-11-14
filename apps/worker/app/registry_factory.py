@@ -6,6 +6,7 @@ from app.llm_gateway import create_metered_gateway
 from app.llm_accounting import ConfiguredCreditEstimator, SupabaseUsageAccounting
 from app.memory_store import SupabaseConversationMemoryStore, SupabasePersonalMemoryStore
 from app.skill_resolver import SupabaseSkillResolver
+from app.connection_tools import GoogleConnectionTools
 from app.knowledge_tools import SupabaseKnowledgeTools
 from app.learning_tools import SupabaseLearningTools
 from app.attachment_loader import CustomerChatAttachmentLoader
@@ -32,6 +33,9 @@ def build_agent_registry(
     memory_store = SupabaseConversationMemoryStore(client)
     personal_memory_store = SupabasePersonalMemoryStore(client)
     skill_resolver = SupabaseSkillResolver(client)
+    internal_api_url = os.getenv('MOREAI_INTERNAL_API_URL', os.getenv('MOREAI_API_URL', 'http://api:8000'))
+    internal_worker_token = os.getenv('MOREAI_WORKER_INTERNAL_TOKEN', '')
+    connection_tools = GoogleConnectionTools(http_client, internal_api_url, internal_worker_token) if internal_worker_token else None
     knowledge_tools = SupabaseKnowledgeTools(client, http_client) if os.getenv("MOREAI_EMBEDDING_BASE_URL") and os.getenv("MOREAI_EMBEDDING_MODEL") else None
     learning_tools = SupabaseLearningTools(client)
     attachment_loader = CustomerChatAttachmentLoader(client)
@@ -86,7 +90,7 @@ def build_agent_registry(
 
     manus = DurableOpenManusRuntime(
         gateway,
-        memory_store=memory_store, personal_memory_store=personal_memory_store, skill_resolver=skill_resolver,
+        memory_store=memory_store, personal_memory_store=personal_memory_store, skill_resolver=skill_resolver, connection_tools=connection_tools,
         knowledge_tools=knowledge_tools,
         learning_tools=learning_tools,
         attachment_loader=attachment_loader,
