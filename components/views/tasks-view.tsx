@@ -79,6 +79,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   const [runDetailLoading, setRunDetailLoading] = useState(false);
   const [runDetailError, setRunDetailError] = useState<string | null>(null);
   const [cancellingRun, setCancellingRun] = useState(false);
+  const [retryingRun, setRetryingRun] = useState(false);
 
   const openRunDetails = async (run: CustomerAgentRun) => {
     setSelectedRun(run);
@@ -166,6 +167,23 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
       setRunDetailError(cause instanceof Error ? cause.message : 'Permintaan pembatalan gagal.');
     } finally {
       setCancellingRun(false);
+    }
+  };
+
+  const retrySelectedRun = async () => {
+    if (!selectedRun || !isTerminalAgentRunStatus(selectedRun.status) || retryingRun) return;
+    setRetryingRun(true);
+    setRunDetailError(null);
+    try {
+      const queued = await customerApi.retryRun(selectedRun.id, crypto.randomUUID());
+      setSelectedRun(queued.run);
+      setRuns((current) => [queued.run, ...current.filter((item) => item.id !== queued.run.id)]);
+      showToast('Retry dibuat sebagai Agent Run baru melalui antrean backend.', 'success');
+      await openRunDetails(queued.run);
+    } catch (cause) {
+      setRunDetailError(cause instanceof Error ? cause.message : 'Retry Agent Run gagal dibuat.');
+    } finally {
+      setRetryingRun(false);
     }
   };
 
@@ -527,7 +545,12 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                   {cancellingRun ? 'Mengirim pembatalan…' : 'Batalkan Agent Run'}
                 </button>
               )}
-              <p className="self-center text-[10px] text-slate-500">Retry tidak ditampilkan karena belum ada endpoint retry customer yang terverifikasi.</p>
+              {isTerminalAgentRunStatus(selectedRun.status) && ['failed', 'cancelled', 'timed_out', 'expired'].includes(selectedRun.status) && (
+                <button type="button" onClick={() => void retrySelectedRun()} disabled={retryingRun}
+                  className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
+                  {retryingRun ? 'Menjadwalkan retry…' : 'Jalankan ulang Agent'}
+                </button>
+              )}
             </div>
           </div>
         </div>
