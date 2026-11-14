@@ -103,3 +103,11 @@ Phase 09 source integration is substantially reconciled, but the following remai
 - Manual Customer retry is a new run for a safely replayable failed source run; automatic worker retry and approval continuation retain the same run/checkpoints. These semantics are intentionally distinguished in UI and API documentation.
 - Source commits: `5da2642f`, `474d3146`, `42850aec`, `cc15f03b`, `7360613b`, and `9ee77d08`.
 - OpenAI Image API has an available generation endpoint and GPT Image models, but no provider credentials/secret reference or media credit reservation/metering contract is configured in this repository context. OpenAI's Sora Videos API and Sora 2 models were removed on 2026-09-24, with no one-to-one replacement; a real alternative video provider must be selected and onboarded. See official OpenAI docs: [Image Generation](https://developers.openai.com/api/docs/guides/image-generation) and [API deprecations](https://developers.openai.com/api/docs/deprecations).
+
+## 2026-11-14 continuation — Agent Studio live runtime truthfulness
+
+- `components/views/agent-studio-view.tsx` previously rendered a static green `Enabled` badge for the selected Agent even when the worker capability registry reported no healthy worker for that runtime.
+- The selected Agent detail now derives the badge label and semantic color from the server-projected `runtimeAvailable` value: `Runtime aktif` for an available runtime and `Worker offline` otherwise. The existing separate worker count/status detail and disabled launch action remain intact.
+- This is a targeted behavior correction; no navigation, layout, spacing, typography, global token or screen hierarchy changes were made.
+- Source commit: `75848ffb91de0f5264c30a1f6b81a66a5ecfdbe4`.
+- No browser screenshot or runtime check was performed by explicit instruction. The display change is source-inspected only.
