@@ -21,7 +21,7 @@ These constraints were observed. Source review and connector metadata inspection
 - Added owner-scoped RLS policies, server-only table privileges and consent/clear RPCs.
 - Applied migration `20261114010000_moreai_customer_personal_memory_privacy.sql` directly to the bound MoreAIdb Supabase project. Supabase returned `success: true`.
 - Added FastAPI customer APIs for state/review, explicit consent enable/disable, user-authored memory create, correction, retention changes, per-item deletion and atomic clear-all deletion.
-- Retention is limited to 30/90/180/365 days. Expired records are excluded from runtime context and opportunistically purged on the owner's memory read.
+- Retention is limited to 30/90/180/365 days. Expired records are excluded from runtime context, opportunistically purged on the owner's memory read, and periodically deleted by a worker maintenance RPC (default every six hours; configurable within 1–24 hours).
 - Added the Personal Memory panel to existing Profile Settings: consent toggle, add, review, edit, retention, delete one and delete all.
 - Conversation transcript storage remains separate from Personal Memory. No chat, attachment or workspace content is silently ingested.
 - Added `SupabasePersonalMemoryStore` to the worker. Manus/ToolCall execution loads at most 20 active records only when the owner has current enabled consent. Records are bounded and injected as explicitly untrusted context, never as policy or instructions.
@@ -85,7 +85,7 @@ These constraints were observed. Source review and connector metadata inspection
 1. Reconcile every remaining Customer action against FastAPI contracts and remove any ungrounded demo/fallback behavior.
 2. Complete agent-definition/configuration management and dynamic worker capability/health reporting; the current Agent Studio catalog is the code-registered runtime/tool policy view, not a custom-agent editor.
 3. Integrate actual image/video generation only after a provider contract, credentials, entitlement, metering and artifact adapter are available.
-4. Finish customer workflow/run lifecycle edge cases and remaining memory retention operations, including a scheduled purge independent of profile visits.
+4. Finish remaining customer workflow/run lifecycle edge cases and verify the retention maintenance job once runtime verification is permitted.
 5. Complete provider-gated payment, EduTech, OTP/gateway and support contracts only against available vendor integrations.
 
 Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED** because verification is explicitly disallowed. Phase 11 remains **BLOCKED**.
