@@ -1321,3 +1321,6 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 
 - EduTech path-list progress aggregation moved into a server-side Supabase view (`learning_path_progress_summary`) so Customer API does not need to materialize all curriculum lesson rows to render path cards. Migration `20261114083000_moreai_edutech_path_summary_view.sql` applied successfully; API path list now reads owner-scoped summary rows.
+
+
+- EduTech prompt guardrails now require age-appropriate explanations and prohibit requesting personal/sensitive identifiers, passwords, contact details or precise location. Formal age verification, guardian/school consent and institutional governance remain unimplemented and must be addressed before scaling access to minors.
