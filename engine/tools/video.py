@@ -73,6 +73,8 @@ class RunwayVideoGenerationAdapter:
         configured_model = os.getenv("MOREAI_RUNWAY_VIDEO_MODEL", "gen4.5")
         if configured_model not in cls.SUPPORTED_MODELS:
             return None
+        if f"{configured_model}:5:1280:720" not in normalized:
+            return None
         if (
             len(normalized) != len(costs)
             or any(not math.isfinite(value) or value <= 0 for value in normalized.values())
