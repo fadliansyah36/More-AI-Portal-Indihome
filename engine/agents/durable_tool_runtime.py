@@ -102,7 +102,7 @@ class DurableOpenManusRuntime:
         plan_store: Any | None = None,
         search_tools: Any | None = None,
         storage_tools: Any | None = None, image_tools: Any | None = None, video_tools: Any | None = None, workspace_tools: Any | None = None, browser_tools: Any | None = None,
-        knowledge_tools: Any | None = None,
+        knowledge_tools: Any | None = None, learning_tools: Any | None = None,
         attachment_loader: Any | None = None,
         event_publisher: Callable[[str, str, str, dict[str, Any]], Awaitable[Any]] | None = None,
         max_rounds: int = 12,
@@ -145,6 +145,8 @@ class DurableOpenManusRuntime:
             enabled_tools.add("browser_use")
         if knowledge_tools is not None:
             enabled_tools.update({"knowledge_ingest", "knowledge_search"})
+        if learning_tools is not None:
+            enabled_tools.update({"learning_path_create", "lesson_generate", "quiz_generate", "answer_assess", "learning_progress_update"})
         if sandbox_tools is not None:
             enabled_tools.update({"bash", "python_execute"})
         self.tools = PolicyEnforcedToolRegistry(
@@ -172,6 +174,12 @@ class DurableOpenManusRuntime:
         if knowledge_tools is not None:
             self.tools.register("knowledge_ingest", knowledge_tools.knowledge_ingest)
             self.tools.register("knowledge_search", knowledge_tools.knowledge_search)
+        if learning_tools is not None:
+            self.tools.register("learning_path_create", learning_tools.learning_path_create)
+            self.tools.register("lesson_generate", learning_tools.lesson_generate)
+            self.tools.register("quiz_generate", learning_tools.quiz_generate)
+            self.tools.register("answer_assess", learning_tools.answer_assess)
+            self.tools.register("learning_progress_update", learning_tools.learning_progress_update)
         if sandbox_tools is not None:
             self.tools.register("bash", sandbox_tools.bash)
             self.tools.register("python_execute", sandbox_tools.python_execute)
