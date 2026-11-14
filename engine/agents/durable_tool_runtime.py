@@ -107,11 +107,19 @@ class DurableOpenManusRuntime:
         event_publisher: Callable[[str, str, str, dict[str, Any]], Awaitable[Any]] | None = None,
         max_rounds: int = 12,
         tool_timeout_seconds: float = 120.0,
+        image_tool_timeout_seconds: float = 360.0,
+        video_tool_timeout_seconds: float = 600.0,
         system_prompt: str | None = None,
     ):
         if isinstance(tool_timeout_seconds, bool) or not 1 <= tool_timeout_seconds <= 1800:
             raise ValueError("tool_timeout_seconds_must_be_between_1_and_1800")
+        if isinstance(image_tool_timeout_seconds, bool) or not 1 <= image_tool_timeout_seconds <= 1800:
+            raise ValueError("image_tool_timeout_seconds_must_be_between_1_and_1800")
+        if isinstance(video_tool_timeout_seconds, bool) or not 1 <= video_tool_timeout_seconds <= 1800:
+            raise ValueError("video_tool_timeout_seconds_must_be_between_1_and_1800")
         self.tool_timeout_seconds = float(tool_timeout_seconds)
+        self.image_tool_timeout_seconds = float(image_tool_timeout_seconds)
+        self.video_tool_timeout_seconds = float(video_tool_timeout_seconds)
         self.gateway = gateway
         self.memory_store = memory_store
         self.personal_memory_store = personal_memory_store
@@ -557,8 +565,13 @@ class DurableOpenManusRuntime:
                     tool_definition = self.tools.catalog.get(function.name)
                     if tool_definition is None:
                         raise LookupError("tool_catalog_entry_missing")
+                    configured_timeout = (
+                        self.image_tool_timeout_seconds if function.name == "image_generate"
+                        else self.video_tool_timeout_seconds if function.name == "video_generate"
+                        else self.tool_timeout_seconds
+                    )
                     effective_timeout_seconds = min(
-                        self.tool_timeout_seconds,
+                        configured_timeout,
                         float(tool_definition.timeout_seconds),
                     )
                     try:
