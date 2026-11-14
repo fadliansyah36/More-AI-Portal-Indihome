@@ -53,6 +53,9 @@ class CalendarCreateRequest(BaseModel):
     start: datetime
     end: datetime
     timezone: str = Field(default="Asia/Jakarta", max_length=64)
+    connection_id: UUID | None = None
+    event_id: str = Field(default="", max_length=256)
+    etag: str = Field(default="", max_length=256)
     confirmed: bool = False
 
 
@@ -699,7 +702,7 @@ def _require_worker_internal(request: Request) -> None:
         raise HTTPException(401, "worker_internal_authentication_failed")
 
 
-async def _internal_google_connection(request: Request, user_id: str, run_id: str, scope: str) -> dict[str, Any]:
+async def _internal_google_connection(request: Request, user_id: str, run_id: str, scope: str, connection_id: UUID | None = None) -> dict[str, Any]:
     _require_worker_internal(request)
     repo = repository(request)
     runs = await repo.select("agent_runs", {
@@ -712,6 +715,7 @@ async def _internal_google_connection(request: Request, user_id: str, run_id: st
         "user_id": f"eq.{user_id}", "provider": "eq.google", "status": "eq.connected",
         "select": "id,user_id,scopes,credential_ciphertext,credential_key_version,access_token_expires_at",
         "order": "updated_at.desc", "limit": "20",
+        **({"id": f"eq.{connection_id}"} if connection_id else {}),
     })
     connection = next((row for row in rows if scope in (row.get("scopes") or [])), None)
     if not connection:
@@ -760,7 +764,7 @@ async def internal_calendar_list(body: InternalGoogleReadRequest, request: Reque
     )
     if response.status_code != 200:
         raise HTTPException(502, "calendar_list_failed")
-    items = [{"id":event.get("id"),"summary":event.get("summary"),"start":event.get("start"),"end":event.get("end")}
+    items = [{"id":event.get("id"),"summary":event.get("summary"),"start":event.get("start"),"end":event.get("end"),"etag":event.get("etag"),"connection_id":str(connection["id"])}
         for event in response.json().get("items",[])[:body.limit]]
     return {"items":items,"count":len(items),"source":"google_calendar"}
 
@@ -890,3 +894,111 @@ async def internal_calendar_create(
         await _finish_internal_action(repo,claim["action_id"],str(body.user_id),
             "unknown","",{"outcome":"provider_response_unavailable","source":"openmanus"})
         raise HTTPException(502,"calendar_event_outcome_unknown_do_not_retry") from exc
+
+
+async def _internal_calendar_event_mutation(
+    body: InternalGoogleWriteRequest, request: Request, *, action: str,
+    idempotency_key: str | None, patch: dict[str, Any] | None = None,
+):
+    if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
+        raise HTTPException(400, "idempotency_key_required")
+    if not body.connection_id or not re.fullmatch(r"[A-Za-z0-9._-]{1,256}", body.event_id) or not body.etag or len(body.etag) > 256:
+        raise HTTPException(422, "calendar_event_identity_or_etag_invalid")
+    connection = await _internal_google_connection(
+        request, str(body.user_id), str(body.run_id), GOOGLE_SCOPE_MAP["calendar.write"], body.connection_id
+    )
+    token = await _google_access_token(request, connection)
+    repo = repository(request)
+    url = "https://www.googleapis.com/calendar/v3/calendars/primary/events/" + body.event_id
+    headers = {"Authorization": "Bearer " + token}
+    current = await request.app.state.http.get(url, headers=headers, timeout=20.0, follow_redirects=False)
+    if current.status_code == 404:
+        raise HTTPException(404, "calendar_event_not_found")
+    if current.status_code != 200:
+        raise HTTPException(502, "calendar_event_version_fetch_failed")
+    current_etag = current.json().get("etag")
+    if not isinstance(current_etag, str) or not hmac.compare_digest(current_etag, body.etag):
+        raise HTTPException(412, "calendar_event_changed_refresh_before_mutation")
+    payload = {"event_id": body.event_id, "etag": current_etag, **(patch or {})}
+    payload_hash = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    claim = await repo.rpc("moreai_begin_connection_action", {
+        "p_user_id": str(body.user_id), "p_connection_id": str(connection["id"]),
+        "p_action_type": action, "p_idempotency_key": idempotency_key,
+        "p_payload_sha256": payload_hash,
+    })
+    if not isinstance(claim, dict):
+        raise HTTPException(409, "calendar_action_claim_failed")
+    if claim.get("replay"):
+        if claim.get("status") == "completed":
+            return {"status": "completed", "replayed": True, "event_id": claim.get("provider_resource_id")}
+        raise HTTPException(409, "calendar_action_already_started_or_outcome_unknown")
+    try:
+        if action == "calendar.update":
+            response = await request.app.state.http.patch(
+                url, headers={**headers, "If-Match": current_etag}, json=patch or {},
+                timeout=30.0, follow_redirects=False,
+            )
+            accepted = response.status_code == 200
+        else:
+            response = await request.app.state.http.delete(
+                url, headers={**headers, "If-Match": current_etag}, timeout=30.0, follow_redirects=False,
+            )
+            accepted = response.status_code in {200, 204}
+        if not accepted:
+            await _finish_internal_action(repo, claim["action_id"], str(body.user_id),
+                "unknown" if response.status_code >= 500 else "failed", body.event_id,
+                {"http_status": response.status_code, "source": "openmanus"})
+            raise HTTPException(502, "calendar_event_provider_rejected")
+        result = response.json() if response.content else {}
+        metadata = {"source": "openmanus", "deleted": action == "calendar.delete"}
+        if action == "calendar.update":
+            metadata.update({"etag": result.get("etag"), "summary": result.get("summary")})
+        receipt = await _finish_internal_action(repo, claim["action_id"], str(body.user_id),
+            "completed", body.event_id, metadata)
+        return {"status": "completed", "replayed": False, "receipt": receipt,
+                "event": {"id": body.event_id, "etag": result.get("etag")} if action == "calendar.update" else None}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        await _finish_internal_action(repo, claim["action_id"], str(body.user_id),
+            "unknown", body.event_id, {"outcome": "provider_response_unavailable", "source": "openmanus"})
+        raise HTTPException(502, "calendar_event_outcome_unknown_do_not_retry") from exc
+
+
+@router.post("/internal/google/calendar/update")
+async def internal_calendar_update(
+    body: InternalGoogleWriteRequest, request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+):
+    if not body.summary and not body.description and not body.start and not body.end:
+        raise HTTPException(422, "calendar_event_update_empty")
+    if bool(body.start) != bool(body.end):
+        raise HTTPException(422, "calendar_event_time_pair_required")
+    patch: dict[str, Any] = {}
+    if body.summary:
+        patch["summary"] = body.summary
+    if body.description:
+        patch["description"] = body.description
+    if body.start and body.end:
+        try:
+            start = datetime.fromisoformat(body.start.replace("Z", "+00:00"))
+            end = datetime.fromisoformat(body.end.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise HTTPException(422, "calendar_event_datetime_invalid") from exc
+        if start.tzinfo is None or end.tzinfo is None or end <= start or end - start > timedelta(days=7):
+            raise HTTPException(422, "calendar_event_time_invalid")
+        patch["start"] = {"dateTime": start.isoformat(), "timeZone": body.timezone}
+        patch["end"] = {"dateTime": end.isoformat(), "timeZone": body.timezone}
+    return await _internal_calendar_event_mutation(
+        body, request, action="calendar.update", idempotency_key=idempotency_key, patch=patch
+    )
+
+
+@router.post("/internal/google/calendar/delete")
+async def internal_calendar_delete(
+    body: InternalGoogleWriteRequest, request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+):
+    return await _internal_calendar_event_mutation(
+        body, request, action="calendar.delete", idempotency_key=idempotency_key
+    )

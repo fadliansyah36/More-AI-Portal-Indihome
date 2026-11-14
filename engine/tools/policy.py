@@ -19,6 +19,8 @@ class ToolPolicy:
         "str_replace_editor",
         "gmail_send",
         "calendar_create_event",
+        "calendar_update_event",
+        "calendar_delete_event",
     })
     DEFAULT_DENY = HIGH_RISK
 

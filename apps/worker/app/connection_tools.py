@@ -82,3 +82,42 @@ class GoogleConnectionTools:
         key = f"{run_id}:calendar.create:{digest}"[:128]
         return await self._request("/api/v1/customer/connections/internal/google/calendar/create",
             payload, run_id=run_id, user_id=user_id, idempotency_key=key)
+
+
+    async def calendar_update_event(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
+        connection_id = arguments.get("connection_id")
+        event_id = arguments.get("event_id")
+        etag = arguments.get("etag")
+        if (not isinstance(connection_id, str) or not connection_id
+            or not isinstance(event_id, str) or not 1 <= len(event_id) <= 256
+            or not isinstance(etag, str) or not 1 <= len(etag) <= 256):
+            raise ValueError("calendar_update_arguments_invalid")
+        payload: dict[str, Any] = {"connection_id": connection_id, "event_id": event_id, "etag": etag}
+        for key, maximum in (("summary", 240), ("description", 4000), ("start", 64), ("end", 64), ("timezone", 64)):
+            value = arguments.get(key)
+            if value is not None:
+                if not isinstance(value, str) or len(value) > maximum:
+                    raise ValueError("calendar_update_arguments_invalid")
+                payload[key] = value
+        if not any(key in payload for key in ("summary", "description", "start", "end")):
+            raise ValueError("calendar_update_empty")
+        if ("start" in payload) != ("end" in payload):
+            raise ValueError("calendar_update_time_pair_required")
+        digest = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:24]
+        key = f"{run_id}:calendar.update:{digest}"[:128]
+        return await self._request("/api/v1/customer/connections/internal/google/calendar/update",
+            payload, run_id=run_id, user_id=user_id, idempotency_key=key)
+
+    async def calendar_delete_event(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
+        connection_id = arguments.get("connection_id")
+        event_id = arguments.get("event_id")
+        etag = arguments.get("etag")
+        if (not isinstance(connection_id, str) or not connection_id
+            or not isinstance(event_id, str) or not 1 <= len(event_id) <= 256
+            or not isinstance(etag, str) or not 1 <= len(etag) <= 256):
+            raise ValueError("calendar_delete_arguments_invalid")
+        payload = {"connection_id": connection_id, "event_id": event_id, "etag": etag}
+        digest = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:24]
+        key = f"{run_id}:calendar.delete:{digest}"[:128]
+        return await self._request("/api/v1/customer/connections/internal/google/calendar/delete",
+            payload, run_id=run_id, user_id=user_id, idempotency_key=key)
