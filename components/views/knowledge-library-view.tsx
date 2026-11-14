@@ -127,7 +127,7 @@ export const KnowledgeLibraryView: React.FC = () => {
     setBusyId(document.id);
     setError(null);
     try {
-      await knowledgeApi.retry(document.id);
+      await knowledgeApi.reindex(document.id);
       setDocuments((items) => items.map((item) => item.id === document.id ? { ...item, status: 'processing' } : item));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Dokumen tidak dapat dimasukkan kembali ke antrean.');
@@ -200,8 +200,8 @@ export const KnowledgeLibraryView: React.FC = () => {
             <p className="mt-1 text-[11px] text-slate-500">{statusLabel[document.status]} · {document.source_type} · {new Date(document.created_at).toLocaleString('id-ID')}</p>
             <p className="mt-1 truncate text-[10px] text-slate-400">SHA-256 {document.content_sha256}</p>
           </div>
-          {document.status === 'failed' && (
-            <button type="button" onClick={() => void retry(document)} disabled={busyId === document.id} aria-label="Proses ulang dokumen" title="Proses ulang" className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 disabled:opacity-50">
+          {(document.status === 'failed' || document.status === 'ready') && (
+            <button type="button" onClick={() => void retry(document)} disabled={busyId === document.id} aria-label={document.status === "ready" ? "Bangun ulang indeks dokumen" : "Proses ulang dokumen"} title={document.status === "ready" ? "Re-index" : "Proses ulang"} className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 disabled:opacity-50">
               {busyId === document.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
             </button>
           )}

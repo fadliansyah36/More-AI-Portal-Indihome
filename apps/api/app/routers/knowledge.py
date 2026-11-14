@@ -320,23 +320,24 @@ async def get_knowledge_document(
 
 
 @router.post("/documents/{document_id}/retry", status_code=202, response_model=KnowledgeDocumentStateResponse)
+@router.post("/documents/{document_id}/reindex", status_code=202, response_model=KnowledgeDocumentStateResponse)
 async def retry_knowledge_document(
     document_id: UUID,
     request: Request,
     user: dict[str, Any] = Depends(customer_principal),
 ):
-    """Requeue a failed owner-scoped file from its already-private Storage object."""
+    """Requeue a failed file or rebuild a ready file from its already-private source object."""
     repo = repository(request)
     rows = await repo.select("knowledge_documents", {
         "id": f"eq.{document_id}",
         "owner_user_id": f"eq.{user['id']}",
         "source_type": "eq.file",
-        "status": "eq.failed",
+        "status": "in.(failed,ready)",
         "select": "id,workspace_id,metadata",
         "limit": "1",
     })
     if not rows:
-        raise HTTPException(404, "Failed knowledge file not found")
+        raise HTTPException(404, "Reindexable knowledge file not found")
     metadata = rows[0].get("metadata") if isinstance(rows[0].get("metadata"), dict) else {}
     if metadata.get("storage_bucket") != KNOWLEDGE_BUCKET or not isinstance(metadata.get("storage_path"), str):
         raise HTTPException(409, "Private source object is unavailable for reprocessing")
@@ -349,7 +350,7 @@ async def retry_knowledge_document(
             "id": f"eq.{document_id}",
             "owner_user_id": f"eq.{user['id']}",
             "source_type": "eq.file",
-            "status": "eq.failed",
+            "status": "in.(failed,ready)",
         },
         {
             "status": "processing",
@@ -359,6 +360,7 @@ async def retry_knowledge_document(
             "metadata": {
                 **metadata,
                 "ingestion_state": "queued",
+                "reindex_requested": True,
                 "retry_after": None,
                 "error_code": None,
                 "requeued_at": datetime.now(timezone.utc).isoformat(),

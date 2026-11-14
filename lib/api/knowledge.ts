@@ -76,6 +76,10 @@ export const knowledgeApi = {
     '/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId) + '/retry',
     { method: 'POST' },
   ),
+  reindex: (documentId: string) => moreAiCustomerApi<{ id: string; status: 'processing'; ingestion_state: 'queued' }>(
+    '/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId) + '/reindex',
+    { method: 'POST' },
+  ),
   archive: (documentId: string) => moreAiCustomerApi<{ id: string; status: 'archived' }>(
     '/api/v1/customer/knowledge/documents/' + encodeURIComponent(documentId) + '/archive',
     { method: 'POST' },
