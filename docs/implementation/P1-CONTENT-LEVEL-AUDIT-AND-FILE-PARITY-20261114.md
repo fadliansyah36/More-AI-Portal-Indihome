@@ -724,3 +724,34 @@ Implement a first-party **Connections & Integrations** capability inside the exi
 - Do not claim live Google or Remotion connections are operational without user credentials and a permitted acceptance process. Per current user instruction, no live external account tests or staging are to be performed.
 
 **Status:** this assessment is recorded for the MoreAI architecture backlog. It is not an implementation of the connection centre, Google Workspace, scheduling, or Remotion. No app code, dependency, or Supabase mutation was made.
+
+
+---
+
+## 18. Ninth continuation increment — OpenFuse chat, computer workspace and desktop surfaces
+
+**Date:** 2026-11-14. Ten additional distinct files were fetched in full at the pinned source commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/mobile/src/chat.tsx` | `a95ad56bf9eb1dc19e0972619ae5daaa6493f31b` |
+| `apps/mobile/src/computer-drafts.tsx` | `0deb0b7ce2692349ed452676a20c8c88c3f68cd5` |
+| `apps/mobile/src/computer-status.ts` | `4d39a7e68cfd33fc6513a7e9e6511a490fe43105` |
+| `apps/mobile/src/computer-workspace.tsx` | `19a9191cb5be7697216be33b053b15454580e6f3` |
+| `apps/mobile/src/computer.tsx` | `285e0516b3ef27a7e4959ffe6337437f2a1e1bd7` |
+| `apps/mobile/src/conversation-queue.ts` | `d3e940b68d6e39e93f06c50797c9aec1c150e848` |
+| `apps/mobile/src/conversation-run.ts` | `4e1e5260e7b31bcab99b2125d499a6d9e4fb80bf` |
+| `apps/mobile/src/date-time.ts` | `a1844f1eb9e94fe380abda1a17aa8534ca87b76e` |
+| `apps/mobile/src/desktop-stream.tsx` | `4906d2552f0f883097b1cb1323341efbfdd8b705` |
+| `apps/mobile/src/desktop-tool-card.tsx` | `cce31a1a60cc7e3010d0cf7222877533ce693acd` |
+
+**Findings and MoreAI disposition:**
+- Chat uses CopilotKit tool/render hooks and composes rich cards for browser, desktop, mail, search, tasks and artifacts. MoreAI should preserve this progressive rich-result concept while using its existing customer UI and OpenManus tool-call/event model. Tool outputs must remain data, not instructions or authorization.
+- Conversation queue/run helpers handle queued turns, thread locking and replayed error events. These are UI/runtime coordination details; they do not replace server-side idempotency, durable run ownership, cancellation fencing or OpenManus run state.
+- Computer workspace exposes terminal commands, files, uploads and a persistent computer snapshot through API routes. It is a privileged capability, not a general plugin. MoreAI must enforce tenant-scoped file ACLs, command allow/deny policy, isolated execution, output caps, approval tiers and audit receipts at FastAPI.
+- Draft state intentionally remains in React memory rather than being persisted to disk. MoreAI should keep sensitive unsent drafts out of browser storage unless a separately designed encrypted draft persistence feature is approved.
+- Desktop stream obtains a URL from the server and embeds/opens a VNC stream. The separate computer runtime has different network and isolation properties from the browser worker; do not conflate them. Treat stream URLs as bearer secrets: short TTL, tenant/session binding, redaction from logs/telemetry/referrers, and revocation.
+- Desktop tool card can attach bearer authorization headers to screenshot requests and expose a start/takeover affordance. Every screenshot, stream and control action must re-check server-side ownership and session state.
+- The small computer status and date-time helpers are presentation utilities only, not standalone backend capabilities.
+
+**Count:** this increment adds ten distinct full-file reviews to the previously reconciled 48. OpenFuse content review is now **58/219**, with **161 remaining**. This is source inspection only; no test, build, install, lint, typecheck, staging, deployment or live external account operation was performed.
