@@ -139,7 +139,7 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
   - `MOREAI_MEDIA_BILLING_ENABLED=true`
   - `MOREAI_MEDIA_ENTITLEMENT_KEY`, `MOREAI_MEDIA_QUOTA_METRIC_KEY`
   - `MOREAI_CREDIT_WALLET_CURRENCY`, `MOREAI_CREDITS_PER_USD`
-  - `MOREAI_RUNWAY_VIDEO_MODEL=gen4.5` (or another model listed by Runway)
+  - `MOREAI_RUNWAY_VIDEO_MODEL=gen4.5` (the source adapter currently enables Gen-4.5 only)
   - `MOREAI_RUNWAY_VIDEO_COSTS_JSON` with a maximum USD reservation for each allowed `model:duration:ratio` combination; default registration requires `gen4.5:5:1280:720`
   - `MOREAI_RUNWAY_CREDIT_USD` (USD conversion for one provider credit, based on the provider account's current pricing)
   - `MOREAI_RUNWAY_OUTPUT_HOST_SUFFIXES` (comma-separated HTTPS output host suffix allowlist)
@@ -149,3 +149,5 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 - Source changes are recorded in the repository history on `main`; this report intentionally avoids a partial or unverified commit-hash list.
 
 - Provider-specific tool execution bounds were added: image generation defaults to 360 seconds (HTTP timeout 300 seconds); video generation defaults to 600 seconds with a maximum 420-second provider poll window to leave time for download, private artifact storage and usage settlement. These bounds are independent from the general 120-second tool timeout.
+
+- The current Runway adapter is intentionally limited to model `gen4.5` and durations `5` or `10` seconds; other model/duration combinations remain unavailable until their API parameters and price map are explicitly added.
