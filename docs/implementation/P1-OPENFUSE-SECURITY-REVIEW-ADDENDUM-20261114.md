@@ -32,7 +32,7 @@
 
 This addendum is an evidence supplement, not a replacement for `docs/implementation/external-source-file-inventory.json` or the SPDX SBOM.
 
-- Fully reviewed in this increment: 4 paths (`auth.ts`, `finance.ts`, `computer-routes.ts`, worker `server.ts`, and root `LICENSE` = 5 paths).
+- Fully reviewed in this increment: 5 paths (`auth.ts`, `finance.ts`, `computer-routes.ts`, worker `server.ts`, and root `LICENSE`).
 - Partially reviewed in this increment: 2 paths (`computer.ts` and worker `browser.ts`).
 - Not reviewed here: remaining OpenFuse server/worker/integration files, all Scenario linked supporting files, Visual Skills binary and unresolved third-party asset rights, and exact-version package metadata.
 - No package-license coordinate is upgraded by this addendum; all existing `NOASSERTION` statuses remain unchanged unless separate exact-version evidence is recorded.
