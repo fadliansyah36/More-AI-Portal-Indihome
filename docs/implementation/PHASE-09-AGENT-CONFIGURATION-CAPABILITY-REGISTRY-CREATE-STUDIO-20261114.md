@@ -125,3 +125,25 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 - The worker does not register the adapter unless every required variable is present and valid. No key was created or read, no provider request was made, and the adapter is not claimed active in the current deployment.
 - GPT Image organization verification may be required by OpenAI. See [Image generation docs](https://developers.openai.com/api/docs/guides/image-generation) and [pricing details](https://developers.openai.com/api/docs/guides/image-generation#cost-and-latency).
 - Source commits include `b1c403ab`, `373d7c79`, `021e49a9`, `f8afe5ab`, `9a19ee26`, `3b5f51cc`, `d45b3168`, `1aec9d87`, `2944db69`, `7d2bfa5d`, `f427b2e3`, and `f6428265`.
+
+
+## Runway Dev video adapter — source integration follow-up
+
+- Added `engine/tools/video.py` with a Runway Dev text-to-video adapter using `POST /v1/text_to_video`, the required `X-Runway-Version: 2024-11-06` header, and `GET /v1/tasks/{id}` polling.
+- The provider task ID is persisted to the existing durable Agent Run checkpoint before polling. Recovery resumes the same provider task; an ambiguous submit outcome is marked unknown and never resubmitted automatically.
+- The adapter reserves MoreAI wallet credits and media quota before provider submission, uses an explicit maximum USD price map per model/duration/ratio, then settles from Runway's returned `estimatedCost.credits` and configured USD-per-Runway-credit conversion.
+- Generated MP4 output is downloaded only from configured HTTPS host suffixes and stored as a deterministic, private Supabase artifact. Task ID, artifact and completion result are checkpointed for recovery.
+- Registered canonical `video_generate` tool in Manus/ToolCall only when all required provider, pricing, billing, wallet, quota, entitlement and output-host allowlist settings are present. Dynamic capability snapshots now report provider identity; Tool Catalog and Create Studio show actual live provider availability.
+- Required Worker environment:
+  - `RUNWAYML_API_SECRET` (server-only secret)
+  - `MOREAI_MEDIA_BILLING_ENABLED=true`
+  - `MOREAI_MEDIA_ENTITLEMENT_KEY`, `MOREAI_MEDIA_QUOTA_METRIC_KEY`
+  - `MOREAI_CREDIT_WALLET_CURRENCY`, `MOREAI_CREDITS_PER_USD`
+  - `MOREAI_RUNWAY_VIDEO_MODEL=gen4.5` (or another model listed by Runway)
+  - `MOREAI_RUNWAY_VIDEO_COSTS_JSON` with a maximum USD reservation for each allowed `model:duration:ratio` combination; default registration requires `gen4.5:5:1280:720`
+  - `MOREAI_RUNWAY_CREDIT_USD` (USD conversion for one provider credit, based on the provider account's current pricing)
+  - `MOREAI_RUNWAY_OUTPUT_HOST_SUFFIXES` (comma-separated HTTPS output host suffix allowlist)
+  - optional `MOREAI_VIDEO_PROVIDER_TIMEOUT_SECONDS=540`, `MOREAI_RUNWAY_POLL_INTERVAL_SECONDS=5`, `MOREAI_MEDIA_MAX_ARTIFACT_BYTES=100000000`
+- No Runway key was created/read, no price/host configuration was supplied, and no provider request was made. The adapter is source-integrated but not registered/active in the current deployment.
+- Runway Dev official reference: [API Reference — Text to video and Task management](https://docs.dev.runwayml.com/api/). Its task detail API advises against polling more frequently than every five seconds; this adapter uses a five-second minimum interval.
+- Source commits include `ededd298`, `58844894`, `3bbf2884`, `0cf8c640`, `d07dbf2e`, `66240d5a`, `93ff1f22`, `fb6ba9d3`, `6570beb4`, `1a97b941`, `f830f508`, and `b4a39920`.
