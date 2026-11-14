@@ -3105,3 +3105,292 @@ All business data and mutations must pass through FastAPI, including conversatio
 ### 34.4 Release gate
 
 Agent execution must remain disabled until an enabled provider/model/routing policy, provider secret reference, active user entitlement, applicable quota policy, funded wallet/credit conversion and healthy durable worker are all verified. The API must fail closed rather than creating a queued run that cannot execute. Any exception to this boundary requires a reviewed ADR and security sign-off.
+
+
+---
+
+## 35. Unified Capability Architecture — OpenFuse, Skills & Creative Production (v1.3)
+
+**Status:** Proposed architecture extension; additive to sections 3–14, 16–17, 19–22 and 24–29. This section does not mark any capability as implemented or accepted. It is subordinate to `AGENTS.md`, the existing OpenManus full-backend integration contract, and the canonical Supabase/FastAPI/UI boundaries.
+
+**Source references**
+- OpenFuse: https://github.com/CopilotKit/openfuse
+- Visual Skills: https://github.com/smixs/visual-skills
+- Scenario Skills: https://github.com/scenario-labs/skills
+- MoreAI implementation target: https://github.com/fadliansyah36/More-AI-Portal-Indihome (branch `main`)
+- OpenManus backend authority remains the pinned source defined in section 33.
+
+### 35.1 Reconciliation decisions and non-duplication rules
+
+The existing MoreAI architecture already defines a single OpenManus-derived Agent Runtime, FastAPI trusted API, durable Worker, Tool Registry, Model Router, Workflow/Orchestration, Memory domain, Supabase PostgreSQL/Storage/Realtime/pgvector, Wallet/Ledger/Quota/Entitlement, and protected Next.js customer experience. These are the canonical systems and must be extended rather than replaced.
+
+| Reference | Adopt into MoreAI | Must not become |
+|---|---|---|
+| OpenFuse | Browser/computer workspace patterns, persistent session abstraction, human takeover, task activity/checkpoints, approval UX, action receipts, goal/recurring-monitor patterns | A second API backend, Agent Runtime, workflow engine, identity system, canonical database, or customer frontend |
+| Visual Skills | Creative direction, image/video art direction, dramaturgy, storyboard, shot planning, model-aware prompt construction, visual quality checklists | A media provider, execution engine, or replacement for Create Studio |
+| Scenario Skills | Skill definitions and workflows for Scenario model discovery, schema-aware generation, media/3D pipelines, job polling, asset handling and quality procedures through Scenario MCP | A replacement for MoreAI Model Router, wallet, entitlement, artifact store, or a second job/worker platform |
+| OpenManusWeb | Complete authoritative backend source and capability parity per sections 1, 5, 33 and AGENTS.md | A second product UI or a separate runtime deployed alongside MoreAI |
+
+**Single authority rules**
+1. OpenManus-derived `engine/agents` and `engine/orchestration` remain the only Agent reasoning, planning, tool dispatch and workflow authority.
+2. FastAPI remains the only trusted business API. External workers/services are private execution adapters called by the backend, never direct browser APIs.
+3. Existing durable Agent Run, step, event, checkpoint, approval, artifact and accounting records remain canonical. Do not create parallel OpenFuse task records or Scenario job ledgers when the existing run/artifact/accounting lifecycle can represent them.
+4. A separate resource/table is justified only when it represents an independently addressable lifecycle (for example, a persistent browser session or reusable skill version) that cannot be represented correctly by an existing entity. Document the mapping and ownership before migration.
+5. Existing customer routes, screen hierarchy, navigation, typography, colors, spacing, breakpoints and interaction contracts remain protected. Add only missing controls/panels/screens and use section 16 tokens; no global restyling.
+6. The Phase 09 Customer Dashboard integration remains active and must be completed against its current acceptance matrix. This extension does not re-open or duplicate Phase 09 work already present.
+
+### 35.2 Target logical architecture
+
+```text
+Existing MoreAI Customer PWA (protected UI)
+  |-- Chat / Agent Studio / Workflow / Tasks / Create Studio
+  |-- Knowledge / Files / Memory / Wallet / Profile
+  |
+  +--> Supabase Auth (authentication lifecycle only)
+  |
+  +--> FastAPI trusted API
+        |-- JWT principal, tenant, RBAC/ABAC, ownership
+        |-- entitlement, quota, credit reservation and approval policy
+        |-- existing typed API and domain services
+        |
+        +--> Existing OpenManus Unified Agent Runtime (single authority)
+              |-- Planner / Agent Runtime / Model Router
+              |-- Workflow & Orchestration / Tool Registry
+              |-- Skill Resolver & Prompt/Context Composer
+              |-- Memory Coordinator (six memory types)
+              |-- durable Agent Run / checkpoint / event lifecycle
+              |
+              +--> Private execution adapters / durable workers
+                    |-- OpenFuse-inspired Browser Worker
+                    |-- isolated Computer / Terminal / Desktop Sandbox
+                    |-- Scenario MCP / media provider adapter
+                    |-- existing OpenManus tools and provider adapters
+              |
+              +--> Supabase PostgreSQL / Storage / pgvector
+                    |-- canonical business records, events, artifacts
+                    |-- memory, skill registry, session metadata
+                    |-- immutable usage ledger and audit trail
+```
+
+The diagram describes logical boundaries, not a requirement to deploy every module as a separate service. Keep process and deployment boundaries aligned with security/isolation needs. Browser/desktop execution must be isolated from API and worker control planes. Scenario MCP and other external providers are reached only from trusted server-side adapters.
+
+### 35.3 OpenFuse capability integration
+
+**A. Browser workspace**
+- Browser sessions are created and owned through FastAPI after tenant, user, workspace and policy validation.
+- The private Browser Worker owns Chromium execution, navigation, screenshots, downloads, browser events and session lifecycle.
+- Enforce HTTPS policy where applicable, domain allowlists, DNS/IP revalidation, SSRF/private/reserved-address denial, redirect checks, download MIME/size limits, per-session quotas and audit.
+- Browser session metadata may persist in Supabase; browser profile/cookies and credentials must be encrypted, isolated and retention-controlled. Never expose worker tokens or browser secrets to the client.
+- Human Takeover reconnects the authorized user to the same session through an authenticated, short-lived, scoped session grant. It does not create a second browser or bypass policy.
+- High-impact actions (payments, purchases, external messages, destructive operations, account/security changes) require explicit backend approval and single-use authorization.
+
+**B. Computer workspace**
+- Terminal, filesystem and desktop automation execute only in an isolated sandbox/microVM boundary, not in FastAPI, the Next.js process, or an unrestricted worker host.
+- Non-root identity, digest-pinned images, read-only base filesystem, ephemeral/controlled workspace, no host mounts, no Docker socket, no secrets in process environment, resource/time/PID/output limits, process-tree termination, and network disabled by default are mandatory.
+- Tool invocations use structured argument arrays and allowlisted operations; never interpolate model/user strings into a host shell command.
+- Desktop control is an optional higher-risk capability behind explicit entitlement, session authorization, approval and audit. It must not be enabled merely because a skill requests it.
+
+**C. Durable activity and human control**
+- OpenFuse task concepts map to existing `agent_runs`, `agent_run_steps`, `agent_run_events`, `agent_run_checkpoints`, approvals and artifacts wherever possible.
+- Automatic recovery resumes the same durable run/checkpoint under worker lease fencing. Manual retry follows the existing replay-safety policy and creates a new Agent Run when permitted; no UI-side checkpoint rewind.
+- Persist user-safe action summaries and receipts. Never expose hidden chain-of-thought, raw private tool observations, credentials or unrestricted command output.
+- Goals and recurring monitors are scheduled triggers that enqueue normal durable Agent Runs. Scheduler does not call LLMs, browser or tools directly.
+
+### 35.4 Unified Skill Intelligence Platform
+
+A Skill is a versioned package of instructions, procedures, references and optional reviewed resources that teaches an existing Agent how to perform a class of work. It is not an Agent, Tool, Workflow, provider, or permission grant.
+
+**Canonical distinction**
+- Agent: execution identity/persona and runtime configuration.
+- Skill: reusable domain knowledge and procedure.
+- Tool: executable capability registered by MoreAI and enforced by backend policy.
+- Workflow: ordered/dependent orchestration of tasks and Agent Runs.
+- Provider/Model: inference or media execution endpoint selected by the existing Model Router/adapter.
+- Workspace: isolated resources and context available to an authorized run.
+
+**Skill lifecycle**
+`discovered -> imported_pending_review -> validated -> approved -> published -> installed/bound -> resolved_for_run -> executed_as_instructions -> deprecated/disabled`.
+Every transition is server-authorized and audited. A skill version is immutable after publication; updates create a new version and provenance record.
+
+**Skill manifest contract (proposed)**
+- `name`, `version`, `description`, `category`, `author`, `source_repository`, `source_commit`, `source_path`, `license_id`, `content_hash`.
+- `supported_agents`, `required_tools`, `optional_tools`, `input_contract`, `output_contract`, `references`, `assets`, `dependencies`.
+- `requested_permissions`, `risk_level`, `execution_mode`, `language`, `status`, `reviewed_at`.
+- Manifest permission declarations are requests/metadata only. Effective permissions come exclusively from MoreAI RBAC/ABAC, tool policy, entitlement and explicit approvals.
+
+**Resolver and context loading**
+1. Discover candidates from skill metadata, task intent, Agent compatibility and tenant/workspace availability.
+2. Apply trust, publication, license, version, dependency, tool availability and policy filters.
+3. Select a bounded skill set; explain skill selection in user-safe activity metadata.
+4. Load only the skill's core instructions. Load references/assets on demand (progressive disclosure).
+5. Compose skill instructions below trusted system/developer policy and above user task context without allowing a skill to override system safety, tenant policy, tool authorization or output schema.
+6. Execute only through existing OpenManus Tool Registry and durable run lifecycle.
+7. Record skill version IDs and hashes on the Agent Run for reproducibility.
+
+**Source and license policy**
+- Pin exact upstream commit/ref and record repository, path, commit, content hash, license and attribution.
+- Preserve required notices and attribution. Review licenses for every copied skill, script, asset and transitive dependency; repository-level license does not automatically relicense third-party content.
+- Visual Skills material identified as CC BY 4.0 must retain attribution and indicate modifications as required.
+- OpenFuse and Scenario Skills license terms must be rechecked at the pinned commit before copying or redistribution; do not assume current default-branch licensing applies to an older/newer pin.
+- Do not run upstream install scripts on MoreAI production hosts. Import reviewed skill content/resources into the controlled registry; scripts are disabled by default and require code/security review plus sandbox execution.
+- No mass copy-paste before provenance, license and security review. Skill content is untrusted input.
+
+### 35.5 Visual Skills and Scenario Skills in Create Studio
+
+**Visual Skills responsibilities**
+- Convert a creative brief into concept, audience/emotion, art direction, style constraints, shot/story structure, storyboard, camera/framing/movement, pacing and model-aware prompts.
+- Provide image art direction, product photography direction, visual consistency instructions and quality checklists.
+- Produce structured creative plans and prompts; it does not itself generate media or claim a provider job succeeded.
+
+**Scenario Skills responsibilities**
+- Use Scenario MCP through a server-side adapter for capability/model discovery, schema retrieval, validated input construction, cost preview where supported, generation submission, job polling, output retrieval and asset metadata.
+- Scenario is a provider adapter, not the canonical Model Router, wallet, job scheduler or artifact database.
+- The adapter must map provider job identifiers/status to the existing durable Agent Run/checkpoint and artifact lifecycle. A dedicated media-job projection may be added only if it is a read model over canonical run/checkpoint/artifact data; it must not duplicate billing, ownership or execution truth.
+- Before paid generation, backend validates tenant, user, project, provider credentials, model allowlist, entitlement, quota, balance, idempotency key, maximum cost and user approval where required.
+- Unknown provider outcome must retain a safe pending/unknown accounting state; never double-submit generation or release reserved credits until provider outcome is reconciled.
+- Provider outputs are validated for host, MIME type, size, malware/content policy as applicable, then stored in private Supabase Storage with owner-scoped metadata and signed download access.
+- Model schema, pricing and capability metadata are dynamic and must be refreshed from trusted provider contracts; do not hardcode assumed model availability or price.
+
+### 35.6 Six-type Memory Architecture
+
+MoreAI Memory is a coordinated subsystem within the existing `engine/memory/` domain, not six separate databases or six competing memory engines. Memory Coordinator selects, writes, retrieves, summarizes, expires and deletes memory through a shared policy and provenance contract.
+
+| Memory type | Purpose | Example | Canonical storage/handling |
+|---|---|---|---|
+| Working Memory | Short-lived context for the active task/run | Progress of an order, current plan, pending approvals, variables and intermediate findings | Run-scoped state/checkpoints and bounded context; TTL/cleanup; do not treat as durable user profile |
+| Conversation Memory | Context and history of explicit conversation threads | Earlier user instruction, assistant response, selected files and conversation summary | Existing conversation/message records and derived summaries; conversation ownership and retention apply |
+| Long-term Memory | Stable, useful user preferences and facts retained with consent | Preferred response language, formatting preference, recurring work preference | Existing personal memory domain/items; consent, user controls, source, confidence, expiry/review and deletion |
+| Episodic Memory | Time-bound experiences/events and outcomes | Projects previously completed, decisions, failures, lessons learned and run outcomes | Derived episode records linked to source Agent Runs/projects/artifacts; deduplicate, redact and retain provenance |
+| Semantic Memory | Normalized facts and domain knowledge | Company profile, product catalogue, approved company policies and terminology | Authorized Knowledge/RAG documents, structured facts and embeddings; source citations, freshness and access filters |
+| Procedural Memory | Reusable methods and preferences for doing work | Preferred workflow, approval sequence, report format, operating procedure | Approved reusable procedures/skill references/workflow templates; versioned and never elevated to executable permission |
+
+**Memory lifecycle and retrieval**
+- Retrieval is query- and task-scoped: Working → Conversation → relevant Long-term/Episodic/Semantic/Procedural memories; this is a logical retrieval order, not a mandatory serial database scan.
+- Every memory item carries owner/tenant/workspace scope, type, source reference, provenance, created/updated timestamps, confidence, sensitivity classification, consent basis, retention/expiry, version and deletion state.
+- Memory writes are typed and policy-gated. Agent-generated candidate memories may require user confirmation depending on sensitivity and memory type.
+- Do not silently ingest unrelated private files, conversations, credentials, payment details or sensitive personal information.
+- Semantic memory retrieval must enforce source-document authorization before vector search results enter a prompt. Embeddings do not bypass RLS/tenant/ownership controls.
+- Procedural memory is not an authorization policy. A remembered procedure cannot grant tools, permissions, entitlements or approval.
+- Working memory is not a substitute for durable checkpoints; canonical run state remains in the existing run/step/checkpoint model.
+- Conversation memory is not interchangeable with long-term memory. Do not promote every chat message into a durable profile.
+- Episodic memory is derived from completed/meaningful events and must link back to source evidence; never fabricate experience.
+- Long-term memory and episodic memory must support user inspection, correction, consent withdrawal and deletion under retention policy.
+- Memory summaries are derived indexes, not canonical evidence. Preserve source references and regenerate or invalidate summaries when source items are changed/deleted.
+
+**Memory schema reconciliation**
+- First inspect existing `memory_items`, `memory_embeddings`, `memory_sources`, `memory_consent_events`, conversation messages, Agent Run events/checkpoints, Knowledge documents/chunks and existing personal-memory API/RLS.
+- Extend existing records with a validated `memory_type` enum/discriminator and metadata only where missing; do not create duplicate memory tables if existing entities can represent the six types safely.
+- Add dedicated episodic/procedural records only if a source-of-truth gap is proven. Reuse existing skills/workflow definitions for approved procedures where semantically appropriate.
+- Use forward-only migrations, tenant-aware indexes, retention/expiry handling, deletion propagation to embeddings/summaries, and RLS tests. No production schema mutation is authorized by this PRD update alone.
+
+### 35.7 Data model and ownership map
+
+The following are logical entities to reconcile against the actual Supabase schema before proposing DDL; names are illustrative, not a mandate to create every table.
+
+| Domain | Reuse first | Add only if proven missing |
+|---|---|---|
+| Skills | Existing tool/agent registry, capability catalog, version/provenance conventions | Skill, immutable skill version, asset/dependency, agent-skill binding and review records |
+| Browser/computer | Agent Runs, steps, events, checkpoints, approvals, workspace files/artifacts, audit | Persistent browser session metadata, sandbox lease/resource metadata, scoped takeover grant |
+| Media | Existing image/video tools, Agent Run/checkpoints, artifact store, reservation/settlement/usage ledger | Provider model catalog cache or media read-model only when existing contracts cannot express it |
+| Memory | Existing personal memory, conversation, Knowledge/RAG, run checkpoints/events, consent | Type-specific source records only where required for episodic/procedural provenance |
+| Goals/monitoring | Existing workflow/scheduler/outbox/run lifecycle | Goal definition and schedule/monitor cursor only if no existing scheduler domain can represent it |
+
+All new data remains in canonical Supabase PostgreSQL/Storage with server-side access, RLS, tenant ownership, idempotency and audit. Do not add PGlite, SQLite, another Postgres, or provider-owned data as MoreAI's system of record.
+
+### 35.8 FastAPI and internal service contract
+
+Extend existing routers/services and typed client; do not create parallel API namespaces where an existing endpoint can be extended compatibly.
+
+**Skill API (proposed contract)**
+- `GET /api/v1/skills`, `GET /api/v1/skills/{skill_id}`
+- `POST /api/v1/skills/import` (admin/reviewer scope; source pin required)
+- `POST /api/v1/skills/{skill_id}/review`, `POST /api/v1/skills/{skill_id}/publish`
+- `POST /api/v1/agents/{agent_id}/skills`, `DELETE /api/v1/agents/{agent_id}/skills/{binding_id}`
+- `GET /api/v1/agent-runs/{run_id}/skills` (safe selected-skill/version projection)
+
+**Memory API (extend existing Personal Memory/Knowledge APIs)**
+- Existing owner-scoped memory list/create/update/delete and consent endpoints remain canonical.
+- Add typed filters and safe source/provenance projections; do not expose hidden prompt context or private run checkpoints.
+- Add episodic/procedural review/approval endpoints only if a new lifecycle is required.
+
+**Computer API (proposed contract)**
+- Create/list/get/close authorized browser/computer sessions; create short-lived takeover grant; request approval for high-risk action.
+- All worker commands are private service-to-service contracts with signed/rotated credentials, tenant/run/session binding, replay protection and correlation IDs.
+- Do not expose raw terminal or browser worker endpoints to the public client.
+
+**Media API**
+- Prefer existing Agent Run enqueue and artifact endpoints. Add only provider catalog/cost-preview and safe job projection endpoints where missing.
+- Generation submission is an idempotent tool action under a durable Agent Run and the existing credit reservation/settlement flow.
+
+### 35.9 Customer UI additions and MoreAI design authority
+
+The five supplied MoreAI × IndiHome reference boards are supplemental evidence for customer workspace, onboarding, mobile-first navigation, Chat, Create, Analyse/Research, Code, Tasks, Files, Profile/benefits and Partner Wi-Fi journeys. They do not override the protected existing UI or section 16.
+
+**Existing surfaces to extend**
+- Chat: safe skill activation and activity, browser/computer status, approval request, takeover entry, memory source/context indicator where appropriate.
+- Agent Studio: assigned skills and versions, supported tools, runtime availability, memory scope, workspace access and capability policy.
+- Workflow/Tasks: skill/tool step summaries, durable checkpoints, approval, browser session state, recovery status and artifacts.
+- Create Studio: creative brief, storyboard/shot plan, selected model/capability, cost/credit preview, generation status, revisions and media artifact gallery.
+- Knowledge/Files: source provenance, indexed status, memory/knowledge distinction, asset ownership and safe downloads.
+- Personal Memory: six memory categories, consent, source/scope, review/edit/delete, retention and clear distinction between personal memory and workspace knowledge.
+- Settings/Tools: authorized connector/session status and revocation where corresponding backend contracts exist.
+
+**New UI only when absent and approved by the UI change gate**
+- Skills Library / Skill Detail / review status / assign-to-Agent interaction.
+- Browser Workspace / Take Control / session expiry and permission state.
+- Computer Workspace activity panel (not unrestricted shell access).
+- Memory category and provenance controls.
+- Create Studio storyboard and media-job detail components if no existing component can support them.
+
+**Design requirements**
+- Follow section 16 tokens exactly: MoreAI red `#E31E24` for primary action, navy `#0A1B3A` and text `#101828`, canvas `#F6F8FC`, white surface `#FFFFFF`, subtle surface `#F1F4F9`, border `#E4E9F1`; use the documented blue/cyan/magenta/green semantic accents only for their designated meaning.
+- Typography: use section 16.4 approved font families, weights and hierarchy; do not introduce a new font.
+- Respect section 16 spacing, radii, elevation, motion, accessibility and section 17.5 responsive breakpoints. Customer experience remains mobile-first and consistent with the supplied MoreAI × IndiHome references.
+- Use `packages/design-tokens` for any new semantic token; no scattered raw colors and no global token migration during integration.
+- Preserve existing navigation, screen layouts and journeys. New UI must have loading, empty, error, unavailable/blocked, permission-denied and success states; never show fake skill availability, browser status, media progress, memory content or credit balance.
+- UI changes require baseline route/screen, exact missing behavior, minimal component change and before/after evidence when verification is authorized. Under current no-test/no-screenshot instruction, do not claim visual verification.
+
+### 35.10 Security, privacy, reliability and observability
+
+- Skills, external repository instructions, downloaded documents, web pages, browser content and provider outputs are untrusted data. They cannot override system policy or invoke tools outside the allowlist.
+- Enforce authorization twice: API/domain policy before dispatch and worker/tool policy at execution.
+- Browser/computer sandbox must defend against SSRF, DNS rebinding, redirect pivots, private IPs, credential exfiltration, malicious downloads, command injection, resource exhaustion and cross-tenant session reuse.
+- Human approval is bound to one tenant, user, run, action hash, expiry and idempotency key; it is single-use and cannot be replayed for a different action.
+- Use structured redacted logs, correlation IDs, audit events, run checkpoints and action receipts. Do not persist hidden chain-of-thought.
+- Apply data minimization, memory consent, retention/deletion propagation, encryption for sensitive session material and least privilege.
+- Fail closed if worker health, sandbox readiness, provider credentials, model policy, quota, entitlement, credit reservation, storage or approval contract is unavailable.
+- Unknown external job outcomes remain explicitly unknown/reconciling; never fabricate success or duplicate side effects.
+
+### 35.11 Dependency-ordered implementation roadmap
+
+This roadmap is additive and must be reconciled with the official Phase 00–11 gates. It does not supersede them, authorize skipping them, or change the current phase tracker status.
+
+| Sequence | Proposed work package | Dependencies / deliverables | Phase 09 overlap rule |
+|---|---|---|---|
+| A0 | Reconciliation & source governance | Re-read AGENTS, PRD, tracker, actual repo/schema; pin three source commits; license/dependency/security inventory; capability overlap matrix | Documentation and inventory only; no duplicate dashboard work |
+| A1 | Architecture contracts & ADRs | Agent/Skill/Tool/Workflow/Memory/Workspace/Media contracts, trust boundaries, run mapping, API and event contracts | Keep existing Agent Run/Workflow/Tool contracts authoritative |
+| A2 | Memory architecture reconciliation | Map six memory types to existing Personal Memory, Conversation, Knowledge/RAG, Run Checkpoint/Event; consent/provenance/retention matrix | Do not reimplement existing Personal Memory consent/CRUD |
+| A3 | Skill registry foundation | Parser, schema validation, immutable versions, provenance/license, review/publish, resolver and progressive loading | Add no customer Skill UI until Phase 09 and Phase 11 gates permit product features |
+| A4 | Visual Skills import/adaptation | Approved creative skills, attribution, storyboard and prompt outputs, quality rubric | Reuse Create Studio/Chat handoff already in Phase 09 |
+| A5 | Scenario MCP adapter | Private MCP connection, dynamic discovery/schema, model allowlist, cost preview, idempotent job submit/poll, existing credit ledger/artifacts | Reuse existing media tools, reservations, settlement, Agent Runs and artifacts; no parallel media engine |
+| A6 | OpenFuse browser capability | Isolated browser worker, session persistence, domain/SSRF controls, event/checkpoint mapping, takeover | Reuse existing worker, sandbox supervisor, approvals, events and run lifecycle |
+| A7 | OpenFuse computer workspace | Isolated terminal/filesystem/desktop execution, lease, quotas, approvals, action receipts | Reuse existing workspace/file/artifact APIs and sandbox policy |
+| A8 | Memory coordinator and retrieval | Six-type resolver, memory write policy, source provenance, hybrid retrieval, retention/deletion and summaries | Extend existing Memory/Knowledge/RAG; no second vector store |
+| A9 | Customer UI activation | Minimal missing controls in existing Chat/Agent Studio/Workflow/Tasks/Create/Files/Memory screens; tokens and reference boards | Only after current Phase 09 acceptance is resolved and applicable Phase 11 feature gate/exception is approved |
+| A10 | Security, operational readiness and verification | Threat model, RLS/tenant checks, sandbox acceptance, provider E2E, cost/recovery evidence, UI regression and release report | Phase 10/11 remain required; source-only changes are not runtime acceptance |
+
+**Recommended sequencing:** complete the current Phase 09 Customer Dashboard scope without expanding it; maintain Phase 04/06/07/08 dependencies and their blockers; then complete mandatory Phase 10 and Phase 11 acceptance. The proposed A0–A8 platform capability packages may be specified and implemented only when their dependencies and AGENTS.md phase gate permit. Customer-facing post-integration feature activation (A9) must wait for Phase 11 or a written product-owner exception that explicitly records the risks and verification plan.
+
+### 35.12 Acceptance criteria for the architecture extension
+
+The extension is considered implemented only when evidence demonstrates:
+1. Every adopted external source has a pinned commit, license/provenance manifest and security classification.
+2. No second Agent Runtime, business API, canonical database, wallet/ledger or customer frontend exists.
+3. Skills resolve deterministically by tenant/Agent/tool/policy compatibility and the selected version is recorded on the Agent Run.
+4. All six memory types have defined source, consent, scope, retention, provenance, retrieval and deletion behavior; existing memory records are reconciled without duplication.
+5. Browser/computer sessions are isolated, owner-scoped, auditable and support authorized takeover without credential leakage.
+6. Scenario generation uses server-side MCP/provider adapters, idempotent durable jobs, existing credit accounting and canonical artifact storage.
+7. Customer UI uses existing screens and section 16 tokens, with no unrelated visual changes.
+8. Phase 10 integration evidence and Phase 11 security/release gate are accepted before production activation.
+
+**Current status:** architecture specified; source import, production code, migrations, new UI activation, external provider configuration and runtime acceptance are not implied by this PRD change.
