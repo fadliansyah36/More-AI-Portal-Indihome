@@ -68,7 +68,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
         if (!active) return;
         setToolCatalog(rows);
         setConfigurationToolKeys(rows
-          .filter((tool) => tool.available_by_default.includes('manus') && tool.enabled_by_default)
+          .filter((tool) => tool.key !== 'run' && tool.available_by_default.includes('manus') && tool.enabled_by_default)
           .map((tool) => tool.key));
       })
       .catch((cause) => { if (active) setToolCatalogError(cause instanceof Error ? cause.message : 'Katalog tool tidak tersedia.'); });
@@ -79,7 +79,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
   }, []);
 
   const availableConfigurationTools = toolCatalog.filter((tool) =>
-    tool.available_by_default.includes(configurationRuntime) && tool.enabled_by_default,
+    tool.key !== 'run' && tool.available_by_default.includes(configurationRuntime) && tool.enabled_by_default,
   );
 
   const resetConfigurationForm = () => {
@@ -378,7 +378,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
                 <select value={configurationRuntime} disabled={!!editingConfigurationId} onChange={(event) => {
                   const runtime = event.target.value as 'manus' | 'toolcall';
                   setConfigurationRuntime(runtime);
-                  setConfigurationToolKeys(toolCatalog.filter((tool) => tool.available_by_default.includes(runtime) && tool.enabled_by_default).map((tool) => tool.key));
+                  setConfigurationToolKeys(toolCatalog.filter((tool) => tool.key !== 'run' && tool.available_by_default.includes(runtime) && tool.enabled_by_default).map((tool) => tool.key));
                 }} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900">
                   <option value="manus">Manus</option>
                   <option value="toolcall">ToolCall</option>
