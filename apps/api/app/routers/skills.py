@@ -100,11 +100,14 @@ async def import_skill(body: SkillImportRequest, request: Request, user: dict[st
 def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     license_files: list[dict[str, Any]] = []
     dependency_files: list[str] = []
+    manifest_files: list[str] = []
     dependencies: list[dict[str, Any]] = []
     for item in files:
         path = str(item.get("relative_path") or "")
         name = PurePosixPath(path).name.lower()
         text = item.get("text_content")
+        if name in {"skill.md", "skill.yaml", "skill.yml", "skill.json", "manifest.json", "package.json", "pyproject.toml"}:
+            manifest_files.append(path)
         if name.startswith(("license", "licence", "copying", "notice", "third_party")):
             license_files.append({
                 "path": path, "sha256": item.get("content_sha256"),
@@ -171,6 +174,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     exact = sum(1 for item in dependencies if item.get("exact_version"))
     return {
         "license_files": license_files,
+        "manifest_files": sorted(set(manifest_files)),
         "dependency_manifests": sorted(set(dependency_files)),
         "dependencies": dependencies,
         "dependency_count": len(dependencies),
@@ -200,8 +204,8 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
     })
     source_inventory = _source_review_inventory(files)
     manifest = skill.get("manifest") if isinstance(skill.get("manifest"), dict) else {}
-    if not manifest:
-        findings.append("Skill manifest is missing; package is not executable.")
+    if not manifest or not source_inventory["manifest_files"]:
+        findings.append("A source-controlled SKILL.md or package manifest is required; user-entered metadata alone is not a skill manifest.")
     if not files:
         findings.append("Pinned source files have not been ingested and integrity-verified.")
     if len(files) > 40 or sum(int(item.get("byte_size") or 0) for item in files) > 5 * 1024 * 1024:
