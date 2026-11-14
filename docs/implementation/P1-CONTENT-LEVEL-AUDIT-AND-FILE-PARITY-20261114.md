@@ -196,3 +196,134 @@ P1 is a source-governance prerequisite, not a replacement for mandatory phases 0
 - 11 release gate: blocked until required verification evidence exists.
 
 **Next dependency-ordered phase after this P1 increment:** continue P1 closure (per-file content, dependency SBOM and final disposition). Once P1 is signed off, resume the earliest incomplete mandatory dependency: **Phase 04 — Full Backend Integration & Security Hardening**, then Phase 06/07/08 as their dependency graph requires, and Phase 09 customer-dashboard integration after those contracts are ready. Do not skip to product feature expansion. Phase 10/11 remain explicitly unaccepted while real verification is disallowed.
+
+
+---
+
+## 10. Second content-audit increment — deeper file and lockfile evidence
+
+**Audit increment date:** 2026-11-14  
+**Reviewed external source pins unchanged.** This section adds file-level evidence and corrects the distinction between a complete recursive inventory and a fully signed-off disposition manifest.
+
+### 10.1 OpenFuse — additional files and dependency graph evidence
+
+Additional pinned files read:
+- root `package.json` (blob `1c2b85d7257886d8c8df99cc8a043c5b5ab58411`);
+- root `pnpm-lock.yaml` (blob `1f64461ae3c5e6c69b5c8c04826fe7bdbac1f016`);
+- `SECURITY.md` (blob `bcdfc706eac000d6d91747f902670eb49bbae95f`);
+- implementation samples recorded in Section 2: auth, store, browser, computer, worker, domain, PDF.
+
+Lockfile evidence:
+- pnpm lockfile v9, 516,017 bytes;
+- 3 workspace importers: root, `apps/mobile`, `apps/worker`;
+- approximately 2,341 package/snapshot entries (counted from lockfile package-key records);
+- 1,452 integrity records;
+- one patched dependency declaration (`metro@0.83.3`) and one override (`image-size@2.0.4`).
+
+The lockfile records resolved versions and integrity but does **not** provide a complete license attribution for each resolved package. A license-aware SBOM still requires package metadata/license resolution against the pinned package artifacts. No install or package execution was performed.
+
+**Additional security decision from SECURITY.md:** OpenFuse's supported deployment is one owner per deployment; shared access key is not multi-tenant identity. Its browser worker is explicitly not a full hostile-tenant security boundary. E2B desktop mode enables outbound internet, passwordless sudo inside the VM, publicly reachable forwarded VM ports, and a VNC URL whose effective password is short; the policy itself warns that prompt-injected computer/browser actions can exfiltrate data. These are concrete reasons to exclude OpenFuse auth/persistence and defer direct browser/computer backend reuse. A MoreAI implementation must independently enforce tenant identity, isolated execution, egress policy, secret isolation, authenticated session transport, explicit human approval, action receipts and durable recovery.
+
+OpenFuse source family counts from the pinned recursive tree:
+- `apps/server`: 36 files;
+- `apps/worker`: 22 files;
+- `apps/computer`: 5 files;
+- `apps/mobile`: 54 files;
+- `packages/domain`: 5 files;
+- `packages/integrations`: 3 files;
+- `packages/backends`: 1 file;
+- remaining root/governance/docs/tests/config: 93 files.
+- 75 files classified as test/test-support paths by path convention; 140 source/script-like paths by extension/path convention; 4 image/PDF assets. These are inventory classifiers, not a claim that every file's semantic content was individually reviewed.
+
+### 10.2 Visual Skills — content structure and attribution evidence
+
+The pinned tree has exactly:
+- 2 skill entrypoints: `image/SKILL.md`, `video/SKILL.md`;
+- 24 image-family files and 13 video-family files (37 total, including their reference materials);
+- 16 visual assets under `assets/`;
+- root `LICENSE`, `NOTICE`, English and Russian README files, and two plugin metadata files.
+
+Additional files read: root `NOTICE`, `video/SKILL.md`, and `image/references/golden-rules.md`, alongside the previously read image entrypoint and model reference. The image entrypoint expressly requires model-specific reference reading and states it produces prompts rather than generating images. The video entrypoint routes through dramaturgy/universal rules and task-specific storyboard/cinematography references.
+
+**Attribution decision remains mandatory:** CC BY 4.0, attribution to Serge Shima and source URL, plus modification notice for adapted content. NOTICE also acknowledges methods studied/adapted from `agentara/skills` under MIT. Logo artwork and all 16 assets remain separate provenance/brand/trademark review items; their presence in the repository does not grant MoreAI an unrestricted right to redistribute brand marks.
+
+The two skill entrypoints are candidates for a curated, attributed knowledge adaptation. No asset/logo is approved for direct customer-facing redistribution by this increment. All 37 family files and 16 assets have path-level inventory coverage, but not every reference and asset has individual semantic/provenance sign-off; P1 therefore remains open.
+
+### 10.3 Scenario Skills — family, script, asset and dependency evidence
+
+Pinned recursive-tree counts:
+- 179 `SKILL.md` entrypoints across Scenario and supporting agent skills;
+- 1,664 files beneath `skills/`;
+- 1,147 script/source-like paths by extension/path classifier;
+- 92 image/video/font/PDF and other asset-like paths;
+- 372 test/test-support paths by path classifier;
+- 318 paths beneath `tests/` (the broader 372 classifier also includes tests/fixtures outside that directory).
+- 2,114 total files and 702 directories; `truncated=false`.
+
+Additional pinned files read:
+- root `package.json` (blob `3d3b31e566918356ed2bf7ee0d88d87a04c5c330`);
+- root `pnpm-lock.yaml` (blob `a9bfa48bafc6cbd1b4c4652972ae6eeeaa27e098`);
+- root `AGENTS.md` and README;
+- `.agents/skills/skill-creator/LICENSE.txt` (blob `4f881c52d1f72f4cfb720e339e2d35c3058d01a9`);
+- `skills/scenario-image/SKILL.md`, `skills/scenario-video/SKILL.md`, `skills/scenario-3d/SKILL.md`, `skills/scenario-workflows/SKILL.md`, `skills/scenario-gpt-image/SKILL.md`.
+
+Lockfile evidence:
+- pnpm lockfile v9, 130,017 bytes;
+- one root workspace importer;
+- approximately 693 package/snapshot entries;
+- 466 integrity records.
+- package manifest is a private skill repository, pnpm 11.21.0, Node >=22.18.0. Its validation/test scripts invoke repository-maintenance, Python lint and skill script suites; these were not run. The lockfile supplies versions/integrity, not full per-package license decisions.
+
+License finding: root Scenario Skills license is MIT. The nested `.agents/skills/skill-creator/LICENSE.txt` is Apache License 2.0 and must be preserved for any material derived from that subtree. Each skill may link supporting material, scripts, model/provider docs, examples and assets; the root MIT license alone is not a blanket provenance clearance for third-party embedded content.
+
+The entrypoint count and tree family inventory are complete. However, every one of 179 skill entrypoints and its transitive references/scripts/assets has not yet been individually fetched and semantically reviewed in this increment. Therefore this is family-level evidence, not final per-file legal/security sign-off.
+
+### 10.4 Updated exact file disposition examples
+
+| Source path / family | Disposition | Evidence / reason | MoreAI owner |
+|---|---|---|---|
+| OpenFuse `apps/server/src/auth.ts` | **EXCLUDE** | Local single-owner/shared access-key session model | Supabase Auth + FastAPI authz |
+| OpenFuse `apps/server/src/db.ts` | **EXCLUDE** | PGlite/generic record store competes with canonical persistence | Supabase repositories |
+| OpenFuse `apps/server/src/engine/worker.ts` | **ADAPT** | Lease/checkpoint/event patterns only; do not import task worker | MoreAI worker + Agent Run lifecycle |
+| OpenFuse `apps/server/src/browser.ts` | **DEFER** | Browser worker bridge needs MoreAI tenant/egress/session controls | Existing sandbox + tool registry |
+| OpenFuse `apps/server/src/computer.ts` | **DEFER** | Docker/E2B computer service has explicit single-owner and egress limitations | Existing isolated sandbox |
+| OpenFuse `packages/integrations/src/pdf.ts` | **ADAPT** | Bounded PDF processing patterns, subject to Files pipeline ownership | Files/Artifacts |
+| OpenFuse `apps/mobile/**` | **ARCHIVE-ONLY** | Competing standalone UI; customer UI is protected | Existing Next.js dashboard |
+| Visual `image/SKILL.md`, `video/SKILL.md` | **ADAPT** | Prompt/storyboard knowledge with attribution and linked-reference review | Skill Registry + Create |
+| Visual `assets/**` | **DEFER** | Brand/logo and embedded asset provenance review outstanding | Not approved for customer UI |
+| Scenario `skills/scenario-image/**`, `scenario-video/**`, `scenario-3d/**` | **ADAPT** | Knowledge and dynamic schema-driven capability guidance only | Skill Registry + Create + provider router |
+| Scenario provider-specific skills | **DEFER** | Model/tool schema must be discovered live; provider availability/entitlement cannot be assumed | Provider adapters/model router |
+| Scenario `skills/dcc/**`, `skills/game-engines/**` | **DEFER** | Scripts depend on local DCC/game-engine runtime and execution authorization | Optional isolated execution agent |
+| Scenario `tests/**`, root CI/scripts | **ARCHIVE-ONLY** | Upstream verification evidence/tooling, not MoreAI runtime code; do not execute | Source governance archive |
+| Scenario root `LICENSE` | **COPY** | Preserve MIT notice for adapted/reproduced portions | Source governance |
+| Scenario skill-creator `LICENSE.txt` | **COPY** if subtree reused; otherwise **ARCHIVE-ONLY** | Nested Apache-2.0 terms apply independently | Source governance |
+
+These are exact reviewed-file decisions and family-level rules, **not** a complete 2,393-row final manifest. Unreviewed files remain **MANUAL REVIEW** and are not silently treated as approved.
+
+### 10.5 SBOM and P1 closure status
+
+| Gate | Current evidence | Status |
+|---|---|---|
+| Recursive path parity | All three pinned trees complete, no truncation | **GREEN** |
+| OpenFuse direct manifest + lockfile inventory | Manifest and 516 KB lockfile read; 3 importers, ~2,341 entries | **PARTIAL** |
+| Scenario direct manifest + lockfile inventory | Manifest and 130 KB lockfile read; 1 importer, ~693 entries | **PARTIAL** |
+| Per-package resolved license SBOM | Lockfiles do not establish license metadata; package metadata/license scan not completed | **OPEN** |
+| OpenFuse source semantics/security | High-risk auth/store/worker/browser/computer/PDF samples reviewed; full apps/packages file review incomplete | **PARTIAL** |
+| Visual references and attribution | Entrypoints, selected references, NOTICE and 16 asset inventory reviewed; every reference/asset not individually signed off | **PARTIAL** |
+| Scenario family inventory | 179 entrypoints, 1,664 skill files, 1,147 scripts, 92 assets, 372 test-like paths inventoried | **GREEN for inventory only** |
+| Scenario per-entrypoint and linked-file content review | Only representative core/provider family samples reviewed; all 179 not individually signed off | **OPEN** |
+| Final decision manifest for all source files | Exact examples and family rules added; full per-file disposition rows still outstanding | **OPEN** |
+| P1 closure | All gates above not green | **NOT CLOSED** |
+
+**Important no-test compliance:** No dependencies were installed, no upstream script was executed, no tests/build/lint/typecheck were run, and no staging, API/provider/browser probing, Supabase migration or deployment was performed. Lockfile inspection is static metadata analysis only.
+
+### 10.6 Next bounded P1 work
+
+1. Produce a reproducible package/license SBOM for the exact OpenFuse and Scenario lockfile snapshots, including unresolved license/unknown-package entries; do not install or execute packages.
+2. Continue OpenFuse per-file semantic review of server actions, OAuth/Google, finance, vault, downloads/proxy/network, worker, computer and integrations; record exact path and disposition.
+3. Complete Visual Skills reference and asset provenance review; keep all unverified brand marks deferred.
+4. Review Scenario's 179 entrypoints in family batches, then resolve each linked reference/script/asset/test/metadata path to an exact disposition.
+5. Generate a final machine-readable per-file decision manifest for all 2,393 source paths, with review status distinct from disposition; only mark reviewed when content/provenance evidence exists.
+6. Close P1 only when unresolved license, provenance, security and disposition rows are zero or explicitly accepted by project governance.
+
+**Phase sequence remains unchanged:** P1 is not complete. On closure, return to the earliest incomplete mandatory phase in `AGENTS.md`: Phase 04, then 06/07/08 and Phase 09 according to dependencies. Phase 10/11 remain unaccepted under the no-real-testing constraint.
