@@ -124,3 +124,11 @@ Phase 09 source integration is substantially reconciled, but the following remai
 - No tests, lint, typecheck, build, browser/API probes, screenshots, worker execution, provider calls, staging or deployment were performed. Runtime acceptance remains NOT VERIFIED.
 
 - Additional source commit `a2f722bfbe607107ab5f073fbedbbe05b887a9f0`: active EduTech curriculum detail now exposes the existing owner-scoped lesson-version history endpoint and displays saved version metadata/objectives/content preview. Source-only; browser rendering remains NOT VERIFIED.
+
+## 2026-11-14 Tasks lifecycle presentation correction
+
+- Source inspection found that the Tasks list treated every terminal Agent Run state (`failed`, `cancelled`, `timed_out`, `expired`) as successful completion. This incorrectly struck through failed work and placed failed runs in the successful-looking completed state.
+- Corrected the Customer Tasks projection: `completed` is now true only for canonical `succeeded`; the original backend `status` is retained on each TaskItem; the Active tab excludes all canonical terminal states and the Selesai tab contains terminal outcomes without falsely marking failures as success.
+- Removed invalid nested interactive buttons from the task card, retaining the outer task-detail action and a non-interactive status indicator.
+- Commits: `41d394731bbcc512ca35ebb2cd2c63f64f9740f8` and `e2cff38d614f87dcda1013f777849af8a358717b`.
+- This is source-level correction only. No browser, accessibility, test, lint, typecheck or build verification was run.
