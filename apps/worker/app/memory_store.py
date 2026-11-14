@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+import json
 
 from app.client import WorkerRpcClient
 from engine.agents.memory import ConversationMemoryStore
@@ -51,6 +52,7 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
                 tool_calls=calls or None,
                 name=metadata.get("name") if isinstance(metadata, dict) else None,
                 tool_call_id=metadata.get("tool_call_id") if isinstance(metadata, dict) else None,
+                metadata=metadata if isinstance(metadata, dict) else {},
             ))
         return messages
 
@@ -87,6 +89,42 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
         })
         return self._messages(rows)
 
+    async def load_episodes(
+        self, *, user_id: str, workspace_id: str | None = None, limit: int = 8,
+    ) -> list[dict[str, str]]:
+        """Load only consented episodic records in the exact owner/workspace scope."""
+        if not 1 <= limit <= 12:
+            raise ValueError("episodic_memory_limit_out_of_range")
+        preferences = await self.client.select("moreai_customer_memory_preferences", {
+            "user_id": f"eq.{user_id}", "enabled": "eq.true",
+            "select": "user_id,enabled,consent_version", "limit": "1",
+        })
+        if not preferences:
+            return []
+        filters = {
+            "user_id": f"eq.{user_id}",
+            "metadata->>memory_type": "eq.episodic",
+            "select": "content,metadata,created_at",
+            "order": "created_at.desc,id.desc",
+            "limit": str(limit),
+        }
+        filters["metadata->>workspace_id"] = "is.null" if workspace_id is None else f"eq.{workspace_id}"
+        rows = await self.client.select("conversation_messages", filters)
+        episodes: list[dict[str, str]] = []
+        for row in rows:
+            metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+            episode = metadata.get("episode") if isinstance(metadata.get("episode"), dict) else {}
+            prompt = episode.get("prompt")
+            outcome = episode.get("outcome")
+            if not isinstance(prompt, str) or not isinstance(outcome, str):
+                continue
+            episodes.append({
+                "prompt": prompt[:900],
+                "outcome": outcome[:1400],
+                "created_at": str(row.get("created_at") or "")[:40],
+            })
+        return episodes
+
     async def append(
         self, *, conversation_id: str, user_id: str, run_id: str,
         message: Message, message_key: str, workspace_id: str | None = None,
@@ -105,6 +143,12 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
             return
 
         metadata: dict[str, Any] = {"message_key": message_key}
+        if isinstance(message.metadata, dict):
+            # Persist bounded provenance alongside the existing message record.
+            supplied = message.metadata
+            if len(json.dumps(supplied, ensure_ascii=False, default=str)) > 12000:
+                raise ValueError("conversation_message_metadata_exceeds_limit")
+            metadata.update(supplied)
         if message.name is not None:
             metadata["name"] = message.name
         if message.tool_call_id is not None:
