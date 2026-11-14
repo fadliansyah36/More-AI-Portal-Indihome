@@ -213,6 +213,22 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
         {filteredTools.map((tool) => {
           const Icon = tool.icon;
           const isSelected = selectedTool === tool.id;
+          const mediaCapability = tool.category === 'gambar'
+            ? mediaCapabilities?.image_generation
+            : tool.category === 'video'
+              ? mediaCapabilities?.video_generation
+              : tool.category === 'file'
+                ? mediaCapabilities?.file_generation
+                : null;
+          const capabilityLabel = tool.category === 'gambar' || tool.category === 'video' || tool.category === 'file'
+            ? mediaCapabilitiesLoading
+              ? 'Memeriksa capability worker…'
+              : !mediaCapabilities
+                ? 'Status provider belum dapat diverifikasi'
+                : mediaCapability?.available
+                  ? `Tersedia · ${mediaCapability.worker_count} worker`
+                  : 'Belum tersedia pada worker'
+            : null;
 
           return (
             <div
@@ -240,6 +256,11 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
                 <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                   {tool.desc}
                 </p>
+                {capabilityLabel && (
+                  <p className={`mt-1.5 text-[10px] font-semibold ${mediaCapability?.available ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {capabilityLabel}
+                  </p>
+                )}
               </div>
             </div>
           );
