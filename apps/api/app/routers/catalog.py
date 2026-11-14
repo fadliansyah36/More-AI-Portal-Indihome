@@ -4,7 +4,6 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
-from uuid import UUID
 
 from app.authorization import customer_principal
 from app.routers.conversations import repository
