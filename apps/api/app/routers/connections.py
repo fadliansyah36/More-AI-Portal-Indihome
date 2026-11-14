@@ -252,13 +252,13 @@ async def google_oauth_callback(request: Request, code: str | None = None, state
     return RedirectResponse(target + "&connection_status=connected", status_code=303)
 
 
-async def _owned_google_connection(request: Request, user_id: str, connection_id: UUID) -> dict[str, Any]:
+async def _owned_google_connection(request: Request, user_id: str, connection_id: UUID, *, allow_inactive: bool = False) -> dict[str, Any]:
     rows = await repository(request).select("moreai_connections", {
         "id": f"eq.{connection_id}", "user_id": f"eq.{user_id}", "provider": "eq.google",
         "select": "id,user_id,external_account_id,display_name,scopes,status,credential_ciphertext,credential_key_version,access_token_expires_at",
         "limit": "1",
     })
-    if not rows or rows[0].get("status") != "connected":
+    if not rows or (not allow_inactive and rows[0].get("status") != "connected"):
         raise HTTPException(404, "google_connection_not_found")
     return rows[0]
 
@@ -366,8 +366,8 @@ async def list_calendar_events(
 
 @router.delete("/{connection_id}")
 async def disconnect_google(connection_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
-    connection = await _owned_google_connection(request, user["id"], connection_id)
-    credential = _decrypt(connection["credential_ciphertext"], "connection:google:" + str(user["id"]))
+    connection = await _owned_google_connection(request, user["id"], connection_id, allow_inactive=True)
+    credential = _decrypt(connection["credential_ciphertext"], "connection:google:" + str(user["id"])) if connection.get("credential_ciphertext") else {}
     token = credential.get("refresh_token") or credential.get("access_token")
     if isinstance(token, str) and token:
         await request.app.state.http.post(GOOGLE_REVOKE_URL, data={"token": token}, timeout=15.0, follow_redirects=False)
