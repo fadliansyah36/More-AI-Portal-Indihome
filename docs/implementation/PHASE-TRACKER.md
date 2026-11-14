@@ -1318,3 +1318,6 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 
 - EduTech persistence scope extended: learner APIs now expose quiz attempts, assessment feedback and lesson version history; EduTech renders saved attempt outcomes and assessment summaries. Progress RPC now computes total curriculum completion and synchronizes enrollment/path status only when all canonical lessons are completed. Follow-up migrations `20261114081000` and `20261114082000` both returned success from Supabase. Phase 09 remains IN PROGRESS.
+
+
+- EduTech path-list progress aggregation moved into a server-side Supabase view (`learning_path_progress_summary`) so Customer API does not need to materialize all curriculum lesson rows to render path cards. Migration `20261114083000_moreai_edutech_path_summary_view.sql` applied successfully; API path list now reads owner-scoped summary rows.
