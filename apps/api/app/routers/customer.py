@@ -1176,3 +1176,49 @@ async def delete_customer_memory(
     if not rows:
         raise HTTPException(404, "Memory not found")
     return Response(status_code=204)
+
+
+@router.post("/agent-runs/{run_id}/retry", status_code=202, response_model=CustomerMessageEnqueueResponse)
+async def retry_customer_agent_run(
+    run_id: UUID, request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Create a new durable run from a terminal failed/cancelled run using the canonical enqueue RPC."""
+    principal = await require_customer_context(request, user)
+    if not request.app.state.settings.agent_execution_enabled:
+        raise HTTPException(503, "Agent execution is disabled until provider, entitlement and worker gates pass")
+    if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
+        raise HTTPException(400, "A 12–128 character Idempotency-Key header is required")
+    repo = repository(request)
+    original = await repo.owned_record("agent_runs", run_id, principal["id"])
+    if original.get("status") not in {"failed", "cancelled", "timed_out", "expired"}:
+        raise HTTPException(409, "Only a terminal unsuccessful run can be retried")
+    source = original.get("input") if isinstance(original.get("input"), dict) else {}
+    prompt = source.get("prompt")
+    agent_key = source.get("agent_key", "manus")
+    conversation_value = original.get("conversation_id") or source.get("conversation_id")
+    if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 100000:
+        raise HTTPException(409, "Original run does not contain a retryable prompt")
+    if agent_key not in {"manus", "planning", "toolcall"}:
+        raise HTTPException(409, "Original runtime is no longer supported")
+    try:
+        conversation_id = UUID(str(conversation_value))
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(409, "Original conversation is unavailable")
+    await repo.owned_record("conversations", conversation_id, principal["id"])
+    raw_attachment_ids = source.get("attachment_ids") or []
+    if not isinstance(raw_attachment_ids, list) or len(raw_attachment_ids) > 10:
+        raise HTTPException(409, "Original attachment references are invalid")
+    try:
+        attachment_ids = [str(UUID(str(item))) for item in raw_attachment_ids]
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(409, "Original attachment references are invalid")
+    return await repo.rpc("moreai_enqueue_chat_run_with_attachments", {
+        "p_user_id": principal["id"],
+        "p_conversation_id": str(conversation_id),
+        "p_content": prompt,
+        "p_agent_key": agent_key,
+        "p_idempotency_key": idempotency_key,
+        "p_attachment_ids": attachment_ids,
+    })
