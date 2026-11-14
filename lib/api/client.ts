@@ -345,9 +345,9 @@ export type CustomerModelCapability = {
 export const platformCatalogApi = {
   tools: () => moreAiCustomerApi<CustomerToolCatalogItem[]>('/api/v1/tools'),
   mediaCapabilities: () => moreAiCustomerApi<{
-    image_generation: { available: boolean; worker_count: number; reason: string | null };
-    video_generation: { available: boolean; worker_count: number; reason: string | null };
-    file_generation: { available: boolean; worker_count: number; reason: string | null };
+    image_generation: { available: boolean; worker_count: number; provider: string | null; reason: string | null };
+    video_generation: { available: boolean; worker_count: number; provider: string | null; reason: string | null };
+    file_generation: { available: boolean; worker_count: number; provider: string | null; reason: string | null };
   }>('/api/v1/media/capabilities'),
   modelCapabilities: () => moreAiCustomerApi<{ items: CustomerModelCapability[]; count: number; source: string }>('/api/v1/models/capabilities'),
 };
