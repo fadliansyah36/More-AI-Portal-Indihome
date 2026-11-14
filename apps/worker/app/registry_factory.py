@@ -6,6 +6,7 @@ from app.llm_gateway import create_metered_gateway
 from app.llm_accounting import ConfiguredCreditEstimator, SupabaseUsageAccounting
 from app.memory_store import SupabaseConversationMemoryStore, SupabasePersonalMemoryStore
 from app.knowledge_tools import SupabaseKnowledgeTools
+from app.learning_tools import SupabaseLearningTools
 from app.attachment_loader import CustomerChatAttachmentLoader
 from app.plan_store import SupabasePlanStore
 from engine.agents.durable_tool_runtime import DurableOpenManusRuntime
@@ -30,6 +31,7 @@ def build_agent_registry(
     memory_store = SupabaseConversationMemoryStore(client)
     personal_memory_store = SupabasePersonalMemoryStore(client)
     knowledge_tools = SupabaseKnowledgeTools(client, http_client) if os.getenv("MOREAI_EMBEDDING_BASE_URL") and os.getenv("MOREAI_EMBEDDING_MODEL") else None
+    learning_tools = SupabaseLearningTools(client)
     attachment_loader = CustomerChatAttachmentLoader(client)
     search_tools = TavilySearchAdapter(http_client) if os.getenv("TAVILY_API_KEY") else None
     # The default bucket is provisioned by the Phase 05 migration; deployments may override it.
@@ -84,6 +86,7 @@ def build_agent_registry(
         gateway,
         memory_store=memory_store, personal_memory_store=personal_memory_store,
         knowledge_tools=knowledge_tools,
+        learning_tools=learning_tools,
         attachment_loader=attachment_loader,
         plan_store=plan_store,
         search_tools=search_tools,
@@ -118,7 +121,7 @@ def build_agent_registry(
     # Reuse the durable, policy-enforced tool loop with the upstream ToolCall prompt;
     # this preserves MoreAI approval, metering, checkpoint and tenant boundaries.
     toolcall = DurableOpenManusRuntime(
-        gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, knowledge_tools=knowledge_tools,
+        gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, knowledge_tools=knowledge_tools, learning_tools=learning_tools,
         plan_store=plan_store, search_tools=search_tools, storage_tools=storage_tools,
         image_tools=image_tools, video_tools=video_tools, workspace_tools=workspace_tools, browser_tools=browser_tools,
         attachment_loader=attachment_loader,
@@ -134,7 +137,7 @@ def build_agent_registry(
     # both explicit runtime/release gates are enabled by deployment configuration.
     if sandbox_tools is not None:
         swe = DurableOpenManusRuntime(
-            gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, knowledge_tools=knowledge_tools,
+            gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, knowledge_tools=knowledge_tools, learning_tools=learning_tools,
             plan_store=plan_store, search_tools=search_tools, storage_tools=storage_tools,
             workspace_tools=workspace_tools, browser_tools=browser_tools,
             attachment_loader=attachment_loader,
