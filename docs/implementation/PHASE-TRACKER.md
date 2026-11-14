@@ -1230,7 +1230,7 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Create Studio continues to route text authoring to Manus and multi-step work to Planning; image generation remains fail-closed and video output remains script/storyboard only until a real media provider adapter exists.
 - Report: [Customer Runtime, Memory Privacy, Retry & Workflow Integration](./PHASE-09-CUSTOMER-RUNTIME-MEMORY-RETRY-WORKFLOW-INTEGRATION-20261114.md).
 - No tests, lint, typecheck, build, browser/API/worker runtime checks, provider calls, staging or deployment were run. Supabase migration application is the only live database operation.
-- Phase 09 remains IN PROGRESS. Remaining: full Customer API action audit, dynamic agent config/worker capability reporting, scheduled memory purge, media provider activation and provider-gated business contracts. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+- Phase 09 remains IN PROGRESS. Remaining: full Customer API action audit, dynamic agent config/worker capability reporting, media provider activation and provider-gated business contracts. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
 
 
 ### Final source/DB record for this increment
@@ -1239,3 +1239,12 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Supabase migration ledger records version `20261114033138`, name `moreai_customer_personal_memory_privacy`.
 - Follow-up hardening: manual retry blocks missing/unknown tool identity as well as side-effecting tool events; Personal Memory context retrieval is filtered to explicit `user_created` / `personal` records; consent UI clarifies that in-flight runs may already have loaded prior context.
 - This metadata confirmation is not runtime testing. No test/lint/typecheck/build/browser/API/worker verification or deployment was performed.
+
+
+## 2026-11-14 — Personal Memory scheduled retention cleanup
+
+- Added `moreai_worker_purge_expired_customer_memories()` in migration `20261114020000_moreai_personal_memory_retention_purge.sql` and applied it to MoreAIdb; Supabase returned success.
+- Worker now runs the retention purge at startup and then at a configurable interval (default six hours, bounded to 1–24 hours). Transient purge failures are logged and retried after five minutes without stopping the worker.
+- API profile reads continue to opportunistically purge the current owner's expired records; runtime retrieval excludes expired records even before physical cleanup.
+- Source commit: `0e2ea8296bc54df5e99f68954bab5a71ad5a7fe6`.
+- No worker runtime verification or tests were run.
