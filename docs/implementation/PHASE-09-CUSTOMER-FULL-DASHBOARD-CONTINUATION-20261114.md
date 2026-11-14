@@ -135,3 +135,12 @@ Source inspection of `apps/worker/app/registry_factory.py`, `engine/tools/media.
 - This source review does not prove that deployment environment variables, provider credentials, wallet policies, worker heartbeats, provider tasks or live artifact storage are configured correctly. No provider API or Supabase mutation was executed.
 
 Remaining media work: add a customer-facing durable media-job projection over Agent Run/checkpoint/artifact data, clarify queued/submitted/processing/succeeded/failed/unknown outcomes, and make recovery/refresh behavior explicit without duplicating run or credit records. Phase 09 remains IN PROGRESS.
+
+## Customer-facing media lifecycle projection — 2026-11-14
+
+- Workflow & Agent Runs now detects image/video generation from the persisted run activity tool projection (`image_generate` / `video_generate`) and correlates it with artifacts whose metadata identifies `media_type=image|video` and the same `run_id`.
+- The expanded run detail displays a media lifecycle panel. A persisted media artifact is shown as succeeded and exposes its existing owner-scoped signed-download action. When the media tool is present but no artifact is yet available, the panel reports processing for an active parent run, failed for a failed parent run, or unknown for other terminal outcomes.
+- The panel deliberately does not infer provider task states (submitted/polling) from absent fields. FastAPI's current safe checkpoint projection excludes provider task identifiers/status and provider internals; the UI labels that limitation and directs the user to durable run/checkpoint details. This avoids exposing private worker state or inventing a separate media job record.
+- This is a source-level Customer UI integration over existing Agent Run, activity, artifact and signed-download APIs. No new database table, billing ledger, provider call or media execution endpoint was added.
+- Implementation commit: `77ce09d64b0ddd097a9ba4d134a59ebec5039015`.
+- Source-only; no tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment.
