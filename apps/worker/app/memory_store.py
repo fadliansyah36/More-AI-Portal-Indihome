@@ -110,13 +110,13 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
         if not 7 <= retention_days <= 3650:
             retention_days = 90
         now = datetime.now(timezone.utc)
-        cutoff = (now - timedelta(days=retention_days)).isoformat()
+        expiry_cutoff = now.isoformat()
         # Expire episodic metadata without deleting the underlying chat transcript
         # or its independent citation provenance.
         expired = await self.client.select("conversation_messages", {
             "user_id": f"eq.{user_id}",
             "metadata->>memory_type": "eq.episodic",
-            "created_at": f"lt.{cutoff}",
+            "metadata->>episode_expires_at": f"lte.{expiry_cutoff}",
             "select": "id,metadata",
             "order": "created_at.asc,id.asc",
             "limit": "100",
@@ -133,7 +133,7 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
         filters = {
             "user_id": f"eq.{user_id}",
             "metadata->>memory_type": "eq.episodic",
-            "created_at": f"gte.{cutoff}",
+            "metadata->>episode_expires_at": f"gt.{expiry_cutoff}",
             "select": "content,metadata,created_at",
             "order": "created_at.desc,id.desc",
             "limit": str(limit),
@@ -183,8 +183,18 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
                     "select": "user_id", "limit": "1",
                 })
                 if not preferences:
-                    for key in ("memory_type", "memory_scope", "workspace_id", "episode"):
+                    for key in ("memory_type", "memory_scope", "workspace_id", "episode", "episode_expires_at"):
                         supplied.pop(key, None)
+                else:
+                    try:
+                        retention_days = int(os.getenv("MOREAI_EPISODIC_MEMORY_RETENTION_DAYS", "90"))
+                    except ValueError:
+                        retention_days = 90
+                    if not 7 <= retention_days <= 3650:
+                        retention_days = 90
+                    supplied["episode_expires_at"] = (
+                        datetime.now(timezone.utc) + timedelta(days=retention_days)
+                    ).isoformat()
             if len(json.dumps(supplied, ensure_ascii=False, default=str)) > 12000:
                 raise ValueError("conversation_message_metadata_exceeds_limit")
             metadata.update(supplied)
