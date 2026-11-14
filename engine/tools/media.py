@@ -58,10 +58,10 @@ class OpenAIImageGenerationAdapter:
             if configured_model not in {"gpt-image-2", "gpt-image-1.5", "gpt-image-1", "gpt-image-1-mini"}:
                 return None
             credits_per_usd = float(os.environ["MOREAI_CREDITS_PER_USD"])
-            timeout_seconds = float(os.getenv("MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS", "600"))
+            timeout_seconds = float(os.getenv("MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS", "300"))
         except (TypeError, ValueError, json.JSONDecodeError):
             return None
-        if not math.isfinite(credits_per_usd) or credits_per_usd <= 0 or not 1 <= timeout_seconds <= 600:
+        if not math.isfinite(credits_per_usd) or credits_per_usd <= 0 or not 1 <= timeout_seconds <= 300:
             return None
         return cls(http=http, artifacts=artifacts, accounting=accounting, estimator=estimator)
 
@@ -173,7 +173,7 @@ class OpenAIImageGenerationAdapter:
                         "Content-Type": "application/json",
                         "Idempotency-Key": request_key,
                     },
-                    timeout=float(os.getenv("MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS", "600")),
+                    timeout=float(os.getenv("MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS", "300")),
                 )
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 provider_outcome_unknown = True
