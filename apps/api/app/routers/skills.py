@@ -442,6 +442,22 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
     records: list[dict[str, Any]] = []
     total_bytes = 0
     http = request.app.state.http
+    # Repository-level LICENSE/NOTICE files govern many nested skill directories.
+    root_listing_url = f"https://api.github.com/repos/{parts[0]}/{parts[1]}/contents?ref={skill['source_commit']}"
+    root_listing = await http.get(root_listing_url, headers={"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}, timeout=15.0, follow_redirects=False)
+    if root_listing.status_code != 200:
+        raise HTTPException(502, "skill_repository_root_listing_failed")
+    root_items = root_listing.json()
+    if not isinstance(root_items, list):
+        raise HTTPException(502, "skill_repository_root_listing_invalid")
+    for root_item in root_items:
+        if not isinstance(root_item, dict) or root_item.get("type") != "file":
+            continue
+        root_name = str(root_item.get("name") or "").lower()
+        if root_name.startswith(("license","licence","copying","notice","third_party")):
+            root_file = _safe_skill_path(str(root_item.get("path") or ""))
+            if root_file not in queue:
+                queue.append(root_file)
     while queue:
         relative = queue.pop(0)
         if relative in seen:
