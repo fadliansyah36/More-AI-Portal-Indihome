@@ -104,12 +104,6 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
         })
         if not preferences:
             return []
-        try:
-            retention_days = int(os.getenv("MOREAI_EPISODIC_MEMORY_RETENTION_DAYS", "90"))
-        except ValueError:
-            retention_days = 90
-        if not 7 <= retention_days <= 3650:
-            retention_days = 90
         now = datetime.now(timezone.utc)
         expiry_cutoff = now.isoformat()
         # Expire episodic metadata without deleting the underlying chat transcript
