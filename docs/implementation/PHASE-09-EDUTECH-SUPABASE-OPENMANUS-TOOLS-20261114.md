@@ -12,7 +12,7 @@ EduTech is a first-party MoreAI capability for students and university students.
 
 ## Implemented Supabase domain
 
-Added migration `supabase/migrations/20261114080000_moreai_edutech_learning_domain.sql` and applied it to canonical Supabase project `uunfgimtokhucegqbpce` (MoreAIdb). Supabase migration tool returned `success: true`.
+Added migration `supabase/migrations/20261114080000_moreai_edutech_learning_domain.sql` and forward-only hardening migration `20261114081000_moreai_edutech_tool_idempotency.sql`; both were applied to canonical Supabase project `uunfgimtokhucegqbpce` (MoreAIdb). Supabase migration tool returned `success: true`.
 
 New tables:
 - `learning_paths`: owner, originating Agent Run, learning goal, level and lifecycle status.
@@ -41,10 +41,10 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 
 ## FastAPI and Customer UI integration
 
-- Added owner-scoped FastAPI reads for learning paths, path/module/lesson detail, canonical progress and learning artifacts created by a given Agent Run.
+- Added owner-scoped FastAPI reads for learning paths, path/module/lesson detail, canonical progress and learning artifacts created by a given Agent Run. Learner-facing quiz projections omit answer keys, explanations and grading notes.
 - Added typed Customer API contracts for the new routes.
 - Updated the existing EduTech view to display saved learning paths, enrollment/progress summaries, modules and canonical lessons.
-- Selecting a saved lesson hands its stored content and canonical IDs into the existing Chat → Planning Agent Run flow. The prompt explicitly instructs the agent to use the five persisted learning tools and never invent IDs or claim a write without a tool result.
+- Selecting a saved lesson hands its stored content and canonical IDs into the existing Chat → Planning Agent Run flow. Task detail also loads the learning artifacts associated with its Agent Run; EduTech progress counts use canonical lesson progress. The prompt explicitly instructs the agent to use the five persisted learning tools and never invent IDs or claim a write without a tool result.
 - Existing Customer visual hierarchy, palette and component patterns were preserved; the UI change is additive and limited to displaying persisted curricula.
 
 ## Source changes
@@ -58,7 +58,7 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 - `e9f7bacc4f0753b378356b9a5281ec5fb325c10f` — add owner-scoped FastAPI learning reads and Agent Run artifact lookup.
 - `eac7d3a73e786066e3ee73a9e8ed80d7ee7064e1` — add typed Customer API contracts.
 - `4cdad90e947c11a18d183984da597c177de8d3a4` — surface saved curricula and resumable lessons.
-- `d387581b664e7e634b6f746b84adf30847d09e13` — route EduTech prompts through persisted learning tools.
+- `d387581b664e7e634b6f746b84adf30847d09e13` — route EduTech prompts through persisted learning tools.\n- `2e5bc04bfd26d3a4d5623190aae83e03ac470afd` — render saved curricula and lesson continuation in EduTech.\n- `95b344000d770e6a677004e13da9685921044e78` — count canonical lesson progress.\n- `4b8a89cdcccbd0e3ab348bd0c815a28c954672d2` / `2eff65742c5f998e8f22c8e12cc83a82b2a194c6` — display learning artifacts in Task detail and refresh them from Agent Run events.\n- `b3300d82b8e16674022b17b7dc5adce6f147a5ad` — prevent learner curriculum reads from exposing quiz answer keys.
 
 ## Security and integrity boundaries
 
