@@ -104,12 +104,12 @@ async def persist_browser_download(
     if not hmac.compare_digest(digest, declared_sha256.lower()): raise HTTPException(422, "browser_download_checksum_mismatch")
     valid = {
         "application/pdf": content.startswith(b"%PDF-"),
-        "image/png": content.startswith(b"\\x89PNG\\r\\n\\x1a\\n"),
-        "image/jpeg": content.startswith(b"\\xff\\xd8\\xff"),
+        "image/png": content.startswith(b"\x89PNG\\r\\n\x1a\\n"),
+        "image/jpeg": content.startswith(b"\xff\xd8\xff"),
         "image/webp": content.startswith(b"RIFF") and content[8:12] == b"WEBP",
-        "application/zip": content.startswith((b"PK\\x03\\x04", b"PK\\x05\\x06")),
-        "text/plain": b"\\x00" not in content, "text/csv": b"\\x00" not in content,
-        "application/json": b"\\x00" not in content,
+        "application/zip": content.startswith((b"PK\x03\x04", b"PK\x05\x06")),
+        "text/plain": b"\x00" not in content, "text/csv": b"\x00" not in content,
+        "application/json": b"\x00" not in content,
     }
     if declared_mime not in valid or not valid[declared_mime]: raise HTTPException(415, "browser_download_signature_or_mime_invalid")
     if declared_mime in {"text/plain", "text/csv", "application/json"}:

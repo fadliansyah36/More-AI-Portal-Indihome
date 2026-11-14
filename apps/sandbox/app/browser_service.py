@@ -21,13 +21,13 @@ MAX_DOWNLOAD_BYTES = 10_000_000
 
 def _detect_download_mime(data: bytes) -> str:
     if data.startswith(b"%PDF-"): return "application/pdf"
-    if data.startswith(b"\\x89PNG\\r\\n\\x1a\\n"): return "image/png"
-    if data.startswith(b"\\xff\\xd8\\xff"): return "image/jpeg"
+    if data.startswith(b"\x89PNG\\r\\n\x1a\\n"): return "image/png"
+    if data.startswith(b"\xff\xd8\xff"): return "image/jpeg"
     if data.startswith(b"RIFF") and data[8:12] == b"WEBP": return "image/webp"
-    if data.startswith((b"PK\\x03\\x04", b"PK\\x05\\x06")): return "application/zip"
+    if data.startswith((b"PK\x03\x04", b"PK\x05\x06")): return "application/zip"
     try: value = data.decode("utf-8", errors="strict")
     except UnicodeDecodeError: return "application/octet-stream"
-    if "\\x00" in value: return "application/octet-stream"
+    if "\x00" in value: return "application/octet-stream"
     if value.lstrip().startswith(("{", "[")):
         try:
             import json
@@ -42,7 +42,7 @@ async def _clamav_scan(data: bytes) -> None:
     if not host: raise RuntimeError("download_malware_scanner_not_configured")
     reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=5)
     try:
-        writer.write(b"zINSTREAM\\0")
+        writer.write(b"zINSTREAM\0")
         await writer.drain()
         for offset in range(0, len(data), 65536):
             chunk = data[offset:offset + 65536]
