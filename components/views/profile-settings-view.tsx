@@ -21,6 +21,7 @@ import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 import { profileApi, customerApi, notificationApi } from '@/lib/api/client';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { PersonalMemorySettings } from '@/components/views/personal-memory-settings';
 
 interface ProfileSettingsViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -333,6 +334,8 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
           <span className="text-xs font-bold">Keluar Akun</span>
         </button>
       </div>
+
+      <PersonalMemorySettings />
 
       {editProfile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
