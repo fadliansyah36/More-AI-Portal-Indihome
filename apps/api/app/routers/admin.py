@@ -363,19 +363,21 @@ async def review_skill_permissions(skill_id: UUID, install_id: UUID, body: Skill
         and bool(source_files)
     )
     execution_enabled = body.decision == "approved" and release_gate and package_ready
-    updated = await repo.update("moreai_skill_installs", {
-        "id": f"eq.{install['id']}", "owner_user_id": f"eq.{install['owner_user_id']}",
-    }, {
-        "permission_status": body.decision,
-        "granted_permissions": body.granted_permissions if body.decision == "approved" else [],
-        "execution_enabled": execution_enabled,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+    reviewed = await repo.rpc("moreai_review_skill_permissions", {
+        "p_skill_id": str(skill_id),
+        "p_install_id": str(install["id"]),
+        "p_actor_user_id": str(principal["id"]),
+        "p_decision": body.decision,
+        "p_granted_permissions": body.granted_permissions if body.decision == "approved" else [],
+        "p_review_note": body.review_note or "",
+        "p_execution_enabled": execution_enabled,
     })
-    if not updated:
+    if not isinstance(reviewed, dict) or not reviewed.get("install_id"):
         raise HTTPException(409, "skill_permission_review_conflict")
     return {
-        "items": updated, "count": len(updated), "execution_enabled": execution_enabled,
+        "items": [reviewed], "count": 1,
+        "execution_enabled": bool(reviewed.get("execution_enabled")),
         "release_gate_passed": release_gate, "package_ready": package_ready,
         "review_note": body.review_note,
-        "notice": "Execution remains disabled unless both server release gates are enabled and the immutable source, validation, license and publication gates are satisfied.",
+        "notice": "Permission decision and audit record were committed atomically. Execution remains disabled unless both server release gates and all package trust gates are satisfied.",
     }
