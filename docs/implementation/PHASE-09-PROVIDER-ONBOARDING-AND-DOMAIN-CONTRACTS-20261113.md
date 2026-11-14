@@ -140,6 +140,8 @@ Phase 09 remains **IN PROGRESS**. Source integration for available Customer cont
 - Required configuration is documented in [Agent Configuration & Create Studio report](./PHASE-09-AGENT-CONFIGURATION-CAPABILITY-REGISTRY-CREATE-STUDIO-20261114.md). No Runway API key or pricing values were supplied, no provider request was made and the adapter is not live until the full configuration gate passes.
 - Official docs: [Runway Dev API Reference](https://docs.dev.runwayml.com/api/).
 
-- The current Runway adapter is intentionally limited to model `gen4.5` and durations `5` or `10` seconds; other model/duration combinations remain unavailable until their API parameters and price map are explicitly added.
+- The current Runway adapter is intentionally limited to model `gen4.5` and durations from `2` to `10` seconds; other model/duration combinations remain unavailable until their API parameters and price map are explicitly added.
 
 - Image adapter model alignment was updated to current documented `gpt-image-2.5-flare` by default, with `gpt-image-2.5-sunburst` as the precision-focused alternative. The tool schema supports the current quality options `low/medium/high/xhigh/max/auto` and background `auto/opaque/transparent`; the operator's price map remains mandatory.
+
+- Runway Dev's official Text-to-Video reference confirms Gen-4.5 accepts 2–10 second duration and `1280:720` / `720:1280` ratios; the worker tool schema and adapter now expose that range. See [Runway Text to Video API](https://docs.dev.runwayml.com/api/) and [input/ratio constraints](https://docs.dev.runwayml.com/assets/inputs/).
