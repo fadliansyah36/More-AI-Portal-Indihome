@@ -135,7 +135,7 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
               <button key={path.id} type="button" onClick={() => openLearningPath(path.id)} className="w-full rounded-2xl border border-slate-200 p-3 text-left transition hover:border-red-200 hover:bg-red-50/30">
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-xs font-bold text-slate-900">{path.title}</span>
-                  <span className="shrink-0 text-[10px] font-semibold text-red-600">{path.progress.lessons_completed}/{path.progress.lessons_started} lesson selesai</span>
+                  <span className="shrink-0 text-[10px] font-semibold text-red-600">{path.progress.lessons_completed}/{path.progress.lessons_total} lesson selesai</span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-[11px] text-slate-500">{path.description || path.learning_goal || 'Kurikulum personal MoreAI'}</p>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
