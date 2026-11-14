@@ -132,3 +132,5 @@ Phase 09 source integration is substantially reconciled, but the following remai
 - Removed invalid nested interactive buttons from the task card, retaining the outer task-detail action and a non-interactive status indicator.
 - Commits: `41d394731bbcc512ca35ebb2cd2c63f64f9740f8` and `e2cff38d614f87dcda1013f777849af8a358717b`.
 - This is source-level correction only. No browser, accessibility, test, lint, typecheck or build verification was run.
+
+- Chat model-routing visibility: the Customer composer now reads `/api/v1/models/capabilities` through the typed catalog client and displays enabled provider/model capability metadata. The UI correctly describes routing as automatic and backend-controlled; no customer-side provider override was added. Commit `33ea20b19a7bbe4d064ace8da8f9c83c336c9b09`. Source-only; not browser-verified.
