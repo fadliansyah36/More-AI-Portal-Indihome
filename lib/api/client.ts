@@ -1195,10 +1195,11 @@ export type CustomerLearningPathDetail = {
       id: string; lesson_index: number; title: string; content_md: string;
       objectives: string[]; content_version: number; status: string;
       progress: { status: string; progress_percent: number; completed_at: string | null } | null;
-      quizzes: Array<{ id: string; title: string; questions: unknown[]; pass_score: number }>;
+      quizzes: Array<{ id: string; title: string; questions: unknown[]; pass_score: number; attempts: Array<{ id: string; score: number; passed: boolean; feedback: Record<string, unknown>; submitted_at: string }> }>;
     }>;
   }>;
   enrollment: { id: string; status: string; enrolled_at: string } | null;
+  assessments: Array<{ id: string; module_id: string | null; lesson_id: string | null; quiz_id: string | null; run_id: string; assessment_type: string; score: number | null; rubric: unknown[]; feedback: Record<string, unknown>; created_at: string }>;
 };
 
 export const learningApi = {
@@ -1207,6 +1208,11 @@ export const learningApi = {
   ),
   path: (pathId: string) => moreAiCustomerApi<CustomerLearningPathDetail>(
     '/api/v1/customer/learning/paths/' + encodeURIComponent(pathId),
+  ),
+  lessonVersions: (pathId: string, lessonId: string) => moreAiCustomerApi<{ items: Array<{
+    id: string; version: number; content_md: string; objectives: string[]; source_run_id: string | null; created_at: string;
+  }>; count: number }>(
+    '/api/v1/customer/learning/paths/' + encodeURIComponent(pathId) + '/lessons/' + encodeURIComponent(lessonId) + '/versions',
   ),
   progressDetail: (limit = 100) => moreAiCustomerApi<{ items: Array<{
     id: string; path_id: string; module_id: string; lesson_id: string; status: string;
