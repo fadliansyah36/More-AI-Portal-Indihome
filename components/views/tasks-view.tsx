@@ -76,7 +76,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   const [selectedRun, setSelectedRun] = useState<CustomerAgentRun | null>(null);
   const [runSteps, setRunSteps] = useState<CustomerWorkflowStep[]>([]);
   const [runActivity, setRunActivity] = useState<CustomerAgentRunActivity[]>([]);
-  const [runProgress, setRunProgress] = useState<CustomerAgentRunProgress | null>(null);\n  const [learningRunArtifacts, setLearningRunArtifacts] = useState<Array<{ id: string; artifact_type: string; resource_id: string; payload: Record<string, unknown>; created_at: string }>>([]);
+  const [runProgress, setRunProgress] = useState<CustomerAgentRunProgress | null>(null);
+  const [learningRunArtifacts, setLearningRunArtifacts] = useState<Array<{ id: string; artifact_type: string; resource_id: string; payload: Record<string, unknown>; created_at: string }>>([]);
   const [runDetailLoading, setRunDetailLoading] = useState(false);
   const [runDetailError, setRunDetailError] = useState<string | null>(null);
   const [cancellingRun, setCancellingRun] = useState(false);
