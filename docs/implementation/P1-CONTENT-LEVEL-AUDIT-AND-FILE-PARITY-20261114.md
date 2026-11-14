@@ -953,3 +953,51 @@ Implement a first-party **Connections & Integrations** capability inside the exi
 These test files were read as source only. **No tests were executed**, per explicit instruction.
 
 **Count:** ten additional distinct full-file reviews; tracked total is **118/219**, with **101 remaining**. No build/install/lint/typecheck, staging, deployment, live external account call or Supabase mutation occurred.
+
+
+---
+
+## 25. Sixteenth continuation increment — OpenFuse repository governance and mobile workspace packaging
+
+**Date:** 2026-11-14. Fourteen additional distinct files were fetched in full at pinned commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA | Disposition |
+|---|---|---|
+| `.gitattributes` | `3be184316fe75b2e9f9e23f2623ece664a07ca39` | ARCHIVE-ONLY |
+| `.github/ISSUE_TEMPLATE/bug_report.yml` | `71e83996e9141f7b757f051478ae67a589fe3188` | ARCHIVE-ONLY |
+| `.github/ISSUE_TEMPLATE/feature_request.yml` | `128ee435ff4ecd30ab3238ccaf45d5c4e4ede56a` | ARCHIVE-ONLY |
+| `.github/pull_request_template.md` | `0e9049b5b29551ef15fce57d126b0590331fd84e` | ARCHIVE-ONLY |
+| `.gitignore` | `d514a5df5b20859f91d94bb2d20acd1467e96efc` | ARCHIVE-ONLY |
+| `.npmrc` | `61e34c2e5dde6b5b6b9d1a478945726c27993d4b` | ARCHIVE-ONLY |
+| `CHANGELOG.md` | `ae88f8980abe48f8d6a9611745afd4134b98a56a` | ARCHIVE-ONLY |
+| `CONTRIBUTING.md` | `f78e5fff1ed2183f6d4503dfdcd5778e8ab83fc9` | ARCHIVE-ONLY |
+| `apps/computer/.dockerignore` | `3a7d1e85c81e0c88ccb70c41dc6a97f8061f57b0` | ARCHIVE-ONLY |
+| `apps/mobile/README.md` | `7116de34d5ab515b9e790f17ae2f36052b798398` | ARCHIVE-ONLY |
+| `apps/mobile/app.json` | `b7285ebfc64a84f0c1c855bf598b3f5873b8a8cb` | EXCLUDE from active product UI |
+| `apps/mobile/index.js` | `bebb4ded2c6a74cbd38fa9f6e89e2520d236568a` | EXCLUDE from active product UI |
+| `apps/mobile/metro.config.js` | `5f2d3b0d0b5204d62d1e48938fbe8854cb34f53f` | ARCHIVE-ONLY |
+| `apps/mobile/package.json` | `a468dc645be3aeff4f888b5eab08531662f87a8c` | ARCHIVE-ONLY |
+
+### Findings and MoreAI disposition
+
+- Repository governance files establish LF normalization, binary treatment, environment/profile exclusion, and contributor expectations. They are source-governance evidence only; do not transplant OpenFuse's CI, dependency manager or issue workflow into MoreAI.
+- The upstream bug-report template explicitly asks contributors to redact credentials and personal data and prohibits attaching `.env` or database files. MoreAI issue/support templates should preserve this data-minimization principle.
+- The upstream PR template requires verification evidence and a separate integration-limit declaration. MoreAI implementation reports should likewise distinguish checks actually run from paths that remain unverified; this aligns with the user's no-real-test/no-staging instruction.
+- CONTRIBUTING prescribes Node 24 and pnpm 11.19.0, installation, builds and browser/Docker checks. These commands were read but **not executed**. Upstream package requirements remain isolated from the MoreAI frontend/backend dependency graph.
+- OpenFuse mobile README confirms a standalone Expo/React Native application with its own Chat, Activity, Ideas, Goals, Apps, Mail, Calendar, Browser, Files and Connections UI. It uses its own API, owner session and in-memory token behavior. This is useful capability inventory, not permission to import its shell or state layer.
+- The mobile README's described OAuth browser handoff, read-only scopes by default, explicit proposal review for mail/calendar writes, durable task state, and queue/stop behavior are useful interaction contracts. They must map to MoreAI's existing Next.js UI, Supabase identity, FastAPI API client, OpenManus durable Agent Runs and MoreAI audit/approval records.
+- The Expo config declares separate application identity, native bundle identifiers and PDF/document plugins. These are not MoreAI app configuration and must remain archive-only.
+- The mobile package manifest introduces a second React/React Native/Expo dependency surface, CopilotKit React Native and platform-specific PDF modules. It must not be merged into the existing Next.js customer runtime or create a second customer application.
+- The Metro resolver patch for `jose` is specific to Expo's browser/native resolution and has no demonstrated need in MoreAI's Next.js bundler.
+- `.dockerignore` restricts the computer image build context to Dockerfile and file bridge. This is a useful minimization pattern, but does not independently establish runtime sandbox security.
+
+### Impact on MoreAI capability plan
+
+The mobile documentation strengthens the product mapping for a single Connections Center and unified Workspace context:
+1. Mail, Calendar, Files, Browser and Tasks are workspace capability panes, not independent applications.
+2. Connection status and OAuth state must come from server-owned connector records and the authenticated MoreAI tenant.
+3. Write scopes and side-effecting actions remain disabled until an explicit, version-bound approval is recorded.
+4. Task/queue status must project canonical durable Agent Run state; client queue state is only draft/follow-up presentation.
+5. Native/PDF/Browser components from OpenFuse are not imported; missing MoreAI UI is built only after the mandatory integration gates and using the protected MoreAI design system.
+
+**Count:** fourteen additional distinct full-file reviews; tracked total is **132/219**, with **87 remaining**. Static source/config/documentation review only. No dependency installation, script execution, build/lint/typecheck/tests, browser/provider/API probe, staging, deployment or Supabase mutation occurred.
