@@ -1216,3 +1216,18 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Report: [Create Studio runtime routing increment](./PHASE-09-CUSTOMER-CREATE-STUDIO-RUNTIME-ROUTING-20261114.md).
 - No tests, lint, typecheck, build, browser/API/worker runtime checks, provider calls, staging, migration or deployment were run.
 - Phase 09 remains IN PROGRESS. Next: Customer Memory privacy lifecycle and safe retry/regenerate contract reconciliation, followed by remaining Customer action closure. Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
+
+
+## 2026-11-14 — Customer Runtime, Memory Privacy, Retry & Workflow Integration
+
+- Added Personal Memory preference/items schema, owner-scoped RLS, service-only privileges, consent RPC and atomic clear-all RPC. Migration `20261114010000_moreai_customer_personal_memory_privacy.sql` was applied to the bound MoreAIdb Supabase project; connector returned success.
+- Added FastAPI owner-scoped Personal Memory review, consent, create, correction, retention, item deletion and clear-all routes. Profile Settings now exposes consent, review, edit, disable, retention and delete controls.
+- Worker loads Personal Memory only when the owner has active consent. User-authored notes are isolated from conversation history, bounded, and passed as untrusted context to OpenManus runtime. No chat or file auto-ingestion is enabled.
+- Added safe manual retry for failed/timed-out/expired runs using the canonical atomic enqueue RPC and Idempotency-Key. Manual rerun is blocked when durable events show side-effecting tool activity; it creates a new run and does not claim checkpoint resume.
+- Added retry actions in Chat and Task detail. Worker automatic retries and approval resume remain the checkpoint-aware recovery paths.
+- Agent Studio now receives code-registered Manus, Planning and ToolCall runtimes even when no database definitions are seeded; DB definitions can customize display metadata or disable a runtime. Capability tags and default tool mappings are derived from the OpenManus tool catalog.
+- Workflow Progress now subscribes to authenticated durable SSE while a run is expanded and refreshes persisted run, step and activity projections.
+- Create Studio continues to route text authoring to Manus and multi-step work to Planning; image generation remains fail-closed and video output remains script/storyboard only until a real media provider adapter exists.
+- Report: [Customer Runtime, Memory Privacy, Retry & Workflow Integration](./PHASE-09-CUSTOMER-RUNTIME-MEMORY-RETRY-WORKFLOW-INTEGRATION-20261114.md).
+- No tests, lint, typecheck, build, browser/API/worker runtime checks, provider calls, staging or deployment were run. Supabase migration application is the only live database operation.
+- Phase 09 remains IN PROGRESS. Remaining: full Customer API action audit, dynamic agent config/worker capability reporting, scheduled memory purge, media provider activation and provider-gated business contracts. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
