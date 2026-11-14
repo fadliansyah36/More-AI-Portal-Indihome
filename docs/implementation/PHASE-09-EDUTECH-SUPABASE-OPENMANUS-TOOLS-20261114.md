@@ -72,7 +72,9 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 - `2d36f886bc1595e725a711d0b50bb554ea6a4b76` — add path/enrollment completion rollup to progress RPC; Supabase migration applied successfully.
 - `3877a917eec65cd6a82615b5f56d4d14fd737ee0` — calculate curriculum progress against total lesson count.
 - `4cc27f4d0a9c7eebcffb5825bd19f0bca0525254` — update typed total-lesson progress contract.
-- `2a4ef0efd7927a040814f6baa33c33c0dc18a282` — show completion against total curriculum lessons.\n- `ae3257864c5d4cf522aabbae55809ebba47d42ea` — add a database-side progress summary view for the curriculum list.\n- `2303b0f72a7a4fed8037c6b79c0f011af87e4407` — use the summary view instead of fetching all lesson rows for path-list cards.
+- `2a4ef0efd7927a040814f6baa33c33c0dc18a282` — show completion against total curriculum lessons.
+- `ae3257864c5d4cf522aabbae55809ebba47d42ea` — add a database-side progress summary view for the curriculum list.
+- `2303b0f72a7a4fed8037c6b79c0f011af87e4407` — use the summary view instead of fetching all lesson rows for path-list cards.
 
 ## UI change gate and visual preservation
 
@@ -92,7 +94,7 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 
 ## Verification and deployment
 
-- Supabase schema migration application: connector returned `success: true`.
+- Supabase schema migration application: all four migrations returned `success: true`.
 - No SQL verification query, test query, unit/integration/E2E test, lint, typecheck, build, browser/API/worker runtime check, provider call, staging or deployment was run, per explicit product-owner instruction.
 - Runtime behavior, worker deployment pickup, frontend rendering and data-flow acceptance remain **NOT VERIFIED**. The implementation is not represented as end-to-end tested or production-validated.
 - No deployment was performed.
