@@ -51,6 +51,7 @@ interface ChatViewProps {
   onBack: () => void;
   initialPrompt?: string;
   initialAgentKey?: 'manus' | 'planning' | 'toolcall';
+  initialAgentConfigurationId?: string | null;
   onNavigateTab?: (tab: NavigationTab) => void;
 }
 
@@ -66,7 +67,7 @@ const toChatCitations = (value: unknown): ChatCitation[] => Array.isArray(value)
     )
   : [];
 
-export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', initialAgentKey = 'manus' }) => {
+export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', initialAgentKey = 'manus', initialAgentConfigurationId = null }) => {
   const { showToast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -338,6 +339,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       const queued = await customerApi.sendMessage(
         activeConversationId, prompt, crypto.randomUUID(), initialAgentKey,
         uploadedAttachments.map((attachment) => attachment.id),
+        initialAgentConfigurationId,
       );
       if (filesToUpload.length > 0) setPendingAttachments([]);
       setActiveRunId(queued.run.id);
