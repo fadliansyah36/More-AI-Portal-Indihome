@@ -124,7 +124,7 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
   - optional `MOREAI_OPENAI_IMAGE_MODEL=gpt-image-2` and `MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS=600`
 - The worker does not register the adapter unless every required variable is present and valid. No key was created or read, no provider request was made, and the adapter is not claimed active in the current deployment.
 - GPT Image organization verification may be required by OpenAI. See [Image generation docs](https://developers.openai.com/api/docs/guides/image-generation) and [pricing details](https://developers.openai.com/api/docs/guides/image-generation#cost-and-latency).
-- Source commits include `b1c403ab`, `373d7c79`, `021e49a9`, `f8afe5ab`, `9a19ee26`, `3b5f51cc`, `d45b3168`, `1aec9d87`, `2944db69`, `7d2bfa5d`, `f427b2e3`, and `f6428265`.
+- Source changes are recorded in the repository history on `main`; this report intentionally avoids a partial or unverified commit-hash list.
 
 
 ## Runway Dev video adapter — source integration follow-up
@@ -146,6 +146,6 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
   - optional `MOREAI_VIDEO_PROVIDER_TIMEOUT_SECONDS=420`, `MOREAI_RUNWAY_POLL_INTERVAL_SECONDS=5`, `MOREAI_MEDIA_MAX_ARTIFACT_BYTES=100000000`
 - No Runway key was created/read, no price/host configuration was supplied, and no provider request was made. The adapter is source-integrated but not registered/active in the current deployment.
 - Runway Dev official reference: [API Reference — Text to video and Task management](https://docs.dev.runwayml.com/api/). Its task detail API advises against polling more frequently than every five seconds; this adapter uses a five-second minimum interval.
-- Source commits include `ededd298`, `58844894`, `3bbf2884`, `0cf8c640`, `d07dbf2e`, `66240d5a`, `93ff1f22`, `fb6ba9d3`, `6570beb4`, `1a97b941`, `f830f508`, and `b4a39920`.
+- Source changes are recorded in the repository history on `main`; this report intentionally avoids a partial or unverified commit-hash list.
 
 - Provider-specific tool execution bounds were added: image generation defaults to 360 seconds (HTTP timeout 300 seconds); video generation defaults to 600 seconds with a maximum 420-second provider poll window to leave time for download, private artifact storage and usage settlement. These bounds are independent from the general 120-second tool timeout.
