@@ -78,8 +78,13 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
     return () => { active = false; };
   }, []);
 
+  const configurationRuntimeAgent = agents.find((agent) => agent.id === configurationRuntime);
   const availableConfigurationTools = toolCatalog.filter((tool) =>
-    tool.key !== 'run' && tool.available_by_default.includes(configurationRuntime) && tool.enabled_by_default,
+    tool.key !== 'run'
+    && tool.available_by_default.includes(configurationRuntime)
+    && tool.enabled_by_default
+    && !!configurationRuntimeAgent?.runtimeAvailable
+    && !!configurationRuntimeAgent.liveToolKeys?.includes(tool.key),
   );
 
   const resetConfigurationForm = () => {
@@ -104,7 +109,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
         name: configurationName.trim(),
         description: configurationDescription.trim(),
         system_prompt: configurationPrompt.trim(),
-        tool_keys: configurationToolKeys,
+        tool_keys: configurationToolKeys.filter((key) => availableConfigurationTools.some((tool) => tool.key === key)),
       };
       const saved = editingConfigurationId
         ? await customerApi.updateAgentConfiguration(editingConfigurationId, payload)
@@ -404,7 +409,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
                     </label>
                   ))}
                 </div>
-              ) : <p className="text-[10px] text-slate-500">Memuat katalog tool runtime…</p>}
+              ) : <p className="text-[10px] text-slate-500">{configurationRuntimeAgent?.runtimeAvailable ? 'Worker belum melaporkan tool yang dapat dipakai untuk runtime ini.' : 'Worker runtime belum online; konfigurasi dapat disimpan dan tool akan tersedia setelah adapter aktif.'}</p>}
             </div>
             {configurationError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-[10px] text-rose-700">{configurationError}</p>}
             <div className="flex gap-2">
