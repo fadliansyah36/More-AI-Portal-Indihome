@@ -678,3 +678,49 @@ Three additional guessed filenames in this batch (`approval-card.tsx`, `task-car
 **Reconciled path count:** the reproducible pinned-tree set is now **48/219 fully reviewed paths**, with **171 remaining**. This count is derived from the explicit reviewed-path set, not the previous narrative totals.
 
 No MoreAI product code or Supabase was changed. No tests, builds, installs, lint, typechecks, staging or deployment were run.
+
+
+---
+
+## 17. OpenFuse external connection / plugin capability assessment
+
+**Date:** 2026-11-14. This is an architecture/capability assessment from the pinned OpenFuse source and its feature/roadmap documents. It does not add to the 219-blob full-review counter because these paths were already included in prior file reviews.
+
+**Additional pinned evidence inspected:**
+- `README.md` — `1e07e33e37072b08b19ab2f5deddeed1cd709971`
+- `docs/FEATURES.md` — `c44b5dca81e8970f7c93649282f9f55515636f60`
+- `ROADMAP.md` — `83c9773347e743cf122e8c87b3fbcdbe3e9455ab`
+- `docs/VERIFICATION.md` — `9453bf7a41af66b40c4a53c90abb494911213b96`
+- `apps/server/src/google-auth.ts` — `ae56eb481b6cab1a52b3994d59090156ba97e193`
+- `apps/server/src/engine/routes.ts` — `0d616aa9db5eb312a28911bba71f2c19f3f6e0ba`
+- `apps/server/src/engine/service.ts` — `54684937f82708ae16cadd074fdb505b3c947904`
+
+### What OpenFuse actually offers
+
+1. **Google Workspace (Gmail + Google Calendar):** implemented OAuth adapter and capability surfaces are documented. OAuth uses state with a 10-minute expiry, PKCE S256, account/connection generation fencing, server-side encrypted tokens, token refresh, disconnect/revoke, and read/write scopes. The initial scopes include Gmail read, Calendar event read and calendar-list read; elevated write scopes include Gmail send and Calendar events write. Mail send and calendar mutations require a stored review/approval. The source describes reviewed event creation/update/deletion and Gmail drafts/attachments. However, the README explicitly says this is a single-owner deployment behind a shared access key, **not multi-tenant identity**, and live Google account acceptance remains pending in its verification/roadmap documents.
+2. **Connector catalogue:** the feature inventory mentions a searchable capability/status catalogue, Google connection and browser worker. It is not evidence of a broad, production-ready third-party plugin marketplace or universal connector SDK.
+3. **Google Drive / Docs:** explicitly listed as a planned extension, not currently implemented capability in the inspected feature inventory.
+4. **Other providers:** Plaid, health, Instagram, WhatsApp and partner APIs are listed as planned/roadmap items, not available integrations to claim as implemented.
+5. **Remotion:** no Remotion integration, package adapter, OAuth connector, render API or workflow capability was evidenced in the inspected OpenFuse feature/roadmap materials. Treat Remotion as a separate integration to design and implement in MoreAI, subject to its official API and licensing/terms. Do not describe it as an OpenFuse built-in plugin.
+6. **Scheduling:** OpenFuse has durable task/goal/monitor concepts, recurring watches, pause/resume/retry/backoff and worker leases. The feature inventory still lists calendar-driven reminders and broader adaptive planning as remaining work. A recurring monitor/task is not the same as a user-facing calendar scheduler with timezone-aware recurrence, Google Calendar sync, webhook delivery, or a workflow automation designer.
+
+### MoreAI integration direction — Muse-like connected assistant experience
+
+Implement a first-party **Connections & Integrations** capability inside the existing MoreAI customer dashboard (do not transplant OpenFuse UI). It should expose:
+- Discoverable connector catalogue with categories, search, capability descriptions, availability, scopes, connection status and admin policy.
+- OAuth connect/disconnect/reconnect and consent-scope review for Google Workspace; per-user/per-tenant credentials with encryption-at-rest, KMS/envelope key rotation, refresh-token lifecycle, revocation, audit trail and least privilege.
+- Google Calendar: list calendars/events, availability checks, create/update/delete events through explicit action proposals; timezone-aware recurrence and event version/ETag fencing. Gmail: search/read threads, draft and attachments, with separate approval before sending.
+- Scheduling centre: one-time and recurring schedules, timezone, calendar source, trigger conditions, retry/backoff, pause/resume, run history, notifications and approval gates. Persist schedule definitions and run receipts in Supabase PostgreSQL; execute through FastAPI job/worker boundary while OpenManus remains the single planner/agent execution authority.
+- Workflow automation: trigger → condition → OpenManus plan/task → authorized connector action → approval (where high impact) → result/audit. Use idempotency keys and explicit reconciliation for uncertain external writes.
+- Remotion: dedicated provider adapter for rendering video programmatically (composition/template selection, input props/assets, render job submission, progress/webhook/polling, output artifact delivery, usage/quota). Store render jobs, ownership, provider IDs and artifacts in Supabase; credentials only server-side. Treat rendering as a capability invoked by OpenManus workflow, not another agent runtime.
+- Future connectors should use a normalized connector contract (manifest/capabilities, OAuth/API-key auth strategy, scopes, input/output schemas, rate limits, webhook/event contract, retry policy, approval class, audit schema, tenant isolation). Provider-specific adapters live behind FastAPI. No connector receives arbitrary authority simply because it is installed.
+
+### Security and architecture constraints
+- Do not reuse OpenFuse shared `OPENFUSE_ACCESS_KEY` or single-owner identity model in MoreAI. Resolve tenant/user from verified Supabase Auth on the FastAPI server.
+- Do not store provider tokens in browser/mobile state or expose them to OpenManus prompts. A tool receives a narrowly scoped server-side capability handle, never raw long-lived credentials.
+- OAuth scopes are incremental and visible; separate read scopes from high-impact write scopes. Every send, calendar write/delete, external form submit, publish, or render spend must have policy evaluation, explicit confirmation as required, idempotency, audit receipt and spend/quotas.
+- Keep OpenManus as the only agent/planning/runtime authority. OpenFuse browser/desktop execution is an isolated tool capability only, not an alternate autonomous runtime.
+- Use Supabase PostgreSQL and private Supabase Storage as canonical MoreAI persistence. Exclude OpenFuse PGlite/local DB and local credential/file persistence as production source of truth.
+- Do not claim live Google or Remotion connections are operational without user credentials and a permitted acceptance process. Per current user instruction, no live external account tests or staging are to be performed.
+
+**Status:** this assessment is recorded for the MoreAI architecture backlog. It is not an implementation of the connection centre, Google Workspace, scheduling, or Remotion. No app code, dependency, or Supabase mutation was made.
