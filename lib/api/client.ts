@@ -1173,7 +1173,53 @@ export type CustomerLearningProgress = {
   updated_at: string;
 };
 
+export type CustomerLearningPathSummary = {
+  id: string;
+  title: string;
+  description: string;
+  education_level: string;
+  learning_goal: string;
+  status: 'draft' | 'active' | 'completed' | 'archived';
+  created_by_run_id: string;
+  created_at: string;
+  updated_at: string;
+  enrollment: { id: string; status: string; enrolled_at: string } | null;
+  progress: { lessons_started: number; lessons_completed: number; average_percent: number };
+};
+
+export type CustomerLearningPathDetail = {
+  path: CustomerLearningPathSummary;
+  modules: Array<{
+    id: string; module_index: number; title: string; summary: string; estimated_minutes: number;
+    lessons: Array<{
+      id: string; lesson_index: number; title: string; content_md: string;
+      objectives: string[]; content_version: number; status: string;
+      progress: { status: string; progress_percent: number; completed_at: string | null } | null;
+      quizzes: Array<{ id: string; title: string; questions: unknown[]; pass_score: number }>;
+    }>;
+  }>;
+  enrollment: { id: string; status: string; enrolled_at: string } | null;
+};
+
 export const learningApi = {
+  paths: (limit = 50) => moreAiCustomerApi<{ items: CustomerLearningPathSummary[]; count: number }>(
+    '/api/v1/customer/learning/paths?limit=' + Math.max(1, Math.min(100, limit)),
+  ),
+  path: (pathId: string) => moreAiCustomerApi<CustomerLearningPathDetail>(
+    '/api/v1/customer/learning/paths/' + encodeURIComponent(pathId),
+  ),
+  progressDetail: (limit = 100) => moreAiCustomerApi<{ items: Array<{
+    id: string; path_id: string; module_id: string; lesson_id: string; status: string;
+    progress_percent: number; last_run_id: string | null; started_at: string | null;
+    completed_at: string | null; updated_at: string;
+  }>; count: number }>(
+    '/api/v1/customer/learning/progress/detail?limit=' + Math.max(1, Math.min(500, limit)),
+  ),
+  runArtifacts: (runId: string) => moreAiCustomerApi<{ items: Array<{
+    id: string; artifact_type: string; resource_id: string; payload: Record<string, unknown>; created_at: string;
+  }>; count: number }>(
+    '/api/v1/customer/learning/runs/' + encodeURIComponent(runId) + '/artifacts',
+  ),
   progress: () => moreAiCustomerApi<{ items: CustomerLearningProgress[]; count: number; total_count: number }>(
     '/api/v1/customer/learning/progress?limit=100',
   ),
