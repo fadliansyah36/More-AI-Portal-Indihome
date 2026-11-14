@@ -336,27 +336,9 @@ export const FilesView: React.FC = () => {
 
   const openVersionHistory = async (file: CustomerWorkspaceFile & { workspaceId: string; workspaceName: string }) => {
     setHistoryFile(file); setHistoryLoading(true); setHistoryError(null); setFileVersions([]); setHistoryNextCursor(null);
-    try { const result = await workspaceApi.versionsPage(file.workspaceId, file.id, 50); setFileVersions(result.items); setHistoryNextCursor(result.nextCursor); }
+    try { const result = await workspaceApi.versions(file.workspaceId, file.id); setFileVersions(result.items); setHistoryNextCursor(null); }
     catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Gagal memuat riwayat versi file.'); }
     finally { setHistoryLoading(false); }
-  };
-
-  const loadMoreVersions = async () => {
-    if (!historyFile || !historyNextCursor || loadingMoreVersions) return;
-    setLoadingMoreVersions(true);
-    setHistoryError(null);
-    try {
-      const page = await workspaceApi.versionsPage(historyFile.workspaceId, historyFile.id, 50, historyNextCursor);
-      setFileVersions((current) => {
-        const known = new Set(current.map((version) => version.id + ':' + version.version));
-        return [...current, ...page.items.filter((version) => !known.has(version.id + ':' + version.version))];
-      });
-      setHistoryNextCursor(page.nextCursor);
-    } catch (cause) {
-      setHistoryError(cause instanceof Error ? cause.message : 'Halaman riwayat versi berikutnya tidak dapat dimuat.');
-    } finally {
-      setLoadingMoreVersions(false);
-    }
   };
 
   const downloadWorkspaceVersion = async (version: number) => {
