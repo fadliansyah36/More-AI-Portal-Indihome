@@ -66,10 +66,12 @@ class SupabaseUsageAccounting:
         self, *, request_id: str, user_id: str, run_id: str, request_key: str,
         estimated_credits: float, estimated_cost: float,
         workspace_id: str | None, partner_id: str | None,
+        entitlement_key: str | None = None,
+        quota_metric_key: str | None = None,
     ) -> str:
         currency = os.getenv("MOREAI_CREDIT_WALLET_CURRENCY")
-        entitlement_key = os.getenv("MOREAI_LLM_ENTITLEMENT_KEY")
-        quota_metric_key = os.getenv("MOREAI_LLM_QUOTA_METRIC_KEY")
+        entitlement_key = entitlement_key or os.getenv("MOREAI_LLM_ENTITLEMENT_KEY")
+        quota_metric_key = quota_metric_key or os.getenv("MOREAI_LLM_QUOTA_METRIC_KEY")
         if not currency or not entitlement_key or not quota_metric_key:
             raise RuntimeError("wallet_entitlement_and_quota_policy_must_be_configured")
         wallets = await self.client.select("wallet_accounts", {
