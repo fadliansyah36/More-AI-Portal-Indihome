@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 from typing import Any
@@ -24,7 +25,7 @@ class SupabaseSkillResolver:
                 "id": f"eq.{skill_id}", "owner_user_id": f"eq.{user_id}",
                 "validation_status": "eq.validated", "license_status": "eq.approved",
                 "publication_status": "eq.published",
-                "select": "id,version,content_sha256,manifest,requested_permissions",
+                "select": "id,version,content_sha256,source_path,source_blob_sha,manifest,requested_permissions",
                 "limit": "1",
             })
             if not packages:
@@ -45,11 +46,39 @@ class SupabaseSkillResolver:
                 raise PermissionError("skill_permission_snapshot_invalid")
             files = await self.client.select("moreai_skill_source_files", {
                 "skill_package_id": f"eq.{skill_id}", "owner_user_id": f"eq.{user_id}",
-                "select": "relative_path,content_sha256,text_content,byte_size,media_type",
+                "select": "relative_path,git_blob_sha,content_sha256,text_content,binary_content_base64,byte_size,media_type",
                 "order": "relative_path.asc", "limit": "40",
             })
             if not files:
                 raise PermissionError("skill_source_files_missing")
+            total_bytes = 0
+            root_verified = False
+            for source_file in files:
+                relative_path = source_file.get("relative_path")
+                size = source_file.get("byte_size")
+                if not isinstance(relative_path, str) or not isinstance(size, int) or size < 0 or size > 524288:
+                    raise PermissionError("skill_source_file_metadata_invalid")
+                total_bytes += size
+                if total_bytes > 5 * 1024 * 1024:
+                    raise PermissionError("skill_source_package_size_limit_exceeded")
+                if isinstance(source_file.get("text_content"), str):
+                    raw = source_file["text_content"].encode("utf-8")
+                elif isinstance(source_file.get("binary_content_base64"), str):
+                    try:
+                        raw = base64.b64decode(source_file["binary_content_base64"], validate=True)
+                    except Exception as exc:
+                        raise PermissionError("skill_source_binary_encoding_invalid") from exc
+                else:
+                    raise PermissionError("skill_source_file_content_missing")
+                if len(raw) != size or hashlib.sha256(raw).hexdigest() != source_file.get("content_sha256"):
+                    raise PermissionError("skill_source_sha256_mismatch")
+                git_blob = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\\0" + raw).hexdigest()
+                if git_blob != source_file.get("git_blob_sha"):
+                    raise PermissionError("skill_source_git_blob_mismatch")
+                if relative_path == package.get("source_path"):
+                    root_verified = git_blob == package.get("source_blob_sha") and hashlib.sha256(raw).hexdigest() == package.get("content_sha256")
+            if not root_verified:
+                raise PermissionError("skill_source_root_provenance_mismatch")
             instruction_files = [
                 item for item in files
                 if isinstance(item.get("text_content"), str)
@@ -72,7 +101,7 @@ class SupabaseSkillResolver:
                 "skill_version": package["version"],
                 "skill_content_sha256": package["content_sha256"],
                 "permission_snapshot": sorted(granted), "event_type": "resolved",
-                "event_detail": {"source_file_count": len(files), "instruction_file_count": len(instruction_files)},
+                "event_detail": {"source_file_count": len(files), "instruction_file_count": len(instruction_files), "verified_total_bytes": total_bytes},
             })
             resolved.append({"snapshot": snapshot, "instructions": body})
         return resolved
