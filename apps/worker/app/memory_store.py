@@ -123,3 +123,35 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
             "run_id": run_id, "token_input": 0, "token_output": 0,
             "metadata": metadata,
         })
+
+
+class SupabasePersonalMemoryStore:
+    """Loads only explicitly consented, user-authored Personal Memory records."""
+
+    def __init__(self, client: WorkerRpcClient):
+        self.client = client
+
+    async def load_for_context(self, *, user_id: str, limit: int = 20) -> list[dict[str, str]]:
+        if not 1 <= limit <= 20:
+            raise ValueError("personal_memory_context_limit_out_of_range")
+        preferences = await self.client.select("moreai_customer_memory_preferences", {
+            "user_id": f"eq.{user_id}",
+            "enabled": "eq.true",
+            "select": "user_id,enabled,consent_version",
+            "limit": "1",
+        })
+        if not preferences:
+            return []
+        from datetime import datetime, timezone
+        rows = await self.client.select("moreai_customer_memories", {
+            "user_id": f"eq.{user_id}",
+            "expires_at": f"gt.{datetime.now(timezone.utc).isoformat()}",
+            "select": "title,content,expires_at",
+            "order": "updated_at.desc,id.desc",
+            "limit": str(limit),
+        })
+        return [
+            {"title": str(row.get("title") or "")[:120], "content": str(row.get("content") or "")[:4000]}
+            for row in rows
+            if isinstance(row.get("title"), str) and isinstance(row.get("content"), str)
+        ]
