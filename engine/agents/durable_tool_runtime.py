@@ -684,6 +684,12 @@ END UNTRUSTED FILE CONTENT"
                     "model_key": response_state.get("model_key"), "rounds": round_no,
                     "citations": citations,
                 }
+                if resolved_skills and self.skill_resolver is not None:
+                    await self.skill_resolver.record_executed(
+                        resolved_skills=resolved_skills,
+                        user_id=context.user_id,
+                        run_id=context.run_id,
+                    )
                 if self.memory_store is not None and context.conversation_id:
                     await self.memory_store.append(
                         conversation_id=context.conversation_id, user_id=context.user_id,
@@ -691,7 +697,7 @@ END UNTRUSTED FILE CONTENT"
                         message=Message.assistant_message(
                             response_text,
                             metadata={
-                                "citations": citations,
+                                "citations": citations[:20],
                                 "memory_type": "episodic",
                                 "memory_scope": "workspace" if context.workspace_id else "personal",
                                 "workspace_id": context.workspace_id,
