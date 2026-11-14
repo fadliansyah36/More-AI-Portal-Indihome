@@ -13,12 +13,14 @@ from engine.tools.catalog import tool_catalog
 from engine.llm.router import ModelRouter
 
 class AgentCatalogItemResponse(BaseModel):
-    id: UUID
+    id: str
     key: str
     name: str
     description: str | None = None
     version: str
     enabled: bool
+    capability_tags: list[str] = []
+    tool_keys: list[str] = []
 
 
 class ToolCatalogItemResponse(BaseModel):
@@ -60,20 +62,43 @@ router = APIRouter(prefix="/api/v1", tags=["catalog"])
 
 @router.get("/agents", response_model=list[AgentCatalogItemResponse])
 async def list_agents(request: Request, user: dict[str, Any] = Depends(customer_principal)):
-    rows = await repository(request).select("agent_definitions", {
-        "enabled": "eq.true", "select": "id,key,name,description,version,enabled",
-        "order": "display_name.asc", "limit": "200",
+    # The code-registered runtimes are the source of executable agents. Database
+    # definitions may customize their customer-facing name/description or disable
+    # a runtime, but an empty definitions table must not make Agent Studio empty.
+    configured_rows = await repository(request).select("agent_definitions", {
+        "select": "id,key,name,description,version,enabled",
+        "order": "name.asc", "limit": "200",
     })
-    # Do not advertise DB definitions that have no registered production runtime.
-    supported = {"manus", "planning", "toolcall"}
-    sandbox_image = os.getenv("MOREAI_SANDBOX_IMAGE", "")
-    if (
-        os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
-        and os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
-        and "@sha256:" in sandbox_image
-    ):
-        supported.add("swe")
-    return [row for row in rows if str(row.get("key", "")).lower() in supported]
+    configured = {str(row.get("key", "")).lower(): row for row in configured_rows}
+    runtime_descriptors = {
+        "manus": ("Manus", "General-purpose OpenManus agent for chat, research, and tool-assisted work."),
+        "planning": ("Planning Agent", "Creates durable multi-step plans and coordinates dependency-aware execution."),
+        "toolcall": ("ToolCall Agent", "Executes registered OpenManus tools through policy and approval controls."),
+    }
+    tools = tool_catalog()
+    items: list[dict[str, Any]] = []
+    for key, (default_name, default_description) in runtime_descriptors.items():
+        definition = configured.get(key)
+        if definition is not None and not bool(definition.get("enabled")):
+            continue
+        mapped_tools = [
+            tool for tool in tools
+            if key in tool.get("available_by_default", []) and bool(tool.get("enabled_by_default"))
+        ]
+        capability_tags = sorted({
+            str(tag) for tool in mapped_tools for tag in tool.get("capability_tags", [])
+        })
+        items.append({
+            "id": str(definition.get("id")) if definition and definition.get("id") else key,
+            "key": key,
+            "name": str(definition.get("name") or default_name) if definition else default_name,
+            "description": str(definition.get("description") or default_description) if definition else default_description,
+            "version": str(definition.get("version") or "1") if definition else "1.0.0",
+            "enabled": True,
+            "capability_tags": capability_tags,
+            "tool_keys": [str(tool["key"]) for tool in mapped_tools],
+        })
+    return items
 
 
 @router.get("/models/capabilities", response_model=ModelCapabilityListResponse)
