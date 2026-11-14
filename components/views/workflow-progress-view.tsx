@@ -242,6 +242,31 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     }
   };
 
+  // Manual retry is a new durable run, not an in-place checkpoint rewind.
+  // Keep the UI allowlist aligned with FastAPI; backend replay-safety checks remain authoritative.
+  const retryableRunStatuses = new Set(['failed', 'timed_out', 'expired']);
+  const retryAgentRun = async (runId: string) => {
+    if (runActionId) return;
+    setRunActionId(runId);
+    setRunPaginationError(null);
+    try {
+      await customerApi.retryRun(runId, crypto.randomUUID());
+      const page = await customerApi.agentRunsPage(50);
+      setRuns(page.items);
+      setNextRunCursor(page.nextCursor);
+      setExpandedRunId(null);
+      setRunSteps((current) => { const next = { ...current }; delete next[runId]; return next; });
+      setRunActivity((current) => { const next = { ...current }; delete next[runId]; return next; });
+      setRunProgress((current) => { const next = { ...current }; delete next[runId]; return next; });
+    } catch (cause) {
+      setRunPaginationError(cause instanceof Error
+        ? 'Retry tidak dapat dijalankan: ' + cause.message
+        : 'Retry tidak dapat dijalankan. Periksa kelayakan replay pada backend.');
+    } finally {
+      setRunActionId(null);
+    }
+  };
+
   const loadMoreArtifacts = async () => {
     if (!nextArtifactCursor || loadingMoreArtifacts) return;
     setLoadingMoreArtifacts(true);
@@ -408,6 +433,11 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                       {!terminal && (
                         <button type="button" onClick={() => void cancelAgentRun(run.id)} disabled={runActionId === run.id} className="rounded-lg border border-rose-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-rose-700 disabled:opacity-50">
                           {runActionId === run.id ? 'Meminta pembatalan…' : 'Batalkan run'}
+                        </button>
+                      )}
+                      {retryableRunStatuses.has(run.status) && (
+                        <button type="button" onClick={() => void retryAgentRun(run.id)} disabled={runActionId === run.id} className="rounded-lg border border-blue-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-blue-700 disabled:opacity-50">
+                          {runActionId === run.id ? 'Mengirim retry…' : 'Retry sebagai run baru'}
                         </button>
                       )}
                     </div>
