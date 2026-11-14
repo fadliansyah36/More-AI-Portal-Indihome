@@ -23,9 +23,9 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [handoffNotice, setHandoffNotice] = useState<string | null>(null);
   const [mediaCapabilities, setMediaCapabilities] = useState<{
-    image_generation: { available: boolean; worker_count: number; reason: string | null };
-    video_generation: { available: boolean; worker_count: number; reason: string | null };
-    file_generation: { available: boolean; worker_count: number; reason: string | null };
+    image_generation: { available: boolean; worker_count: number; provider: string | null; reason: string | null };
+    video_generation: { available: boolean; worker_count: number; provider: string | null; reason: string | null };
+    file_generation: { available: boolean; worker_count: number; provider: string | null; reason: string | null };
   } | null>(null);
   const [mediaCapabilitiesLoading, setMediaCapabilitiesLoading] = useState(true);
 
@@ -226,7 +226,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
               : !mediaCapabilities
                 ? 'Status provider belum dapat diverifikasi'
                 : mediaCapability?.available
-                  ? `Tersedia · ${mediaCapability.worker_count} worker`
+                  ? `Tersedia · ${mediaCapability.provider || 'provider'} · ${mediaCapability.worker_count} worker`
                   : 'Belum tersedia pada worker'
             : null;
 
