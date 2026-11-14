@@ -309,7 +309,7 @@ async def review_skill_package(skill_id: UUID, body: SkillRegistryReviewRequest,
                 "reviewed_at": datetime.now(timezone.utc).isoformat(),
             },
         },
-        "updated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
     })
     if not updated:
         raise HTTPException(409, "skill_review_conflict")
@@ -323,15 +323,15 @@ class SkillPermissionReviewRequest(BaseModel):
 
 
 @router.patch("/skills/{skill_id}/permissions")
-async def review_skill_permissions(skill_id: UUID, body: SkillPermissionReviewRequest, request: Request, principal=Depends(skill_registry_reviewer)):
+async def review_skill_permissions(skill_id: UUID, install_id: UUID, body: SkillPermissionReviewRequest, request: Request, principal=Depends(skill_registry_reviewer)):
     allowed = {"network.read", "workspace.read", "workspace.write", "browser.navigate", "browser.download", "search.web", "files.read", "files.write", "calendar.read", "calendar.write", "gmail.read", "gmail.send"}
     if len(set(body.granted_permissions)) != len(body.granted_permissions) or any(key not in allowed for key in body.granted_permissions):
         raise HTTPException(422, "skill_permission_key_not_allowlisted")
     repo = repository(request)
     rows = await repo.select("moreai_skill_installs", {
-        "skill_package_id": f"eq.{skill_id}",
+        "skill_package_id": f"eq.{skill_id}", "id": f"eq.{install_id}",
         "select": "id,owner_user_id,permission_request,permission_status",
-        "limit": "100",
+        "limit": "1",
     })
     if not rows:
         raise HTTPException(404, "skill_installation_not_found")
@@ -344,7 +344,7 @@ async def review_skill_permissions(skill_id: UUID, body: SkillPermissionReviewRe
             "id": f"eq.{install['id']}", "owner_user_id": f"eq.{install['owner_user_id']}",
         }, {
             "permission_status": body.decision,
-            "granted_permissions": body.granted_permissions if approved else [],
+            "granted_permissions": body.granted_permissions if body.decision == "approved" else [],
             "execution_enabled": False,
             "updated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
         })
