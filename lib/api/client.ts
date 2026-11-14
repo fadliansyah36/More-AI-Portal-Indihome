@@ -828,8 +828,11 @@ export const customerApi = {
       `/api/v1/agent-runs/${encodeURIComponent(runId)}/logs?after=${Math.max(0, after)}&limit=${Math.max(1, Math.min(500, limit))}`,
     ),
   getRunEvents: (runId: string, after = 0) => moreAiCustomerApi<Array<{
-    id: string; event_type: string; sequence: number; payload: Record<string, unknown>; created_at: string;
-  }>>(`/api/v1/agent-runs/${runId}/events?after=${Math.max(0, after)}`),
+    id: string; event_type: string; sequence: number; payload: Record<string, unknown>;
+    created_at: string; checkpoint: Record<string, unknown> | null;
+  }>>(
+    `/api/v1/agent-runs/${encodeURIComponent(runId)}/events?after=${Math.max(0, after)}`,
+  ),
   streamRun: (runId: string, after = 0) => `/api/v1/customer/agent-runs/${runId}/stream?after=${Math.max(0, after)}&wait_seconds=30`,
   networkSessions: (limit = 50) => moreAiCustomerApi<CustomerNetworkSession[]>(
     `/api/v1/customer/network-sessions?limit=${Math.min(100, Math.max(1, limit))}`,
