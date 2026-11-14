@@ -545,10 +545,10 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                   {cancellingRun ? 'Mengirim pembatalan…' : 'Batalkan Agent Run'}
                 </button>
               )}
-              {isTerminalAgentRunStatus(selectedRun.status) && ['failed', 'cancelled', 'timed_out', 'expired'].includes(selectedRun.status) && (
+              {isTerminalAgentRunStatus(selectedRun.status) && ['failed', 'timed_out', 'expired'].includes(selectedRun.status) && (
                 <button type="button" onClick={() => void retrySelectedRun()} disabled={retryingRun}
                   className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
-                  {retryingRun ? 'Menjadwalkan retry…' : 'Jalankan ulang Agent'}
+                  {retryingRun ? 'Menjadwalkan retry…' : 'Jalankan ulang (run baru)'}
                 </button>
               )}
             </div>
