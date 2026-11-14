@@ -540,6 +540,7 @@ async def send_customer_message(
     if conversation.get("workspace_id"):
         from app.routers.workspaces import _workspace_access
         await _workspace_access(repo, UUID(str(conversation["workspace_id"])), principal["id"], "agent.run.create")
+    await _require_live_customer_runtime(repo, body.agent_key)
     if body.agent_configuration_id:
         return await repo.rpc("moreai_enqueue_chat_run_with_config", {
             "p_user_id": principal["id"],
@@ -1062,6 +1063,22 @@ class CustomerAgentConfigurationResponse(BaseModel):
     updated_at: datetime
 
 
+async def _require_live_customer_runtime(repo: Any, runtime_key: str) -> None:
+    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=90)).isoformat()
+    snapshots = await repo.select("moreai_worker_capability_snapshots", {
+        "last_seen_at": f"gt.{cutoff}",
+        "select": "runtime_keys,status",
+        "limit": "100",
+    })
+    if not any(
+        row.get("status") == "healthy"
+        and isinstance(row.get("runtime_keys"), list)
+        and runtime_key in row["runtime_keys"]
+        for row in snapshots
+    ):
+        raise HTTPException(503, "No healthy worker currently advertises this Agent runtime; the task was not queued")
+
+
 def _validate_customer_agent_tool_keys(runtime_key: str, tool_keys: list[str]) -> list[str]:
     from engine.tools.catalog import tool_catalog
     available = {
@@ -1356,6 +1373,7 @@ async def retry_customer_agent_run(
         raise HTTPException(409, "Original run does not contain a retryable prompt")
     if agent_key not in {"manus", "planning", "toolcall"}:
         raise HTTPException(409, "Original runtime is no longer supported")
+    await _require_live_customer_runtime(repo, agent_key)
     try:
         conversation_id = UUID(str(conversation_value))
     except (ValueError, TypeError, AttributeError):
