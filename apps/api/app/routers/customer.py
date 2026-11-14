@@ -1413,13 +1413,14 @@ async def retry_customer_agent_run(
             configuration_id = UUID(saved_configuration["id"])
         except (ValueError, TypeError, AttributeError):
             raise HTTPException(409, "Original Agent configuration reference is invalid")
-        return await repo.rpc("moreai_enqueue_chat_run_with_config", {
+        return await repo.rpc("moreai_enqueue_chat_run_with_config_snapshot", {
             "p_user_id": principal["id"],
+            "p_source_run_id": str(run_id),
             "p_conversation_id": str(conversation_id),
             "p_content": prompt,
             "p_agent_key": agent_key,
             "p_idempotency_key": idempotency_key,
-            "p_agent_config_id": str(configuration_id),
+            "p_agent_config_snapshot": saved_configuration,
             "p_attachment_ids": attachment_ids,
         })
     return await repo.rpc("moreai_enqueue_chat_run_with_attachments", {
