@@ -134,7 +134,7 @@ class RunwayVideoGenerationAdapter:
         if model not in self.SUPPORTED_MODELS:
             raise ValueError("runway_video_model_not_supported")
         duration = arguments.get("duration", 5)
-        if isinstance(duration, bool) or not isinstance(duration, int) or duration not in {5, 10}:
+        if isinstance(duration, bool) or not isinstance(duration, int) or not 2 <= duration <= 10:
             raise ValueError("video_duration_not_supported")
         ratio = arguments.get("ratio", "1280:720")
         if ratio not in {"1280:720", "720:1280"}:
