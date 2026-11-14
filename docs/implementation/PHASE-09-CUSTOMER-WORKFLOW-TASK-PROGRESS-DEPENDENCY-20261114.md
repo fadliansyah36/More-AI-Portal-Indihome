@@ -116,3 +116,11 @@ Official references:
 - This report records source integration only. It does not claim runtime acceptance.
 
 Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 remains **BLOCKED**.
+
+
+## Create Studio capability visibility follow-up
+
+- Existing Create Studio media/file cards now display the live worker capability status from `GET /api/v1/media/capabilities`: worker check in progress, number of healthy workers reporting the adapter, unavailable, or status not verifiable.
+- This is a capability status indicator only. It does not imply provider credentials, credits, media usage metering or artifact storage have been runtime verified.
+- Current file output handoff is intended for text-based workspace artifacts (TXT, Markdown, CSV, JSON) through `file_saver`; binary office/PDF formats are not yet a claimed output capability.
+- Source commit: `b2440997`.
