@@ -134,8 +134,8 @@ export const PersonalMemorySettings: React.FC = () => {
             </button>
           </div>
 
-          {state.enabled && (
-            <>
+          <>
+            {state.enabled && (
               <form onSubmit={(event) => void addMemory(event)} className="space-y-2.5">
                 <p className="text-xs font-bold text-slate-800">Tambah catatan pribadi</p>
                 <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} required
@@ -154,7 +154,9 @@ export const PersonalMemorySettings: React.FC = () => {
                   </button>
                 </div>
               </form>
-              <div className="border-t border-slate-100 pt-3 space-y-2">
+            )}
+            {!state.enabled && <p className="text-[11px] text-slate-500">Memory dinonaktifkan untuk konteks AI. Catatan tetap dapat ditinjau, dikoreksi, atau dihapus.</p>}
+            <div className="border-t border-slate-100 pt-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-slate-800">Memory tersimpan</p>
                   <span className="text-[10px] text-slate-500">{state.items.length} catatan</span>
@@ -192,9 +194,7 @@ export const PersonalMemorySettings: React.FC = () => {
                     )}
                   </div>
                 ))}
-              </div>
-            </>
-          )}
+            </div>
           <p className="text-[10px] leading-relaxed text-slate-400">
             Catatan dibuat secara manual. MoreAI tidak otomatis menyimpan isi chat atau file sebagai Personal Memory. Penghapusan menghapus catatan dari penyimpanan aplikasi.
           </p>
