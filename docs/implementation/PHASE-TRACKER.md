@@ -1327,3 +1327,12 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 
 - Phase 09 Customer retry parity follow-up (2026-11-14): Tasks manual retry handler now matches FastAPI's exact allowed statuses (`failed`, `timed_out`, `expired`); cancelled runs remain terminal but cannot be manually retried. Backend additionally enforces execution gate, idempotency, supported runtime, conversation ownership and safe-replay/no-side-effect rules. Commit `79378c9aa6c12f52ce81268335552efbaea39527`; acceptance/continuation docs updated in `392b8c5d3ad7e0b5fc4687ad0df3256e753a722f` and `3a7fad8b6e3ccc35791cc812f25f90c237d87551`. Source-level only; Phase 09 remains IN PROGRESS and no tests/runtime checks were run.
+
+
+## 2026-11-14 — Customer EduTech progress count contract correction
+
+- Corrected `GET /api/v1/customer/learning/progress/detail`: the existing bounded page (up to 500 rows) is now accompanied by an exact owner-scoped total in `count`, rather than the number of rows returned in the current page.
+- Added a server-only PostgREST exact-count helper; it retains the supplied owner filter, uses a bounded HEAD request, and fails closed if the exact count header is absent.
+- No Customer UI, Supabase schema, migration, provider configuration, or persisted data was changed.
+- Implementation report: [Customer EduTech Progress Count Contract Correction](./PHASE-09-CUSTOMER-EDUTECH-PROGRESS-COUNT-20261114.md).
+- No tests, lint, typecheck, build, browser/API probes, worker execution, staging or deployment were run per owner instruction. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.

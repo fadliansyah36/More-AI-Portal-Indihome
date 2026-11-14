@@ -248,3 +248,12 @@ Knowledge Search returns an explicit validated `citation_marker` for each chunk.
 - Support screen does not invent a contact address or create a fake ticket; it explicitly reports that the official support channel is not configured.
 
 - Image adapter model alignment was updated to current documented `gpt-image-2.5-flare` by default, with `gpt-image-2.5-sunburst` as the precision-focused alternative. The tool schema supports the current quality options `low/medium/high/xhigh/max/auto` and background `auto/opaque/transparent`; the operator's price map remains mandatory.
+
+
+## 2026-11-14 EduTech progress count correction
+
+- The canonical `GET /api/v1/customer/learning/progress/detail` response now returns an exact owner-scoped total in `count`, independently from the bounded `items` page (maximum 500 rows).
+- The exact total uses a server-side PostgREST `HEAD` request with `Prefer: count=exact`; the caller's `user_id` filter is retained and page-only parameters are excluded.
+- Missing exact-count metadata fails closed rather than silently presenting the current page length as the account total.
+- Source commit: `45481e9b8352edfa55f55264f9f95b8c57cb3188`; implementation report: [Customer EduTech Progress Count Contract Correction](./PHASE-09-CUSTOMER-EDUTECH-PROGRESS-COUNT-20261114.md).
+- No tests, lint, typecheck, build, browser/API probes, worker execution, staging or deployment were run. Runtime acceptance remains NOT VERIFIED.
