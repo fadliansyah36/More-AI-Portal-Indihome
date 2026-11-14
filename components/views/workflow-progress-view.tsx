@@ -162,28 +162,47 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     setStepLoadingId(runId);
     setActivityLoadingId(runId);
     try {
-      const [steps, activity, progress, events] = await Promise.all([
+      // A missing optional projection (for example checkpoint history on an older
+      // run) must not hide the other durable workflow details that did load.
+      const [stepsResult, activityResult, progressResult, eventsResult] = await Promise.allSettled([
         customerApi.getRunSteps(runId),
         customerApi.getRunActivity(runId, 0, 200),
         customerApi.getRunProgress(runId),
         customerApi.getRunEvents(runId, 0),
       ]);
-      setRunSteps((current) => ({ ...current, [runId]: steps }));
-      setRunActivity((current) => ({ ...current, [runId]: activity }));
-      setRunProgress((current) => ({ ...current, [runId]: progress }));
-      setRunCheckpoints((current) => ({
-        ...current,
-        [runId]: events
-          .filter((event) => !!event.checkpoint)
-          .map((event) => ({
-            sequence: event.sequence,
-            event_type: event.event_type,
-            created_at: event.created_at,
-            checkpoint: event.checkpoint,
-          })),
-      }));
-    } catch (cause) {
-      setRunPaginationError(cause instanceof Error ? cause.message : 'Tahapan atau aktivitas Agent Run tidak dapat dimuat.');
+      const failures: string[] = [];
+      if (stepsResult.status === 'fulfilled') {
+        setRunSteps((current) => ({ ...current, [runId]: stepsResult.value }));
+      } else failures.push('tahapan');
+      if (activityResult.status === 'fulfilled') {
+        setRunActivity((current) => ({ ...current, [runId]: activityResult.value }));
+      } else failures.push('aktivitas');
+      if (progressResult.status === 'fulfilled') {
+        setRunProgress((current) => ({ ...current, [runId]: progressResult.value }));
+      } else failures.push('progres');
+      if (eventsResult.status === 'fulfilled') {
+        setRunCheckpoints((current) => ({
+          ...current,
+          [runId]: eventsResult.value
+            .filter((event) => !!event.checkpoint)
+            .map((event) => ({
+              sequence: event.sequence,
+              event_type: event.event_type,
+              created_at: event.created_at,
+              checkpoint: event.checkpoint,
+            })),
+        }));
+      } else failures.push('checkpoint');
+      if (failures.length) {
+        const firstFailure = [stepsResult, activityResult, progressResult, eventsResult]
+          .find((result) => result.status === 'rejected');
+        setRunPaginationError(
+          (firstFailure?.status === 'rejected' && firstFailure.reason instanceof Error
+            ? firstFailure.reason.message
+            : 'Sebagian data workflow tidak dapat dimuat.')
+          + ' Data lain yang berhasil dimuat tetap ditampilkan (' + failures.join(', ') + ').'
+        );
+      }
     } finally {
       setStepLoadingId(null);
       setActivityLoadingId(null);
