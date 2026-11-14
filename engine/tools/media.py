@@ -19,8 +19,7 @@ class OpenAIImageGenerationAdapter:
         "png": "image/png",
         "jpeg": "image/jpeg",
         "webp": "image/webp",
-        "svg": "image/svg+xml",
-    }
+     }
 
     def __init__(self, *, http: httpx.AsyncClient, artifacts: Any, accounting: Any, estimator: Any):
         self.http = http
@@ -36,49 +35,64 @@ class OpenAIImageGenerationAdapter:
             "MOREAI_MEDIA_QUOTA_METRIC_KEY",
             "MOREAI_CREDIT_WALLET_CURRENCY",
             "MOREAI_CREDITS_PER_USD",
-            "MOREAI_OPENAI_IMAGE_INPUT_COST_PER_MILLION",
-            "MOREAI_OPENAI_IMAGE_OUTPUT_COST_PER_MILLION",
-            "MOREAI_OPENAI_IMAGE_MAX_OUTPUT_TOKENS",
+            "MOREAI_OPENAI_IMAGE_COSTS_JSON",
         )
         if os.getenv("MOREAI_MEDIA_BILLING_ENABLED", "false").lower() != "true":
             return None
         if any(not os.getenv(key) for key in required):
             return None
         try:
-            values = {
-                "input_cost": float(os.environ["MOREAI_OPENAI_IMAGE_INPUT_COST_PER_MILLION"]),
-                "output_cost": float(os.environ["MOREAI_OPENAI_IMAGE_OUTPUT_COST_PER_MILLION"]),
-                "max_output_tokens": int(os.environ["MOREAI_OPENAI_IMAGE_MAX_OUTPUT_TOKENS"]),
-                "credits_per_usd": float(os.environ["MOREAI_CREDITS_PER_USD"]),
+            costs = json.loads(os.environ["MOREAI_OPENAI_IMAGE_COSTS_JSON"])
+            if not isinstance(costs, dict) or not costs:
+                return None
+            normalized_costs = {
+                str(key): float(value)
+                for key, value in costs.items()
+                if isinstance(key, str) and isinstance(value, (int, float)) and not isinstance(value, bool)
             }
-        except (TypeError, ValueError):
+            if len(normalized_costs) != len(costs) or any(not math.isfinite(value) or value <= 0 for value in normalized_costs.values()):
+                return None
+            credits_per_usd = float(os.environ["MOREAI_CREDITS_PER_USD"])
+            timeout_seconds = float(os.getenv("MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS", "600"))
+        except (TypeError, ValueError, json.JSONDecodeError):
             return None
-        if (
-            any(not math.isfinite(values[key]) or values[key] <= 0 for key in ("input_cost", "output_cost", "credits_per_usd"))
-            or not 1 <= values["max_output_tokens"] <= 2_000_000
-        ):
+        if not math.isfinite(credits_per_usd) or credits_per_usd <= 0 or not 1 <= timeout_seconds <= 600:
             return None
         return cls(http=http, artifacts=artifacts, accounting=accounting, estimator=estimator)
 
-    def _route(self, model: str) -> ResolvedModelRoute:
+    def _route(self, model: str, image_cost: float) -> ResolvedModelRoute:
+        # The existing usage ledger is reused for atomic wallet/quota reservation.
+        # One synthetic output unit represents the configured per-image USD cost;
+        # token counters recorded for this media request remain zero.
         return ResolvedModelRoute(
             provider_key="openai",
             model_key=model,
             display_name=model,
             base_url="https://api.openai.com/v1",
             secret_env_name="OPENAI_API_KEY",
-            input_cost_per_million=float(os.environ["MOREAI_OPENAI_IMAGE_INPUT_COST_PER_MILLION"]),
-            output_cost_per_million=float(os.environ["MOREAI_OPENAI_IMAGE_OUTPUT_COST_PER_MILLION"]),
-            max_input_tokens=int(os.getenv("MOREAI_OPENAI_IMAGE_MAX_INPUT_TOKENS", "32000")),
-            max_output_tokens=int(os.environ["MOREAI_OPENAI_IMAGE_MAX_OUTPUT_TOKENS"]),
+            input_cost_per_million=0.0,
+            output_cost_per_million=image_cost * 1_000_000,
+            max_input_tokens=32000,
+            max_output_tokens=1,
             capabilities=("image_generation",),
         )
+
+    def _image_cost(self, size: str, quality: str) -> float:
+        costs = json.loads(os.environ["MOREAI_OPENAI_IMAGE_COSTS_JSON"])
+        keys = (f"{size}:{quality}", f"{size}:auto", f"auto:{quality}", "auto:auto")
+        for key in keys:
+            value = costs.get(key)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                cost = float(value)
+                if math.isfinite(cost) and cost > 0:
+                    return cost
+        raise RuntimeError("image_price_not_configured_for_size_and_quality")
 
     async def image_generate(self, arguments: dict[str, Any], *, run_id: str, user_id: str) -> str:
         prompt = arguments.get("prompt")
         if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 12000:
             raise ValueError("image_prompt_invalid")
-        model = os.getenv("MOREAI_OPENAI_IMAGE_MODEL", "gpt-image-2.6-flare")
+        model = os.getenv("MOREAI_OPENAI_IMAGE_MODEL", "gpt-image-2")
         output_format = arguments.get("output_format", "png")
         if output_format not in self.MIME_TYPES:
             raise ValueError("image_output_format_not_supported")
@@ -87,12 +101,13 @@ class OpenAIImageGenerationAdapter:
         background = arguments.get("background", "auto")
         if size not in {"auto", "1024x1024", "1536x1024", "1024x1536"}:
             raise ValueError("image_size_not_supported")
-        if quality not in {"low", "medium", "high", "xhigh", "max", "auto"}:
+        if quality not in {"low", "medium", "high", "auto"}:
             raise ValueError("image_quality_not_supported")
-        if background not in {"auto", "opaque", "transparent"}:
+        if background not in {"auto", "opaque"}:
             raise ValueError("image_background_not_supported")
 
-        route = self._route(model)
+        image_cost = self._image_cost(size, quality)
+        route = self._route(model, image_cost)
         request_payload = {
             "model": model,
             "prompt": prompt.strip(),
@@ -141,8 +156,7 @@ class OpenAIImageGenerationAdapter:
                     json={
                         **request_payload,
                         "n": 1,
-                        "safety_identifier": hashlib.sha256(user_id.encode()).hexdigest()[:64],
-                    },
+                     },
                     headers={
                         "Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}",
                         "Content-Type": "application/json",
@@ -163,22 +177,14 @@ class OpenAIImageGenerationAdapter:
             if not isinstance(data, list) or not data or not isinstance(data[0], dict):
                 raise RuntimeError("image_provider_returned_no_image")
             image_base64 = data[0].get("b64_json")
-            usage = payload.get("usage") if isinstance(payload, dict) else None
-            if not isinstance(image_base64, str) or not isinstance(usage, dict):
-                raise RuntimeError("image_provider_usage_or_binary_missing")
-            input_tokens = usage.get("input_tokens")
-            output_tokens = usage.get("output_tokens")
-            if (
-                isinstance(input_tokens, bool) or not isinstance(input_tokens, int) or input_tokens < 0
-                or isinstance(output_tokens, bool) or not isinstance(output_tokens, int) or output_tokens < 1
-            ):
-                raise RuntimeError("image_provider_usage_invalid")
-            actual_cost = (
-                input_tokens * route.input_cost_per_million
-                + output_tokens * route.output_cost_per_million
-            ) / 1_000_000
-            if not math.isfinite(actual_cost) or actual_cost <= 0:
-                raise RuntimeError("image_actual_cost_invalid")
+            if not isinstance(image_base64, str):
+                raise RuntimeError("image_provider_binary_missing")
+            # Image API pricing is per generated image/quality/size, so settlement
+            # uses the explicitly configured price map rather than assuming token
+            # usage fields that the Images API response does not promise.
+            input_tokens = 0
+            output_tokens = 0
+            actual_cost = image_cost
 
             extension = "jpg" if output_format == "jpeg" else output_format
             filename = f"moreai-image-{run_id[:8]}.{extension}"
