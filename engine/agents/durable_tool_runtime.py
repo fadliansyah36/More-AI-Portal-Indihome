@@ -132,6 +132,7 @@ class DurableOpenManusRuntime:
             "files.read": {"knowledge_search", "workspace_read_file"},
             "files.write": {"file_saver", "knowledge_ingest"},
             "gmail.read": {"gmail_search"}, "calendar.read": {"calendar_list_events"},
+            "gmail.send": {"gmail_send"}, "calendar.write": {"calendar_create_event"},
         }
         self.attachment_loader = attachment_loader
         self.plan_store = plan_store
@@ -156,7 +157,7 @@ class DurableOpenManusRuntime:
         if knowledge_tools is not None:
             enabled_tools.update({"knowledge_ingest", "knowledge_search"})
         if connection_tools is not None:
-            enabled_tools.update({"gmail_search", "calendar_list_events"})
+            enabled_tools.update({"gmail_search", "calendar_list_events", "gmail_send", "calendar_create_event"})
         if learning_tools is not None:
             enabled_tools.update({"learning_path_create", "lesson_generate", "quiz_generate", "answer_assess", "learning_progress_update"})
         if sandbox_tools is not None:
@@ -189,6 +190,8 @@ class DurableOpenManusRuntime:
         if connection_tools is not None:
             self.tools.register("gmail_search", connection_tools.gmail_search)
             self.tools.register("calendar_list_events", connection_tools.calendar_list_events)
+            self.tools.register("gmail_send", connection_tools.gmail_send)
+            self.tools.register("calendar_create_event", connection_tools.calendar_create_event)
         if learning_tools is not None:
             self.tools.register("learning_path_create", learning_tools.learning_path_create)
             self.tools.register("lesson_generate", learning_tools.lesson_generate)
