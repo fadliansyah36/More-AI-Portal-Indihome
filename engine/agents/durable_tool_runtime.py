@@ -697,7 +697,7 @@ END UNTRUSTED FILE CONTENT"
                         message=Message.assistant_message(
                             response_text,
                             metadata={
-                                "citations": citations[:20],
+                                "citations": citations[:10],
                                 "memory_type": "episodic",
                                 "memory_scope": "workspace" if context.workspace_id else "personal",
                                 "workspace_id": context.workspace_id,
@@ -707,11 +707,20 @@ END UNTRUSTED FILE CONTENT"
                                     "prompt": prompt[:900],
                                     "outcome": response_text[:1400],
                                     "model_key": response_state.get("model_key"),
-                                    "citations": citations[:20],
+                                    "citations": citations[:10],
                                     "skills": [
                                         item.get("snapshot", {})
                                         for item in resolved_skills[:10]
                                     ],
+                                    "actions": [
+                                        {"tool": state.get("tool"), "outcome": state.get("outcome")}
+                                        for key, state in sorted(states.items())
+                                        if key.startswith("openmanus.round.")
+                                        and ".tool." in key and key.endswith(".settled")
+                                        and isinstance(state, dict)
+                                        and isinstance(state.get("tool"), str)
+                                        and isinstance(state.get("outcome"), str)
+                                    ][:20],
                                 },
                             },
                         ),
