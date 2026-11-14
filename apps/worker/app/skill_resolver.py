@@ -103,5 +103,22 @@ class SupabaseSkillResolver:
                 "permission_snapshot": sorted(granted), "event_type": "resolved",
                 "event_detail": {"source_file_count": len(files), "instruction_file_count": len(instruction_files), "verified_total_bytes": total_bytes},
             })
-            resolved.append({"snapshot": snapshot, "instructions": body})
+            resolved.append({"snapshot": snapshot, "instructions": body, "install_id": install["id"]})
         return resolved
+
+
+    async def record_executed(self, *, resolved_skills: list[dict[str, Any]], user_id: str, run_id: str) -> None:
+        for item in resolved_skills:
+            snapshot = item.get("snapshot") if isinstance(item.get("snapshot"), dict) else {}
+            skill_id = snapshot.get("skill_id")
+            if not isinstance(skill_id, str) or not isinstance(item.get("install_id"), str):
+                raise ValueError("skill_execution_audit_identity_invalid")
+            await self.client.insert("moreai_skill_execution_audit", {
+                "skill_package_id": skill_id, "skill_install_id": item["install_id"],
+                "owner_user_id": user_id, "agent_run_id": run_id,
+                "skill_version": snapshot.get("version"),
+                "skill_content_sha256": snapshot.get("content_sha256"),
+                "permission_snapshot": snapshot.get("permissions") or [],
+                "event_type": "executed",
+                "event_detail": {"execution_outcome": "agent_run_terminated_successfully"},
+            })
