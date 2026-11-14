@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import json
+import tomllib
 from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
@@ -93,6 +95,93 @@ async def import_skill(body: SkillImportRequest, request: Request, user: dict[st
 
 
 @router.post("/{skill_id}/validate", response_model=SkillValidationResponse)
+
+
+def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
+    license_files: list[dict[str, Any]] = []
+    dependency_files: list[str] = []
+    dependencies: list[dict[str, Any]] = []
+    for item in files:
+        path = str(item.get("relative_path") or "")
+        name = PurePosixPath(path).name.lower()
+        text = item.get("text_content")
+        if name.startswith(("license", "licence", "copying", "notice", "third_party")):
+            license_files.append({
+                "path": path, "sha256": item.get("content_sha256"),
+                "bytes": item.get("byte_size"),
+            })
+        if not isinstance(text, str):
+            continue
+        if name in {"package.json", "package-lock.json", "npm-shrinkwrap.json"}:
+            dependency_files.append(path)
+            try:
+                manifest = json.loads(text)
+            except Exception:
+                dependencies.append({"manifest": path, "ecosystem": "npm", "status": "parse_error"})
+                continue
+            if name == "package.json":
+                for group in ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies"):
+                    for package, spec in (manifest.get(group) or {}).items():
+                        exact = isinstance(spec, str) and bool(re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?", spec))
+                        dependencies.append({"ecosystem":"npm","name":package,"requested":spec,"exact_version":spec if exact else None,"source_manifest":path,"status":"exact" if exact else "range_or_unpinned"})
+            else:
+                for package, details in (manifest.get("packages") or {}).items():
+                    if not package or package == "" or not isinstance(details, dict) or not details.get("version"):
+                        continue
+                    dependencies.append({"ecosystem":"npm","name":package.rsplit("node_modules/",1)[-1],"version":details["version"],"exact_version":details["version"],"integrity":details.get("integrity"),"source_manifest":path,"status":"lockfile_pinned"})
+        elif name == "requirements.txt":
+            dependency_files.append(path)
+            for line in text.splitlines():
+                raw = line.split("#",1)[0].strip()
+                if not raw or raw.startswith(("-r ", "--", "git+", "http:","https:")):
+                    continue
+                match = re.match(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)(?:\s*;.*)?$",raw)
+                dependencies.append({"ecosystem":"pypi","name":match.group(1) if match else raw.split(/[<>=!~;\s]/,1)[0],"requested":raw,"exact_version":match.group(2) if match else None,"source_manifest":path,"status":"exact" if match else "range_or_unpinned"})
+        elif name == "pyproject.toml":
+            dependency_files.append(path)
+            try:
+                parsed = tomllib.loads(text)
+                declared = parsed.get("project",{}).get("dependencies",[])
+                for raw in declared:
+                    match = re.match(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)$",raw)
+                    dependencies.append({"ecosystem":"pypi","name":match.group(1) if match else raw,"requested":raw,"exact_version":match.group(2) if match else None,"source_manifest":path,"status":"exact" if match else "range_or_unpinned"})
+            except Exception:
+                dependencies.append({"manifest":path,"ecosystem":"pypi","status":"parse_error"})
+        elif name in {"cargo.lock","go.mod","composer.lock","pnpm-lock.yaml","yarn.lock"}:
+            dependency_files.append(path)
+            if name == "go.mod":
+                for match in re.finditer(r"(?m)^\s*([^\s]+)\s+(v\d+\.\d+\.\d+[^\s]*)\s*$",text):
+                    dependencies.append({"ecosystem":"go","name":match.group(1),"exact_version":match.group(2),"source_manifest":path,"status":"lockfile_pinned"})
+            elif name == "cargo.lock":
+                try:
+                    parsed = tomllib.loads(text)
+                    for package in parsed.get("package",[]):
+                        dependencies.append({"ecosystem":"cargo","name":package.get("name"),"exact_version":package.get("version"),"source_manifest":path,"status":"lockfile_pinned"})
+                except Exception:
+                    dependencies.append({"manifest":path,"ecosystem":"cargo","status":"parse_error"})
+            elif name == "composer.lock":
+                try:
+                    parsed = json.loads(text)
+                    for package in parsed.get("packages",[]):
+                        dependencies.append({"ecosystem":"composer","name":package.get("name"),"exact_version":package.get("version"),"source_manifest":path,"status":"lockfile_pinned"})
+                except Exception:
+                    dependencies.append({"manifest":path,"ecosystem":"composer","status":"parse_error"})
+            else:
+                dependencies.append({"manifest":path,"ecosystem":"npm","status":"lockfile_detected_manual_parser_review_required"})
+    exact = sum(1 for item in dependencies if item.get("exact_version"))
+    return {
+        "license_files": license_files,
+        "dependency_manifests": sorted(set(dependency_files)),
+        "dependencies": dependencies,
+        "dependency_count": len(dependencies),
+        "exact_version_count": exact,
+        "unresolved_dependency_count": len(dependencies)-exact,
+        "license_evidence_status": "source_license_files_present" if license_files else "source_license_files_missing",
+        "notice_files_present": any(PurePosixPath(item["path"]).name.lower().startswith("notice") for item in license_files),
+        "warning": "Exact versions are parsed from source lockfiles/manifests only. Registry license metadata, transitive provenance, vulnerability and rights checks remain separate review gates.",
+    }
+
+
 async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
     rows = await repo.select("moreai_skill_packages", {
@@ -109,6 +198,7 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
         "select": "relative_path,git_blob_sha,content_sha256,byte_size,text_content,binary_content_base64",
         "limit": "40",
     })
+    source_inventory = _source_review_inventory(files)
     manifest = skill.get("manifest") if isinstance(skill.get("manifest"), dict) else {}
     if not manifest:
         findings.append("Skill manifest is missing; package is not executable.")
@@ -122,20 +212,20 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
         if not SHA40.fullmatch(str(item.get("git_blob_sha") or "")) or not SHA64.fullmatch(str(item.get("content_sha256") or "")):
             findings.append("One or more source file hashes are malformed.")
             break
-    if not skill.get("license_evidence"):
-        findings.append("License evidence is missing; legal approval is required.")
+    if not skill.get("license_evidence") or not source_inventory["license_files"]:
+        findings.append("Repository LICENSE/NOTICE evidence is incomplete; legal approval is required.")
     if not skill.get("source_path") or ".." in str(skill["source_path"]).split("/"):
         findings.append("Unsafe source path.")
     if not skill.get("source_blob_sha") or not skill.get("content_sha256"):
         findings.append("Immutable source/content hashes are required.")
     if not isinstance(skill.get("requested_permissions"), list) or any(x not in PERMISSION_KEYS for x in skill["requested_permissions"]):
         findings.append("Requested permissions contain unsupported capabilities.")
-    # Static metadata validation is not a malware scan, dependency audit or rights clearance.
+    # Static source inventory is not malware scanning, registry license reconciliation or rights clearance.
     status = "review_required" if findings else "validated"
     license_status = "review_required" if findings else "unverified"
     await repo.update("moreai_skill_packages", {"id": f"eq.{skill_id}", "owner_user_id": f"eq.{user['id']}"}, {
         "validation_status": status, "license_status": license_status,
-        "validation_report": {"findings": findings, "checked_at": datetime.now(timezone.utc).isoformat(), "scope": "metadata_only"},
+        "validation_report": {"findings": findings, "checked_at": datetime.now(timezone.utc).isoformat(), "scope": "pinned_source_static_inventory", "source_inventory": source_inventory},
         "updated_at": datetime.now(timezone.utc).isoformat(),
     })
     return {"skill_id": skill_id, "validation_status": status, "license_status": license_status, "findings": findings}
