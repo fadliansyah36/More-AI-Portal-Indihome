@@ -127,7 +127,7 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
       'Status lesson: ' + lesson.status + ' | Progress saat ini: ' + (lesson.progress?.progress_percent ?? 0) + '%',
       'Materi tersimpan (gunakan sebagai konteks, jangan mengarang sumber):',
       lesson.content_md || 'Materi belum dibuat. Gunakan lesson_generate untuk mengembangkan lesson ini.',
-      'Bimbing student secara Socratic, berikan latihan aktif dan umpan balik formatif. Setelah sesi belajar benar-benar selesai, gunakan learning_progress_update dengan lesson_id yang sama dan status completed; jika masih berjalan, gunakan in_progress. Jangan mengklaim progress tersimpan tanpa hasil tool.',
+      'Bimbing student secara Socratic, berikan latihan aktif dan umpan balik formatif. Setelah sesi belajar benar-benar selesai, gunakan learning_progress_update hanya dengan status in_progress ketika sesi belajar benar-benar dimulai. Jangan menandai lesson completed; status selesai ditentukan dari hasil assessment tersimpan yang lulus. Jangan mengklaim progress tersimpan tanpa hasil tool.',
     ].join('\n');
     onStartPrompt(prompt, 'planning');
   };

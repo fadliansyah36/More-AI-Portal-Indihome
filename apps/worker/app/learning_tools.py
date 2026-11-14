@@ -21,7 +21,7 @@ class SupabaseLearningTools:
     @staticmethod
     def _normalize_answer(value: Any) -> Any:
         if isinstance(value, str):
-            return re.sub(r"\\s+", " ", value).strip().casefold()
+            return re.sub(r"\s+", " ", value).strip().casefold()
         if isinstance(value, list):
             return sorted(SupabaseLearningTools._normalize_answer(item) for item in value)
         if isinstance(value, bool) or value is None or isinstance(value, (int, float)):
@@ -146,8 +146,10 @@ class SupabaseLearningTools:
     async def learning_progress_update(
         self, arguments: dict[str, Any], *, run_id: str, user_id: str,
     ) -> str:
+        if arguments.get("status") != "in_progress":
+            raise ValueError("learning_progress_completion_is_assessment_derived")
         return await self._rpc("moreai_learning_progress_update", {
             "p_user_id": user_id, "p_run_id": run_id,
             "p_lesson_id": arguments["lesson_id"],
-            "p_status": arguments["status"],
+            "p_status": "in_progress",
         })
