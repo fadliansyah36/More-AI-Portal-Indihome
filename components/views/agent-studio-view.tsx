@@ -64,7 +64,13 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
       .catch((cause) => { if (active) setAgentLoadError(cause instanceof Error ? cause.message : 'Katalog agent tidak tersedia.'); })
       .finally(() => { if (active) setIsLoadingAgents(false); });
     customerApi.tools()
-      .then((rows) => { if (active) setToolCatalog(rows); })
+      .then((rows) => {
+        if (!active) return;
+        setToolCatalog(rows);
+        setConfigurationToolKeys(rows
+          .filter((tool) => tool.available_by_default.includes('manus') && tool.enabled_by_default)
+          .map((tool) => tool.key));
+      })
       .catch((cause) => { if (active) setToolCatalogError(cause instanceof Error ? cause.message : 'Katalog tool tidak tersedia.'); });
     customerApi.agentConfigurations()
       .then((rows) => { if (active) setAgentConfigurations(rows); })
