@@ -53,9 +53,9 @@
       "adapt": 330
     },
     "review_status_counts": {
-      "pending-content-review": 2135,
+      "pending-content-review": 2129,
+      "content-reviewed-security-boundary": 10,
       "content-reviewed-sample": 21,
-      "content-reviewed-security-boundary": 4,
       "content-reviewed-reference": 39,
       "static-svg-reviewed": 15,
       "entrypoint-content-reviewed-internal": 7,
@@ -300,12 +300,12 @@
       "git_blob_sha1": "4ef4cf8525201112601b7e597d29b6b21a6c7ae7",
       "category": "other",
       "preliminary_disposition": "MANUAL_REVIEW",
-      "review_note": "Manual path/content classification required",
+      "review_note": "Full pinned source fetched and statically reviewed in P1 increment 2026-11-14; see P1 audit report section 28.",
       "target_owner": "MoreAI Chat / durable runs / isolated browser-computer / approvals / files",
       "decision": "archive-only",
       "decision_basis": "Upstream test/evidence artifacts are reference material; user disallows running tests",
       "decision_owner": "Existing MoreAI module only; no parallel engine, persistence, auth or UI",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-security-boundary"
     },
     {
       "repository": "CopilotKit/openfuse",
@@ -330,12 +330,12 @@
       "git_blob_sha1": "270a5f1f3e3d521d5da67f156cb51fd87793de21",
       "category": "implementation_candidate",
       "preliminary_disposition": "ADAPT_AFTER_SECURITY_REVIEW",
-      "review_note": "Map to canonical MoreAI owner; do not import a second engine",
+      "review_note": "Full pinned source fetched and statically reviewed in P1 increment 2026-11-14; see P1 audit report section 28.",
       "target_owner": "MoreAI Chat / durable runs / isolated browser-computer / approvals / files",
       "decision": "archive-only",
       "decision_basis": "Upstream test/evidence artifacts are reference material; user disallows running tests",
       "decision_owner": "Existing MoreAI module only; no parallel engine, persistence, auth or UI",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-security-boundary"
     },
     {
       "repository": "CopilotKit/openfuse",
@@ -1185,12 +1185,12 @@
       "git_blob_sha1": "1d6bc4dfb87fae01c680be1add4840e54710a24b",
       "category": "implementation_candidate",
       "preliminary_disposition": "ADAPT_AFTER_SECURITY_REVIEW",
-      "review_note": "Map to canonical MoreAI owner; do not import a second engine",
+      "review_note": "Full pinned source fetched and statically reviewed in P1 increment 2026-11-14; see P1 audit report section 28.",
       "target_owner": "MoreAI Chat / durable runs / isolated browser-computer / approvals / files",
       "decision": "defer",
       "decision_basis": "Conservative hold: content/provenance or runtime compatibility review remains outstanding",
       "decision_owner": "Existing MoreAI module only; no parallel engine, persistence, auth or UI",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-security-boundary"
     },
     {
       "repository": "CopilotKit/openfuse",
@@ -1470,12 +1470,12 @@
       "git_blob_sha1": "0d616aa9db5eb312a28911bba71f2c19f3f6e0ba",
       "category": "implementation_candidate",
       "preliminary_disposition": "ADAPT_AFTER_SECURITY_REVIEW",
-      "review_note": "Map to canonical MoreAI owner; do not import a second engine",
+      "review_note": "Full pinned source fetched and statically reviewed in P1 increment 2026-11-14; see P1 audit report section 28.",
       "target_owner": "MoreAI Chat / durable runs / isolated browser-computer / approvals / files",
       "decision": "defer",
       "decision_basis": "Conservative hold: content/provenance or runtime compatibility review remains outstanding",
       "decision_owner": "Existing MoreAI module only; no parallel engine, persistence, auth or UI",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-security-boundary"
     },
     {
       "repository": "CopilotKit/openfuse",
@@ -1650,12 +1650,12 @@
       "git_blob_sha1": "95c1f5ff6a2be4a1b4a1f9ee0fc09b6e5eabae59",
       "category": "implementation_candidate",
       "preliminary_disposition": "ADAPT_AFTER_SECURITY_REVIEW",
-      "review_note": "Map to canonical MoreAI owner; do not import a second engine",
+      "review_note": "Full pinned source fetched and statically reviewed in P1 increment 2026-11-14; see P1 audit report section 28.",
       "target_owner": "MoreAI Chat / durable runs / isolated browser-computer / approvals / files",
       "decision": "defer",
       "decision_basis": "Conservative hold: content/provenance or runtime compatibility review remains outstanding",
       "decision_owner": "Existing MoreAI module only; no parallel engine, persistence, auth or UI",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-security-boundary"
     },
     {
       "repository": "CopilotKit/openfuse",
@@ -1665,12 +1665,12 @@
       "git_blob_sha1": "6f70602ed153c22f978471f60fcbefe91a3aa085",
       "category": "implementation_candidate",
       "preliminary_disposition": "ADAPT_AFTER_SECURITY_REVIEW",
-      "review_note": "Map to canonical MoreAI owner; do not import a second engine",
+      "review_note": "Full pinned source fetched and statically reviewed in P1 increment 2026-11-14; see P1 audit report section 28.",
       "target_owner": "MoreAI Chat / durable runs / isolated browser-computer / approvals / files",
       "decision": "defer",
       "decision_basis": "Conservative hold: content/provenance or runtime compatibility review remains outstanding",
       "decision_owner": "Existing MoreAI module only; no parallel engine, persistence, auth or UI",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-security-boundary"
     },
     {
       "repository": "CopilotKit/openfuse",
