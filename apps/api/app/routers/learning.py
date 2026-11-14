@@ -120,21 +120,31 @@ async def list_learning_paths(
         "select": "id,path_id,lesson_id,status,progress_percent,completed_at,updated_at",
         "limit": "1000",
     })
+    lessons = await repo.select("learning_lessons", {
+        "owner_user_id": f"eq.{user['id']}", "path_id": f"in.({path_ids})",
+        "select": "id,path_id", "limit": "3000",
+    })
     enrollment_by_path = {str(row["path_id"]): row for row in enrollments}
     progress_by_path: dict[str, list[dict[str, Any]]] = {}
+    lessons_by_path: dict[str, list[dict[str, Any]]] = {}
     for row in progress:
         progress_by_path.setdefault(str(row["path_id"]), []).append(row)
+    for row in lessons:
+        lessons_by_path.setdefault(str(row["path_id"]), []).append(row)
     items = []
     for path in paths:
         key = str(path["id"])
         rows = progress_by_path.get(key, [])
+        total = len(lessons_by_path.get(key, []))
+        completed = sum(1 for row in rows if row["status"] == "completed")
         items.append({
             **path,
             "enrollment": enrollment_by_path.get(key),
             "progress": {
                 "lessons_started": len(rows),
-                "lessons_completed": sum(1 for row in rows if row["status"] == "completed"),
-                "average_percent": round(sum(float(row["progress_percent"]) for row in rows) / len(rows), 1) if rows else 0,
+                "lessons_completed": completed,
+                "lessons_total": total,
+                "average_percent": round(sum(float(row["progress_percent"]) for row in rows) / total, 1) if total else 0,
             },
         })
     return {"items": items, "count": len(items)}
@@ -223,10 +233,12 @@ async def get_learning_path(
     for module in modules:
         module["lessons"] = lessons_by_module.get(str(module["id"]), [])
     path["enrollment"] = enrollment_rows[0] if enrollment_rows else None
+    completed_lessons = sum(1 for row in progress if row["status"] == "completed")
     path["progress"] = {
         "lessons_started": len(progress),
-        "lessons_completed": sum(1 for row in progress if row["status"] == "completed"),
-        "average_percent": round(sum(float(row["progress_percent"]) for row in progress) / len(progress), 1) if progress else 0,
+        "lessons_completed": completed_lessons,
+        "lessons_total": len(lessons),
+        "average_percent": round(sum(float(row["progress_percent"]) for row in progress) / len(lessons), 1) if lessons else 0,
     }
     return {"path": path, "modules": modules, "assessments": assessments, "enrollment": enrollment_rows[0] if enrollment_rows else None}
 
