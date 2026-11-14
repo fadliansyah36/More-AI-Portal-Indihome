@@ -53,10 +53,10 @@
       "adapt": 330
     },
     "review_status_counts": {
-      "pending-content-review": 2129,
+      "pending-content-review": 2123,
       "content-reviewed-security-boundary": 10,
       "content-reviewed-sample": 21,
-      "content-reviewed-reference": 39,
+      "content-reviewed-reference": 45,
       "static-svg-reviewed": 15,
       "entrypoint-content-reviewed-internal": 7,
       "entrypoint-content-reviewed": 166,
@@ -3360,12 +3360,12 @@
       "git_blob_sha1": "27429137a79d07b773e6a2a8b6f816fc75b063a8",
       "category": "build_config_or_script",
       "preliminary_disposition": "REVIEW_SECURITY_DEPENDENCIES",
-      "review_note": "Do not execute/install; inspect dependency and runtime impact",
+      "review_note": "Plugin metadata only; no executable MoreAI runtime permission.",
       "target_owner": "MoreAI Skill Registry / Create image-video prompt procedures",
       "decision": "defer",
       "decision_basis": "Conservative hold: content/provenance or runtime compatibility review remains outstanding",
       "decision_owner": "Existing Skill Registry + Create prompt guidance",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-reference"
     },
     {
       "repository": "smixs/visual-skills",
@@ -3375,12 +3375,12 @@
       "git_blob_sha1": "8960a2121ccf990dc740a50554310c4cd5e0e86e",
       "category": "build_config_or_script",
       "preliminary_disposition": "REVIEW_SECURITY_DEPENDENCIES",
-      "review_note": "Do not execute/install; inspect dependency and runtime impact",
+      "review_note": "Plugin metadata declares image/video skill paths; not a MoreAI plugin manifest.",
       "target_owner": "MoreAI Skill Registry / Create image-video prompt procedures",
       "decision": "defer",
       "decision_basis": "Conservative hold: content/provenance or runtime compatibility review remains outstanding",
       "decision_owner": "Existing Skill Registry + Create prompt guidance",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-reference"
     },
     {
       "repository": "smixs/visual-skills",
@@ -3390,12 +3390,12 @@
       "git_blob_sha1": "d4a4664cb102f301b3970e0748881e1fff38fa87",
       "category": "other",
       "preliminary_disposition": "MANUAL_REVIEW",
-      "review_note": "Manual path/content classification required",
+      "review_note": "Repository housekeeping only; no product integration.",
       "target_owner": "MoreAI Skill Registry / Create image-video prompt procedures",
       "decision": "defer",
       "decision_basis": "Conservative hold: content/provenance or runtime compatibility review remains outstanding",
       "decision_owner": "Existing Skill Registry + Create prompt guidance",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-reference"
     },
     {
       "repository": "smixs/visual-skills",
@@ -3405,12 +3405,12 @@
       "git_blob_sha1": "da6ab6cc8f333d7e89a99812866df8f24374d47c",
       "category": "governance",
       "preliminary_disposition": "ARCHIVE_AND_PRESERVE",
-      "review_note": "License/attribution review required",
+      "review_note": "CC BY 4.0; attribution/change notice required; no trademark grant.",
       "target_owner": "MoreAI Skill Registry / Create image-video prompt procedures",
       "decision": "copy",
       "decision_basis": "CC BY 4.0 and explicit attribution/modification notice required for adapted material",
       "decision_owner": "Existing Skill Registry + Create prompt guidance",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-reference"
     },
     {
       "repository": "smixs/visual-skills",
@@ -3420,12 +3420,12 @@
       "git_blob_sha1": "ec40c203365e6b3747c2e711e77e8ab327f98e44",
       "category": "governance",
       "preliminary_disposition": "ARCHIVE_AND_PRESERVE",
-      "review_note": "License/attribution review required",
+      "review_note": "Names Serge Shima and source; acknowledges agentara/skills MIT-derived methods; retain attribution.",
       "target_owner": "MoreAI Skill Registry / Create image-video prompt procedures",
       "decision": "copy",
       "decision_basis": "CC BY 4.0 and explicit attribution/modification notice required for adapted material",
       "decision_owner": "Existing Skill Registry + Create prompt guidance",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-reference"
     },
     {
       "repository": "smixs/visual-skills",
@@ -3495,12 +3495,12 @@
       "git_blob_sha1": "a0f428d40903c954ed5394fd98c12a9b85fba23c",
       "category": "assets_or_domain_resources",
       "preliminary_disposition": "REVIEW_ASSET",
-      "review_note": "Check source/license/dependency and relevance; no automatic import",
+      "review_note": "Binary inventoried/fetched; creator and embedded third-party rights remain unverified, so do not publish or redistribute.",
       "target_owner": "MoreAI Skill Registry / Create image-video prompt procedures",
       "decision": "defer",
       "decision_basis": "Binary asset not visually/provenance-cleared for redistribution",
       "decision_owner": "Existing Skill Registry + Create prompt guidance",
-      "review_status": "pending-content-review"
+      "review_status": "content-reviewed-reference"
     },
     {
       "repository": "smixs/visual-skills",
