@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import math
@@ -74,7 +75,7 @@ class RunwayVideoGenerationAdapter:
             or any(not math.isfinite(value) or value <= 0 for value in normalized.values())
             or not math.isfinite(credit_usd) or credit_usd <= 0
             or not math.isfinite(credits_per_usd) or credits_per_usd <= 0
-            or not 30 <= poll_timeout <= 600
+            or not 30 <= poll_timeout <= 540
             or not 1_000_000 <= max_bytes <= 150_000_000
         ):
             return None
@@ -242,7 +243,13 @@ class RunwayVideoGenerationAdapter:
                     release_reservation=False, request_key=f"{request_key}:unknown",
                 )
                 raise RuntimeError("runway_video_submission_outcome_unknown_reservation_retained")
-            response.raise_for_status()
+            if response.status_code >= 400:
+                await self.accounting.fail(
+                    request_id=request_id, error_code="runway_video_provider_rejected",
+                    release_reservation=True, request_key=f"{request_key}:release",
+                )
+                await self.client.checkpoint(run_id, checkpoint_key, {**state, "status": "failed", "provider_status_code": response.status_code})
+                raise RuntimeError("runway_video_provider_rejected")
             created = response.json()
             task_id = created.get("id") if isinstance(created, dict) else None
             estimated = created.get("estimatedCost") if isinstance(created, dict) else None
@@ -264,7 +271,7 @@ class RunwayVideoGenerationAdapter:
         if not isinstance(task_id, str) or not task_id:
             raise RuntimeError("runway_video_task_checkpoint_missing")
 
-        poll_timeout = min(600.0, max(30.0, float(os.getenv("MOREAI_VIDEO_PROVIDER_TIMEOUT_SECONDS", "600"))))
+        poll_timeout = min(540.0, max(30.0, float(os.getenv("MOREAI_VIDEO_PROVIDER_TIMEOUT_SECONDS", "540"))))
         poll_interval = max(5.0, min(15.0, float(os.getenv("MOREAI_RUNWAY_POLL_INTERVAL_SECONDS", "5"))))
         poll_started = time.monotonic()
         task: dict[str, Any] | None = None
@@ -295,7 +302,7 @@ class RunwayVideoGenerationAdapter:
             await self.client.checkpoint(run_id, checkpoint_key, {
                 **state, "status": "polling", "provider_status": status,
             })
-            await __import__("asyncio").sleep(poll_interval)
+            await asyncio.sleep(poll_interval)
         if not isinstance(task, dict) or str(task.get("status") or "").upper() != "SUCCEEDED":
             raise TimeoutError("runway_video_task_still_processing")
 
