@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Literal
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Query, WebSocket, Response
@@ -200,14 +200,38 @@ async def send_message(
     if conversation.get("workspace_id"):
         from app.routers.workspaces import _workspace_access
         await _workspace_access(repo, UUID(str(conversation["workspace_id"])), user["id"], "agent.run.create")
-    # The SECURITY DEFINER RPC performs ownership validation and atomically inserts
-    # the user message, queued run, and message.run_id relationship in one transaction.
-    return await repo.rpc("moreai_enqueue_chat_run", {
+    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=90)).isoformat()
+    workers = await repo.select("moreai_worker_capability_snapshots", {
+        "last_seen_at": f"gt.{cutoff}",
+        "select": "runtime_keys,status",
+        "limit": "100",
+    })
+    if not any(
+        row.get("status") == "healthy"
+        and isinstance(row.get("runtime_keys"), list)
+        and body.agent_key in row["runtime_keys"]
+        for row in workers
+    ):
+        raise HTTPException(503, "No healthy worker currently advertises this Agent runtime; the task was not queued")
+    # The SECURITY DEFINER RPC atomically validates ownership, attaches only
+    # owner-scoped artifacts, inserts the message and creates the durable run.
+    if body.agent_configuration_id:
+        return await repo.rpc("moreai_enqueue_chat_run_with_config", {
+            "p_user_id": user["id"],
+            "p_conversation_id": str(conversation_id),
+            "p_content": body.content,
+            "p_agent_key": body.agent_key,
+            "p_idempotency_key": idempotency_key,
+            "p_agent_config_id": str(body.agent_configuration_id),
+            "p_attachment_ids": [str(item) for item in body.attachment_ids],
+        })
+    return await repo.rpc("moreai_enqueue_chat_run_with_attachments", {
         "p_user_id": user["id"],
         "p_conversation_id": str(conversation_id),
         "p_content": body.content,
         "p_agent_key": body.agent_key,
         "p_idempotency_key": idempotency_key,
+        "p_attachment_ids": [str(item) for item in body.attachment_ids],
     })
 
 
