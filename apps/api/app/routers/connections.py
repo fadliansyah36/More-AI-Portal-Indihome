@@ -107,7 +107,7 @@ def _encrypt(value: dict[str, Any], aad: str) -> str:
 
 
 def _decrypt(value: str, aad: str) -> dict[str, Any]:
-    match = re.fullmatch(r"v(\\d+)\\.([A-Za-z0-9_-]+)", value)
+    match = re.fullmatch(r"v(\d+)\.([A-Za-z0-9_-]+)", value)
     if not match:
         raise HTTPException(409, "connection_credential_version_unsupported")
     version = int(match.group(1))
