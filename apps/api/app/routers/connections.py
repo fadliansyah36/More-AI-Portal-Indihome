@@ -195,8 +195,16 @@ async def google_oauth_callback(request: Request, code: str | None = None, state
         granted_scopes = sorted(set(scopes.split()) if isinstance(scopes, str) else set(state_record.get("scopes") or []))
         if not set(granted_scopes).issubset(GOOGLE_ALLOWED_SCOPES | {"openid", "email", "profile"}):
             raise HTTPException(403, "google_scope_not_allowlisted")
+        prior = await repo.select("moreai_connections", {
+            "user_id": f"eq.{user_id}", "provider": "eq.google",
+            "external_account_id": f"eq.{profile['id']}",
+            "select": "credential_ciphertext", "limit": "1",
+        })
+        previous_refresh = None
+        if prior and isinstance(prior[0].get("credential_ciphertext"), str):
+            previous_refresh = _decrypt(prior[0]["credential_ciphertext"], "connection:google:" + user_id).get("refresh_token")
         credential = {
-            "access_token": access_token, "refresh_token": token_data.get("refresh_token"),
+            "access_token": access_token, "refresh_token": token_data.get("refresh_token") or previous_refresh,
             "token_type": token_data.get("token_type", "Bearer"), "scope": granted_scopes,
         }
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=max(60, int(token_data.get("expires_in") or 3600)))
@@ -255,6 +263,11 @@ async def _google_access_token(request: Request, connection: dict[str, Any]) -> 
         "credential_ciphertext": _encrypt(credential, "connection:google:" + user_id),
         "access_token_expires_at": new_expiry.isoformat(), "token_updated_at": datetime.now(timezone.utc).isoformat(),
         "status": "connected", "last_error_code": None, "updated_at": datetime.now(timezone.utc).isoformat(),
+    })
+    await repository(request).insert("moreai_connection_audit", {
+        "connection_id": connection["id"], "user_id": user_id, "provider": "google",
+        "event_type": "refreshed", "scopes": connection.get("scopes") or [],
+        "detail": {"credential_key_version": 1},
     })
     return credential["access_token"]
 
