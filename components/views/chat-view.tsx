@@ -52,6 +52,7 @@ interface ChatViewProps {
   initialPrompt?: string;
   initialAgentKey?: 'manus' | 'planning' | 'toolcall';
   initialAgentConfigurationId?: string | null;
+  initialSkillIds?: string[];
   onNavigateTab?: (tab: NavigationTab) => void;
 }
 
@@ -67,7 +68,7 @@ const toChatCitations = (value: unknown): ChatCitation[] => Array.isArray(value)
     )
   : [];
 
-export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', initialAgentKey = 'manus', initialAgentConfigurationId = null }) => {
+export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', initialAgentKey = 'manus', initialAgentConfigurationId = null, initialSkillIds = [] }) => {
   const { showToast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -536,7 +537,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       setIsCancelling(false);
       setIsLoading(false);
     }
-  }, [inputText, pendingAttachments, isLoading, isRestoringConversation, conversationId, showToast, initialAgentKey, selectedWorkspaceId, workspaceLoading]);
+  }, [inputText, pendingAttachments, isLoading, isRestoringConversation, conversationId, showToast, initialAgentKey, initialSkillIds, selectedWorkspaceId, workspaceLoading]);
 
   const handleRetryRun = useCallback(async (sourceRunId: string) => {
     if (retryingRunId || isLoading) return;
