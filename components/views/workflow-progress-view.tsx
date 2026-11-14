@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Clock, Loader2, AlertCircle, Download } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { artifactApi, customerApi, customerToolApprovalApi, moreAiApiStream, type CustomerAgentRun, type CustomerToolApproval, type CustomerArtifact } from '@/lib/api/client';
+import { artifactApi, customerApi, customerToolApprovalApi, moreAiApiStream, type CustomerAgentRun, type CustomerAgentRunProgress, type CustomerToolApproval, type CustomerArtifact } from '@/lib/api/client';
 import { agentRunStatusLabel, isActiveAgentRunStatus, isTerminalAgentRunStatus } from '@/lib/api/agent-run-status';
 
 interface WorkflowProgressViewProps {
@@ -45,6 +45,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [runSteps, setRunSteps] = useState<Record<string, Awaited<ReturnType<typeof customerApi.getRunSteps>>>>({});
   const [runActivity, setRunActivity] = useState<Record<string, Awaited<ReturnType<typeof customerApi.getRunActivity>>>>({});
+  const [runProgress, setRunProgress] = useState<Record<string, CustomerAgentRunProgress>>({});
   const [activityLoadingId, setActivityLoadingId] = useState<string | null>(null);
   const [stepLoadingId, setStepLoadingId] = useState<string | null>(null);
   const [runActionId, setRunActionId] = useState<string | null>(null);
@@ -160,12 +161,14 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     setStepLoadingId(runId);
     setActivityLoadingId(runId);
     try {
-      const [steps, activity] = await Promise.all([
+      const [steps, activity, progress] = await Promise.all([
         customerApi.getRunSteps(runId),
         customerApi.getRunActivity(runId, 0, 200),
+        customerApi.getRunProgress(runId),
       ]);
       setRunSteps((current) => ({ ...current, [runId]: steps }));
       setRunActivity((current) => ({ ...current, [runId]: activity }));
+      setRunProgress((current) => ({ ...current, [runId]: progress }));
     } catch (cause) {
       setRunPaginationError(cause instanceof Error ? cause.message : 'Tahapan atau aktivitas Agent Run tidak dapat dimuat.');
     } finally {
@@ -185,6 +188,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         customerApi.getRun(expandedRunId),
         customerApi.getRunSteps(expandedRunId),
         customerApi.getRunActivity(expandedRunId, 0, 200),
+        customerApi.getRunProgress(expandedRunId),
       ]);
       if (!active) return;
       if (runResult.status === 'fulfilled') {
@@ -197,6 +201,9 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       }
       if (activityResult.status === 'fulfilled') {
         setRunActivity((current) => ({ ...current, [expandedRunId]: activityResult.value }));
+      }
+      if (progressResult.status === 'fulfilled') {
+        setRunProgress((current) => ({ ...current, [expandedRunId]: progressResult.value }));
       }
     };
     void moreAiApiStream(customerApi.streamRun(expandedRunId), ({ event }) => {
@@ -406,6 +413,18 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                     </div>
                     {expandedRunId === run.id && (
                       <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3">
+                        {runProgress[run.id] && (
+                          <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Progress eksekusi</p>
+                              <span className="text-xs font-bold tabular-nums text-slate-700">{runProgress[run.id].percentage}%</span>
+                            </div>
+                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                              <div className="h-full rounded-full bg-red-600 transition-all" style={{ width: `${Math.max(0, Math.min(100, runProgress[run.id].percentage))}%` }} />
+                            </div>
+                            <p className="mt-1.5 text-[10px] text-slate-500">{runProgress[run.id].completed_steps} dari {runProgress[run.id].total_steps} langkah selesai{runProgress[run.id].current_step ? ' · Saat ini: ' + runProgress[run.id].current_step : ''}</p>
+                          </div>
+                        )}
                         <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Durable workflow steps</p>
                         {stepLoadingId === run.id ? (
                           <p className="mt-2 text-[11px] text-slate-500">Memuat tahapan dari FastAPI…</p>
