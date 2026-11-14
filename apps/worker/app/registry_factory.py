@@ -13,6 +13,7 @@ from engine.agents.planning_runtime import PlanningAgentRuntime
 from engine.tools.search_provider import TavilySearchAdapter
 from engine.tools.storage import SupabaseArtifactTool
 from engine.tools.media import OpenAIImageGenerationAdapter
+from engine.tools.video import RunwayVideoGenerationAdapter
 from engine.tools.workspace import SupabaseWorkspaceTool
 from apps.sandbox.app.browser_supervisor import BrowserSupervisor
 from engine.orchestration.registry import AgentRegistry
@@ -36,6 +37,16 @@ def build_agent_registry(
     image_tools = (
         OpenAIImageGenerationAdapter.from_environment(
             http=http_client,
+            artifacts=storage_tools,
+            accounting=SupabaseUsageAccounting(client),
+            estimator=ConfiguredCreditEstimator(),
+        )
+        if storage_tools is not None else None
+    )
+    video_tools = (
+        RunwayVideoGenerationAdapter.from_environment(
+            http=http_client,
+            client=client,
             artifacts=storage_tools,
             accounting=SupabaseUsageAccounting(client),
             estimator=ConfiguredCreditEstimator(),
@@ -77,6 +88,7 @@ def build_agent_registry(
         search_tools=search_tools,
         storage_tools=storage_tools,
         image_tools=image_tools,
+        video_tools=video_tools,
         workspace_tools=workspace_tools,
         browser_tools=browser_tools,
         event_publisher=client.append_run_event,
@@ -105,7 +117,7 @@ def build_agent_registry(
     toolcall = DurableOpenManusRuntime(
         gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, knowledge_tools=knowledge_tools,
         plan_store=plan_store, search_tools=search_tools, storage_tools=storage_tools,
-        image_tools=image_tools, workspace_tools=workspace_tools, browser_tools=browser_tools,
+        image_tools=image_tools, video_tools=video_tools, workspace_tools=workspace_tools, browser_tools=browser_tools,
         attachment_loader=attachment_loader,
         event_publisher=client.append_run_event, sandbox_tools=sandbox_tools,
         approval_gate=client.wait_for_tool_approval,
