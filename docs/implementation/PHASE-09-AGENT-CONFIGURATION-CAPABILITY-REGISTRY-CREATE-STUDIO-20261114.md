@@ -151,3 +151,11 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 - Provider-specific tool execution bounds were added: image generation defaults to 360 seconds (HTTP timeout 300 seconds); video generation defaults to 600 seconds with a maximum 420-second provider poll window to leave time for download, private artifact storage and usage settlement. These bounds are independent from the general 120-second tool timeout.
 
 - The current Runway adapter is intentionally limited to model `gen4.5` and durations `5` or `10` seconds; other model/duration combinations remain unavailable until their API parameters and price map are explicitly added.
+
+
+## Supabase media artifact bucket capacity
+
+- Read-only configuration inspection found the existing `moreai-artifacts` bucket was private but limited to 2 MiB, which was insufficient for generated image/video artifacts.
+- Added and successfully applied migration `20261114070000_moreai_media_artifact_bucket_capacity.sql`: it preserves `public=false` and raises the bucket file size limit to 150,000,000 bytes (150 MB), matching the worker's bounded media artifact limit.
+- The migration does not make Storage public and does not change Customer direct access. The Worker service-role artifact pipeline remains the only write path.
+- No generated media was requested from a provider; no tests or runtime checks were run.
