@@ -25,6 +25,25 @@ class SupabaseRepository:
             headers["Prefer"] = prefer
         return headers
 
+    async def count(self, table: str, params: dict[str, str]) -> int:
+        """Return an exact count for the caller's filtered PostgREST query."""
+        count_params = {key: value for key, value in params.items() if key not in {"limit", "offset", "select"}}
+        count_params["select"] = "id"
+        headers = self._headers("count=exact")
+        headers["Range"] = "0-0"
+        response = await self.http.head(
+            f"{self.url}/rest/v1/{table}", params=count_params, headers=headers, timeout=12.0,
+        )
+        if response.status_code >= 500:
+            raise HTTPException(503, "Database service unavailable")
+        if response.status_code >= 400:
+            raise HTTPException(502, "Database count query failed")
+        content_range = response.headers.get("content-range", "")
+        total = content_range.rsplit("/", 1)[-1] if "/" in content_range else ""
+        if not total.isdigit():
+            raise HTTPException(502, "Database did not return an exact count")
+        return int(total)
+
     async def select(self, table: str, params: dict[str, str]) -> list[dict[str, Any]]:
         response = await self.http.get(f"{self.url}/rest/v1/{table}", params=params, headers=self._headers(), timeout=12.0)
         if response.status_code >= 500:

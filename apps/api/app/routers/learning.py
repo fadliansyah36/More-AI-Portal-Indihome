@@ -239,13 +239,15 @@ async def list_canonical_learning_progress(
     user: dict[str, Any] = Depends(customer_principal),
 ):
     repo = repository(request)
-    rows = await repo.select("learning_progress", {
+    filters = {
         "user_id": f"eq.{user['id']}",
         "select": "id,path_id,module_id,lesson_id,status,progress_percent,last_run_id,started_at,completed_at,updated_at",
         "order": "updated_at.desc,id.desc",
         "limit": str(limit),
-    })
-    return {"items": rows, "count": len(rows)}
+    }
+    rows = await repo.select("learning_progress", filters)
+    total_count = await repo.count("learning_progress", {"user_id": f"eq.{user['id']}"})
+    return {"items": rows, "count": total_count}
 
 
 @router.get("/runs/{run_id}/artifacts")
