@@ -102,7 +102,7 @@ class DurableOpenManusRuntime:
         plan_store: Any | None = None,
         search_tools: Any | None = None,
         storage_tools: Any | None = None, image_tools: Any | None = None, video_tools: Any | None = None, workspace_tools: Any | None = None, browser_tools: Any | None = None,
-        knowledge_tools: Any | None = None, learning_tools: Any | None = None, skill_resolver: Any | None = None,
+        knowledge_tools: Any | None = None, learning_tools: Any | None = None, skill_resolver: Any | None = None, connection_tools: Any | None = None,
         attachment_loader: Any | None = None,
         event_publisher: Callable[[str, str, str, dict[str, Any]], Awaitable[Any]] | None = None,
         max_rounds: int = 12,
@@ -131,6 +131,7 @@ class DurableOpenManusRuntime:
             "browser.navigate": {"browser_use"}, "browser.download": {"browser_use"},
             "files.read": {"knowledge_search", "workspace_read_file"},
             "files.write": {"file_saver", "knowledge_ingest"},
+            "gmail.read": {"gmail_search"}, "calendar.read": {"calendar_list_events"},
         }
         self.attachment_loader = attachment_loader
         self.plan_store = plan_store
@@ -154,6 +155,8 @@ class DurableOpenManusRuntime:
             enabled_tools.add("browser_use")
         if knowledge_tools is not None:
             enabled_tools.update({"knowledge_ingest", "knowledge_search"})
+        if connection_tools is not None:
+            enabled_tools.update({"gmail_search", "calendar_list_events"})
         if learning_tools is not None:
             enabled_tools.update({"learning_path_create", "lesson_generate", "quiz_generate", "answer_assess", "learning_progress_update"})
         if sandbox_tools is not None:
@@ -183,6 +186,9 @@ class DurableOpenManusRuntime:
         if knowledge_tools is not None:
             self.tools.register("knowledge_ingest", knowledge_tools.knowledge_ingest)
             self.tools.register("knowledge_search", knowledge_tools.knowledge_search)
+        if connection_tools is not None:
+            self.tools.register("gmail_search", connection_tools.gmail_search)
+            self.tools.register("calendar_list_events", connection_tools.calendar_list_events)
         if learning_tools is not None:
             self.tools.register("learning_path_create", learning_tools.learning_path_create)
             self.tools.register("lesson_generate", learning_tools.lesson_generate)
