@@ -55,8 +55,8 @@ class OpenAIImageGenerationAdapter:
                 return None
             if "1024x1024:medium" not in normalized_costs:
                 return None
-            configured_model = os.getenv("MOREAI_OPENAI_IMAGE_MODEL", "gpt-image-2")
-            if configured_model != "gpt-image-2":
+            configured_model = os.getenv("MOREAI_OPENAI_IMAGE_MODEL", "gpt-image-2.5-flare")
+            if configured_model not in {"gpt-image-2.5-flare", "gpt-image-2.5-sunburst"}:
                 return None
             credits_per_usd = float(os.environ["MOREAI_CREDITS_PER_USD"])
             timeout_seconds = float(os.getenv("MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS", "300"))
@@ -104,7 +104,7 @@ class OpenAIImageGenerationAdapter:
         prompt = arguments.get("prompt")
         if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 12000:
             raise ValueError("image_prompt_invalid")
-        model = os.getenv("MOREAI_OPENAI_IMAGE_MODEL", "gpt-image-2")
+        model = os.getenv("MOREAI_OPENAI_IMAGE_MODEL", "gpt-image-2.5-flare")
         output_format = arguments.get("output_format", "png")
         if output_format not in self.MIME_TYPES:
             raise ValueError("image_output_format_not_supported")
@@ -113,9 +113,9 @@ class OpenAIImageGenerationAdapter:
         background = arguments.get("background", "auto")
         if size not in {"auto", "1024x1024", "1536x1024", "1024x1536"}:
             raise ValueError("image_size_not_supported")
-        if quality not in {"low", "medium", "high", "auto"}:
+        if quality not in {"low", "medium", "high", "xhigh", "max", "auto"}:
             raise ValueError("image_quality_not_supported")
-        if background not in {"auto", "opaque"}:
+        if background not in {"auto", "opaque", "transparent"}:
             raise ValueError("image_background_not_supported")
 
         image_cost = self._image_cost(size, quality)
