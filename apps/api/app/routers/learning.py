@@ -163,7 +163,7 @@ async def get_learning_path(
     lessons = await repo.select("learning_lessons", {
         "path_id": f"eq.{path_id}", "owner_user_id": f"eq.{user['id']}",
         "select": "id,path_id,module_id,lesson_index,title,content_md,objectives,content_version,status,source_run_id,created_at,updated_at",
-        "order": "lesson_index.asc",
+        "order": "module_id.asc,lesson_index.asc",
         "limit": "1000",
     })
     progress = await repo.select("learning_progress", {
@@ -178,19 +178,40 @@ async def get_learning_path(
         "limit": "200",
     })
     progress_by_lesson = {str(row["lesson_id"]): row for row in progress}
+    enrollment_rows = await repo.select("learning_enrollments", {
+        "path_id": f"eq.{path_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,status,enrolled_at,completed_at,updated_at", "limit": "1",
+    })
     lessons_by_module: dict[str, list[dict[str, Any]]] = {}
     for lesson in lessons:
         lesson["progress"] = progress_by_lesson.get(str(lesson["id"]))
-        lesson["quizzes"] = [quiz for quiz in quizzes if str(quiz["lesson_id"]) == str(lesson["id"])]
+        safe_quizzes = []
+        for quiz in quizzes:
+            if str(quiz["lesson_id"]) != str(lesson["id"]):
+                continue
+            safe_questions = []
+            for question in quiz.get("questions") or []:
+                if isinstance(question, dict):
+                    safe_questions.append({
+                        key: value for key, value in question.items()
+                        if key.lower() not in {"answer", "answer_key", "correct_answer", "explanation", "rationale", "grading_notes", "rubric"}
+                    })
+            safe_quizzes.append({
+                "id": quiz["id"], "title": quiz["title"], "questions": safe_questions,
+                "question_count": len(safe_questions), "pass_score": quiz["pass_score"],
+                "created_at": quiz["created_at"],
+            })
+        lesson["quizzes"] = safe_quizzes
         lessons_by_module.setdefault(str(lesson["module_id"]), []).append(lesson)
     for module in modules:
         module["lessons"] = lessons_by_module.get(str(module["id"]), [])
-    return {"path": path, "modules": modules, "enrollment": (
-        await repo.select("learning_enrollments", {
-            "path_id": f"eq.{path_id}", "user_id": f"eq.{user['id']}",
-            "select": "id,status,enrolled_at,completed_at,updated_at", "limit": "1",
-        })
-    )[:1]}
+    path["enrollment"] = enrollment_rows[0] if enrollment_rows else None
+    path["progress"] = {
+        "lessons_started": len(progress),
+        "lessons_completed": sum(1 for row in progress if row["status"] == "completed"),
+        "average_percent": round(sum(float(row["progress_percent"]) for row in progress) / len(progress), 1) if progress else 0,
+    }
+    return {"path": path, "modules": modules, "enrollment": enrollment_rows[0] if enrollment_rows else None}
 
 
 @router.get("/progress/detail")
