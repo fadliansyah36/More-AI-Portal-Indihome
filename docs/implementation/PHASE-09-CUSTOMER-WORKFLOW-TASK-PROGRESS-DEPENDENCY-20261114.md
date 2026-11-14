@@ -124,3 +124,11 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 - This is a capability status indicator only. It does not imply provider credentials, credits, media usage metering or artifact storage have been runtime verified.
 - Current file output handoff is intended for text-based workspace artifacts (TXT, Markdown, CSV, JSON) through `file_saver`; binary office/PDF formats are not yet a claimed output capability.
 - Source commit: `b2440997`.
+
+
+## Media provider implementation update
+
+- The Runway Dev provider decision is now implemented as a gated source adapter in `engine/tools/video.py`; it uses durable task-ID checkpoints, task polling, a configured provider-credit-to-USD conversion, MoreAI wallet/quota reservation, HTTPS output host allowlisting and private MP4 artifact persistence.
+- The earlier note that a video provider had not been selected is superseded: Runway Dev is the chosen adapter. It is not active until its server secret, price map, credit conversion, media entitlement/quota and output host suffix allowlist are configured.
+- OpenAI Image Generation also has a gated `gpt-image-2` adapter with per-image price map and private artifact persistence. Neither provider was called and no secret was created/read.
+- Official provider references: [OpenAI Image Generation](https://developers.openai.com/api/docs/guides/image-generation), [Runway Dev API](https://docs.dev.runwayml.com/api/).
