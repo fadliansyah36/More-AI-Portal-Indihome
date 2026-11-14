@@ -769,7 +769,7 @@ export const customerApi = {
   ) => moreAiCustomerApi<CustomerChatEnqueueResponse>(`/api/v1/customer/conversations/${conversationId}/messages`, {
     method: 'POST',
     headers: { 'Idempotency-Key': idempotencyKey },
-    body: JSON.stringify({ content, agent_key: agentKey, attachment_ids: attachmentIds, agent_configuration_id: agentConfigurationId || null }),
+    body: JSON.stringify({ content, agent_key: agentKey, attachment_ids: attachmentIds, agent_configuration_id: agentConfigurationId || null, skill_ids: skillIds }),
   }),
   agentRuns: (limit = 50, before?: string) => moreAiCustomerApi<CustomerAgentRun[]>(`/api/v1/customer/agent-runs?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
   agentRunsPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerAgentRun>(
