@@ -1356,3 +1356,12 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Files: `apps/api/app/routers/artifacts.py`, `components/views/artifacts-result-view.tsx`.
 - No Supabase schema, migration, RLS, stored data, provider or worker changes. No tests, lint, typecheck, build, browser/API probes, worker execution, staging or deployment were run. UI regression remains NOT VERIFIED; source behavior is not runtime-verified.
 - Source commit: `6db78da69e70fa65e669736448482406d8f55881`. Phase 09 remains IN PROGRESS. Next: continue Customer action-to-API reconciliation and workflow dependency/checkpoint/retry/cancellation lifecycle parity. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-14 Customer Dashboard continuation — EduTech quiz runtime
+
+- Added `Kerjakan dengan AI Tutor` to the canonical EduTech Lesson Reader. The action forwards canonical path/lesson/quiz IDs and learner-safe questions into the existing Customer Chat → FastAPI → durable OpenManus Planning flow.
+- The prompt requires actual student answers and delegates scoring/feedback/pass decision exclusively to the worker `answer_assess` tool, which reloads the owner-scoped quiz answer key and persists deterministic assessment results and run-linked artifacts.
+- Dashboard callback wiring is additive; no visual redesign, browser-side business database access, new assessment engine, or new table.
+- Report: `PHASE-09-EDUTECH-QUIZ-AGENT-RUNTIME-INTEGRATION-20261114.md`. Source commits `9788e270` and `1b36c2d4`; report commit `fcf3cb7b`.
+- No tests, lint, typecheck, build, browser/API/worker/provider calls, staging, deployment, or live Supabase mutation were performed. Phase 09 remains IN PROGRESS.
