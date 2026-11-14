@@ -688,6 +688,7 @@ export const customerApi = {
   createConversation: (title: string, workspaceId?: string | null) => moreAiCustomerApi<{ id: string; workspace_id: string | null }>('/api/v1/customer/conversations', {
     method: 'POST', body: JSON.stringify({ title, workspace_id: workspaceId || null }),
   }),
+  clearPersonalMemory: () => moreAiCustomerFetch('/api/v1/customer/memory', { method: 'DELETE' }).then(() => undefined),
   sendMessage: (
     conversationId: string, content: string, idempotencyKey: string,
     agentKey: 'manus' | 'planning' | 'toolcall' = 'manus', attachmentIds: string[] = [],
