@@ -3,7 +3,8 @@
 Date: 2026-11-14  
 Repository: `fadliansyah36/More-AI-Portal-Indihome`  
 Branch: `main`  
-Baseline HEAD: `f5306792c41c2e12e89c0a300ec5244b280c5fd8`\nImplementation source snapshot before final report updates: `2a4ef0efd7927a040814f6baa33c33c0dc18a282`  
+Baseline HEAD: `f5306792c41c2e12e89c0a300ec5244b280c5fd8`
+Implementation source snapshot before final report updates: `2a4ef0efd7927a040814f6baa33c33c0dc18a282`  
 Scope: implement the first canonical MoreAI EduTech data domain and expose its lifecycle to the existing Customer dashboard and OpenManus Agent Runtime. This is a source implementation report, not runtime acceptance.
 
 ## Product and architecture decision
@@ -14,7 +15,7 @@ EduTech is a first-party MoreAI capability for students and university students.
 
 ## Implemented Supabase domain
 
-Added migration `supabase/migrations/20261114080000_moreai_edutech_learning_domain.sql` and forward-only hardening migration `20261114081000_moreai_edutech_tool_idempotency.sql`; both were applied to canonical Supabase project `uunfgimtokhucegqbpce` (MoreAIdb). Supabase migration tool returned `success: true`.
+Added migration `supabase/migrations/20261114080000_moreai_edutech_learning_domain.sql` and forward-only hardening migrations `20261114081000_moreai_edutech_tool_idempotency.sql` and `20261114082000_moreai_edutech_progress_rollup.sql`; all three were applied to canonical Supabase project `uunfgimtokhucegqbpce` (MoreAIdb). Supabase migration tool returned `success: true`.
 
 New tables:
 - `learning_paths`: owner, originating Agent Run, learning goal, level and lifecycle status.
@@ -64,7 +65,14 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 - `2e5bc04bfd26d3a4d5623190aae83e03ac470afd` — render saved curricula and lesson continuation in EduTech.
 - `95b344000d770e6a677004e13da9685921044e78` — count canonical lesson progress.
 - `4b8a89cdcccbd0e3ab348bd0c815a28c954672d2` / `2eff65742c5f998e8f22c8e12cc83a82b2a194c6` — display learning artifacts in Task detail and refresh them from Agent Run events.
-- `b3300d82b8e16674022b17b7dc5adce6f147a5ad` — prevent learner curriculum reads from exposing quiz answer keys.\n- `b559aa384f3034d1696ec64323073d9341bc541d` — expose owner-scoped quiz attempts, assessments and lesson version history.\n- `7204532551a9ceab01ea4d380321e226d41ac08c` — add typed contracts for quiz attempts and lesson versions.\n- `209123418038bdc425393dfbdd01f773c4912301` — display persisted quiz attempts and assessment summaries in EduTech.\n- `2d36f886bc1595e725a711d0b50bb554ea6a4b76` — add path/enrollment completion rollup to progress RPC; Supabase migration applied successfully.\n- `3877a917eec65cd6a82615b5f56d4d14fd737ee0` — calculate curriculum progress against total lesson count.\n- `4cc27f4d0a9c7eebcffb5825bd19f0bca0525254` — update typed total-lesson progress contract.\n- `2a4ef0efd7927a040814f6baa33c33c0dc18a282` — show completion against total curriculum lessons.
+- `b3300d82b8e16674022b17b7dc5adce6f147a5ad` — prevent learner curriculum reads from exposing quiz answer keys.
+- `b559aa384f3034d1696ec64323073d9341bc541d` — expose owner-scoped quiz attempts, assessments and lesson version history.
+- `7204532551a9ceab01ea4d380321e226d41ac08c` — add typed contracts for quiz attempts and lesson versions.
+- `209123418038bdc425393dfbdd01f773c4912301` — display persisted quiz attempts and assessment summaries in EduTech.
+- `2d36f886bc1595e725a711d0b50bb554ea6a4b76` — add path/enrollment completion rollup to progress RPC; Supabase migration applied successfully.
+- `3877a917eec65cd6a82615b5f56d4d14fd737ee0` — calculate curriculum progress against total lesson count.
+- `4cc27f4d0a9c7eebcffb5825bd19f0bca0525254` — update typed total-lesson progress contract.
+- `2a4ef0efd7927a040814f6baa33c33c0dc18a282` — show completion against total curriculum lessons.
 
 ## UI change gate and visual preservation
 
