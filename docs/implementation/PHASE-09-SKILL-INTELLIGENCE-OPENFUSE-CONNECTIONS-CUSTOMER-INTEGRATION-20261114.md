@@ -151,3 +151,18 @@ Dependency order:
 ## 7. Validation boundary
 
 This report documents committed source changes only. No build, test, lint, typecheck, browser session, live OAuth consent, Gmail/Calendar provider action, staging, deployment or Supabase mutation was performed.
+
+
+## 8. Additional implementation after the first report revision
+
+- OpenManus now has Gmail send and Calendar create tools in addition to read-only search/list tools.
+- Both write tools are classified as critical/high-risk in the canonical tool policy and require the existing durable run-scoped approval gate before the adapter is invoked.
+- Worker-to-FastAPI write requests are bound to an authenticated internal token and a currently running Agent Run owned by the same user.
+- Write operations use deterministic run-and-payload idempotency keys and the shared connection action receipt ledger. Ambiguous provider outcomes are marked unknown and are not retried automatically.
+- Skill permissions `gmail.send` and `calendar.write` map to those approval-gated tools; granting a skill permission does not bypass the approval gate.
+- The Super Admin reviewer can now inspect actual source-controlled LICENSE/NOTICE/manifest contents, in addition to hashes and dependency metadata.
+- Pinned source ingestion now includes repository-level LICENSE/NOTICE/COPYING files so skills that inherit repository licensing can be reviewed.
+- Worker independently verifies the canonical Git Blob preimage and every source file's SHA-256 before injecting instructions.
+- Skill instructions are appended as an untrusted user-context message, not concatenated into the system prompt.
+
+These additions are committed on `main`. They do not change the validation boundary in Section 7: no live OAuth consent, provider action, migration application, tests, staging or deployment was performed.
