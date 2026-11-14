@@ -116,6 +116,7 @@ class CustomerAgentRunStepResponse(BaseModel):
     sequence: int
     step_key: str
     status: str
+    dependencies: list[int] = Field(default_factory=list)
     started_at: datetime | None = None
     finished_at: datetime | None = None
     created_at: datetime
@@ -636,12 +637,33 @@ async def customer_agent_run_steps(
     principal = await require_customer_context(request, user)
     repo = repository(request)
     await repo.owned_record("agent_runs", run_id, principal["id"])
-    return await repo.select("agent_run_steps", {
+    rows = await repo.select("agent_run_steps", {
         "run_id": f"eq.{run_id}",
-        "select": "id,sequence,step_key,status,started_at,finished_at,created_at",
+        "select": "id,sequence,step_key,status,input,started_at,finished_at,created_at",
         "order": "sequence.asc",
         "limit": str(limit),
     })
+    # Expose only validated dependency indexes from the private step input.
+    # Objective, prompts, tool parameters and private outputs remain server-only.
+    safe_rows: list[dict[str, Any]] = []
+    for row in rows:
+        sequence = row.get("sequence")
+        source = row.get("input") if isinstance(row.get("input"), dict) else {}
+        raw_dependencies = source.get("dependencies")
+        dependencies: list[int] = []
+        if isinstance(sequence, int) and not isinstance(sequence, bool) and isinstance(raw_dependencies, list):
+            dependencies = sorted({
+                dependency for dependency in raw_dependencies
+                if isinstance(dependency, int) and not isinstance(dependency, bool)
+                and 0 <= dependency < sequence - 1
+            })
+        safe_rows.append({
+            "id": row.get("id"), "sequence": sequence, "step_key": row.get("step_key"),
+            "status": row.get("status"), "dependencies": dependencies,
+            "started_at": row.get("started_at"), "finished_at": row.get("finished_at"),
+            "created_at": row.get("created_at"),
+        })
+    return safe_rows
 
 
 @router.get("/agent-runs/{run_id}/stream")
