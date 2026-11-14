@@ -22,6 +22,12 @@ export function ConnectionsCenterView() {
   const [error, setError] = useState<string | null>(null);
   const [mail, setMail] = useState<Record<string, MailItem[]>>({});
   const [events, setEvents] = useState<Record<string, CalendarItem[]>>({});
+  const [mailTo, setMailTo] = useState('');
+  const [mailSubject, setMailSubject] = useState('');
+  const [mailBody, setMailBody] = useState('');
+  const [eventSummary, setEventSummary] = useState('');
+  const [eventStart, setEventStart] = useState('');
+  const [eventEnd, setEventEnd] = useState('');
 
   const refresh = useCallback(async () => {
     setLoading(true); setError(null);
@@ -52,6 +58,25 @@ export function ConnectionsCenterView() {
     setBusy(connection.id); setError(null);
     try { const result = await connectionsApi.gmailMessages(connection.id); setMail(current => ({ ...current, [connection.id]: result.items })); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Gmail tidak dapat dimuat.'); }
+    finally { setBusy(null); }
+  };
+
+  const sendMail = async (connection: CustomerConnection) => {
+    const recipients = mailTo.split(',').map(value => value.trim()).filter(Boolean);
+    if (!recipients.length || !mailSubject.trim() || !mailBody.trim()) return;
+    if (!window.confirm('Kirim email sekarang ke ' + recipients.join(', ') + '? Tindakan ini tidak dapat dibatalkan.')) return;
+    setBusy(connection.id); setError(null);
+    try { await connectionsApi.sendGmail(connection.id, recipients, mailSubject.trim(), mailBody); setMailTo(''); setMailSubject(''); setMailBody(''); window.alert('Email diterima oleh Gmail API.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Pengiriman email gagal atau hasilnya belum diketahui. Periksa folder Sent sebelum mencoba kembali.'); }
+    finally { setBusy(null); }
+  };
+
+  const createEvent = async (connection: CustomerConnection) => {
+    if (!eventSummary.trim() || !eventStart || !eventEnd) return;
+    if (!window.confirm('Buat agenda Calendar "' + eventSummary + '" pada ' + eventStart + '?')) return;
+    setBusy(connection.id); setError(null);
+    try { await connectionsApi.createCalendarEvent(connection.id, eventSummary.trim(), new Date(eventStart).toISOString(), new Date(eventEnd).toISOString()); setEventSummary(''); setEventStart(''); setEventEnd(''); await loadCalendar(connection); window.alert('Agenda berhasil dibuat di Google Calendar.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Pembuatan agenda gagal atau hasilnya belum diketahui.'); }
     finally { setBusy(null); }
   };
 
@@ -87,6 +112,19 @@ export function ConnectionsCenterView() {
         </div>
         {mail[connection.id]&&<div className="space-y-1 rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-bold text-slate-700">Email terbaru</p>{mail[connection.id].length?mail[connection.id].map(item=><div key={item.id} className="border-t border-slate-200 py-2"><p className="text-xs font-semibold text-slate-800">{item.subject||'(Tanpa subjek)'}</p><p className="text-[10px] text-slate-500">{item.from} · {item.date}</p><p className="text-[10px] text-slate-600">{item.snippet}</p></div>):<p className="text-xs text-slate-500">Tidak ada email ditemukan.</p>}</div>}
         {events[connection.id]&&<div className="space-y-1 rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-bold text-slate-700">Agenda 30 hari</p>{events[connection.id].length?events[connection.id].map(event=><div key={event.id} className="border-t border-slate-200 py-2"><p className="text-xs font-semibold text-slate-800">{event.summary||'(Tanpa judul)'}</p><p className="text-[10px] text-slate-500">{event.start?.dateTime||event.start?.date||'Waktu tidak tersedia'}</p></div>):<p className="text-xs text-slate-500">Tidak ada agenda.</p>}</div>}
+        {connection.scopes.includes('https://www.googleapis.com/auth/gmail.send')&&<form onSubmit={event=>{event.preventDefault();void sendMail(connection);}} className="space-y-2 rounded-xl border border-slate-200 p-3">
+          <p className="text-[10px] font-bold text-slate-700">Kirim Gmail · konfirmasi wajib</p>
+          <input value={mailTo} onChange={event=>setMailTo(event.target.value)} placeholder="Penerima email (pisahkan koma)" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"/>
+          <input value={mailSubject} onChange={event=>setMailSubject(event.target.value)} placeholder="Subjek" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"/>
+          <textarea value={mailBody} onChange={event=>setMailBody(event.target.value)} placeholder="Isi email" rows={3} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"/>
+          <button disabled={busy===connection.id||!mailTo.trim()||!mailSubject.trim()||!mailBody.trim()} className="rounded-lg bg-red-600 px-3 py-2 text-[10px] font-bold text-white disabled:opacity-40">Tinjau & kirim email</button>
+        </form>}
+        {connection.scopes.includes('https://www.googleapis.com/auth/calendar.events')&&<form onSubmit={event=>{event.preventDefault();void createEvent(connection);}} className="space-y-2 rounded-xl border border-slate-200 p-3">
+          <p className="text-[10px] font-bold text-slate-700">Buat agenda Calendar · konfirmasi wajib</p>
+          <input value={eventSummary} onChange={event=>setEventSummary(event.target.value)} placeholder="Judul agenda" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"/>
+          <div className="grid gap-2 sm:grid-cols-2"><input type="datetime-local" value={eventStart} onChange={event=>setEventStart(event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"/><input type="datetime-local" value={eventEnd} onChange={event=>setEventEnd(event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"/></div>
+          <button disabled={busy===connection.id||!eventSummary.trim()||!eventStart||!eventEnd} className="rounded-lg bg-red-600 px-3 py-2 text-[10px] font-bold text-white disabled:opacity-40">Tinjau & buat agenda</button>
+        </form>}
       </article>)}</div>}
     <p className="text-[10px] text-slate-400">Aksi Gmail send dan Calendar write tetap memerlukan konfirmasi eksplisit dan receipt idempotent; tombol baca di sini hanya menggunakan scope read yang telah disetujui.</p>
   </div>;
