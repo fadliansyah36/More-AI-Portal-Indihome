@@ -94,3 +94,13 @@ Both migration applications returned `success: true`. Source migration files are
 6. Runtime/E2E verification remains deferred until the owner changes the no-testing instruction.
 
 Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 remains **BLOCKED** by the controlling release gate.
+
+
+## Follow-up hardening after initial report
+
+- Added `moreai_agent_config_retry_snapshot` migration and `moreai_enqueue_chat_run_with_config_snapshot` RPC. A safe manual retry now validates the original owner-scoped run and reuses its exact immutable Agent configuration snapshot, even if the saved configuration was later edited or deleted.
+- The retry RPC independently checks the source run state, original prompt/runtime/config/attachments, attachment ownership and the durable tool-event allowlist before creating a new run.
+- Runtime now enforces saved tool allowlists both when advertising tool definitions and immediately before tool execution; unselected registered tools cannot be invoked through a hallucinated function call.
+- Agent Studio only offers tool choices reported by a live healthy worker and disables saved Agent launch while its runtime is offline.
+- Follow-up migration `moreai_agent_config_retry_snapshot` was applied successfully; no runtime verification was performed.
+- Follow-up source commits include `c2ab2538`, `4bc4dc2e`, `502089b9`, `e4df5a37`, `1069b152`, `57978256`, `deb8d374`, and `e8c9bc36`.
