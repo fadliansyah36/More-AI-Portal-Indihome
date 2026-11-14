@@ -737,6 +737,10 @@ export const customerApi = {
         + '/events?after=' + Math.max(0, after) + '&limit=' + Math.max(1, Math.min(500, limit)),
     ),
   getRun: (runId: string) => moreAiCustomerApi<CustomerAgentRun>(`/api/v1/customer/agent-runs/${runId}`),
+  retryRun: (runId: string, idempotencyKey: string) =>
+    moreAiCustomerApi<CustomerChatEnqueueResponse>(`/api/v1/customer/agent-runs/${encodeURIComponent(runId)}/retry`, {
+      method: 'POST', headers: { 'Idempotency-Key': idempotencyKey },
+    }),
   cancelRun: (runId: string) => moreAiCustomerApi<{ run_id: string; status: CustomerAgentRunCancellationStatus }>(`/api/v1/customer/agent-runs/${runId}/cancel`, {
     method: 'POST',
   }),
