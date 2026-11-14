@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 interface CreateViewProps {
-  onNavigateToChat?: (prompt: string) => void;
+  onNavigateToChat?: (prompt: string, agentKey?: 'manus' | 'planning' | 'toolcall') => void;
 }
 
 export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
@@ -25,6 +25,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
   const tools = [
     {
       id: 'text-doc',
+      agentKey: 'manus' as const,
       name: 'Teks ke Dokumen',
       altName: 'Tulis Konten',
       category: 'teks',
@@ -35,6 +36,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     },
     {
       id: 'img-gen',
+      agentKey: 'manus' as const,
       name: 'Generate Gambar',
       altName: 'Gambar ke Gambar',
       category: 'gambar',
@@ -45,6 +47,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     },
     {
       id: 'doc-summary',
+      agentKey: 'planning' as const,
       name: 'Ringkasan Dokumen',
       altName: 'Pahami Dokumen',
       category: 'teks',
@@ -55,6 +58,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     },
     {
       id: 'translate',
+      agentKey: 'manus' as const,
       name: 'Terjemahkan Bahasa',
       altName: 'Multi-bahasa',
       category: 'teks',
@@ -65,6 +69,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     },
     {
       id: 'presentation',
+      agentKey: 'planning' as const,
       name: 'Presentasi AI',
       altName: 'Slide Otomatis',
       category: 'teks',
@@ -75,6 +80,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     },
     {
       id: 'video-gen',
+      agentKey: 'planning' as const,
       name: 'Generate Video',
       altName: 'Script ke Video',
       category: 'video',
@@ -123,7 +129,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
         ? 'Brief naskah dan storyboard dibuka di Chat AI. Kirim pesan untuk menjalankan Agent; file video tidak dibuat.'
         : 'Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.'
     );
-    onNavigateToChat(taskInstruction + '\\n\\nInstruksi pengguna:\\n' + customPrompt.trim());
+    onNavigateToChat(taskInstruction + '\n\nInstruksi pengguna:\n' + customPrompt.trim(), selected.agentKey);
   };
 
   return (
