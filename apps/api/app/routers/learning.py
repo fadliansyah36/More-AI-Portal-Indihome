@@ -97,19 +97,32 @@ async def set_learning_progress(
 @router.get("/paths")
 async def list_learning_paths(
     request: Request,
-    limit: int = Query(default=50, ge=1, le=100),
+    response: Response,
+    limit: int = Query(default=20, ge=1, le=100),
+    cursor: str | None = Query(default=None, max_length=512),
     user: dict[str, Any] = Depends(customer_principal),
 ):
     """List the authenticated learner's first-party paths and enrollment state."""
-    repo = repository(request)
-    paths = await repo.select("learning_paths", {
+    decoded = decode_timestamp_id_cursor(cursor)
+    filters = {
         "owner_user_id": f"eq.{user['id']}",
         "select": "id,title,description,education_level,learning_goal,status,created_by_run_id,created_at,updated_at",
         "order": "updated_at.desc,id.desc",
-        "limit": str(limit),
-    })
+        "limit": str(limit + 1),
+    }
+    cursor_filter = timestamp_id_filter(decoded, "updated_at")
+    if cursor_filter:
+        filters["or"] = cursor_filter
+    repo = repository(request)
+    paths = await repo.select("learning_paths", filters)
+    has_more = len(paths) > limit
+    paths = paths[:limit]
+    if has_more and paths:
+        response.headers["X-Next-Cursor"] = encode_timestamp_id_cursor(paths[-1], "updated_at")
+    response.headers["X-Pagination-Mode"] = "keyset"
+    total_count = await repo.count("learning_paths", {"owner_user_id": f"eq.{user['id']}"})
     if not paths:
-        return {"items": [], "count": 0}
+        return {"items": [], "count": total_count}
     path_ids = ",".join(str(item["id"]) for item in paths)
     enrollments = await repo.select("learning_enrollments", {
         "user_id": f"eq.{user['id']}", "path_id": f"in.({path_ids})",
@@ -136,7 +149,7 @@ async def list_learning_paths(
                 "average_percent": float(summary.get("average_percent") or 0),
             },
         })
-    return {"items": items, "count": len(items)}
+    return {"items": items, "count": total_count}
 
 
 @router.get("/paths/{path_id}")

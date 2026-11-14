@@ -1206,8 +1206,12 @@ export type CustomerLearningPathDetail = {
 };
 
 export const learningApi = {
-  paths: (limit = 50) => moreAiCustomerApi<{ items: CustomerLearningPathSummary[]; count: number }>(
+  paths: (limit = 20) => moreAiCustomerApi<{ items: CustomerLearningPathSummary[]; count: number }>(
     '/api/v1/customer/learning/paths?limit=' + Math.max(1, Math.min(100, limit)),
+  ),
+  pathsPage: (limit = 20, cursor?: string) => moreAiCustomerApiPage<CustomerLearningPathSummary>(
+    '/api/v1/customer/learning/paths?limit=' + Math.max(1, Math.min(100, limit))
+      + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
   ),
   path: (pathId: string) => moreAiCustomerApi<CustomerLearningPathDetail>(
     '/api/v1/customer/learning/paths/' + encodeURIComponent(pathId),

@@ -42,6 +42,8 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
   const { showToast } = useToast();
   const [savedProgressCount, setSavedProgressCount] = useState(0);
   const [savedPaths, setSavedPaths] = useState<CustomerLearningPathSummary[]>([]);
+  const [nextPathCursor, setNextPathCursor] = useState<string | null>(null);
+  const [loadingMorePaths, setLoadingMorePaths] = useState(false);
   const [selectedPath, setSelectedPath] = useState<CustomerLearningPathDetail | null>(null);
   const [lessonVersions, setLessonVersions] = useState<Array<{
     id: string; version: number; content_md: string; objectives: string[]; source_run_id: string | null; created_at: string;
@@ -57,8 +59,8 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
 
   useEffect(() => {
     let active = true;
-    learningApi.paths(20)
-      .then(({ items }) => { if (active) setSavedPaths(items); })
+    learningApi.pathsPage(20)
+      .then(({ items, nextCursor }) => { if (active) { setSavedPaths(items); setNextPathCursor(nextCursor); } })
       .catch((error) => { if (active) showToast(error instanceof Error ? error.message : 'Learning path gagal dimuat.', 'error'); })
       .finally(() => { if (active) setPathsLoading(false); });
     learningApi.progressDetail(500)
@@ -71,6 +73,23 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
       .finally(() => { if (active) setProgressLoading(false); });
     return () => { active = false; };
   }, [showToast]);
+
+  const loadMorePaths = async () => {
+    if (!nextPathCursor || loadingMorePaths) return;
+    setLoadingMorePaths(true);
+    try {
+      const page = await learningApi.pathsPage(20, nextPathCursor);
+      setSavedPaths((current) => {
+        const seen = new Set(current.map((item) => item.id));
+        return [...current, ...page.items.filter((item) => !seen.has(item.id))];
+      });
+      setNextPathCursor(page.nextCursor);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Kurikulum berikutnya gagal dimuat.', 'error');
+    } finally {
+      setLoadingMorePaths(false);
+    }
+  };
 
   const openLearningPath = async (pathId: string) => {
     try { setSelectedPath(await learningApi.path(pathId)); }
@@ -168,6 +187,12 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
                 </div>
               </button>
             ))}
+            {nextPathCursor && (
+              <button type="button" onClick={() => void loadMorePaths()} disabled={loadingMorePaths}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-600 disabled:opacity-50">
+                {loadingMorePaths ? 'Memuat kurikulum…' : 'Muat kurikulum berikutnya'}
+              </button>
+            )}
           </div>
         )}
         {selectedPath && (
