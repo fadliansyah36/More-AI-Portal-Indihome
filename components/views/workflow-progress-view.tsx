@@ -46,6 +46,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   const [runSteps, setRunSteps] = useState<Record<string, Awaited<ReturnType<typeof customerApi.getRunSteps>>>>({});
   const [runActivity, setRunActivity] = useState<Record<string, Awaited<ReturnType<typeof customerApi.getRunActivity>>>>({});
   const [runProgress, setRunProgress] = useState<Record<string, CustomerAgentRunProgress>>({});
+  const [runCheckpoints, setRunCheckpoints] = useState<Record<string, Array<{ sequence: number; event_type: string; created_at: string; checkpoint: Record<string, unknown> | null }>>>({});
   const [activityLoadingId, setActivityLoadingId] = useState<string | null>(null);
   const [stepLoadingId, setStepLoadingId] = useState<string | null>(null);
   const [runActionId, setRunActionId] = useState<string | null>(null);
@@ -161,14 +162,26 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     setStepLoadingId(runId);
     setActivityLoadingId(runId);
     try {
-      const [steps, activity, progress] = await Promise.all([
+      const [steps, activity, progress, events] = await Promise.all([
         customerApi.getRunSteps(runId),
         customerApi.getRunActivity(runId, 0, 200),
         customerApi.getRunProgress(runId),
+        customerApi.getRunEvents(runId, 0),
       ]);
       setRunSteps((current) => ({ ...current, [runId]: steps }));
       setRunActivity((current) => ({ ...current, [runId]: activity }));
       setRunProgress((current) => ({ ...current, [runId]: progress }));
+      setRunCheckpoints((current) => ({
+        ...current,
+        [runId]: events
+          .filter((event) => !!event.checkpoint)
+          .map((event) => ({
+            sequence: event.sequence,
+            event_type: event.event_type,
+            created_at: event.created_at,
+            checkpoint: event.checkpoint,
+          })),
+      }));
     } catch (cause) {
       setRunPaginationError(cause instanceof Error ? cause.message : 'Tahapan atau aktivitas Agent Run tidak dapat dimuat.');
     } finally {
@@ -189,6 +202,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
         customerApi.getRunSteps(expandedRunId),
         customerApi.getRunActivity(expandedRunId, 0, 200),
         customerApi.getRunProgress(expandedRunId),
+        customerApi.getRunEvents(expandedRunId, 0),
       ]);
       if (!active) return;
       if (runResult.status === 'fulfilled') {
@@ -204,6 +218,23 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       }
       if (progressResult.status === 'fulfilled') {
         setRunProgress((current) => ({ ...current, [expandedRunId]: progressResult.value }));
+      }
+      const eventsResult = await Promise.resolve(customerApi.getRunEvents(expandedRunId, 0)).then(
+        (value) => ({ status: 'fulfilled' as const, value }),
+        (reason) => ({ status: 'rejected' as const, reason }),
+      );
+      if (eventsResult.status === 'fulfilled') {
+        setRunCheckpoints((current) => ({
+          ...current,
+          [expandedRunId]: eventsResult.value
+            .filter((event) => !!event.checkpoint)
+            .map((event) => ({
+              sequence: event.sequence,
+              event_type: event.event_type,
+              created_at: event.created_at,
+              checkpoint: event.checkpoint,
+            })),
+        }));
       }
     };
     void moreAiApiStream(customerApi.streamRun(expandedRunId), ({ event }) => {
@@ -473,6 +504,25 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                               </li>
                             ))}
                           </ol>
+                        )}
+                        {(runCheckpoints[run.id] || []).length > 0 && (
+                          <div className="mt-3 rounded-xl border border-cyan-200 bg-cyan-50/50 p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-cyan-900">Checkpoint tersimpan (safe projection)</p>
+                            <p className="mt-1 text-[10px] text-cyan-800">Checkpoint berasal dari event durable backend. Data tool argument, credential, dan observation privat tidak ditampilkan.</p>
+                            <ol className="mt-2 space-y-2">
+                              {(runCheckpoints[run.id] || []).map((item) => (
+                                <li key={item.sequence} className="rounded-lg border border-cyan-100 bg-white p-2">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[10px] font-semibold text-slate-800">#{item.sequence} · {item.event_type}</span>
+                                    <span className="text-[9px] text-slate-400">{new Date(item.created_at).toLocaleString('id-ID')}</span>
+                                  </div>
+                                  {item.checkpoint && Object.entries(item.checkpoint).map(([key, value]) => (
+                                    <p key={key} className="mt-1 break-words text-[10px] text-slate-600">{key}: {typeof value === 'string' ? value : JSON.stringify(value)}</p>
+                                  ))}
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
                         )}
                         <div className="mt-3 border-t border-slate-100 pt-3">
                           <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Event activity (safe backend projection)</p>
