@@ -100,10 +100,10 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
       name: 'Generate Video',
       altName: 'Script ke Video',
       category: 'video',
-      desc: 'Rancang storyboard video promosi pendek dan narasi suara natural.',
+      desc: 'Buat video promosi pendek hingga 10 detik atau siapkan storyboard jika provider belum aktif.',
       icon: Video,
       color: 'bg-indigo-50 text-indigo-600 border-indigo-200',
-      samplePrompt: 'Buat script video TikTok 15 detik tentang kemudahan akses AI di jaringan Global Partner ISP.',
+      samplePrompt: 'Buat video promosi 10 detik tentang kemudahan akses AI di jaringan Global Partner ISP. Format landscape 16:9.',
     },
     {
       id: 'file-gen',
