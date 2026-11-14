@@ -30,6 +30,35 @@ async function adminRequest<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function adminMutation<T>(path: string, method: 'PATCH', body: Record<string, unknown>): Promise<T> {
+  if (!API) throw new Error('NEXT_PUBLIC_MOREAI_API_URL belum dikonfigurasi.');
+  const { data, error } = await createSupabaseBrowserClient().auth.getSession();
+  if (error || !data.session?.access_token) throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
+  const response = await fetch(API + path, {
+    method, headers: { Authorization: 'Bearer ' + data.session.access_token, Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body), cache: 'no-store',
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.detail || 'Perubahan Skill Registry ditolak (' + response.status + ').');
+  }
+  return response.json() as Promise<T>;
+}
+
+type SkillReviewRow = {
+  id: string; owner_user_id: string; slug: string; name: string;
+  source_repository: string; source_commit: string; source_path: string;
+  license_id: string; license_url: string | null; license_evidence: string | null;
+  license_status: string; validation_status: string; publication_status: string;
+  validation_report: { findings?: string[]; file_count?: number; total_bytes?: number };
+  requested_permissions: string[];
+  installations: Array<{
+    id: string; owner_user_id: string; status: string;
+    permission_request: string[]; permission_status: string;
+    granted_permissions: string[]; execution_enabled: boolean;
+  }>;
+};
+
 const metricCards = [
   ['users', 'Pengguna', Users],
   ['partners', 'Organisasi Mitra', Building2],
@@ -45,7 +74,11 @@ export default function SuperAdminPage() {
   const [runs, setRuns] = useState<Row[]>([]);
   const [audit, setAudit] = useState<Row[]>([]);
   const [providerCatalog, setProviderCatalog] = useState<ProviderCatalog | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'runs' | 'audit' | 'providers'>('overview');
+  const [skillReviews, setSkillReviews] = useState<SkillReviewRow[]>([]);
+  const [skillReviewBusy, setSkillReviewBusy] = useState<string | null>(null);
+  const [skillReviewError, setSkillReviewError] = useState<string | null>(null);
+  const [skillPermissionChoices, setSkillPermissionChoices] = useState<Record<string, string[]>>({});
+  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'runs' | 'audit' | 'providers' | 'skills'>('overview');
   const [principal, setPrincipal] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +123,7 @@ export default function SuperAdminPage() {
     ['partners', 'Organisasi Mitra'],
     ['runs', 'Agent Runs'],
     ['audit', 'Audit Log'],
-    ['providers', 'Provider & Model'],
+    ['providers', 'Provider & Model'],\n    ['skills', 'AI Skills Review'],
   ] as const;
 
   return (
@@ -132,6 +165,23 @@ export default function SuperAdminPage() {
         {!loading && activeTab === 'runs' && <DataTable title="Agent Runs" rows={runs} columns={['id', 'status', 'attempt', 'created_at']} />}
         {!loading && activeTab === 'audit' && <DataTable title="Audit Log" rows={audit} columns={['action', 'resource_type', 'outcome', 'created_at']} />}
         {!loading && activeTab === 'providers' && providerCatalog && <ProviderManagement catalog={providerCatalog} />}
+        {!loading && activeTab === 'skills' && <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3"><div><h2 className="font-bold">AI Skills Trust & Permission Review</h2><p className="mt-1 text-xs text-slate-500">Review provenance, validation, license, publication dan permission sebelum skill dapat digunakan OpenManus.</p></div><button onClick={() => void loadSkillReviews()} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold">Muat ulang</button></div>
+          {skillReviewError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{skillReviewError}</p>}
+          {skillReviews.length === 0 ? <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Tidak ada review skill yang tertunda.</div> : skillReviews.map(skill => <article key={skill.id} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="font-bold">{skill.name}</h3><p className="text-xs text-slate-500">{skill.slug} · {skill.source_repository} · {skill.source_path}</p></div><div className="flex flex-wrap gap-1 text-[10px]"><span className="rounded-full bg-slate-100 px-2 py-1">{skill.validation_status}</span><span className="rounded-full bg-amber-50 px-2 py-1 text-amber-800">{skill.license_status}</span><span className="rounded-full bg-slate-100 px-2 py-1">{skill.publication_status}</span></div></div>
+            <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-[10px] text-slate-600 sm:grid-cols-2"><p>Commit: <span className="font-mono">{skill.source_commit}</span></p><p>License: {skill.license_id} · {skill.license_url || 'URL tidak tersedia'}</p><p>Files ingested: {skill.validation_report?.file_count ?? '—'}</p><p>Package bytes: {skill.validation_report?.total_bytes ?? '—'}</p></div>
+            {skill.license_evidence && <p className="rounded-xl border border-slate-100 p-3 text-xs text-slate-600">{skill.license_evidence}</p>}
+            {skill.validation_report?.findings?.length ? <ul className="list-disc space-y-1 pl-5 text-[11px] text-amber-800">{skill.validation_report.findings.map((finding,index)=><li key={index}>{finding}</li>)}</ul> : null}
+            <div className="flex flex-wrap gap-2"><button disabled={skillReviewBusy===skill.id || skill.validation_status!=='validated'} onClick={()=>void reviewPackage(skill,'approved')} className="rounded-xl bg-red-600 px-3 py-2 text-[11px] font-bold text-white disabled:opacity-40">Setujui lisensi & publikasikan</button><button disabled={skillReviewBusy===skill.id} onClick={()=>void reviewPackage(skill,'rejected')} className="rounded-xl border border-rose-200 px-3 py-2 text-[11px] font-semibold text-rose-700 disabled:opacity-40">Tolak lisensi</button></div>
+            {skill.installations.map(install=><div key={install.id} className="space-y-2 rounded-xl border border-slate-200 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold">Install {install.id.slice(0,8)} · {install.permission_status}</p><span className="text-[10px] text-slate-500">Owner {install.owner_user_id.slice(0,8)} · eksekusi {install.execution_enabled?'aktif':'nonaktif'}</span></div>
+              <div className="grid gap-2 sm:grid-cols-3">{install.permission_request.map(permission=><label key={permission} className="flex items-center gap-2 text-[10px] text-slate-700"><input type="checkbox" checked={(skillPermissionChoices[install.id] || []).includes(permission)} onChange={event=>setSkillPermissionChoices(current=>({...current,[install.id]:event.target.checked?[...(current[install.id]||[]),permission]:(current[install.id]||[]).filter(item=>item!==permission)}))} className="accent-red-600"/>{permission}</label>)}</div>
+              <div className="flex gap-2"><button disabled={skillReviewBusy===install.id || install.permission_status!=='pending_review'} onClick={()=>void reviewInstall(skill,install,'approved')} className="rounded-lg bg-red-600 px-3 py-1.5 text-[10px] font-bold text-white disabled:opacity-40">Setujui permission terpilih</button><button disabled={skillReviewBusy===install.id || install.permission_status!=='pending_review'} onClick={()=>void reviewInstall(skill,install,'rejected')} className="rounded-lg border border-rose-200 px-3 py-1.5 text-[10px] font-semibold text-rose-700 disabled:opacity-40">Tolak permission</button></div>
+            </div>)}
+          </article>)}
+        </section>}
+
         <footer className="border-t border-slate-200 pt-4 text-xs text-slate-500">MoreAI · Provider/model/routing changes use server-side platform permissions and audited database procedures. Credential values are never exposed to the browser.</footer>
       </div>
     </main>
