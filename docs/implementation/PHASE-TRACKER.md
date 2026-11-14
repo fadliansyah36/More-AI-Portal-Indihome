@@ -1161,3 +1161,13 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Vercel API deployment for `fb4929b` reached READY. Frontend deployment for `557c7eb` failed on a stale pagination callback; after correction, the latest `c5eb19a` frontend deployment was QUEUED at report time. The API deployment for `c5eb19a` was also QUEUED; the API deployment at `fb4929b` is READY.
 - No tests, lint, typecheck, local build, browser/API/worker runtime checks, staging or E2E were run. Vercel's own Git deployment build is not Phase 10/11 acceptance evidence.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT STARTED/BLOCKED; Phase 11 BLOCKED by the controlling AGENTS.md release gate. No production release at the latest source HEAD is yet verified.
+
+
+## 2026-11-14 — Customer provider-gate reconciliation
+- Re-read `AGENTS.md`, latest Customer acceptance matrix, Customer API inventory, provider onboarding report, FastAPI Customer router and typed API client.
+- Confirmed the supported Customer integration contracts are routed through FastAPI for Chat/durable runs/events/cancellation, agent/tool/model catalog, workspace files, artifacts, knowledge/RAG, wallet/ledger/usage reads, learning progress, notifications, profile and network-session history.
+- Updated [Provider Onboarding & Customer Domain Contract Gate](./PHASE-09-PROVIDER-ONBOARDING-AND-DOMAIN-CONTRACTS-20261113.md) with the current source-level reconciliation and exact external inputs needed for gateway/OTP, payment/subscription, EduTech, support and Memory privacy lifecycle.
+- No fabricated endpoints, mock success, provider credentials, payment/OTP/gateway activation, Memory lifecycle schema or direct browser business-data access were introduced. Existing unavailable actions remain fail-closed.
+- No tests, lint, typecheck, build, browser/API/worker runtime checks, provider calls, staging, deployment or E2E were run.
+- Phase 09 remains IN PROGRESS because provider/domain contracts are not yet supplied; Phase 10 remains NOT STARTED/BLOCKED and Phase 11 remains BLOCKED by the mandatory release gate.
+- Source/documentation commit: `3375a2f84e067b005a47aec8c684108e31bf6777`.
