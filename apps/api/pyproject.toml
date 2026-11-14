@@ -3,7 +3,7 @@ name = "moreai-api"
 version = "0.2.0"
 requires-python = ">=3.12"
 description = "MoreAI trusted FastAPI boundary"
-dependencies = ["fastapi==0.115.12", "httpx==0.28.1", "uvicorn[standard]==0.34.0", "python-multipart==0.0.20"]
+dependencies = ["fastapi==0.115.12", "httpx==0.28.1", "uvicorn[standard]==0.34.0", "python-multipart==0.0.20", "cryptography==44.0.2"]
 
 [project.optional-dependencies]
 test = ["pytest==8.3.5", "httpx==0.28.1"]
