@@ -97,6 +97,8 @@ export interface AIAgent {
   color: string;
   creditsRequired: number;
   active?: boolean;
+  capabilityTags?: string[];
+  toolKeys?: string[];
 }
 
 export interface ConnectedDevice {
