@@ -23,6 +23,25 @@ const runSummary = (run: CustomerAgentRun) => {
   return 'Belum ada ringkasan hasil yang disimpan untuk run ini.';
 };
 
+const workflowStepStatus = (status: string): { label: string; tone: string; detail: string } => {
+  const states: Record<string, { label: string; tone: string; detail: string }> = {
+    pending: { label: 'Menunggu', tone: 'bg-slate-100 text-slate-600', detail: 'Langkah menunggu giliran eksekusi.' },
+    queued: { label: 'Dalam antrean', tone: 'bg-slate-100 text-slate-600', detail: 'Langkah sudah dijadwalkan oleh runtime.' },
+    blocked: { label: 'Menunggu dependensi', tone: 'bg-amber-50 text-amber-700', detail: 'Prasyarat belum selesai; planner belum menjalankan langkah ini.' },
+    running: { label: 'Berjalan', tone: 'bg-blue-50 text-blue-700', detail: 'Worker sedang menjalankan langkah ini.' },
+    in_progress: { label: 'Berjalan', tone: 'bg-blue-50 text-blue-700', detail: 'Worker sedang menjalankan langkah ini.' },
+    succeeded: { label: 'Berhasil', tone: 'bg-emerald-50 text-emerald-700', detail: 'Langkah berhasil disimpan oleh runtime.' },
+    completed: { label: 'Selesai', tone: 'bg-emerald-50 text-emerald-700', detail: 'Langkah selesai menurut status runtime.' },
+    failed: { label: 'Gagal', tone: 'bg-rose-50 text-rose-700', detail: 'Langkah gagal; lihat event dan ringkasan error yang aman.' },
+    skipped: { label: 'Dilewati', tone: 'bg-slate-100 text-slate-600', detail: 'Planner melewati langkah ini sesuai kondisi workflow.' },
+    cancelled: { label: 'Dibatalkan', tone: 'bg-rose-50 text-rose-700', detail: 'Eksekusi langkah dibatalkan.' },
+    timed_out: { label: 'Waktu habis', tone: 'bg-rose-50 text-rose-700', detail: 'Batas waktu eksekusi langkah tercapai.' },
+    waiting_approval: { label: 'Menunggu persetujuan', tone: 'bg-amber-50 text-amber-700', detail: 'Workflow dijeda sampai keputusan approval diterima.' },
+    paused: { label: 'Dijeda', tone: 'bg-amber-50 text-amber-700', detail: 'Workflow sedang dijeda oleh lifecycle runtime.' },
+  };
+  return states[status.toLowerCase()] || { label: status.replace(/[_-]+/g, ' '), tone: 'bg-slate-100 text-slate-600', detail: 'Status asli dari backend: ' + status };
+};
+
 export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
   onBack,
 }) => {
@@ -568,7 +587,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                                   <p className="text-[11px] font-semibold text-slate-800">{step.sequence}. {step.step_key}</p>
                                   <p className="mt-0.5 text-[10px] text-slate-400">{step.started_at ? new Date(step.started_at).toLocaleString('id-ID') : 'Belum dimulai'}{step.finished_at ? ' · selesai ' + new Date(step.finished_at).toLocaleString('id-ID') : ''}</p><p className="mt-0.5 text-[10px] text-slate-400">{step.dependencies.length ? 'Bergantung pada langkah ' + step.dependencies.map((dependency) => dependency + 1).join(', ') : 'Tanpa dependensi'}</p>
                                 </div>
-                                <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{step.status}</span>
+                                <span title={workflowStepStatus(step.status).detail} className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${workflowStepStatus(step.status).tone}`}>{workflowStepStatus(step.status).label}</span>
                               </li>
                             ))}
                           </ol>
@@ -592,6 +611,10 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                             </ol>
                           </div>
                         )}
+                        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <p className="text-[10px] font-bold text-slate-700">Pemulihan workflow</p>
+                          <p className="mt-1 text-[10px] leading-relaxed text-slate-600">Worker melanjutkan run dan checkpoint tersimpan melalui mekanisme recovery durable. Tombol retry manual membuat Agent Run baru dan hanya tersedia untuk run gagal yang lolos pemeriksaan replay-safety backend; retry bukan rewind checkpoint pada run ini.</p>
+                        </div>
                         <div className="mt-3 border-t border-slate-100 pt-3">
                           <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Event activity (safe backend projection)</p>
                           {activityLoadingId === run.id ? (
