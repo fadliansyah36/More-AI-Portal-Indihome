@@ -101,7 +101,7 @@ class DurableOpenManusRuntime:
         approval_gate: Callable[[str, str, str, dict[str, Any]], Awaitable[bool]] | None = None,
         plan_store: Any | None = None,
         search_tools: Any | None = None,
-        storage_tools: Any | None = None, image_tools: Any | None = None, workspace_tools: Any | None = None, browser_tools: Any | None = None,
+        storage_tools: Any | None = None, image_tools: Any | None = None, video_tools: Any | None = None, workspace_tools: Any | None = None, browser_tools: Any | None = None,
         knowledge_tools: Any | None = None,
         attachment_loader: Any | None = None,
         event_publisher: Callable[[str, str, str, dict[str, Any]], Awaitable[Any]] | None = None,
@@ -129,6 +129,8 @@ class DurableOpenManusRuntime:
             enabled_tools.add("file_saver")
         if image_tools is not None:
             enabled_tools.add("image_generate")
+        if video_tools is not None:
+            enabled_tools.add("video_generate")
         if workspace_tools is not None:
             enabled_tools.update({"str_replace_editor", "workspace_restore_version", "workspace_read_file"})
         if browser_tools is not None:
@@ -151,6 +153,8 @@ class DurableOpenManusRuntime:
             self.tools.register("file_saver", storage_tools.file_saver)
         if image_tools is not None:
             self.tools.register("image_generate", image_tools.image_generate)
+        if video_tools is not None:
+            self.tools.register("video_generate", video_tools.video_generate)
         if workspace_tools is not None:
             self.tools.register("str_replace_editor", workspace_tools.str_replace_editor)
             self.tools.register("workspace_restore_version", workspace_tools.restore_version)
