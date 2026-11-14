@@ -110,7 +110,12 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = () => {
                     <p className="mt-1 text-[10px] text-slate-400">Risiko: {tool.risk} · Approval: {tool.approval_mode} · {tool.execution_environment}</p>
                   </div>
                 </div>
-                <span className="shrink-0 rounded-full border border-slate-200 px-2 py-1 text-[9px] font-semibold text-slate-500">{tool.enabled_by_default ? 'Default aktif' : 'Default nonaktif'}</span>
+                <div className="shrink-0 text-right">
+                  <span className={`rounded-full border px-2 py-1 text-[9px] font-semibold ${tool.registered ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+                    {tool.registered ? `Tersedia · ${tool.active_workers} worker` : 'Belum tersedia'}
+                  </span>
+                  <p className="mt-1 text-[9px] text-slate-400">{tool.enabled_by_default ? 'Policy default aktif' : 'Policy default nonaktif'}</p>
+                </div>
               </article>
             );
           })}
