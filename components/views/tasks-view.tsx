@@ -87,13 +87,15 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
     setRunSteps([]);
     setRunActivity([]);
     setRunProgress(null);
+    setLearningRunArtifacts([]);
     setRunDetailError(null);
     setRunDetailLoading(true);
-    const [stepsResult, activityResult, runResult, progressResult] = await Promise.allSettled([
+    const [stepsResult, activityResult, runResult, progressResult, learningArtifactsResult] = await Promise.allSettled([
       customerApi.getRunSteps(run.id),
       customerApi.getRunActivity(run.id, 0, 200),
       customerApi.getRun(run.id),
       customerApi.getRunProgress(run.id),
+      learningApi.runArtifacts(run.id),
     ]);
     if (stepsResult.status === 'fulfilled') setRunSteps(stepsResult.value);
     if (activityResult.status === 'fulfilled') setRunActivity(activityResult.value.items);
@@ -102,6 +104,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
       setRuns((current) => current.map((item) => item.id === run.id ? runResult.value : item));
     }
     if (progressResult.status === 'fulfilled') setRunProgress(progressResult.value);
+    if (learningArtifactsResult.status === 'fulfilled') setLearningRunArtifacts(learningArtifactsResult.value.items);
     const errors = [stepsResult, activityResult, runResult, progressResult]
       .filter((result) => result.status === 'rejected')
       .map((result) => result.reason instanceof Error ? result.reason.message : 'Data lifecycle Agent Run tidak dapat dimuat.');
@@ -118,11 +121,12 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
     let active = true;
     const runId = selectedRun.id;
     const refreshSnapshot = async () => {
-      const [runResult, stepsResult, activityResult, progressResult] = await Promise.allSettled([
+      const [runResult, stepsResult, activityResult, progressResult, learningArtifactsResult] = await Promise.allSettled([
         customerApi.getRun(runId),
         customerApi.getRunSteps(runId),
         customerApi.getRunActivity(runId, 0, 200),
         customerApi.getRunProgress(runId),
+        learningApi.runArtifacts(runId),
       ]);
       if (!active) return;
       if (runResult.status === 'fulfilled') {
@@ -136,6 +140,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
       if (stepsResult.status === 'fulfilled') setRunSteps(stepsResult.value);
       if (activityResult.status === 'fulfilled') setRunActivity(activityResult.value.items);
       if (progressResult.status === 'fulfilled') setRunProgress(progressResult.value);
+      if (learningArtifactsResult.status === 'fulfilled') setLearningRunArtifacts(learningArtifactsResult.value.items);
     };
     void moreAiApiStream(customerApi.streamRun(runId), ({ event }) => {
       if (!active) return;
