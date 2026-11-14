@@ -396,6 +396,7 @@ async def send_gmail_message(
     message.set_content(body.body)
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode().rstrip("=")
     payload_hash = hashlib.sha256(json.dumps({"to":body.to,"subject":body.subject,"body":body.body},sort_keys=True).encode()).hexdigest()
+    token = await _google_access_token(request, connection)
     repo = repository(request)
     claim = await repo.rpc("moreai_begin_connection_action", {
         "p_user_id": str(user["id"]), "p_connection_id": str(connection_id),
@@ -408,7 +409,6 @@ async def send_gmail_message(
         if claim.get("status") == "completed":
             return {"status": "completed", "replayed": True, "message_id": claim.get("provider_resource_id")}
         raise HTTPException(409, "gmail_action_already_started_or_outcome_unknown")
-    token = await _google_access_token(request, connection)
     try:
         response = await request.app.state.http.post(
             "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
@@ -462,6 +462,7 @@ async def create_calendar_event(
         "end": {"dateTime": body.end.isoformat(), "timeZone": body.timezone},
     }
     payload_hash = hashlib.sha256(json.dumps(event_payload,sort_keys=True).encode()).hexdigest()
+    token = await _google_access_token(request, connection)
     repo = repository(request)
     claim = await repo.rpc("moreai_begin_connection_action", {
         "p_user_id": str(user["id"]), "p_connection_id": str(connection_id),
@@ -474,7 +475,6 @@ async def create_calendar_event(
         if claim.get("status") == "completed":
             return {"status":"completed","replayed":True,"event_id":claim.get("provider_resource_id")}
         raise HTTPException(409, "calendar_action_already_started_or_outcome_unknown")
-    token = await _google_access_token(request, connection)
     try:
         response = await request.app.state.http.post(
             "https://www.googleapis.com/calendar/v3/calendars/primary/events",
