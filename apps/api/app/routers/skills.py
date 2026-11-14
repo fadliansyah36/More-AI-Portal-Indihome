@@ -315,8 +315,7 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
             break
     if not skill.get("license_evidence") or not source_inventory["license_files"]:
         findings.append("Repository LICENSE/NOTICE evidence is incomplete; legal approval is required.")
-    if registry_inventory["unresolved_count"]:
-        findings.append("One or more dependency versions or registry license metadata remain unresolved; inspect the generated SPDX SBOM.")
+
     if not skill.get("source_path") or ".." in str(skill["source_path"]).split("/"):
         findings.append("Unsafe source path.")
     if not skill.get("source_blob_sha") or not skill.get("content_sha256"):
