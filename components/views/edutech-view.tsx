@@ -151,16 +151,39 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
               <h3 className="text-sm font-bold text-slate-900">{selectedPath.path.title}</h3>
               <button type="button" onClick={() => setSelectedPath(null)} className="text-[11px] font-semibold text-slate-500">Tutup</button>
             </div>
+            {selectedPath.assessments.length > 0 && (
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-[11px] font-bold text-slate-800">Penilaian tersimpan · {selectedPath.assessments.length}</p>
+                <div className="mt-2 space-y-1.5">
+                  {selectedPath.assessments.slice(0, 5).map((assessment) => (
+                    <div key={assessment.id} className="flex items-center justify-between gap-2 text-[10px]">
+                      <span className="text-slate-600">{assessment.assessment_type === 'quiz' ? 'Kuis' : 'Evaluasi'} · {new Date(assessment.created_at).toLocaleDateString('id-ID')}</span>
+                      <span className="font-semibold text-slate-800">{assessment.score === null ? 'Belum dinilai' : assessment.score + '/100'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {selectedPath.modules.map((module) => (
               <div key={module.id} className="rounded-2xl bg-slate-50 p-3">
                 <div className="text-xs font-bold text-slate-800">{module.module_index + 1}. {module.title}</div>
                 <p className="mt-1 text-[10px] text-slate-500">{module.summary} · {module.estimated_minutes} menit</p>
                 <div className="mt-2 space-y-1.5">
                   {module.lessons.map((lesson) => (
-                    <button key={lesson.id} type="button" onClick={() => startLesson(selectedPath.path, module.title, lesson)} className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left">
-                      <span className="min-w-0"><span className="block text-[11px] font-semibold text-slate-800">{lesson.lesson_index + 1}. {lesson.title}</span><span className="text-[10px] text-slate-500">{lesson.progress?.status === 'completed' ? 'Selesai' : lesson.progress?.status === 'in_progress' ? 'Sedang dipelajari' : 'Belum dimulai'} · v{lesson.content_version}</span></span>
-                      <span className="shrink-0 text-[10px] font-semibold text-red-600">Lanjutkan</span>
-                    </button>
+                    <div key={lesson.id} className="rounded-xl border border-slate-200 bg-white p-2.5">
+                      <button type="button" onClick={() => startLesson(selectedPath.path, module.title, lesson)} className="flex w-full items-center justify-between gap-2 text-left">
+                        <span className="min-w-0"><span className="block text-[11px] font-semibold text-slate-800">{lesson.lesson_index + 1}. {lesson.title}</span><span className="text-[10px] text-slate-500">{lesson.progress?.status === 'completed' ? 'Selesai' : lesson.progress?.status === 'in_progress' ? 'Sedang dipelajari' : 'Belum dimulai'} · v{lesson.content_version}</span></span>
+                        <span className="shrink-0 text-[10px] font-semibold text-red-600">Lanjutkan</span>
+                      </button>
+                      {lesson.quizzes.length > 0 && (
+                        <div className="mt-2 border-t border-slate-100 pt-2">
+                          {lesson.quizzes.map((quiz) => {
+                            const latest = quiz.attempts[0];
+                            return <div key={quiz.id} className="flex items-center justify-between gap-2 text-[10px]"><span className="text-slate-500">{quiz.title} · {quiz.attempts.length} percobaan</span><span className="font-semibold text-slate-700">{latest ? latest.score + '/100' + (latest.passed ? ' · Lulus' : ' · Perlu latihan') : 'Belum dikerjakan'}</span></div>;
+                          })}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
