@@ -99,6 +99,7 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
             raise ValueError("episodic_memory_limit_out_of_range")
         preferences = await self.client.select("moreai_customer_memory_preferences", {
             "user_id": f"eq.{user_id}", "enabled": "eq.true",
+            "consent_version": "eq.2026-11-14.v1",
             "select": "user_id,enabled,consent_version", "limit": "1",
         })
         if not preferences:
@@ -124,7 +125,7 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
         for row in expired:
             prior = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
             cleaned = {key: value for key, value in prior.items()
-                       if key not in {"memory_type", "memory_scope", "workspace_id", "episode"}}
+                       if key not in {"memory_type", "memory_scope", "workspace_id", "episode", "episode_expires_at"}}
             await self.client.update(
                 "conversation_messages",
                 {"id": f"eq.{row['id']}", "user_id": f"eq.{user_id}"},
@@ -180,6 +181,7 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
             if supplied.get("memory_type") == "episodic":
                 preferences = await self.client.select("moreai_customer_memory_preferences", {
                     "user_id": f"eq.{user_id}", "enabled": "eq.true",
+                    "consent_version": "eq.2026-11-14.v1",
                     "select": "user_id", "limit": "1",
                 })
                 if not preferences:
