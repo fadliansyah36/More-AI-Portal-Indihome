@@ -7776,10 +7776,10 @@
       "versionInfo": "24.13.4",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key @types/node@24.13.4; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key @types/node@24.13.4; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -7794,10 +7794,10 @@
       "versionInfo": "8.23.1",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key @types/pg@8.23.1; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key @types/pg@8.23.1; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -13716,10 +13716,10 @@
       "versionInfo": "2.3.2",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key fsevents@2.3.2; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key fsevents@2.3.2; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -20610,10 +20610,10 @@
       "versionInfo": "1.17.1",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key pdf-lib@1.17.1; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key pdf-lib@1.17.1; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -20754,10 +20754,10 @@
       "versionInfo": "8.23.1",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key pg@8.23.1; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key pg@8.23.1; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -20988,10 +20988,10 @@
       "versionInfo": "1.62.1",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key playwright-core@1.62.1; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key playwright-core@1.62.1; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -21006,10 +21006,10 @@
       "versionInfo": "1.62.1",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key playwright@1.62.1; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key playwright@1.62.1; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -24444,10 +24444,10 @@
       "versionInfo": "4.23.15",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key tsx@4.23.15; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key tsx@4.23.15; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -24588,10 +24588,10 @@
       "versionInfo": "5.9.3",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key typescript@5.9.3; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key typescript@5.9.3; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -24642,10 +24642,10 @@
       "versionInfo": "7.18.2",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key undici-types@7.18.2; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key undici-types@7.18.2; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -25992,10 +25992,10 @@
       "versionInfo": "2.9.1",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key yaml@2.9.1; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc pnpm-lock.yaml (pnpm lockfile package key yaml@2.9.1; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -26316,10 +26316,10 @@
       "versionInfo": "21.2.4",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key @commitlint/cli@21.2.4; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key @commitlint/cli@21.2.4; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -26334,10 +26334,10 @@
       "versionInfo": "21.2.4",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key @commitlint/config-conventional@21.2.4; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key @commitlint/config-conventional@21.2.4; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -31554,10 +31554,10 @@
       "versionInfo": "9.1.7",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key husky@9.1.7; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key husky@9.1.7; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -32976,10 +32976,10 @@
       "versionInfo": "0.20.2",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key prettier-plugin-sh@0.20.2; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key prettier-plugin-sh@0.20.2; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -34416,10 +34416,10 @@
       "versionInfo": "2.9.1",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
       "copyrightText": "NOASSERTION",
-      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key yaml@2.9.1; sha512 integrity present; exact-version license metadata not yet resolved)",
+      "sourceInfo": "scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9 pnpm-lock.yaml (pnpm lockfile package key yaml@2.9.1; sha512 integrity present; exact-version license metadata not yet resolved); exact license recorded from npm registry latest version match or pinned apps/worker/package-lock.json package metadata",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
@@ -44136,6 +44136,12 @@
       "annotator": "Tool: MoreAI static pnpm-lockfile inventory",
       "annotationDate": "2026-11-14T12:42:00Z",
       "comment": "Lockfile sources: [{\"name\":\"openfuse\",\"repository\":\"CopilotKit/openfuse\",\"commit\":\"7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc\",\"lockfile\":\"pnpm-lock.yaml\",\"lockfileBlobSha1\":\"1f64461ae3c5e6c69b5c8c04826fe7bdbac1f016\",\"lockfileVersion\":\"9.0\",\"packageCount\":1452},{\"name\":\"scenario\",\"repository\":\"scenario-labs/skills\",\"commit\":\"94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9\",\"lockfile\":\"pnpm-lock.yaml\",\"lockfileBlobSha1\":\"a9bfa48bafc6cbd1b4c4652972ae6eeeaa27e098\",\"lockfileVersion\":\"9.0\",\"packageCount\":466}]. This is a lockfile-derived package inventory, not a license-complete SBOM. Resolve licenses for exact package versions from immutable registry artifacts before closing P1."
+    },
+    {
+      "annotationType": "OTHER",
+      "annotator": "Tool: MoreAI static dependency license reconciliation",
+      "annotationDate": "2026-11-14T12:42:00Z",
+      "comment": "Exact-version license metadata was resolved for 15 distinct package@version coordinates: 9 direct package versions whose npm registry latest version exactly matched the lockfile pin, plus exact entries from CopilotKit/openfuse/apps/worker/package-lock.json. Remaining package licenses remain NOASSERTION. Worker package-lock blob SHA-1: 37c93ea2a3410032df594b2893e1a015b2342749."
     }
   ]
 }
