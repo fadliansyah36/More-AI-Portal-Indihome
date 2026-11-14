@@ -38,15 +38,28 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
       const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
       if (error) {
         const message = error.message.toLowerCase();
-        if (message.includes('email not confirmed')) {
-          showToast('Akun belum dapat masuk karena Confirm Email masih aktif pada pengaturan Supabase Auth.', 'error');
+        const code = 'code' in error && typeof error.code === 'string' ? error.code.toLowerCase() : '';
+        if (code === 'email_not_confirmed' || message.includes('email not confirmed')) {
+          showToast('Email akun belum dikonfirmasi. Periksa inbox/spam atau minta tautan konfirmasi baru sebelum masuk.', 'error');
           return;
         }
-        if (message.includes('rate limit') || message.includes('too many')) {
+        if (code === 'user_banned' || message.includes('user is banned')) {
+          showToast('Akun ini sedang dinonaktifkan. Hubungi dukungan MoreAI untuk pemeriksaan akses.', 'error');
+          return;
+        }
+        if (code.includes('rate_limit') || message.includes('rate limit') || message.includes('too many')) {
           showToast('Terlalu banyak percobaan login. Tunggu beberapa saat lalu coba kembali.', 'error');
           return;
         }
-        showToast('Email atau password salah. Periksa kembali data akun Anda.', 'error');
+        if (code === 'invalid_credentials' || message.includes('invalid login credentials')) {
+          showToast('Supabase Auth tidak menemukan pasangan email dan password yang valid. Pastikan email yang digunakan sama dengan email saat pendaftaran, lalu gunakan Lupa password jika perlu membuat ulang password.', 'error');
+          return;
+        }
+        if (message.includes('network') || message.includes('fetch') || message.includes('timeout')) {
+          showToast('Tidak dapat menghubungi Supabase Auth. Periksa koneksi dan konfigurasi URL Auth, lalu coba kembali.', 'error');
+          return;
+        }
+        showToast('Login ditolak oleh Supabase Auth: ' + error.message, 'error');
         return;
       }
       if (!data.session) {
@@ -55,8 +68,8 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
       }
       onLoginSuccess();
       onNavigate('home');
-    } catch {
-      showToast('Layanan login sedang tidak tersedia. Silakan coba kembali.', 'error');
+    } catch (cause) {
+      showToast(cause instanceof Error ? cause.message : 'Layanan login sedang tidak tersedia. Silakan coba kembali.', 'error');
     } finally {
       setIsSubmitting(false);
     }
