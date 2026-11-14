@@ -181,3 +181,22 @@ The direct Agent Run event-history endpoint now uses the same safe allowlist as 
 
 ### Final RAG marker contract
 Knowledge Search returns an explicit validated `citation_marker` for each chunk. The final model instruction requires exact markers; the durable runtime resolves them against retrieved chunk IDs, stores chunk/document provenance in Agent Run output, and strips markers from visible prose. Conversation detail and keyset message history restore citations through the assistant message's owner-scoped `run_id`.
+
+
+## 2026-11-14 continuation — Agent configuration, live capabilities and Create Studio
+
+| Customer screen / action | Frontend contract | FastAPI / Worker contract | Source status |
+|---|---|---|---|
+| Agent Studio saved configurations | `customerApi.agentConfigurations/createAgentConfiguration/updateAgentConfiguration/deleteAgentConfiguration` | `GET/POST/PATCH/DELETE /api/v1/customer/agents/configurations` | Connected at source level; owner-scoped config CRUD, tool allowlist and configuration versioning. No runtime verification |
+| Saved Agent chat handoff | `ChatView → customerApi.sendMessage(..., agentConfigurationId)` | `POST /api/v1/customer/conversations/{id}/messages` → `moreai_enqueue_chat_run_with_config` | Connected at source level; config snapshot and attachment linkage are atomic with durable run creation; safe retry preserves config reference |
+| Dynamic Agent availability | `customerApi.agents()` | `GET /api/v1/agents` + worker capability heartbeat | Connected at source level; live worker/tool metadata uses healthy snapshots ≤90 seconds; enqueue and retry return 503 instead of queuing when the requested runtime is unavailable |
+| Create Studio media/file capability | `customerApi.mediaCapabilities()` | `GET /api/v1/media/capabilities` | Connected at source level; availability derives from actual worker-registered adapters, not static UI flags |
+| Create Studio file artifact | File category → Chat → Manus `file_saver` | Existing durable Agent Run and private artifact pipeline | Connected subject to live storage adapter and private bucket configuration; not runtime-verified |
+| Create Studio image generation | Image category → capability-gated Chat handoff | Requires registered `image_generate` worker adapter | Unavailable; current worker does not register this adapter |
+| Create Studio rendered video | Video category → capability-gated Chat handoff | Requires registered `video_generate` worker adapter | Unavailable; script/storyboard is text-only and does not create a rendered video |
+
+- New server-side schema: `moreai_customer_agent_configs` and `moreai_worker_capability_snapshots`; both have RLS enabled and no browser-role table privileges.
+- Worker publishes its registered runtime and policy-filtered tool capabilities at startup and every 30 seconds. Stale snapshots are not treated as available.
+- User-configured instructions remain user-role preferences, never trusted system instructions. Saved tool keys can only narrow tools already registered by the worker.
+- OpenAI image/video provider activation is not claimed. It still requires server-side provider credentials, entitlement/credit reservation, usage metering and durable media artifact storage.
+- See [Agent Configuration, Dynamic Capability Registry & Create Studio report](./PHASE-09-AGENT-CONFIGURATION-CAPABILITY-REGISTRY-CREATE-STUDIO-20261114.md).
