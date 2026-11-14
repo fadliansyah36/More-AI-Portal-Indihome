@@ -1286,3 +1286,11 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 
 - Added the durable, metered Runway Dev video adapter (`video_generate`) to the canonical OpenManus tool catalog/runtime. It uses the official text-to-video/task polling API, checkpointed provider task IDs, pre-submit wallet/quota reservation, provider-credit USD settlement, output-host allowlisting and private MP4 artifact storage. Worker capability is advertised only when the Runway secret, price map, provider-credit conversion, media entitlement/quota and host allowlist are configured. No key was created/read and no provider request was made. - Source changes are recorded in the repository history on `main`; this report intentionally avoids a partial or unverified commit-hash list. See [Agent Configuration & Create Studio report](./PHASE-09-AGENT-CONFIGURATION-CAPABILITY-REGISTRY-CREATE-STUDIO-20261114.md).
+
+
+## Supabase media artifact bucket capacity
+
+- Read-only configuration inspection found the existing `moreai-artifacts` bucket was private but limited to 2 MiB, which was insufficient for generated image/video artifacts.
+- Added and successfully applied migration `20261114070000_moreai_media_artifact_bucket_capacity.sql`: it preserves `public=false` and raises the bucket file size limit to 150,000,000 bytes (150 MB), matching the worker's bounded media artifact limit.
+- The migration does not make Storage public and does not change Customer direct access. The Worker service-role artifact pipeline remains the only write path.
+- No generated media was requested from a provider; no tests or runtime checks were run.
