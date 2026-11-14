@@ -126,10 +126,10 @@ Phase 09 remains **IN PROGRESS**. Source integration for available Customer cont
 
 ### OpenAI Image adapter source integration — 2026-11-14
 
-- The previous note that the MoreAI worker had no image adapter is superseded. A metered `gpt-image-2` adapter is now present in `engine/tools/media.py`, registered through the OpenManus tool catalog and worker registry only when the server-side API key, media entitlement/quota, wallet conversion and explicit per-size/quality USD price map are configured.
+- The previous note that the MoreAI worker had no image adapter is superseded. A metered `gpt-image-2.5-flare` adapter is now present in `engine/tools/media.py`, registered through the OpenManus tool catalog and worker registry only when the server-side API key, media entitlement/quota, wallet conversion and explicit per-size/quality USD price map are configured.
 - The adapter uses the official Images API generation endpoint, saves binary output to private Supabase Storage, and returns an artifact reference. It reserves wallet/quota before the provider request and retains reservations on ambiguous provider outcomes.
 - No API key was created/read, no pricing configuration was supplied, no provider call was made and the adapter is not claimed active in the current deployment.
-- The official current model used by source defaults is `gpt-image-2`; OpenAI documentation says organization verification may be required. Official cost examples currently list 1024×1024 at $0.006 low / $0.053 medium / $0.211 high. Those values are examples only and must be reviewed against current provider pricing before configuration.
+- The official current model used by source defaults is `gpt-image-2.5-flare`; OpenAI documentation says organization verification may be required. Official cost examples currently list 1024×1024 at $0.006 low / $0.053 medium / $0.211 high. Those values are examples only and must be reviewed against current provider pricing before configuration.
 - Sora Video API remains removed. Runway Dev is one technically documented candidate for an asynchronous video adapter, but it has not been selected or connected. A product-owner decision and secret/pricing configuration are still required.
 
 
@@ -141,3 +141,5 @@ Phase 09 remains **IN PROGRESS**. Source integration for available Customer cont
 - Official docs: [Runway Dev API Reference](https://docs.dev.runwayml.com/api/).
 
 - The current Runway adapter is intentionally limited to model `gen4.5` and durations `5` or `10` seconds; other model/duration combinations remain unavailable until their API parameters and price map are explicitly added.
+
+- Image adapter model alignment was updated to current documented `gpt-image-2.5-flare` by default, with `gpt-image-2.5-sunburst` as the precision-focused alternative. The tool schema supports the current quality options `low/medium/high/xhigh/max/auto` and background `auto/opaque/transparent`; the operator's price map remains mandatory.
