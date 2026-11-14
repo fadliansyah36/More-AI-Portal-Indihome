@@ -65,6 +65,8 @@ export interface TaskItem {
   title: string;
   time: string;
   completed: boolean;
+  /** Canonical persisted Agent Run lifecycle status, when backed by OpenManus. */
+  status?: string;
   category: string;
   deadline?: string;
   credits?: number;
