@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Bot, Copy, Loader2, Paperclip, Send, ShieldCheck, Sparkles, StopCircle, User, X } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
 import { NavigationTab } from '@/types/moreai';
-import { artifactApi, customerApi, moreAiApiStream, workspaceApi, type CustomerWorkspace } from '@/lib/api/client';
+import { artifactApi, customerApi, moreAiApiStream, platformCatalogApi, workspaceApi, type CustomerWorkspace, type CustomerModelCapability } from '@/lib/api/client';
 
 interface ChatCitation {
   id: string;
@@ -72,6 +72,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [workspaces, setWorkspaces] = useState<CustomerWorkspace[]>([]);
+  const [modelCapabilities, setModelCapabilities] = useState<CustomerModelCapability[]>([]);
+  const [modelRegistryLoading, setModelRegistryLoading] = useState(true);
+  const [modelRegistryError, setModelRegistryError] = useState<string | null>(null);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
   const [workspaceCursor, setWorkspaceCursor] = useState<string | null>(null);
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
@@ -99,6 +102,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
     }
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    let active = true;
+    platformCatalogApi.modelCapabilities()
+      .then((result) => { if (active) setModelCapabilities(result.items); })
+      .catch((cause) => { if (active) setModelRegistryError(cause instanceof Error ? cause.message : 'Registry model tidak dapat dimuat.'); })
+      .finally(() => { if (active) setModelRegistryLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -752,6 +764,28 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       </div>
 
       <form onSubmit={(event) => { event.preventDefault(); void handleSendMessage(); }} className="border-t border-slate-100 bg-white p-3">
+        <details className="mb-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+          <summary className="cursor-pointer text-[10px] font-semibold text-slate-600">
+            Model & capability tersedia {modelRegistryLoading ? '· memuat…' : `· ${modelCapabilities.length} model aktif`}
+          </summary>
+          <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">
+            Pemilihan model dilakukan otomatis oleh Model Router berdasarkan task, capability dan kebijakan backend. Daftar ini hanya menampilkan model aktif yang boleh digunakan; bukan pilihan untuk melewati routing atau entitlement.
+          </p>
+          {modelRegistryError ? (
+            <p role="alert" className="mt-1 text-[10px] text-amber-700">{modelRegistryError}</p>
+          ) : modelRegistryLoading ? null : modelCapabilities.length === 0 ? (
+            <p className="mt-1 text-[10px] text-amber-700">Belum ada provider/model aktif yang dipublikasikan oleh registry.</p>
+          ) : (
+            <ul className="mt-2 space-y-1.5">
+              {modelCapabilities.map((model) => (
+                <li key={model.provider_key + ':' + model.model_key} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-2">
+                  <span className="min-w-0 text-[10px] font-semibold text-slate-700">{model.provider_name} · {model.model_name}</span>
+                  <span className="text-[9px] text-slate-500">{model.capabilities.join(' · ')}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </details>
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <label htmlFor="chat-workspace" className="text-[10px] font-semibold text-slate-500">Simpan percakapan di</label>
           <select
