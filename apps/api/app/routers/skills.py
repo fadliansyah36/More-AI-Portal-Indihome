@@ -455,7 +455,7 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
         total_bytes += len(content)
         if total_bytes > 5 * 1024 * 1024:
             raise HTTPException(413, "skill_source_package_size_limit_exceeded")
-        git_sha = hashlib.sha1(b"blob " + str(len(content)).encode() + b"\\0" + content).hexdigest()
+        git_sha = hashlib.sha1(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest()
         sha_api = item.get("sha")
         if not isinstance(sha_api, str) or git_sha != sha_api:
             raise HTTPException(409, "skill_git_blob_hash_mismatch")
