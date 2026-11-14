@@ -7,7 +7,8 @@ create or replace function public.moreai_enqueue_chat_run_with_attachments(
   p_content text,
   p_agent_key text,
   p_idempotency_key text,
-  p_attachment_ids uuid[] default '{}'::uuid[]
+  p_attachment_ids uuid[] default '{}'::uuid[],
+  p_skill_ids uuid[] default '{}'::uuid[]
 ) returns jsonb
 language plpgsql
 security definer
@@ -239,6 +240,6 @@ end;
 $function$;
 revoke all on function public.moreai_enqueue_chat_run_with_config(uuid,uuid,text,text,text,uuid,uuid[],uuid[])
   from public, anon, authenticated;
-grant execute on function public.moreai_enqueue_chat_run_with_config(uuid,uuid,text,text,text,uuid,uuid[])
+grant execute on function public.moreai_enqueue_chat_run_with_config(uuid,uuid,text,text,text,uuid,uuid[],uuid[])
   to service_role;
 
