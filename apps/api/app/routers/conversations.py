@@ -24,6 +24,7 @@ class MessageCreate(BaseModel):
     content: str = Field(min_length=1, max_length=100_000)
     agent_key: Literal["manus", "planning", "toolcall"] = "manus"
     attachment_ids: list[UUID] = Field(default_factory=list, max_length=10)
+    agent_configuration_id: UUID | None = None
 
 
 class ConversationResponse(BaseModel):
