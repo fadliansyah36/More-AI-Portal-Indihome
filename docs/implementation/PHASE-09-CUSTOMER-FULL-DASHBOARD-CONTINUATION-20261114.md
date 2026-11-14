@@ -144,3 +144,18 @@ Remaining media work: add a customer-facing durable media-job projection over Ag
 - This is a source-level Customer UI integration over existing Agent Run, activity, artifact and signed-download APIs. No new database table, billing ledger, provider call or media execution endpoint was added.
 - Implementation commit: `77ce09d64b0ddd097a9ba4d134a59ebec5039015`.
 - Source-only; no tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment.
+
+## Customer benefits, wallet, profile/security and service audit — 2026-11-14
+
+Source audit of `benefit-credit-view.tsx`, `account-upgrade-view.tsx`, `profile-settings-view.tsx`, `personal-memory-settings.tsx`, `security-settings-view.tsx`, `notifications-view.tsx`, and `files-view.tsx`:
+
+- Benefit & AI Credit Center reads active wallets, entitlements, quotas, usage, currency-scoped ledger pages and network sessions from authenticated Customer FastAPI endpoints. History pagination merges server pages without duplicate IDs. Balances are not summed across currencies.
+- Top Up is explicitly unavailable and does not mutate wallet state. Account Upgrade reads entitlement state but checkout/subscription activation is explicitly blocked until a real payment contract exists. This is intentional; no fake checkout or local balance mutation is introduced.
+- Profile identity, locale and notification preferences use FastAPI. Supabase browser access in profile view is an Auth-only fallback for identity when the business API is unavailable.
+- Personal Memory consent and CRUD operations use Customer FastAPI; mutations are applied to the UI only after server success.
+- MFA factor enrollment/challenge/verification and factor removal use Supabase Auth MFA APIs. These are authentication-provider operations, not direct business database writes.
+- Notifications list, pagination, mark-read and mark-all-read use FastAPI and only update the local projection after accepted responses. Destination routing is a UI navigation concern.
+- Files view reads artifacts and workspace files/version history through FastAPI and downloads through signed artifact/workspace endpoints. No browser Storage service-role or direct business table access was observed in these components.
+- Security boundaries: no payment checkout, partner voucher redemption, OTP delivery, captive gateway/device control, or external support-ticket provider is claimed as operational without corresponding real provider/business contracts. The benefit view's voucher/ledger navigation is not itself proof of redemption workflow completion.
+
+Remaining follow-up is to reconcile the separate voucher redemption and partner-specific benefit actions with their exact backend endpoints and to distinguish unavailable external service integrations from completed account/profile functionality. No payment or external service call was made.
