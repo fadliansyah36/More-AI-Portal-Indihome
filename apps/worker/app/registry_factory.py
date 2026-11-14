@@ -143,7 +143,7 @@ def build_agent_registry(
     # both explicit runtime/release gates are enabled by deployment configuration.
     if sandbox_tools is not None:
         swe = DurableOpenManusRuntime(
-            gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, skill_resolver=skill_resolver, knowledge_tools=knowledge_tools, learning_tools=learning_tools,
+            gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, skill_resolver=skill_resolver, connection_tools=connection_tools, knowledge_tools=knowledge_tools, learning_tools=learning_tools,
             plan_store=plan_store, search_tools=search_tools, storage_tools=storage_tools,
             workspace_tools=workspace_tools, browser_tools=browser_tools,
             attachment_loader=attachment_loader,
