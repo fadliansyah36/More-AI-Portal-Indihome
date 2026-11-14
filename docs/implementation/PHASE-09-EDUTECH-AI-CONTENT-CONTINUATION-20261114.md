@@ -53,3 +53,12 @@ No tests, lint, typecheck, build, browser/API probes, screenshots, worker execut
 ## Phase status
 
 Phase 09 remains **IN PROGRESS**. This continuation does not declare Customer Dashboard, EduTech or AI Content runtime integration complete. Remaining Phase 09 work includes full action-to-endpoint parity across all Customer dashboard domains, real provider routing and media metering configuration, and reconciliation of all remaining gated/unsupported workflows. Phase 10 and Phase 11 remain unexecuted.
+
+## Additional Customer UI capability surfaced
+
+- Added an additive lesson-level **Lihat riwayat versi** interaction to the existing EduTech curriculum detail.
+- It calls the existing typed `learningApi.lessonVersions(pathId, lessonId)` FastAPI endpoint and renders the canonical saved version number, timestamp, learning objectives and a bounded content preview.
+- This closes a source-level UI/API gap: the backend version-history route and typed client existed, but the active Customer EduTech screen did not expose them.
+- Existing screen hierarchy and MoreAI light-theme styling are retained; no new route or redesign was introduced.
+- Source commit: `a2f722bfbe607107ab5f073fbedbbe05b887a9f0`.
+- No browser verification was performed; visual behavior is not runtime-verified.
