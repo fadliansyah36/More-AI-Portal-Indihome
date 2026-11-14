@@ -158,8 +158,14 @@ create or replace function public.moreai_learning_path_create(
   p_education_level text, p_learning_goal text, p_modules jsonb
 ) returns jsonb language plpgsql security invoker set search_path = ''
 as $$
-declare v_path public.learning_paths%rowtype; v_module jsonb; v_lesson jsonb; v_module_row public.learning_modules%rowtype;
-declare v_module_index integer := 0; v_lesson_index integer; v_count integer := 0;
+declare
+  v_path public.learning_paths%rowtype;
+  v_module jsonb;
+  v_lesson jsonb;
+  v_module_row public.learning_modules%rowtype;
+  v_module_index integer := 0;
+  v_lesson_index integer;
+  v_count integer := 0;
 begin
   if not exists(select 1 from public.agent_runs r where r.id=p_run_id and r.user_id=p_user_id) then
     raise exception 'learning_run_owner_mismatch' using errcode='42501';
