@@ -111,3 +111,14 @@ Phase 09 source integration is substantially reconciled, but the following remai
 - This is a targeted behavior correction; no navigation, layout, spacing, typography, global token or screen hierarchy changes were made.
 - Source commit: `75848ffb91de0f5264c30a1f6b81a66a5ecfdbe4`.
 - No browser screenshot or runtime check was performed by explicit instruction. The display change is source-inspected only.
+
+## 2026-11-14 EduTech and AI Content continuation
+
+- Source review covered the Customer EduTech view, lesson continuation handoff, typed learning API client, FastAPI learning router, worker learning-tool adapters, and the first-party learning-domain implementation reports.
+- Fixed a prompt serialization defect in `components/views/edutech-view.tsx`: resuming a saved canonical lesson now joins prompt sections with actual newline characters instead of a literal backslash-n sequence. This preserves the intended structured lesson context when handing off to the OpenManus Planning runtime.
+- Commit: `a64d18fa9f71f4c787e01e5b91ef4756e14cf4e6`.
+- Existing EduTech source integration includes owner-scoped saved paths/modules/lessons, enrollment/progress summaries, canonical quiz attempts and assessments, lesson version API, learning artifacts linked to Agent Runs, and five durable worker tools (`learning_path_create`, `lesson_generate`, `quiz_generate`, `answer_assess`, `learning_progress_update`). Learner quiz projections omit answer keys and grading material. These capabilities are source-inspected; no execution was performed in this continuation.
+- AI Content / Create Studio continues to route text, translation, document summary and presentation requests into the existing Chat → FastAPI → durable OpenManus Agent Run flow. File generation is gated by the worker's `file_generation` capability and uses the real file artifact tool. Image and rendered video generation remain gated by worker-reported provider adapters, credentials, entitlement/quota, metering and artifact persistence; where video rendering is unavailable, the UI explicitly offers script/storyboard work only. No fake media result is shown.
+- Remaining EduTech product boundary: the first-party AI-guided learning workspace and persistence tools are present, but institutional LMS features such as instructor/cohort administration, enrollment management for third-party courses, formal grading governance and certificates are not claimed as implemented.
+- Remaining AI Content boundary: no image/video generation can be declared operational without real provider configuration and billing/metering integration. The existing UI handoff is not equivalent to a completed media generation job.
+- No tests, lint, typecheck, build, browser/API probes, screenshots, worker execution, provider calls, staging or deployment were performed. Runtime acceptance remains NOT VERIFIED.
