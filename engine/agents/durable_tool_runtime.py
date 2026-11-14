@@ -124,6 +124,7 @@ class DurableOpenManusRuntime:
         self.gateway = gateway
         self.memory_store = memory_store
         self.personal_memory_store = personal_memory_store
+        self.knowledge_tools = knowledge_tools
         self.skill_resolver = skill_resolver
         self.skill_permission_tools = {
             "network.read": {"google_search"}, "search.web": {"google_search"},
