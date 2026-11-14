@@ -1378,7 +1378,11 @@ async def retry_customer_agent_run(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     user: dict[str, Any] = Depends(customer_principal),
 ):
-    """Create a new durable run from a terminal failed/cancelled run using the canonical enqueue RPC."""
+    """Create a new idempotent durable run from a safely replayable failed run.
+
+    This is an explicit new-run retry, not an in-place checkpoint resume. Worker
+    automatic retries and approval continuations retain the same run/checkpoints.
+    """
     principal = await require_customer_context(request, user)
     if not request.app.state.settings.agent_execution_enabled:
         raise HTTPException(503, "Agent execution is disabled until provider, entitlement and worker gates pass")
