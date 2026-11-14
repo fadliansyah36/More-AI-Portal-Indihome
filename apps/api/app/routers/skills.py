@@ -136,7 +136,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 if not raw or raw.startswith(("-r ", "--", "git+", "http:","https:")):
                     continue
                 match = re.match(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)(?:\s*;.*)?$",raw)
-                dependencies.append({"ecosystem":"pypi","name":match.group(1) if match else raw.split(/[<>=!~;\s]/,1)[0],"requested":raw,"exact_version":match.group(2) if match else None,"source_manifest":path,"status":"exact" if match else "range_or_unpinned"})
+                dependencies.append({"ecosystem":"pypi","name":match.group(1) if match else re.split(r"[<>=!~;\s]", raw, maxsplit=1)[0],"requested":raw,"exact_version":match.group(2) if match else None,"source_manifest":path,"status":"exact" if match else "range_or_unpinned"})
         elif name == "pyproject.toml":
             dependency_files.append(path)
             try:
