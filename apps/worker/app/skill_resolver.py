@@ -113,6 +113,17 @@ class SupabaseSkillResolver:
             skill_id = snapshot.get("skill_id")
             if not isinstance(skill_id, str) or not isinstance(item.get("install_id"), str):
                 raise ValueError("skill_execution_audit_identity_invalid")
+            existing = await self.client.select("moreai_skill_execution_audit", {
+                "skill_package_id": f"eq.{skill_id}",
+                "skill_install_id": f"eq.{item['install_id']}",
+                "owner_user_id": f"eq.{user_id}",
+                "agent_run_id": f"eq.{run_id}",
+                "event_type": "eq.executed",
+                "select": "id",
+                "limit": "1",
+            })
+            if existing:
+                continue
             await self.client.insert("moreai_skill_execution_audit", {
                 "skill_package_id": skill_id, "skill_install_id": item["install_id"],
                 "owner_user_id": user_id, "agent_run_id": run_id,
@@ -120,5 +131,5 @@ class SupabaseSkillResolver:
                 "skill_content_sha256": snapshot.get("content_sha256"),
                 "permission_snapshot": snapshot.get("permissions") or [],
                 "event_type": "executed",
-                "event_detail": {"execution_outcome": "agent_run_terminated_successfully"},
+                "event_detail": {"execution_outcome": "agent_run_succeeded"},
             })
