@@ -424,6 +424,8 @@ export type CustomerWorkflowStep = {
   sequence: number;
   step_key: string;
   status: 'pending' | 'running' | 'waiting_approval' | 'succeeded' | 'failed' | 'skipped' | 'cancelled' | string;
+  /** Zero-based indexes of prerequisite steps, projected from validated durable step input. */
+  dependencies: number[];
   started_at: string | null;
   finished_at: string | null;
   created_at: string;
