@@ -84,6 +84,8 @@ async def run_worker() -> None:
                 egress_enforced=os.getenv("MOREAI_BROWSER_EGRESS_ENFORCED", "false").lower() == "true",
                 allow_private_http=os.getenv("MOREAI_BROWSER_PRIVATE_NETWORK_HTTP", "false").lower() == "true",
                 http=http,
+                api_url=os.getenv("MOREAI_INTERNAL_API_URL", os.getenv("MOREAI_API_URL", "http://api:8000")),
+                internal_token=os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", ""),
             )
             await browser_client.check_ready()
         sandbox_tools = None

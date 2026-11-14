@@ -79,6 +79,7 @@ def build_agent_registry(
             service_url=service_url, service_token=service_token,
             egress_enforced=egress_enforced, http=http_client,
             allow_private_http=allow_private_http,
+            api_url=internal_api_url, internal_token=internal_worker_token,
         )
 
     sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"

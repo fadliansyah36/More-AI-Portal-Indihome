@@ -18,6 +18,7 @@ class BrowserAction(BaseModel):
     action: Literal["navigate", "extract"]
     run_id: str = Field(min_length=1, max_length=128)
     user_id: str = Field(min_length=1, max_length=128)
+    storage_state: dict = Field(default_factory=dict, max_length=1000)
 
 
 def _authorize(value: str | None) -> None:

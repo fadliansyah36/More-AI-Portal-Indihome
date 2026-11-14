@@ -9,6 +9,7 @@ class Settings:
     supabase_service_role_key: str | None
     agent_execution_enabled: bool
     artifacts_bucket: str
+    browser_session_encryption_key: str | None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -19,6 +20,7 @@ class Settings:
             supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
             agent_execution_enabled=os.getenv("MOREAI_AGENT_EXECUTION_ENABLED", "false").lower() == "true",
             artifacts_bucket=os.getenv("MOREAI_ARTIFACTS_BUCKET", "moreai-artifacts"),
+            browser_session_encryption_key=os.getenv("MOREAI_BROWSER_SESSION_ENCRYPTION_KEY"),
         )
 
     @property

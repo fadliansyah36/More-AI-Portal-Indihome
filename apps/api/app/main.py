@@ -16,7 +16,7 @@ logger = logging.getLogger("moreai.api")
 
 from app.config import Settings
 from app.dependencies import current_user
-from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, notifications, partner, tool_approvals, workspaces, learning, knowledge, skills, connections
+from app.routers import admin, agent_runs, artifacts, catalog, conversations, customer, notifications, partner, tool_approvals, workspaces, learning, knowledge, skills, connections, browser_sessions
 
 
 @asynccontextmanager
@@ -60,6 +60,8 @@ app.include_router(learning.router)
 app.include_router(knowledge.router)
 app.include_router(skills.router)
 app.include_router(connections.router)
+app.include_router(browser_sessions.router)
+app.include_router(browser_sessions.router)
 
 
 class ProfileRecordResponse(BaseModel):

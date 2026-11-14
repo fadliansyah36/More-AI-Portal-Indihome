@@ -12,6 +12,7 @@ class BrowserSupervisor:
     def __init__(
         self, *, service_url: str, service_token: str, egress_enforced: bool,
         http: httpx.AsyncClient, allow_private_http: bool = False,
+        api_url: str = "", internal_token: str = "",
     ):
         parsed = urlsplit(service_url)
         private_http = (
@@ -39,6 +40,10 @@ class BrowserSupervisor:
         self.service_url = service_url.rstrip("/")
         self.service_token = service_token
         self.http = http
+        self.api_url = api_url.rstrip("/")
+        self.internal_token = internal_token
+        if len(internal_token) < 32 or not self.api_url.startswith(("https://", "http://api:8000")):
+            raise ValueError("browser_session_api_internal_auth_required")
 
     async def check_ready(self) -> dict:
         response = await self.http.get(
@@ -67,12 +72,37 @@ class BrowserSupervisor:
             raise ValueError("browser_url_must_be_https_without_credentials")
         if action not in ("navigate", "extract"):
             raise ValueError("browser_action_not_supported_by_supervisor")
+        headers = {"X-MoreAI-Worker-Token": self.internal_token}
+        acquired = await self.http.post(
+            f"{self.api_url}/api/v1/customer/browser-sessions/internal/acquire",
+            json={"run_id": run_id, "user_id": user_id, "session_id": arguments.get("session_id"),
+                  "origin_host": parsed.hostname.lower()},
+            headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+        )
+        acquired.raise_for_status()
+        session = acquired.json()
+        session_id = session.get("session_id")
+        storage_state = session.get("storage_state", {})
+        if not isinstance(session_id, str) or not isinstance(storage_state, dict):
+            raise RuntimeError("browser_session_restore_contract_invalid")
         response = await self.http.post(
             f"{self.service_url}/v1/browser/actions",
-            json={"url": url, "action": action, "run_id": run_id, "user_id": user_id},
+            json={"url": url, "action": action, "run_id": run_id, "user_id": user_id,
+                  "storage_state": storage_state},
             headers={"Authorization": f"Bearer {self.service_token}"},
             timeout=httpx.Timeout(45.0, connect=5.0),
         )
         response.raise_for_status()
         payload = response.json()
+        updated_state = payload.pop("storage_state", None)
+        if not isinstance(updated_state, dict):
+            raise RuntimeError("browser_session_state_missing_from_supervisor")
+        saved = await self.http.put(
+            f"{self.api_url}/api/v1/customer/browser-sessions/internal/{session_id}/state",
+            json={"run_id": run_id, "user_id": user_id, "storage_state": updated_state},
+            headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+        )
+        saved.raise_for_status()
+        payload["session_id"] = session_id
+        payload["session_persistence"] = "saved"
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
