@@ -110,7 +110,9 @@ begin
     granted_permissions=case when p_decision='approved' then to_jsonb(p_granted_permissions) else '[]'::jsonb end,
     execution_enabled=(p_decision='approved' and p_execution_enabled
       and v_package.validation_status='validated' and v_package.license_status='approved'
-      and v_package.publication_status='published'),
+      and v_package.publication_status='published'
+      and exists(select 1 from public.moreai_skill_source_files sf
+        where sf.skill_package_id=p_skill_id and sf.owner_user_id=v_install.owner_user_id)),
     updated_at=now()
   where id=p_install_id returning * into v_install;
   insert into public.moreai_skill_registry_audit(
