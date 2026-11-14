@@ -616,3 +616,35 @@ A further fetch of the large standalone mobile UI files (`agent-ui.tsx`, `agent-
 **Review count:** this increment adds 10 fully fetched server paths. The report now records **42 of 219 OpenFuse blobs reviewed in full**, leaving **177 blobs not yet fully reviewed**. This is still an open path-level audit; it is not P1 closure.
 
 No application code or Supabase data/schema was changed. No builds, tests, installs, lint, typechecks, staging or deployment were run.
+
+
+---
+
+## 15. Seventh continuation increment — OpenFuse mobile app boundary and document rendering
+
+**Date:** 2026-11-14. Source pin remains `CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`. Ten additional files were fetched in full and reviewed:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/mobile/App.tsx` | `53e192a602f3541c1b3e913f595f00e1991772aa` |
+| `apps/mobile/src/BrowserConsole.native.tsx` | `64e77489f65c95255745cbcaa4f359d6cc6336f1` |
+| `apps/mobile/src/BrowserConsole.web.tsx` | `eb15e336900f156f47feeab4f179b59e5dd8efd7` |
+| `apps/mobile/src/DateFields.native.tsx` | `32fb7ffc3ca6a2fd23c7484e78a5e2b228cf818b` |
+| `apps/mobile/src/DateFields.web.tsx` | `db9e88afde19efef7596486defe2dddd5661d421` |
+| `apps/mobile/src/DateTimeEditor.tsx` | `92e78ee7a0129b1d7f55fdfe474ba53c4e7d6e4c` |
+| `apps/mobile/src/PdfReader.native.tsx` | `c5ead898a65b04c0483a0258ff16fb38699f87d6` |
+| `apps/mobile/src/PdfReader.web.tsx` | `017fdf562c278f3a903e7832a0f23812f5160741` |
+| `apps/mobile/src/api-response.ts` | `d6e8b017d2f70668f2833642e894268047032245` |
+| `apps/mobile/src/assistant-markdown.ts` | `190f242e6f56eacb89c437950ad881300a8f92ab` |
+
+**Findings and MoreAI disposition:**
+- The mobile app obtains an OpenFuse standalone session through `createSession(key)`, retains its bearer token in component state, and passes it to CopilotKit runtime and a dedicated `FuseApi`. This is a standalone demo/application auth path, not MoreAI's identity model. Do not reuse it. MoreAI must use the authenticated Supabase user session and FastAPI authorization; any downstream service credential stays server-side.
+- Native browser console uses React Native WebView to load a supplied URL; web browser console uses an iframe with optional sandbox flags. MoreAI must constrain session URLs to server-issued, short-lived, tenant-bound endpoints; enforce allowed origins, CSP, navigation restrictions and no credential-bearing URL leakage. Web sandbox flags need deliberate review; do not blindly enable same-origin plus scripts for untrusted content.
+- Native PDF reader sends bearer authorization headers and disables cache; web PDF reader embeds a URL in an iframe and exposes print/download UI. MoreAI should use short-lived Supabase signed URLs or a FastAPI streaming endpoint with ownership/RLS checks, avoid long-lived bearer tokens in URL fragments, and apply download policy/audit.
+- Date field/editor components are presentation utilities; they do not create a distinct backend capability. They are not candidates for direct UI transplantation because the MoreAI customer dashboard and design system remain canonical.
+- Assistant markdown URL helper permits only HTTP(S) schemes. This is a useful baseline, but MoreAI additionally needs safe-link rendering, host/IP restrictions for server-side fetch tools, and untrusted-content treatment; client URL scheme validation alone does not prevent SSRF.
+- API response helper is a parsing/normalization utility and does not establish auth or tenant security.
+
+**Audit count correction:** a fresh set-based reconciliation of the previously named reviewed paths against the pinned 219-blob tree showed that the prior increment's stated 42/219 count had included ten paths that were not in the enumerated set. The reproducible count before this increment was **32**. This increment adds ten distinct fully reviewed paths, bringing the verified total to **42/219**, with **177 paths remaining**. This corrected count supersedes the earlier paragraph's count; the per-file list above is the evidence for the ten new paths.
+
+No MoreAI application code, dependencies, or Supabase schema/data were changed. No install, build, test, lint, typecheck, staging or deployment was run.
