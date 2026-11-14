@@ -434,6 +434,14 @@ export type CustomerWorkflowStep = {
 export type CustomerAgentRunCancellationStatus =
   | 'cancel_requested' | 'cancelled' | 'succeeded' | 'failed' | 'timed_out' | 'expired';
 
+export type CustomerAgentRunProgress = {
+  status: string;
+  current_step: string | null;
+  total_steps: number;
+  completed_steps: number;
+  percentage: number;
+};
+
 export type CustomerAgentRun = {
   id: string;
   conversation_id: string | null;
@@ -809,6 +817,9 @@ export const customerApi = {
     method: 'POST',
   }),
   getRunSteps: (runId: string) => moreAiCustomerApi<CustomerWorkflowStep[]>(`/api/v1/customer/agent-runs/${runId}/steps`),
+  getRunProgress: (runId: string) => moreAiCustomerApi<CustomerAgentRunProgress>(
+    `/api/v1/agent-runs/${encodeURIComponent(runId)}/progress`,
+  ),
   getRunActivity: (runId: string, after = 0, limit = 200) =>
     moreAiCustomerApi<{ items: CustomerAgentRunActivity[]; count: number; next_after: number }>(
       `/api/v1/agent-runs/${encodeURIComponent(runId)}/logs?after=${Math.max(0, after)}&limit=${Math.max(1, Math.min(500, limit))}`,
