@@ -3695,3 +3695,100 @@ Before a capability is marked complete, its evidence must include:
 
 **Review conclusion:** Section 35 captured the high-level architecture and major extension concepts but did not yet enumerate the full OpenFuse feature surface, the internal Visual Skills reference-loading and creative-quality process, nor the breadth and schema-sensitive execution rules of Scenario Skills. Section 36 closes those specification gaps at the capability and contract level. This is a documentation enhancement only; it does not certify that the features are present in code, imported, configured, tested or production-ready.
 
+---
+
+## 37. P1 Source Governance Baseline — Pinned Revisions & Capability Parity
+
+**Status: IN PROGRESS — reviewed revisions pinned; recursive file/dependency/license inventory is not yet complete.** This is the first P1 governance baseline, not approval to import or execute third-party code.
+
+### 37.1 Reviewed immutable source revisions
+
+| Repository | Pinned commit | License evidence | Initial inventory evidence | Decision |
+|---|---|---|---|---|
+| CopilotKit/OpenFuse | `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc` (Nov 13, 2026) | Root LICENSE is MIT, Copyright 2026 OpenFuse contributors | Root listing exposes app, packages, assets, docs, infra, patches, tests; 53 test files enumerated under tests; full app/package recursive tree not yet captured | Adopt selected architecture patterns only; do not import OpenFuse app/API/DB/auth/task engine as a parallel runtime |
+| smixs/visual-skills | `61a60d317f0fa0c3dc98902e58a7cb178838ae3f` | Root LICENSE CC BY 4.0; NOTICE Copyright 2026 Serge Shima and third-party acknowledgements | Exactly two primary skill entrypoints: `image/SKILL.md`, `video/SKILL.md`; reference directories contain linked model/task guidance; recursive image/video references/assets still need full inventory | Adapt approved procedural skill content with attribution and modification notice; do not claim the skill itself generates media |
+| scenario-labs/skills | `94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9` | Root LICENSE MIT, Copyright 2026 Scenario Inc.; AGENTS.md defines public-content and skill-authoring rules; each skill manifest has license metadata | Pinned root listing exposes 172 `SKILL.md` links and 210 file links; includes core Scenario skills and DCC/game-engine expert families. Recursive scripts/references/assets/tests inventory remains to be closed | Treat as a large skill catalogue, not one skill. Import by capability/role only after per-skill and per-file provenance/security review |
+
+The pin is immutable for this review. Do not silently follow `main` or install latest. Re-review and update the pin whenever source changes. The previous Section 36 statement about Scenario's skill ecosystem is expanded by this exact inventory baseline: its repository includes core MCP skills, model-family skills, and separate expert tool families for ZBrush, Blender, Maya, Unreal, Unity, Godot and Roblox. The README's install list is not an exhaustive file/dependency manifest.
+
+### 37.2 License and attribution controls
+
+- **OpenFuse MIT:** include its copyright and permission notice in any copied substantial portion; inspect nested assets and transitive package licenses before reuse.
+- **Visual Skills CC BY 4.0:** retain attribution line `Serge Shima — https://github.com/smixs/visual-skills`; link to CC BY 4.0; identify modifications. Preserve root NOTICE. NOTICE also credits methods adapted from `agentara/skills` under MIT; preserve that acknowledgement where relevant and inspect the original source before reusing those specific methods independently.
+- **Scenario Skills MIT:** preserve Scenario Inc. copyright/license. Root AGENTS.md says published skills declare `license: MIT`, but the per-skill manifest and nested files remain the actual import unit. Review bundled code, generated assets, linked references, logos, examples, external-source excerpts and dependencies separately; repository MIT does not automatically relicense third-party material.
+- Never execute a source repository's install script as a production installer. Never place source skill text into prompts until it has passed provenance, content-safety and permission review.
+
+### 37.3 Initial source-to-MoreAI mapping
+
+| Source surface / source files | MoreAI target owner | Existing MoreAI evidence | Parity decision |
+|---|---|---|---|
+| OpenFuse chat/AG-UI hooks, tool cards, follow-up queue, Rich Threads | Existing customer Chat UI + `lib/api/client.ts` stream adapter + FastAPI conversation/run endpoints + OpenManus runtime | Typed authenticated customer API client and stream event contract exist; API README documents conversation and Agent Run endpoints | **Extend existing**; do not add CopilotKit chat runtime or Intelligence persistence |
+| OpenFuse tasks/plans/checkpoints/leases/retry/cancel/receipts | Existing Agent Run/Step/Event/Checkpoint lifecycle and `apps/worker` | Worker README documents durable Supabase run lifecycle, planning steps, checkpoint manifest, Manus/Planning runtimes and LLM metering | **Reuse/extend**; reconcile each missing event/receipt field against existing schema |
+| OpenFuse browser worker/profile/takeover/download | Existing tool registry + worker/sandbox boundary + Files/Artifact + FastAPI | Worker README explicitly keeps browser automation blocked until isolated sandbox is deployed and reviewed | **Missing runtime capability / blocked**; no OpenFuse worker transplant without security adaptation |
+| OpenFuse Linux terminal/workspace | Existing isolated sandbox boundary + workspace/artifact services | Worker README explicitly blocks Bash/Python/process/workspace editing until isolated sandboxes are deployed and reviewed | **Missing runtime capability / blocked**; OpenFuse single-owner container is not a MoreAI multi-tenant sandbox |
+| OpenFuse goals/ideas/notifications/PDF/finance | Existing workflow/scheduler, notifications, Files, Analyse, Agent Runs | Product surfaces and prior Phase 09 work exist; exact route/schema parity needs repository-wide reconciliation | **Partially covered / reconcile**; no duplicate task engine, inbox, document store or finance ledger |
+| Visual image skill | Existing Create UI + Skill Resolver + image provider adapter | PRD Section 36 and current frontend/API architecture define Create and provider gateway; no claim of imported skill or complete provider availability | **Not imported**; adapt full reference set, attribution and progressive loading |
+| Visual video skill | Existing Create UI + Skill Resolver + video provider adapter | Same as above | **Not imported**; adapt storyboard/shot continuity and model-specific prompting as skill logic, not generator |
+| Scenario core MCP skill | Existing server-side Tool Registry + provider adapter + FastAPI + OpenManus Agent Runtime | Existing worker metered LLM gateway and durable Agent Run; Scenario MCP connector is not evidenced as connected | **Not connected / not imported**; private adapter only after credentials, policy, pricing and schema contracts |
+| Scenario image/video/audio/3D skills | Existing Create and Artifact/Storage/credit services | MoreAI has credit/entitlement architecture and Create surface; no verified Scenario job integration | **Not integrated**; model schema/dry-run/idempotency/wait/artifact/settlement required |
+| Scenario workflow skills | Existing canonical Workflow/Agent Run engine | Existing MoreAI workflow lifecycle/recovery projection already exists | **Adapt only**; never make Scenario workflows a second canonical workflow engine |
+| Scenario DCC/game-engine expert skills | Optional Skill Library/professional workspace only if product scope requires | No proof of these desktop applications or local MCP bridges in MoreAI runtime | **Do not import wholesale**; treat as opt-in procedural knowledge and capability declarations, not executable permission |
+
+### 37.4 Explicit capability parity statuses
+
+Legend: **EXISTS** = source-backed implementation evidence in MoreAI repository documentation/code inspected; **PARTIAL** = some components exist but full source behavior is not proven; **MISSING/BLOCKED** = no production-ready capability evidenced or worker explicitly blocks it; **EXCLUDE** = must not be adopted as a parallel/unsafe architecture.
+
+| Capability | Status | Required treatment |
+|---|---|---|
+| Existing Next.js customer UI and typed FastAPI client | EXISTS | Preserve; connect through minimal adapters |
+| Customer conversation/run endpoints | EXISTS (API README) | Continue Phase 09 mapping; do not recreate |
+| SSE stream client with replay/reconnect contract | EXISTS (frontend client source) | Reuse; map new event types only where missing |
+| Durable Supabase run/checkpoint worker | EXISTS (worker README) | Extend current lifecycle |
+| Manus and Planning runtime adapters | EXISTS (worker README) | Keep OpenManus authoritative |
+| LLM gateway/model routing/metering | EXISTS (worker README) | Reuse provider routing and credit settlement |
+| SWE, Bash, Python, process, browser, workspace execution | MISSING/BLOCKED (worker README) | Keep fail-closed until sandbox phase is complete |
+| Full OpenFuse follow-up queue semantics | PARTIAL | Inspect current Chat lifecycle and implement only missing semantics |
+| OpenFuse Rich Threads / side conversations | PARTIAL/UNKNOWN | Map to existing conversation domain; exclude CopilotKit persistence |
+| Browser persistent profile and same-session takeover | MISSING/BLOCKED | Build on MoreAI private worker/sandbox and existing session ownership |
+| Linux/desktop computer workspace | MISSING/BLOCKED | Provider-neutral isolated sandbox; optional desktop only after threat review |
+| OpenFuse action receipts and action-bound approval | PARTIAL | Extend existing approval/audit records after schema reconciliation |
+| Goals/recurring monitoring/Ideas | PARTIAL/UNKNOWN | Reuse workflow scheduler, durable runs and notifications |
+| PDF typed forms and CSV analysis | PARTIAL/UNKNOWN | Reuse Files/Analyse/artifacts; distinguish OCR support |
+| Visual image/video prompt skills | NOT IMPORTED | Skill Registry + complete referenced files + attribution |
+| Scenario MCP server connection | NOT EVIDENCED | Do not claim connected |
+| Scenario model discovery/schema/dry-run/job wait | NOT INTEGRATED | Build private MCP adapter and map to existing run/accounting |
+| Scenario 3D and DCC/game-engine procedures | NOT IMPORTED | Import only selected skills after relevance and execution-channel review |
+| OpenFuse Hono API / PGlite / single-owner auth / CopilotKit Intelligence DB | EXCLUDE | Conflicts with FastAPI, Supabase, multi-tenant canonical identity |
+| OpenFuse independent task worker/Agent authority | EXCLUDE | OpenManus runtime + existing durable worker remain sole authority |
+| Scenario workflow engine replacing MoreAI workflow | EXCLUDE | Scenario saved graph is provider capability; MoreAI remains orchestration authority |
+| Skill YAML permissions granting tool authority | EXCLUDE | Tool Registry and policy engine alone grant permissions |
+
+### 37.5 Scenario Skills scope correction
+
+Scenario's README lists many more capability families than the initial high-level list. The import review must distinguish:
+- Core MCP operation skills: connection, discovery, schema, model run, job wait, asset read/write, workflow list/get/run/author.
+- Creative direction and content production: inspiration, image, multi-reference, product shots, brand kit, image editing, text overlay, storyboard/comic, thumbnails, game assets, sprite animation, textures, skyboxes, 3D, walkable spaces, motion, video, editing, color grading, music-video, audio, captioning, UGC and ad variants.
+- Consistency and model training: consistency, identity library, model training, asset analysis, quality gate, refine loop, model comparison and output formats/placements.
+- Provider/model-family guidance: image, video, audio and 3D family-specific skills. Model availability must be discovered dynamically; the skill may not freeze an assumed model ID.
+- Workflow and governance: saved workflow execution, workflow authoring, moderation, reporting, team administration, admin analytics and task tracking. These are privileged and must not be customer-visible by default.
+- Expert tool families: Blender, Maya, ZBrush, Unreal Engine, Unity, Godot and Roblox. These require the corresponding application, supported version, local MCP/GUI or headless execution channel and explicit user permission; they are not Scenario-hosted generic model calls.
+
+### 37.6 Scenario skill authoring rules that MoreAI must preserve
+
+Scenario AGENTS.md specifies: skill names unique repository-wide and equal directory names; published frontmatter `name`, `description`, `license: MIT`; supporting files must be directly linked from SKILL.md (one-level resolution); scripts shipped with core skills have test suites at root `tests/<name>/`; expert tools test per family. Public content must reference only approved public Scenario surfaces. Model facts and tool parameters must be grounded in the current MCP tool reference. Use `recommend` for capability-level selection and `search` for a known/private model; never hardcode a changing generative model ID. `model_schema_get` is the runtime contract; dry-run validates and prices the exact payload; `jobs_wait` handles pending work; observe concurrency limits and `next_step` guidance. A skill is one output type; model-family skills group provider families rather than model generations. MoreAI's Skill Registry must preserve these procedural rules while applying its own tenant, entitlement, safety and credit policies.
+
+### 37.7 P1 closure checklist and stop conditions
+
+P1 is not complete until all of the following are delivered:
+1. Full recursive Git tree inventory for each pinned repository, including nested `SKILL.md`, references, scripts, assets, tests, examples, manifests, package files, lockfiles and license/notice files.
+2. Per-file SHA-256, byte size, source commit/blob identity, classification, source license/attribution and destination decision.
+3. Dependency/SBOM inventory including direct/transitive package licenses and known vulnerabilities; no dependency installation or test execution is authorized by this P1 review.
+4. File-by-file source → MoreAI target mapping with EXISTS/PARTIAL/MISSING/EXCLUDE status and rationale.
+5. Complete upstream feature parity matrix for OpenFuse, including docs/FEATURES.md, ROADMAP.md, SECURITY.md, COMPUTER.md, RICH-THREADS.md, TELEMETRY.md, OPENBOT-INTEGRATION.md, worker/server/computer implementation and tests.
+6. Complete Visual Skills reference closure: every file directly linked by image/video SKILL.md, all attribution and NOTICE dependencies, all assets and source credits.
+7. Complete Scenario skills catalogue and nested file inventory; per-skill manifest/license; DCC/game-engine prerequisites; script/test linkage; third-party public-source provenance.
+8. Review sign-off on what may be copied, adapted, excluded or deferred. No mass copy, package installation, script execution or provider connection before closure.
+9. Reconcile MoreAI Phase 09 and actual Supabase schema before assigning implementation to a new module; do not create parallel chat/tasks/workflows/wallet/files/artifact/memory/event infrastructure.
+
+**Execution constraints for the current MoreAI workstream:** implement directly on `main`; preserve the existing customer UI and design tokens; no real test execution, staging, provider calls, migrations applied, Supabase data mutation or deployment. Source inspection and repository documentation updates are allowed. The current Phase 09 customer dashboard integration remains the primary product integration path and must not be duplicated by P1 work.
+
