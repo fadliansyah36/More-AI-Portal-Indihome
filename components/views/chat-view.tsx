@@ -769,7 +769,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             Model & capability tersedia {modelRegistryLoading ? '· memuat…' : `· ${modelCapabilities.length} model aktif`}
           </summary>
           <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">
-            Pemilihan model dilakukan otomatis oleh Model Router berdasarkan task, capability dan kebijakan backend. Daftar ini hanya menampilkan model aktif yang boleh digunakan; bukan pilihan untuk melewati routing atau entitlement.
+            Pemilihan model dilakukan otomatis oleh Model Router berdasarkan task, capability dan kebijakan backend. Daftar ini menampilkan model yang diaktifkan pada registry backend; kelayakan eksekusi tetap mengikuti entitlement, kuota, routing, dan kebijakan worker.
           </p>
           {modelRegistryError ? (
             <p role="alert" className="mt-1 text-[10px] text-amber-700">{modelRegistryError}</p>
