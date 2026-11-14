@@ -55,6 +55,8 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
           description: row.description, iconName: 'Bot', color: 'bg-slate-500',
           creditsRequired: 0, active: row.enabled,
           capabilityTags: row.capability_tags, toolKeys: row.tool_keys,
+          runtimeAvailable: row.runtime_available, activeWorkers: row.active_workers,
+          liveToolKeys: row.live_tool_keys, lastSeenAt: row.last_seen_at,
         }));
         setAgents(mapped);
         setSelectedAgentId(mapped[0]?.id || '');
@@ -319,7 +321,9 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
               </div>
               <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-slate-400 block text-[9px] uppercase font-bold">Status Backend</span>
-                <span className="font-bold text-emerald-600">Enabled oleh backend</span>
+                <span className={selectedAgent.runtimeAvailable ? 'font-bold text-emerald-600' : 'font-bold text-amber-700'}>
+                  {selectedAgent.runtimeAvailable ? `Worker online · ${selectedAgent.activeWorkers || 0}` : 'Worker belum terdeteksi'}
+                </span>
               </div>
             </div>
 
@@ -328,7 +332,9 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
                 showToast('Membuka Chat Workspace. Eksekusi mengikuti ketersediaan backend.', 'info');
                 if (onSelectAgentForChat) onSelectAgentForChat(selectedAgent);
               }}
-              className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2"
+              disabled={!selectedAgent.runtimeAvailable}
+              title={!selectedAgent.runtimeAvailable ? 'Worker runtime belum melaporkan heartbeat aktif' : 'Gunakan Agent ini'}
+              className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Zap className="w-3.5 h-3.5 fill-current" />
               <span>Gunakan Agent Ini</span>
