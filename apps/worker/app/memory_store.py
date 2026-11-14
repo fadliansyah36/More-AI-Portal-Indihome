@@ -146,6 +146,7 @@ class SupabasePersonalMemoryStore:
         rows = await self.client.select("moreai_customer_memories", {
             "user_id": f"eq.{user_id}",
             "expires_at": f"gt.{datetime.now(timezone.utc).isoformat()}",
+            "source_type": "eq.user_created", "scope": "eq.personal",
             "select": "title,content,expires_at",
             "order": "updated_at.desc,id.desc",
             "limit": str(limit),
