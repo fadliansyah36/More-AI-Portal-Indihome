@@ -34,7 +34,7 @@ const buildStudyPrompt = (topic: string, level: string, goal: string, mode: Stud
     'Tujuan belajar: ' + (goal.trim() || 'Memahami topik secara konseptual dan mampu menerapkannya.'),
     'Mode: ' + mode,
     'Instruksi: ' + modeInstructions[mode],
-    'Gunakan Bahasa Indonesia yang jelas, ramah, akademis, inklusif, dan sesuai tingkat student. Sertakan learning outcomes yang terukur, contoh, latihan aktif, umpan balik formatif, serta langkah berikutnya. Jangan mengklaim sertifikat atau nilai resmi. Simpan hasil sebagai percakapan dan Agent Run MoreAI yang dapat dilihat pada Chat dan Tasks.',
+    'Gunakan Bahasa Indonesia yang jelas, ramah, akademis, inklusif, dan sesuai usia serta tingkat student. Jangan meminta data pribadi/sensitif, password, nomor identitas, kontak, atau lokasi presisi. Untuk pelajar di bawah 18 tahun, jaga materi sesuai usia dan anjurkan pendampingan guru/wali untuk keputusan penting. Sertakan learning outcomes yang terukur, contoh, latihan aktif, umpan balik formatif, serta langkah berikutnya. Jangan mengklaim sertifikat atau nilai resmi. Simpan hasil sebagai percakapan dan Agent Run MoreAI yang dapat dilihat pada Chat dan Tasks.',
   ].join('\n');
 };
 
