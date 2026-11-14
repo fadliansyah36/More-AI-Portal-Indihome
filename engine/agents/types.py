@@ -34,6 +34,7 @@ class Message:
     tool_calls: list[ToolCall] | None = None
     name: str | None = None
     tool_call_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {"role": self.role}
@@ -59,8 +60,11 @@ class Message:
         return cls("system", content)
 
     @classmethod
-    def assistant_message(cls, content: str | None = None, tool_calls: list[ToolCall] | None = None) -> "Message":
-        return cls("assistant", content, tool_calls)
+    def assistant_message(
+        cls, content: str | None = None, tool_calls: list[ToolCall] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> "Message":
+        return cls("assistant", content, tool_calls, metadata=metadata or {})
 
     @classmethod
     def tool_message(cls, content: str, *, name: str, tool_call_id: str) -> "Message":
