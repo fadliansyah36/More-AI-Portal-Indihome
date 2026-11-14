@@ -1123,3 +1123,33 @@ The mobile documentation strengthens the product mapping for a single Connection
 The audit narrative previously reported **154/219 reviewed and 65 remaining**, while the machine-readable inventory still showed **194 OpenFuse rows pending**. Those were not synchronized and therefore the 65 figure must not be treated as a manifest-derived count. This increment updates six exact rows after matching pinned blob SHA values. The manifest now records **188 OpenFuse rows pending-content-review** (31 rows with non-pending review statuses) across the full 219-file tree. The historical 154/65 count remains an audit-ledger figure only; it is not asserted as the current canonical manifest state. Further path-by-path reconciliation is required before any P1 sign-off.
 
 **Validation:** static source review and manifest bookkeeping only. No packages were installed, no upstream scripts/tests/builds were run, no browser/provider/API calls were made, and no staging, deployment or Supabase mutation occurred. P1 remains OPEN.
+
+
+---
+
+## 29. Twentieth continuation increment — Visual Skills remaining support files and license notice
+
+Six previously pending Visual Skills files were fetched at pinned commit `61a60d317f0fa0c3dc98902e58a7cb178838ae3f`, content-reviewed, and reconciled into the canonical manifest:
+
+| Path | Blob SHA | Disposition |
+|---|---|---|
+| `.claude-plugin/marketplace.json` | `27429137a79d07b773e6a2a8b6f816fc75b063a8` | ARCHIVE-ONLY; upstream marketplace metadata |
+| `.claude-plugin/plugin.json` | `8960a2121ccf990dc740a50554310c4cd5e0e86e` | ARCHIVE-ONLY; upstream plugin metadata |
+| `.gitignore` | `d4a4664cb102f301b3970e0748881e1fff38fa87` | ARCHIVE-ONLY |
+| `LICENSE` | `da6ab6cc8f333d7e89a99812866df8f24374d47c` | COPY attribution/license notice only |
+| `NOTICE` | `ec40c203365e6b3747c2e711e77e8ab327f98e44` | COPY attribution/provenance notice only |
+| `assets/hero.webp` | `a0f428d40903c954ed5394fd98c12a9b85fba23c` | DEFER; source/creator and embedded third-party rights remain unverified |
+
+### Rights and integration findings
+
+- The plugin manifests identify Serge Shima as author and point to the upstream `image` and `video` skill directories. They are not runtime provider manifests and do not authorize execution in MoreAI.
+- The root license is CC BY 4.0. Any shared/adapted skill content must retain creator identification, source URI, license URI, disclaimer notice, and a clear indication of modifications. CC BY 4.0 does not grant trademark rights.
+- NOTICE attributes the work to Serge Shima and identifies methods rewritten after studying `agentara/skills` under MIT. That is provenance evidence; it is not permission to copy the separate upstream source. Any future adaptation must preserve both applicable notices and identify modifications.
+- The hero binary is inventoried and fetched, but the binary's creator/model/stock provenance cannot be inferred from the repository license. Keep it out of production assets until rights are evidenced.
+- The 13 third-party provider logo SVGs remain separately deferred because trademark permission is not granted by CC BY. Text labels are the safe interim presentation.
+
+### Updated source inventory
+
+All **60/60 Visual Skills paths** now have a non-pending content/static review status in the manifest: 45 content-reviewed references/metadata and 15 static SVG reviews. This is not a rights clearance for all assets: the hero remains deferred and the 13 provider marks remain excluded/deferred. The two procedural skill entrypoints and 23 image/video reference files were already recorded as content-reviewed in the earlier manifest.
+
+**P1 remains OPEN.** Scenario Skills still has a large supporting-file review backlog. No skills/assets were imported into the MoreAI product. No tests, scripts, installs, builds, provider calls, staging, deployment or Supabase mutation occurred.
