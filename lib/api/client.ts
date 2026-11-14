@@ -626,7 +626,48 @@ export type CustomerAgentCatalogItem = {
   enabled: boolean;
 };
 
+
+export type CustomerPersonalMemoryItem = {
+  id: string;
+  title: string;
+  content: string;
+  source_type: 'user_created';
+  scope: 'personal';
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CustomerPersonalMemoryState = {
+  enabled: boolean;
+  consent_version: string | null;
+  consented_at: string | null;
+  disabled_at: string | null;
+  items: CustomerPersonalMemoryItem[];
+};
+
 export const customerApi = {
+  personalMemory: () => moreAiCustomerApi<CustomerPersonalMemoryState>('/api/v1/customer/memory'),
+  setPersonalMemoryConsent: (enabled: boolean) => moreAiCustomerApi<{
+    enabled: boolean; consent_version: string; consented_at: string | null;
+    disabled_at: string | null; updated_at: string;
+  }>('/api/v1/customer/memory/consent', {
+    method: 'PUT', body: JSON.stringify({ enabled, consent_version: '2026-11-14.v1' }),
+  }),
+  createPersonalMemory: (payload: { title: string; content: string; retention_days: 30 | 90 | 180 | 365 }) =>
+    moreAiCustomerApi<CustomerPersonalMemoryItem>('/api/v1/customer/memory', {
+      method: 'POST', body: JSON.stringify(payload),
+    }),
+  updatePersonalMemory: (memoryId: string, payload: Partial<{
+    title: string; content: string; retention_days: 30 | 90 | 180 | 365;
+  }>) => moreAiCustomerApi<CustomerPersonalMemoryItem>(
+    '/api/v1/customer/memory/' + encodeURIComponent(memoryId),
+    { method: 'PATCH', body: JSON.stringify(payload) },
+  ),
+  deletePersonalMemory: (memoryId: string) => moreAiCustomerFetch(
+    '/api/v1/customer/memory/' + encodeURIComponent(memoryId), { method: 'DELETE' },
+  ).then(() => undefined),
+
   agents: () => moreAiCustomerApi<CustomerAgentCatalogItem[]>('/api/v1/agents'),
   context: () => moreAiCustomerApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
   conversations: (limit = 50, before?: string) => moreAiCustomerApi<CustomerConversation[]>(`/api/v1/customer/conversations?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
