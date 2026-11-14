@@ -1298,3 +1298,14 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Image adapter model alignment was updated to current documented `gpt-image-2.5-flare` by default, with `gpt-image-2.5-sunburst` as the precision-focused alternative. The tool schema supports the current quality options `low/medium/high/xhigh/max/auto` and background `auto/opaque/transparent`; the operator's price map remains mandatory.
 
 - Runway Dev's official Text-to-Video reference confirms Gen-4.5 accepts 2–10 second duration and `1280:720` / `720:1280` ratios; the worker tool schema and adapter now expose that range. See [Runway Text to Video API](https://docs.dev.runwayml.com/api/) and [input/ratio constraints](https://docs.dev.runwayml.com/assets/inputs/).
+
+
+## 2026-11-14 — First-party EduTech persistence and OpenManus tool integration
+
+- Added and applied the first-party EduTech schema migration to canonical MoreAIdb: learning paths, modules, lessons/content versions, enrollments, quizzes, quiz attempts, assessments, canonical lesson progress and Agent Run-linked learning artifacts.
+- Added five worker-backed OpenManus tools: `learning_path_create`, `lesson_generate`, `quiz_generate`, `answer_assess` and `learning_progress_update`. Tool writes validate the owner of the current Agent Run and canonical learning resource.
+- Added owner-scoped FastAPI reads for saved curricula, lesson detail, canonical progress and Agent Run learning artifacts; exposed typed Customer API contracts.
+- Existing EduTech screen now lists saved curricula and allows a learner to continue a stored lesson through the existing Chat → Planning Agent Run flow. No separate learning engine or browser-to-Supabase business-data path was introduced.
+- Implementation report: [First-party EduTech persistence and OpenManus tools](./PHASE-09-EDUTECH-SUPABASE-OPENMANUS-TOOLS-20261114.md).
+- Supabase migration application returned success. No tests, lint, typecheck, build, SQL verification query, browser/API/worker runtime checks, provider calls, staging or deployment were run per owner instruction.
+- Phase 09 remains IN PROGRESS. Next: finish the full Customer API action and workflow/task lifecycle audit, then close the remaining Customer dashboard integrations backed by existing contracts. Payment, OTP/Gateway and external media provider configuration remain deferred. Phase 10 is NOT ACCEPTED; Phase 11 remains BLOCKED.
