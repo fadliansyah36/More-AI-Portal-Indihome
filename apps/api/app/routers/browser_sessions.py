@@ -72,7 +72,7 @@ class SessionStateUpdate(BaseModel):
 async def list_browser_sessions(request: Request, user: dict[str, Any] = Depends(customer_principal)):
     rows = await repository(request).select("moreai_browser_sessions", {
         "user_id": f"eq.{user['id']}", "status": "eq.active",
-        "select": "id,origin_host,status,created_at,last_used_at,expires_at",
+        "select": "id,run_id,last_run_id,origin_host,status,created_at,last_used_at,expires_at",
         "order": "last_used_at.desc", "limit": "50",
     })
     return {"items": rows}

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CheckCircle2, FileText, Image as ImageIcon, FileSpreadsheet, ArrowRight, Loader2, AlertCircle, Download, Video } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
-import { artifactApi } from '@/lib/api/client';
+import { artifactApi, browserSessionApi, type CustomerBrowserSession } from '@/lib/api/client';
 
 type ArtifactRecord = {
   id: string;
@@ -32,6 +32,10 @@ const categoryFor = (mime: string | null, path: string): 'pdf' | 'image' | 'vide
 export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack, onNavigateTab }) => {
   const [filter, setFilter] = useState<'semua' | 'pdf' | 'image' | 'video' | 'xlsx'>('semua');
   const [files, setFiles] = useState<ArtifactRecord[]>([]);
+  const [sessions, setSessions] = useState<CustomerBrowserSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
@@ -41,12 +45,23 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
 
   useEffect(() => {
     let active = true;
+    browserSessionApi.list().then((result) => { if (active) setSessions(result.items); })
+      .catch((cause) => { if (active) setSessionError(cause instanceof Error ? cause.message : 'Sesi browser tidak dapat dimuat.'); })
+      .finally(() => { if (active) setSessionsLoading(false); });
     artifactApi.listPage(50)
       .then((page) => { if (active) { setFiles(page.items); setNextCursor(page.nextCursor); } })
       .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Artefak tidak dapat dimuat.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
+  const closeBrowserSession = async (sessionId: string) => {
+    if (closingSessionId) return;
+    setClosingSessionId(sessionId); setSessionError(null);
+    try { await browserSessionApi.close(sessionId); setSessions((current) => current.filter((session) => session.id !== sessionId)); }
+    catch (cause) { setSessionError(cause instanceof Error ? cause.message : 'Sesi browser tidak dapat ditutup.'); }
+    finally { setClosingSessionId(null); }
+  };
 
   const loadMore = async () => {
     if (!nextCursor || loadingMore) return;
@@ -102,6 +117,20 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
         <div className="w-5" />
       </div>
 
+      <section className="rounded-3xl border border-slate-200 bg-white p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2"><div><h2 className="text-sm font-bold text-slate-900">Browser Sessions</h2><p className="text-[11px] text-slate-500 mt-0.5">Sesi OpenFuse tersimpan untuk akun Anda</p></div><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">{sessions.length} aktif</span></div>
+        {sessionsLoading ? <div className="py-3 text-xs text-slate-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Memuat sesi browser…</div>
+          : sessionError ? <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{sessionError}</div>
+          : sessions.length === 0 ? <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">Tidak ada sesi browser aktif.</p>
+          : sessions.map((session) => <div key={session.id} className="rounded-2xl border border-slate-100 p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-bold text-slate-900">{session.origin_host}</span><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">Aktif</span></div>
+            <p className="text-[10px] text-slate-500">Terakhir digunakan: {new Date(session.last_used_at).toLocaleString('id-ID')}</p>
+            <p className="text-[10px] text-slate-500">Berakhir: {new Date(session.expires_at).toLocaleString('id-ID')}</p>
+            <p className="text-[10px] text-slate-500">Agent Run: {(session.last_run_id || session.run_id).slice(0, 12)}</p>
+            <button type="button" disabled={closingSessionId === session.id} onClick={() => void closeBrowserSession(session.id)} className="rounded-xl border border-rose-200 px-3 py-2 text-[10px] font-semibold text-rose-700 disabled:opacity-50">{closingSessionId === session.id ? 'Menutup…' : 'Tutup sesi'}</button>
+          </div>)}
+      </section>
+
       <div className="p-4 rounded-3xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
         <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0"><CheckCircle2 className="w-5 h-5" /></div>
         <div>
@@ -135,6 +164,7 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
                   <h4 className="text-xs font-bold text-slate-900 truncate">{nameOf(file)}</h4>
                   <p className="text-[10px] text-slate-500 mt-0.5">{sizeOf(file)} · {new Date(file.created_at).toLocaleString('id-ID')}</p>
                   <p className="mt-1 text-[10px] text-slate-500">{file.run_id ? 'Agent Run ' + file.run_id.slice(0, 8) : 'Belum ditautkan ke Agent Run'}</p>
+                  {file.metadata?.source === 'openfuse_browser_download' && <p className="mt-1 text-[10px] text-slate-600">OpenFuse Browser · Scan: {String(file.metadata.scan_status || 'tidak tersedia')}</p>}
                 </div>
               </div>
               <button type="button" onClick={() => void downloadArtifact(file.id)} disabled={downloadingFile === file.id} className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">

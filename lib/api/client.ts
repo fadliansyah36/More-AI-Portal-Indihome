@@ -572,6 +572,18 @@ export type CustomerArtifact = {
   created_at: string;
 };
 
+export type CustomerBrowserSession = {
+  id: string; run_id: string; last_run_id: string | null; origin_host: string;
+  status: 'active' | 'closed' | 'expired'; created_at: string; last_used_at: string; expires_at: string;
+};
+
+export const browserSessionApi = {
+  list: () => moreAiCustomerApi<{ items: CustomerBrowserSession[] }>('/api/v1/customer/browser-sessions'),
+  close: (sessionId: string) => moreAiCustomerApi<{ session_id: string; status: 'closed' }>(
+    '/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/close', { method: 'POST' },
+  ),
+};
+
 export const artifactApi = {
   list: () => moreAiCustomerApi<CustomerArtifact[]>('/api/v1/artifacts?limit=100'),
   listPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerArtifact>(
