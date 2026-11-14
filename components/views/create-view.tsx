@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Sparkles,
   FileText,
@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Wand2,
 } from 'lucide-react';
+import { customerApi } from '@/lib/api/client';
 
 interface CreateViewProps {
   onNavigateToChat?: (prompt: string, agentKey?: 'manus' | 'planning' | 'toolcall') => void;
@@ -21,6 +22,21 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = useState('');
   const [handoffNotice, setHandoffNotice] = useState<string | null>(null);
+  const [mediaCapabilities, setMediaCapabilities] = useState<{
+    image_generation: { available: boolean; worker_count: number; reason: string | null };
+    video_generation: { available: boolean; worker_count: number; reason: string | null };
+    file_generation: { available: boolean; worker_count: number; reason: string | null };
+  } | null>(null);
+  const [mediaCapabilitiesLoading, setMediaCapabilitiesLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    customerApi.mediaCapabilities()
+      .then((result) => { if (active) setMediaCapabilities(result); })
+      .catch(() => { if (active) setMediaCapabilities(null); })
+      .finally(() => { if (active) setMediaCapabilitiesLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   const tools = [
     {
@@ -118,10 +134,21 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     const selected = tools.find((tool) => tool.id === selectedTool);
     if (!selected) return;
 
-    // Image and rendered-video generation require a real media provider adapter.
-    // Until the worker advertises one, keep those actions fail-closed.
-    if (selected.category === 'gambar') {
-      setHandoffNotice('Provider Image Generation belum terhubung ke worker MoreAI. Tidak ada gambar yang dibuat dan tidak ada kredit yang dipotong.');
+    const isImageGeneration = selected.category === 'gambar';
+    const isVideoGeneration = selected.category === 'video';
+    const isFileGeneration = selected.category === 'file';
+    if (mediaCapabilitiesLoading || !mediaCapabilities) {
+      if (isImageGeneration || isFileGeneration) {
+        setHandoffNotice('Status provider belum dapat dipastikan dari worker. Tidak ada proses atau pemotongan kredit yang dilakukan.');
+        return;
+      }
+    }
+    if (isImageGeneration && !mediaCapabilities?.image_generation.available) {
+      setHandoffNotice(mediaCapabilities?.image_generation.reason || 'Image Generation belum tersedia pada worker. Tidak ada gambar yang dibuat.');
+      return;
+    }
+    if (isFileGeneration && !mediaCapabilities?.file_generation.available) {
+      setHandoffNotice(mediaCapabilities?.file_generation.reason || 'File storage adapter belum tersedia pada worker. Tidak ada file yang dibuat.');
       return;
     }
     if (!onNavigateToChat) {
@@ -129,19 +156,27 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
       return;
     }
 
-    const isVideoScript = selected.id === 'video-gen';
-    const isFileGeneration = selected.category === 'file';
-    const taskInstruction = isVideoScript
-      ? 'Buat naskah, storyboard per adegan, arahan visual, voice-over, dan timing untuk video. Hasilkan dokumen teks saja; jangan mengklaim membuat atau merender file video.'
-      : isFileGeneration
-        ? 'Buat artifact file nyata berdasarkan instruksi pengguna. Gunakan tool file_saver dengan nama file dan MIME type yang sesuai. Pastikan hasil tool mengonfirmasi penyimpanan sebelum menyatakan file selesai.'
-        : 'Gunakan kemampuan AI MoreAI untuk tugas ' + selected.name + '.';
+    const renderedVideoAvailable = isVideoGeneration && !!mediaCapabilities?.video_generation.available;
+    const isVideoScript = isVideoGeneration && !renderedVideoAvailable;
+    const taskInstruction = isImageGeneration
+      ? 'Buat gambar melalui tool image_generate yang terdaftar. Jangan mengklaim hasil sebelum adapter menyimpan artifact dan mengembalikan referensi hasil.'
+      : renderedVideoAvailable
+        ? 'Buat video melalui tool video_generate yang terdaftar. Jangan mengklaim hasil sebelum adapter menyimpan artifact dan mengembalikan referensi hasil.'
+        : isVideoScript
+          ? 'Buat naskah, storyboard per adegan, arahan visual, voice-over, dan timing untuk video. Hasilkan dokumen teks saja; jangan mengklaim membuat atau merender file video.'
+          : isFileGeneration
+            ? 'Buat artifact file nyata berdasarkan instruksi pengguna. Gunakan tool file_saver dengan nama file dan MIME type yang sesuai. Pastikan hasil tool mengonfirmasi penyimpanan sebelum menyatakan file selesai.'
+            : 'Gunakan kemampuan AI MoreAI untuk tugas ' + selected.name + '.';
     setHandoffNotice(
       isVideoScript
-        ? 'Brief naskah dan storyboard dibuka di Chat AI. File video belum dirender.'
-        : isFileGeneration
-          ? 'Brief pembuatan file dibuka di Chat AI. Agent akan menyimpan artifact hanya jika tool storage berhasil.'
-          : 'Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.'
+        ? 'Provider video belum terdaftar. Brief naskah dan storyboard dibuka di Chat AI; file video tidak dirender.'
+        : isImageGeneration
+          ? 'Brief gambar dibuka di Chat AI menggunakan adapter Image yang dilaporkan worker.'
+          : renderedVideoAvailable
+            ? 'Brief video dibuka di Chat AI menggunakan adapter Video yang dilaporkan worker.'
+            : isFileGeneration
+              ? 'Brief pembuatan file dibuka di Chat AI. Agent menyimpan artifact hanya jika tool storage berhasil.'
+              : 'Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.'
     );
     onNavigateToChat(taskInstruction + '\n\nInstruksi pengguna:\n' + customPrompt.trim(), selected.agentKey);
   };
