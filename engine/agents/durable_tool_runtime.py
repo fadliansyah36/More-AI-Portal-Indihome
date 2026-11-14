@@ -299,6 +299,7 @@ class DurableOpenManusRuntime:
             ),
         }
         skill_allowed_tools: set[str] | None = None
+        resolved_skills: list[dict[str, Any]] = []
         # Optional skills are resolved per run from immutable, approved registry records.
         # Skill instructions remain untrusted user-level context and cannot grant tools.
         skill_ids = payload.get("skill_ids", [])
@@ -705,6 +706,12 @@ class DurableOpenManusRuntime:
                     }
                     await save("openmanus.final", {"output": output})
                     await save("openmanus.completed", {"rounds": round_no, "terminated": True})
+                    if resolved_skills and self.skill_resolver is not None:
+                        await self.skill_resolver.record_executed(
+                            resolved_skills=resolved_skills,
+                            user_id=context.user_id,
+                            run_id=context.run_id,
+                        )
                     return AgentRunResult(output)
 
                 tool_message = Message.tool_message(observation, name=call.function.name, tool_call_id=call.id)
