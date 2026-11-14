@@ -1322,6 +1322,10 @@ export const customerSkillApi = {
     `/api/v1/customer/skills/${encodeURIComponent(skillId)}/permissions`,
     { method: 'POST', body: JSON.stringify({ permissions }) },
   ),
+  revokePermissions: (skillId: string) => moreAiCustomerApi<Record<string, unknown>>(
+    `/api/v1/customer/skills/${encodeURIComponent(skillId)}/permissions/revoke`,
+    { method: 'POST' },
+  ),
 };
 
 

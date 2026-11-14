@@ -400,6 +400,33 @@ async def request_skill_permissions(skill_id: UUID, body: SkillPermissionRequest
     return updated[0]
 
 
+@router.post("/{skill_id}/permissions/revoke")
+async def revoke_skill_permissions(
+    skill_id: UUID, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Let an installation owner close its own execution gate immediately."""
+    repo = repository(request)
+    rows = await repo.select("moreai_skill_installs", {
+        "owner_user_id": f"eq.{user['id']}", "skill_package_id": f"eq.{skill_id}",
+        "select": "id,permission_status", "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "skill_installation_not_found")
+    updated = await repo.update("moreai_skill_installs", {
+        "id": f"eq.{rows[0]['id']}", "owner_user_id": f"eq.{user['id']}",
+    }, {
+        "execution_enabled": False,
+        "permission_status": "revoked",
+        "permission_request": [],
+        "granted_permissions": [],
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    })
+    if not updated:
+        raise HTTPException(409, "skill_permission_revocation_conflict")
+    return updated[0]
+
+
 import base64
 import hashlib
 import mimetypes
