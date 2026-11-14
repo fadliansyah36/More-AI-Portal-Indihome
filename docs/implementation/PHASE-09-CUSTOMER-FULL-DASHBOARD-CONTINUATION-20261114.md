@@ -122,3 +122,16 @@ This is source-contract inspection only. It does not establish live Supabase/RLS
 - API client event type now models the nullable safe checkpoint payload.
 - Source commits: `16fd19ac39160fe629f2b52c4bc3b2d16df5aef8`, `58a63b417567b238db3f87587c1f05ae1ca72732`, `139f5af87f4861eec3ba1c0ba86c1fca010daf8a`.
 - Source-only; no tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment.
+
+## Media adapter and Agent Studio runtime-policy reconciliation — 2026-11-14
+
+Source inspection of `apps/worker/app/registry_factory.py`, `engine/tools/media.py`, `engine/tools/video.py`, `apps/worker/app/llm_accounting.py`, `apps/worker/app/dispatcher.py` and `engine/agents/durable_tool_runtime.py` refines the remaining media/runtime gap:
+
+- Image and video adapters already exist in the worker registry. They are registered only when media billing, provider credentials, entitlement/quota keys, currency/credit conversion, explicit price maps and artifact storage are configured. Provider calls are not made during this source review.
+- Both adapters use idempotent request claims and atomic credit/quota reservation through the shared accounting RPC contract, persist provider results and settle actual usage. Failure paths retain reservations when provider outcome is unknown rather than releasing credits unsafely.
+- Video generation persists provider task ID/status and artifact receipt in run checkpoints, polls the provider task, validates the output host/content type/size, stores the binary artifact, then records and finalizes usage. Image generation persists the generated image as a run artifact and stores the provider result for recovery/settlement.
+- These media operations are currently tools inside a durable Agent Run, not a separately exposed customer media-job resource/API. The Customer UI can track the parent Agent Run and its persisted artifacts, but does not yet expose a dedicated media task view/status model. The remaining work is to reconcile the user-facing job lifecycle, safe provider/task status projection and artifact presentation with the durable run, not to invent a parallel media engine or duplicate billing ledger.
+- Agent Studio's supported saved-config runtimes (`manus`, `toolcall`) match FastAPI's request/response contract. FastAPI validates configured tools against the runtime catalog; the worker validates the saved runtime/config identity and narrows actual tool definitions to the saved allowlist while retaining mandatory completion/termination primitives. Saved instructions are injected as user-level preferences and cannot override trusted system policy. The current UI further limits selectable tools to the live worker's reported tool keys; actual runtime remains the final enforcement boundary.
+- This source review does not prove that deployment environment variables, provider credentials, wallet policies, worker heartbeats, provider tasks or live artifact storage are configured correctly. No provider API or Supabase mutation was executed.
+
+Remaining media work: add a customer-facing durable media-job projection over Agent Run/checkpoint/artifact data, clarify queued/submitted/processing/succeeded/failed/unknown outcomes, and make recovery/refresh behavior explicit without duplicating run or credit records. Phase 09 remains IN PROGRESS.
