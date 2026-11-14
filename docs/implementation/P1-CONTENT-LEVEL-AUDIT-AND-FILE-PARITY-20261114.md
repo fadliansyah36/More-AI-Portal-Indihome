@@ -755,3 +755,34 @@ Implement a first-party **Connections & Integrations** capability inside the exi
 - The small computer status and date-time helpers are presentation utilities only, not standalone backend capabilities.
 
 **Count:** this increment adds ten distinct full-file reviews to the previously reconciled 48. OpenFuse content review is now **58/219**, with **161 remaining**. This is source inspection only; no test, build, install, lint, typecheck, staging, deployment or live external account operation was performed.
+
+
+---
+
+## 19. Tenth continuation increment — OpenFuse mail, calendar, thread and rich-result UI
+
+**Date:** 2026-11-14. Ten additional distinct files were fetched in full at pinned commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/mobile/src/details.tsx` | `7046350953bc7739a55c4a7b03a228b7360bf5db` |
+| `apps/mobile/src/jev-actions.ts` | `b52e6ca4a1b0393542f894eac9f91ef1eaba0b3b` |
+| `apps/mobile/src/jev-tool-card.tsx` | `94563021a541eb838294790340fa8a624e89c848` |
+| `apps/mobile/src/mail-tool-card.tsx` | `3e0ed193ff24f60c22cab632f9a704fce36b832b` |
+| `apps/mobile/src/relative-date.ts` | `642c6d95889b0d1ca0dfd91f650e23b9e0d6198c` |
+| `apps/mobile/src/screens.tsx` | `ea12faef13211657d8bd403db81a78886d70d12d` |
+| `apps/mobile/src/search-tool-card.tsx` | `97aa69031cb5d04293342e092ea06c440ff38715` |
+| `apps/mobile/src/thread-artifacts.tsx` | `9aa98c4bb3da4a9557865f9e24664192e42a5cc8` |
+| `apps/mobile/src/threads.tsx` | `537522513e64b87896e6ed3e76cf57378c28766b` |
+| `apps/mobile/src/ui.tsx` | `758a69f06a0d283a8041c28c8e36aaebc56434e7` |
+
+**Findings and MoreAI disposition:**
+- Details/screens assemble mail, calendar, files, browser, task and connection/app views. This is a single-owner OpenFuse information architecture; MoreAI must map the useful capabilities into existing dashboard navigation rather than transplant these screens.
+- Mail detail fetches full threads and imports attachments through server APIs. MoreAI must preserve tenant ownership checks on thread IDs and attachment references, scan/quarantine uploads before RAG ingestion, and use private Storage with signed access.
+- Calendar/event interaction cards and JEV choice/action helpers bind user confirmation to a specific panel, thread and selection. This is a useful stale-action defense pattern. MoreAI must additionally bind approval to a canonical action payload hash, connector account generation, event ETag/version, expiry and idempotency key on the server.
+- Search result cards accept HTTP(S) source links and open them externally. This is display navigation only, not permission to fetch arbitrary URLs server-side; SSRF controls remain at FastAPI/tool boundary.
+- Thread artifact cards explicitly hydrate task-linked artifacts by ID and do not store signed URLs in messages. Reuse this principle: persist durable artifact IDs/metadata, mint short-lived signed URLs on authorized access, and do not persist expiring URLs in chat history.
+- Threads are backed by CopilotKit Intelligence thread persistence/replay, with the OpenFuse server provisioning a main thread. MoreAI should keep its canonical chat/run/message persistence in Supabase and connect UI through its FastAPI/OpenManus boundary, avoiding a second thread persistence service.
+- Shared UI primitives and date format helpers are presentational. MoreAI's own component library and design tokens remain authoritative.
+
+**Count:** ten more distinct full-file reviews; OpenFuse content review is now **68/219**, with **151 remaining**. No tests/build/install/lint/typecheck, staging, deployment, live mail send, calendar write or Supabase mutation was performed.
