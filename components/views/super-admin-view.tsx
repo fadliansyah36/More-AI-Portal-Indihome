@@ -50,7 +50,7 @@ type SkillReviewRow = {
   source_repository: string; source_commit: string; source_path: string;
   license_id: string; license_url: string | null; license_evidence: string | null;
   license_status: string; validation_status: string; publication_status: string;
-  validation_report: { findings?: string[]; file_count?: number; total_bytes?: number };
+  validation_report: { findings?: string[]; file_count?: number; total_bytes?: number; source_inventory?: { license_files?: Array<{path:string;sha256:string}>; manifest_files?: string[]; dependency_manifests?: string[]; dependency_count?: number; exact_version_count?: number; unresolved_dependency_count?: number; warning?: string } };
   requested_permissions: string[];
   installations: Array<{
     id: string; owner_user_id: string; status: string;
@@ -173,6 +173,15 @@ export default function SuperAdminPage() {
             <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-[10px] text-slate-600 sm:grid-cols-2"><p>Commit: <span className="font-mono">{skill.source_commit}</span></p><p>License: {skill.license_id} · {skill.license_url || 'URL tidak tersedia'}</p><p>Files ingested: {skill.validation_report?.file_count ?? '—'}</p><p>Package bytes: {skill.validation_report?.total_bytes ?? '—'}</p></div>
             {skill.license_evidence && <p className="rounded-xl border border-slate-100 p-3 text-xs text-slate-600">{skill.license_evidence}</p>}
             {skill.validation_report?.findings?.length ? <ul className="list-disc space-y-1 pl-5 text-[11px] text-amber-800">{skill.validation_report.findings.map((finding,index)=><li key={index}>{finding}</li>)}</ul> : null}
+            {skill.validation_report?.source_inventory && <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[10px] text-slate-600">
+              <p className="font-bold text-slate-800">Source manifest & dependency inventory</p>
+              <p>Manifest: {(skill.validation_report.source_inventory.manifest_files||[]).join(', ')||'Belum ditemukan'}</p>
+              <p>License/NOTICE: {(skill.validation_report.source_inventory.license_files||[]).map(file=>file.path).join(', ')||'Belum ditemukan'}</p>
+              <p>Dependency manifests: {(skill.validation_report.source_inventory.dependency_manifests||[]).join(', ')||'Tidak ditemukan'}</p>
+              <p>Dependencies: {skill.validation_report.source_inventory.exact_version_count||0} exact-version / {skill.validation_report.source_inventory.dependency_count||0} terdeteksi · {skill.validation_report.source_inventory.unresolved_dependency_count||0} belum exact</p>
+              {skill.validation_report.source_inventory.warning&&<p className="mt-1 text-amber-800">{skill.validation_report.source_inventory.warning}</p>}
+            </div>}
+
             <div className="flex flex-wrap gap-2"><button disabled={skillReviewBusy===skill.id || skill.validation_status!=='validated'} onClick={()=>void reviewPackage(skill,'approved')} className="rounded-xl bg-red-600 px-3 py-2 text-[11px] font-bold text-white disabled:opacity-40">Setujui lisensi & publikasikan</button><button disabled={skillReviewBusy===skill.id} onClick={()=>void reviewPackage(skill,'rejected')} className="rounded-xl border border-rose-200 px-3 py-2 text-[11px] font-semibold text-rose-700 disabled:opacity-40">Tolak lisensi</button></div>
             {skill.installations.map(install=><div key={install.id} className="space-y-2 rounded-xl border border-slate-200 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold">Install {install.id.slice(0,8)} · {install.permission_status}</p><span className="text-[10px] text-slate-500">Owner {install.owner_user_id.slice(0,8)} · eksekusi {install.execution_enabled?'aktif':'nonaktif'}</span></div>
