@@ -50,7 +50,7 @@ type SkillReviewRow = {
   source_repository: string; source_commit: string; source_path: string;
   license_id: string; license_url: string | null; license_evidence: string | null;
   license_status: string; validation_status: string; publication_status: string;
-  validation_report: { findings?: string[]; file_count?: number; total_bytes?: number; source_inventory?: { license_files?: Array<{path:string;sha256:string}>; manifest_files?: string[]; dependency_manifests?: string[]; dependency_count?: number; exact_version_count?: number; unresolved_dependency_count?: number; warning?: string } };
+  validation_report: { findings?: string[]; file_count?: number; total_bytes?: number; source_inventory?: { license_files?: Array<{path:string;sha256:string}>; manifest_files?: string[]; dependency_manifests?: string[]; dependency_count?: number; exact_version_count?: number; unresolved_dependency_count?: number; warning?: string; registry_resolution?: { exact_version_count?: number; registry_metadata_resolved_count?: number; license_assertion_count?: number; unresolved_count?: number; note?: string } } };
   requested_permissions: string[];
   installations: Array<{
     id: string; owner_user_id: string; status: string;
@@ -179,6 +179,7 @@ export default function SuperAdminPage() {
               <p>License/NOTICE: {(skill.validation_report.source_inventory.license_files||[]).map(file=>file.path).join(', ')||'Belum ditemukan'}</p>
               <p>Dependency manifests: {(skill.validation_report.source_inventory.dependency_manifests||[]).join(', ')||'Tidak ditemukan'}</p>
               <p>Dependencies: {skill.validation_report.source_inventory.exact_version_count||0} exact-version / {skill.validation_report.source_inventory.dependency_count||0} terdeteksi · {skill.validation_report.source_inventory.unresolved_dependency_count||0} belum exact</p>
+              <p>Registry metadata: {skill.validation_report.source_inventory.registry_resolution?.registry_metadata_resolved_count||0} ter-resolve · {skill.validation_report.source_inventory.registry_resolution?.license_assertion_count||0} deklarasi lisensi · {skill.validation_report.source_inventory.registry_resolution?.unresolved_count||0} belum terselesaikan</p>
               {skill.validation_report.source_inventory.warning&&<p className="mt-1 text-amber-800">{skill.validation_report.source_inventory.warning}</p>}
             </div>}
 
