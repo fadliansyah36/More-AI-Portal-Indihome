@@ -86,3 +86,18 @@ Phase 09 remains **IN PROGRESS**. The Customer Dashboard integration must not be
 - Tightened the Tasks handler guard to the same exact status allowlist; the detail button and handler now agree with the FastAPI contract. Backend safety checks remain authoritative.
 - Commit: `79378c9aa6c12f52ce81268335552efbaea39527`.
 - Source-level only; no runtime verification or prohibited checks were performed.
+
+
+## Customer action-to-endpoint audit continuation — 2026-11-14
+
+Source inspection continued across Tools Catalog, Knowledge Library, Files, Notifications, Profile/Preferences, Personal Memory, Workflow Progress, Agent Studio and Chat:
+
+- Tools Catalog reads the platform tool registry and displays registration/worker/policy metadata; it is informational and does not claim that a catalog entry is customer-entitled or directly executable.
+- Knowledge Library upload, pagination, document detail/chunk paging, retry and archive actions call the authenticated FastAPI knowledge API. Retry is restricted by backend to owner-scoped failed file documents with a retained private source object; archive is restricted to ready/failed and remains a soft archive. UI local projection follows the returned accepted state; ingestion completion remains worker-owned.
+- Files view uses artifact/workspace APIs for listing, upload, version history and downloads; no browser-side Storage access was identified in the reviewed component.
+- Notifications mark-read and mark-all-read await API success before changing the local projection. Profile identity/preferences and Personal Memory mutations use their respective FastAPI clients; Supabase browser client is used only as an Auth identity fallback.
+- Workflow Progress consumes durable run, approval, step/activity, artifact and stream APIs. Approval decision is persisted through the backend atomic decision path; the UI refreshes runs after success and separately reports refresh failure without undoing the durable decision.
+- Agent Studio reads published agents and tool registry, persists customer agent configurations through create/update/delete APIs, and hands the selected configuration ID to Chat. Chat includes that ID in the message enqueue contract so FastAPI can apply the stored configuration.
+- Create Studio remains a prompt-to-Chat handoff. It checks worker-reported media capabilities and explicitly avoids claiming image/video/file artifacts before backend tools return persisted results. It does not yet implement a standalone customer media job lifecycle or expose a complete credit reservation/metering ledger for those jobs.
+
+This is source-contract inspection only. It does not establish live Supabase/RLS behavior, worker execution, provider credentials, media billing, UI behavior, or end-to-end success. No tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment were performed. Phase 09 remains IN PROGRESS.
