@@ -509,3 +509,38 @@ Created `docs/implementation/sbom/P1-DIRECT-DEPENDENCY-LICENSE-OBSERVATIONS-2026
 6. Only then close P1 and resume the earliest incomplete mandatory phase under `AGENTS.md`: Phase 04, then 06/07/08 and Phase 09 according to dependency order.
 
 **P1 remains open.** The next implementation work remains source governance and dependency/license resolution, not importing unreviewed engines or skipping to Phase 09.
+
+---
+
+## 12. Fourth continuation increment — deeper OpenFuse runtime evidence and rights reconciliation
+
+**Date:** 2026-11-14. Source pins unchanged. Companion evidence documents:
+- `docs/implementation/P1-OPENFUSE-RUNTIME-BROWSER-OAUTH-REVIEW-20261114.md`
+- `docs/implementation/P1-VISUAL-SKILLS-ASSET-RIGHTS-AND-SCENARIO-INVENTORY-20261114.md`
+
+### 12.1 OpenFuse runtime/browser/OAuth
+
+A further ten complete source files were fetched and reviewed: `computer-backend.ts`, `computer-e2b-desktop.ts`, `computer.ts`, server `browser.ts`, `google-auth.ts`, worker `browser.ts`, `downloads.ts`, `network.ts`, `proxy.ts`, and integrations `vault.ts`. Their pinned blob SHAs and dispositions are recorded in the companion addendum.
+
+Key security distinction: Docker computer isolation is configured with network disabled, non-root execution, read-only rootfs, dropped capabilities, no host binds/devices/ports and resource caps. E2B desktop is explicitly network-enabled and must be governed separately. Browser DNS validation and IP-pinned proxy patterns are useful defense-in-depth but do not replace network-layer egress controls. OAuth send-mail/calendar writes are high-impact actions and require explicit MoreAI confirmation, scoped credentials, version checks, idempotency and immutable receipts. OpenFuse owner Store/session/lease state is not MoreAI's canonical Supabase identity or durable run store.
+
+The pinned OpenFuse tree has 219 blob paths. This increment does not claim all 219 are reviewed; remaining routes, packages, support files, tests, configs and notices remain in the path-by-path audit.
+
+### 12.2 Visual Skills asset rights
+
+The pinned Visual Skills tree contains 60 blobs and 16 files under `assets/`: 13 third-party provider/product logo variants, two dramaturgy banners and one hero WebP. Root LICENSE is CC BY 4.0 and NOTICE requires attribution to Serge Shima and the source repository, and describes specific third-party methods as rewritten/adapted from an MIT-licensed source. CC BY does not grant trademark rights. The 13 logo marks are deferred pending provider permission/brand-guideline review; banners and hero remain held until original authorship and embedded material provenance are confirmed. Therefore Visual Skills asset rights are **OPEN**, even though the prior content audit reviewed the 39 Markdown and 15 SVG text files.
+
+### 12.3 Scenario entrypoint count reconciliation
+
+The pinned Scenario recursive tree contains 2,114 blobs and is not truncated. The 179 entrypoint aggregate reconciles to 172 product `SKILL.md` files beneath `skills/` plus 7 internal maintainer/skill-authoring entrypoints beneath `.agents/skills/`. The seven internal entrypoints are archive-only, not product skills. Within `skills/`, tree counts include 519 reference paths, 898 script paths, 54 asset paths and 20 test paths. Tree enumeration does not equal per-file content review; linked supporting files and nested licensing remain open.
+
+### 12.4 P1 gate remains open
+
+- OpenFuse full-tree review: OPEN (selected high-risk paths now have detailed static review).
+- Exact-version package license resolution: OPEN (1,793 unique package@version coordinates remain `NOASSERTION`).
+- Visual Skills asset rights: OPEN (13 marks deferred; three non-logo assets await provenance confirmation).
+- Scenario supporting-file content/provenance review: OPEN.
+- Final manifest: OPEN; 2,135 paths remain `pending-content-review` per the prior manifest snapshot. No pending state is cleared by this increment without per-file evidence.
+- P1 closure: NOT APPROVED.
+
+No source code/assets were copied into product runtime. No dependency installation, script execution, build, lint, typecheck, tests, staging, database mutation/migration or deployment was performed. This remains static review and documentation only.
