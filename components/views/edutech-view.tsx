@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { GraduationCap, BookOpen, Brain, ClipboardCheck, Compass, Lightbulb, Sparkles } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
-import { learningApi } from '@/lib/api/client';
+import { learningApi, type CustomerLearningPathDetail, type CustomerLearningPathSummary } from '@/lib/api/client';
 
 interface EdutechViewProps {
   onStartPrompt: (prompt: string, agentKey?: 'manus' | 'planning' | 'toolcall') => void;
@@ -41,6 +41,9 @@ const buildStudyPrompt = (topic: string, level: string, goal: string, mode: Stud
 export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
   const { showToast } = useToast();
   const [savedProgressCount, setSavedProgressCount] = useState(0);
+  const [savedPaths, setSavedPaths] = useState<CustomerLearningPathSummary[]>([]);
+  const [selectedPath, setSelectedPath] = useState<CustomerLearningPathDetail | null>(null);
+  const [pathsLoading, setPathsLoading] = useState(true);
   const [progressLoading, setProgressLoading] = useState(true);
   const [topic, setTopic] = useState('');
   const [level, setLevel] = useState('Mahasiswa / Perguruan Tinggi');
@@ -49,6 +52,10 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
 
   useEffect(() => {
     let active = true;
+    learningApi.paths(20)
+      .then(({ items }) => { if (active) setSavedPaths(items); })
+      .catch((error) => { if (active) showToast(error instanceof Error ? error.message : 'Learning path gagal dimuat.', 'error'); })
+      .finally(() => { if (active) setPathsLoading(false); });
     learningApi.progress()
       .then(({ total_count }) => {
         if (active) setSavedProgressCount(total_count);
@@ -59,6 +66,25 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
       .finally(() => { if (active) setProgressLoading(false); });
     return () => { active = false; };
   }, [showToast]);
+
+  const openLearningPath = async (pathId: string) => {
+    try { setSelectedPath(await learningApi.path(pathId)); }
+    catch (error) { showToast(error instanceof Error ? error.message : 'Detail learning path gagal dimuat.', 'error'); }
+  };
+
+  const startLesson = (path: CustomerLearningPathDetail['path'], moduleTitle: string, lesson: CustomerLearningPathDetail['modules'][number]['lessons'][number]) => {
+    const prompt = [
+      'Lanjutkan sesi pembelajaran first-party MoreAI EduTech dari artefak kurikulum tersimpan.',
+      'Path ID: ' + path.id + ' | Judul: ' + path.title,
+      'Lesson ID: ' + lesson.id + ' | Versi konten: ' + lesson.content_version,
+      'Modul: ' + moduleTitle + ' | Lesson: ' + lesson.title,
+      'Status lesson: ' + lesson.status + ' | Progress saat ini: ' + (lesson.progress?.progress_percent ?? 0) + '%',
+      'Materi tersimpan (gunakan sebagai konteks, jangan mengarang sumber):',
+      lesson.content_md || 'Materi belum dibuat. Gunakan lesson_generate untuk mengembangkan lesson ini.',
+      'Bimbing student secara Socratic, berikan latihan aktif dan umpan balik formatif. Setelah sesi belajar benar-benar selesai, gunakan learning_progress_update dengan lesson_id yang sama dan status completed; jika masih berjalan, gunakan in_progress. Jangan mengklaim progress tersimpan tanpa hasil tool.',
+    ].join('\\n');
+    onStartPrompt(prompt, 'planning');
+  };
 
   const startLearning = () => {
     if (topic.trim().length < 3) {
