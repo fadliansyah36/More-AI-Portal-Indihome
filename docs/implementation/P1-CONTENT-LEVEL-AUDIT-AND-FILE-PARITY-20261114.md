@@ -918,3 +918,38 @@ Implement a first-party **Connections & Integrations** capability inside the exi
 - PDF integration bounds input size (10 MiB), page count (500) and decoded expansion (100 MiB) to defend against decompression/resource exhaustion. MoreAI should retain layered file size, parser CPU/time, page and expanded-byte quotas, malware quarantine and safe ingestion controls.
 
 **Count:** ten more distinct full-file reviews; tracked total is **108/219**, with **111 remaining**. Test source was read only; no test or executable workflow was run. No build/install/lint/typecheck, staging, deployment, live Google API operation or Supabase mutation occurred.
+
+
+---
+
+## 24. Fifteenth continuation increment — OpenFuse mobile workspace contract and client-side regression source review
+
+**Date:** 2026-11-14. Ten additional distinct files fetched in full at pinned commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/mobile/src/workspace.tsx` | `e3ab78e1f2c035c09bbbb7cebcafe138152119e4` |
+| `apps/mobile/test/api-response.test.ts` | `cd5ebb24f4f125997451c7c07260067ca8f4de10` |
+| `apps/mobile/test/assistant-markdown.test.ts` | `10e2c1e73bca28e119d300d8d188034bbf4c3231` |
+| `apps/mobile/test/browser-address.test.ts` | `82032235061dae20ec1afdb2feb08c20aa9cb8e2` |
+| `apps/mobile/test/computer-status.test.ts` | `c217c60832c47ab8170a61a037ef02c8db92d83e` |
+| `apps/mobile/test/conversation-queue.test.ts` | `d3c5abb7ccc95773028a5838f7efc7ee76f004b6` |
+| `apps/mobile/test/date-time.test.ts` | `c9845b4747514a03869f54af48bd6572f5575ec0` |
+| `apps/mobile/test/jev-actions.test.ts` | `1641754499ecfffc2c0b2c16acd6b8577cfd9e15` |
+| `apps/mobile/test/relative-date.test.ts` | `ab65f1210fe03b35b5115f3275f1228f5d520162` |
+| `apps/mobile/tsconfig.json` | `7415db9fb808ee63da6058992881962468eee9a0` |
+
+**Findings and MoreAI disposition:**
+- Workspace context is a typed navigation/selection contract for mail, email drafts, calendar events, files, browser sessions and tasks. MoreAI can use the same typed selection model to connect existing dashboard panes without importing OpenFuse's standalone navigation or persistence.
+- Client API response handling avoids surfacing raw HTML/JSON parser failures. MoreAI FastAPI should return stable, sanitized error envelopes and correlation IDs, never raw provider stack traces or secrets.
+- Assistant Markdown renderer escapes raw HTML and allows only absolute HTTP(S) links. Preserve this output-sanitization property in MoreAI's chat/agent result renderer.
+- Browser address tests document client rejection of unsupported schemes and embedded credentials. This is only client-side validation; backend SSRF and egress controls remain mandatory.
+- Conversation queue tests define ordering, stop/resume and refusal restoration semantics. MoreAI should map these to durable OpenManus run state and server-side idempotency, not rely on the browser queue as canonical execution state.
+- Date-time regression source explicitly covers IANA timezone conversion, UTC day-boundary shifts, invalid date rejection and DST gaps. This is valuable for MoreAI scheduling UX and API contract; store IANA zone + UTC instant and define nonexistent/ambiguous local-time policy.
+- JEV tests bind a choice panel to active thread/current turn and validate malformed tool results. MoreAI should similarly bind approval/choice to current run, tenant, action hash and expiry.
+- Relative date helper has deterministic future/clock-skew behavior; presentational only.
+- TypeScript config is source configuration, not evidence of successful compilation.
+
+These test files were read as source only. **No tests were executed**, per explicit instruction.
+
+**Count:** ten additional distinct full-file reviews; tracked total is **118/219**, with **101 remaining**. No build/install/lint/typecheck, staging, deployment, live external account call or Supabase mutation occurred.
