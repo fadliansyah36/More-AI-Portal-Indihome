@@ -18,6 +18,10 @@ class ConversationMemoryStore(Protocol):
         workspace_id: str | None = None, limit: int = 200,
     ) -> list[Message]: ...
 
+    async def load_episodes(
+        self, *, user_id: str, workspace_id: str | None = None, limit: int = 8,
+    ) -> list[dict[str, str]]: ...
+
     async def append(
         self, *, conversation_id: str, user_id: str, run_id: str,
         message: Message, message_key: str, workspace_id: str | None = None,
