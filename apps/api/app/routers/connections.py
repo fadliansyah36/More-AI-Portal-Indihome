@@ -254,7 +254,7 @@ async def google_oauth_callback(request: Request, code: str | None = None, state
 async def _owned_google_connection(request: Request, user_id: str, connection_id: UUID) -> dict[str, Any]:
     rows = await repository(request).select("moreai_connections", {
         "id": f"eq.{connection_id}", "user_id": f"eq.{user_id}", "provider": "eq.google",
-        "select": "id,user_id,external_account_id,display_name,scopes,status,credential_ciphertext,access_token_expires_at",
+        "select": "id,user_id,external_account_id,display_name,scopes,status,credential_ciphertext,credential_key_version,access_token_expires_at",
         "limit": "1",
     })
     if not rows or rows[0].get("status") != "connected":
@@ -268,6 +268,16 @@ async def _google_access_token(request: Request, connection: dict[str, Any]) -> 
     expires = connection.get("access_token_expires_at")
     expires_at = datetime.fromisoformat(expires.replace("Z", "+00:00")) if isinstance(expires, str) else datetime.now(timezone.utc)
     if expires_at > datetime.now(timezone.utc) + timedelta(minutes=2) and isinstance(credential.get("access_token"), str):
+        stored_version = int(connection.get("credential_key_version") or 1)
+        active_version = _active_key_version()
+        if stored_version != active_version:
+            await repository(request).update("moreai_connections", {
+                "id": f"eq.{connection['id']}", "user_id": f"eq.{user_id}",
+            }, {
+                "credential_ciphertext": _encrypt(credential, "connection:google:" + user_id),
+                "credential_key_version": active_version,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            })
         return credential["access_token"]
     refresh_token = credential.get("refresh_token")
     if not isinstance(refresh_token, str) or not refresh_token:
@@ -288,6 +298,7 @@ async def _google_access_token(request: Request, connection: dict[str, Any]) -> 
     new_expiry = datetime.now(timezone.utc) + timedelta(seconds=max(60, int(refreshed.get("expires_in") or 3600)))
     await repository(request).update("moreai_connections", {"id": f"eq.{connection['id']}", "user_id": f"eq.{user_id}"}, {
         "credential_ciphertext": _encrypt(credential, "connection:google:" + user_id),
+        "credential_key_version": _active_key_version(),
         "access_token_expires_at": new_expiry.isoformat(), "token_updated_at": datetime.now(timezone.utc).isoformat(),
         "status": "connected", "last_error_code": None, "updated_at": datetime.now(timezone.utc).isoformat(),
     })
