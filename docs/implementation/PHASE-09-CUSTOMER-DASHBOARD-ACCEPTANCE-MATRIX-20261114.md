@@ -40,6 +40,7 @@ Scope: source-level Customer UI → FastAPI → worker/engine → Supabase integ
 | Workspace files / upload / preview | `files-view.tsx` | Workspace owner/member authorization, private storage, CAS upload, immutable version history, soft delete/restore | CONNECTED (source) | NOT VERIFIED |
 | Generated artifacts | `artifacts-result-view.tsx`, Files, Tasks | Private artifact storage, metadata owner checks, signed URL | CONNECTED (source) | NOT VERIFIED |
 | Analyse / Knowledge Library | `analyse-view.tsx`, `knowledge-library-view.tsx` | Owner-scoped upload, ingestion, keyset chunk pages, selected-document retrieval and provenance | CONNECTED (source) | NOT VERIFIED |
+| EduTech AI learning sessions | `edutech-view.tsx` → existing ChatView | Student topic/level/goal and four study modes hand off to durable Planning Agent Run through authenticated Customer conversation enqueue; conversation/run/progress appear in Chat, Tasks and Workflow | CONNECTED (source; AI learning session) / PARTIAL (structured LMS records and lesson progress) | NOT VERIFIED |
 | Research | `research-view.tsx` | Keyset Agent Run/artifact pages and signed download | CONNECTED (source) | NOT VERIFIED |
 | Code Assistant | `code-view.tsx` | Analysis through durable Agent Run; code snapshots/artifacts | PARTIAL / GATED | NOT VERIFIED |
 | Create Studio file output | `create-view.tsx` | Manus `file_saver` artifact path, gated by live worker adapter capability | PARTIAL / GATED | NOT VERIFIED |
