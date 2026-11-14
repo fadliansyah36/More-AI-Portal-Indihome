@@ -167,3 +167,124 @@ async def request_skill_permissions(skill_id: UUID, body: SkillPermissionRequest
     if not updated:
         raise HTTPException(409, "skill_permission_request_conflict")
     return updated[0]
+
+
+import base64
+import hashlib
+from urllib.parse import quote, unquote
+from pathlib import PurePosixPath
+
+PINNED_SKILL_SOURCES = {
+    ("smixs", "visual-skills"): {"61a60d317f0fa0c3dc98902e58a7cb178838ae3f"},
+    ("scenario-labs", "skills"): {"94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9"},
+}
+LOCAL_REFERENCE = re.compile(r"!?(?:\[[^\]]*\])\(([^)]+)\)|^\s*[-*+]\s+.*?\]\(([^)]+)\)", re.MULTILINE)
+
+
+def _safe_skill_path(value: str) -> str:
+    decoded = unquote(value.split("#", 1)[0].split("?", 1)[0]).replace("\\", "/")
+    path = PurePosixPath(decoded)
+    if not decoded or decoded.startswith("/") or any(part in {"", ".", ".."} for part in decoded.split("/")):
+        raise HTTPException(422, "skill_source_path_invalid")
+    return str(path)
+
+
+@router.post("/{skill_id}/ingest")
+async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
+    repo = repository(request)
+    rows = await repo.select("moreai_skill_packages", {
+        "id": f"eq.{skill_id}", "owner_user_id": f"eq.{user['id']}",
+        "select": "id,source_repository,source_commit,source_path,source_blob_sha,content_sha256",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "skill_not_found")
+    skill = rows[0]
+    parts = str(skill["source_repository"]).split("/")
+    if len(parts) != 2 or skill["source_commit"] not in PINNED_SKILL_SOURCES.get((parts[0], parts[1]), set()):
+        raise HTTPException(403, "skill_source_repository_or_commit_not_pinned")
+    root_path = _safe_skill_path(str(skill["source_path"]))
+    queue = [root_path]
+    seen: set[str] = set()
+    records: list[dict[str, Any]] = []
+    total_bytes = 0
+    http = request.app.state.http
+    while queue:
+        relative = queue.pop(0)
+        if relative in seen:
+            continue
+        seen.add(relative)
+        if len(seen) > 40:
+            raise HTTPException(413, "skill_source_file_count_limit_exceeded")
+        url = f"https://api.github.com/repos/{parts[0]}/{parts[1]}/contents/{quote(relative, safe='/')}?ref={skill['source_commit']}"
+        response = await http.get(url, headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}, timeout=15.0, follow_redirects=False)
+        if response.status_code != 200:
+            raise HTTPException(502, "skill_source_fetch_failed")
+        item = response.json()
+        if not isinstance(item, dict) or item.get("type") != "file" or item.get("encoding") != "base64":
+            raise HTTPException(422, "skill_source_file_type_unsupported")
+        encoded = item.get("content")
+        if not isinstance(encoded, str):
+            raise HTTPException(502, "skill_source_content_missing")
+        try:
+            content = base64.b64decode(encoded, validate=False)
+        except Exception as exc:
+            raise HTTPException(502, "skill_source_base64_invalid") from exc
+        if len(content) > 524288:
+            raise HTTPException(413, "skill_source_file_size_limit_exceeded")
+        total_bytes += len(content)
+        if total_bytes > 5 * 1024 * 1024:
+            raise HTTPException(413, "skill_source_package_size_limit_exceeded")
+        git_sha = hashlib.sha1(b"blob " + str(len(content)).encode() + b"\\0" + content).hexdigest()
+        sha_api = item.get("sha")
+        if not isinstance(sha_api, str) or git_sha != sha_api:
+            raise HTTPException(409, "skill_git_blob_hash_mismatch")
+        digest = hashlib.sha256(content).hexdigest()
+        if relative == root_path and (git_sha != skill["source_blob_sha"] or digest != skill["content_sha256"]):
+            raise HTTPException(409, "skill_root_provenance_hash_mismatch")
+        media_type = str(item.get("content_type") or "application/octet-stream")[:120]
+        is_text = media_type.startswith("text/") or relative.lower().endswith((".md", ".txt", ".json", ".yaml", ".yml", ".toml", ".py", ".js", ".ts", ".svg"))
+        text_content = content.decode("utf-8", errors="strict") if is_text else None
+        records.append({
+            "skill_package_id": str(skill_id), "owner_user_id": user["id"],
+            "relative_path": relative, "git_blob_sha": git_sha, "content_sha256": digest,
+            "media_type": media_type, "byte_size": len(content),
+            "text_content": text_content,
+            "binary_content_base64": None if is_text else base64.b64encode(content).decode("ascii"),
+        })
+        if text_content:
+            for match in LOCAL_REFERENCE.finditer(text_content):
+                target = (match.group(1) or match.group(2) or "").strip()
+                if not target or target.startswith(("http://", "https://", "mailto:", "#", "data:")):
+                    continue
+                target = target.split("#", 1)[0].split("?", 1)[0]
+                if not target:
+                    continue
+                base = PurePosixPath(relative).parent
+                try:
+                    resolved = _safe_skill_path(str(base / unquote(target)))
+                except HTTPException:
+                    continue
+                if resolved not in seen and resolved not in queue:
+                    queue.append(resolved)
+    existing = await repo.select("moreai_skill_source_files", {
+        "skill_package_id": f"eq.{skill_id}", "owner_user_id": f"eq.{user['id']}",
+        "select": "id", "limit": "1",
+    })
+    if existing:
+        raise HTTPException(409, "skill_source_already_ingested_immutable")
+    for record in records:
+        await repo.insert("moreai_skill_source_files", record)
+    await repo.update("moreai_skill_packages", {
+        "id": f"eq.{skill_id}", "owner_user_id": f"eq.{user['id']}",
+    }, {
+        "validation_status": "review_required",
+        "validation_report": {
+            "scope": "pinned_github_content_integrity",
+            "file_count": len(records), "total_bytes": total_bytes,
+            "files": [{"path": x["relative_path"], "git_blob_sha": x["git_blob_sha"], "sha256": x["content_sha256"], "bytes": x["byte_size"]} for x in records],
+            "findings": ["File contents and local Markdown references were fetched at the pinned commit and Git blob SHA verified.", "License, nested dependency, script safety and asset rights still require separate review."],
+        },
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"skill_id": str(skill_id), "source_commit": skill["source_commit"], "file_count": len(records), "total_bytes": total_bytes, "integrity": "verified", "execution_enabled": False}
