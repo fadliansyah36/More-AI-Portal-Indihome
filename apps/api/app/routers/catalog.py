@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
@@ -19,6 +20,10 @@ class AgentCatalogItemResponse(BaseModel):
     enabled: bool
     capability_tags: list[str]
     tool_keys: list[str]
+    runtime_available: bool
+    active_workers: int
+    live_tool_keys: list[str]
+    last_seen_at: datetime | None = None
 
 
 class ToolCatalogItemResponse(BaseModel):
@@ -74,6 +79,19 @@ async def list_agents(request: Request, user: dict[str, Any] = Depends(customer_
         "toolcall": ("ToolCall Agent", "Executes registered OpenManus tools through policy and approval controls."),
     }
     tools = tool_catalog()
+    heartbeat_cutoff = (datetime.now(timezone.utc) - timedelta(seconds=90)).isoformat()
+    worker_snapshots = await repository(request).select("moreai_worker_capability_snapshots", {
+        "last_seen_at": f"gt.{heartbeat_cutoff}",
+        "select": "worker_id,runtime_keys,capabilities,status,last_seen_at",
+        "order": "last_seen_at.desc",
+        "limit": "100",
+    })
+    runtime_workers: dict[str, list[dict[str, Any]]] = {}
+    for snapshot in worker_snapshots:
+        runtime_keys = snapshot.get("runtime_keys") if isinstance(snapshot.get("runtime_keys"), list) else []
+        for runtime_key in runtime_keys:
+            if isinstance(runtime_key, str):
+                runtime_workers.setdefault(runtime_key, []).append(snapshot)
     items: list[dict[str, Any]] = []
     for key, (default_name, default_description) in runtime_descriptors.items():
         definition = configured.get(key)
@@ -86,6 +104,18 @@ async def list_agents(request: Request, user: dict[str, Any] = Depends(customer_
         capability_tags = sorted({
             str(tag) for tool in mapped_tools for tag in tool.get("capability_tags", [])
         })
+        active = runtime_workers.get(key, [])
+        live_tool_keys: set[str] = set()
+        for snapshot in active:
+            snapshot_capabilities = snapshot.get("capabilities") if isinstance(snapshot.get("capabilities"), dict) else {}
+            runtimes = snapshot_capabilities.get("runtimes") if isinstance(snapshot_capabilities.get("runtimes"), dict) else {}
+            runtime_capability = runtimes.get(key) if isinstance(runtimes.get(key), dict) else {}
+            keys = runtime_capability.get("tool_keys") if isinstance(runtime_capability.get("tool_keys"), list) else []
+            live_tool_keys.update(item for item in keys if isinstance(item, str))
+        last_seen = max(
+            (row.get("last_seen_at") for row in active if isinstance(row.get("last_seen_at"), str)),
+            default=None,
+        )
         items.append({
             "id": str(definition.get("id")) if definition and definition.get("id") else key,
             "key": key,
@@ -95,6 +125,10 @@ async def list_agents(request: Request, user: dict[str, Any] = Depends(customer_
             "enabled": True,
             "capability_tags": capability_tags,
             "tool_keys": [str(tool["key"]) for tool in mapped_tools],
+            "runtime_available": bool(active),
+            "active_workers": len({str(row.get("worker_id")) for row in active}),
+            "live_tool_keys": sorted(live_tool_keys),
+            "last_seen_at": last_seen,
         })
     return items
 
