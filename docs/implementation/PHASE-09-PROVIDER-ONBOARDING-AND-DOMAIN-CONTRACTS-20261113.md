@@ -131,3 +131,11 @@ Phase 09 remains **IN PROGRESS**. Source integration for available Customer cont
 - No API key was created/read, no pricing configuration was supplied, no provider call was made and the adapter is not claimed active in the current deployment.
 - The official current model used by source defaults is `gpt-image-2`; OpenAI documentation says organization verification may be required. Official cost examples currently list 1024×1024 at $0.006 low / $0.053 medium / $0.211 high. Those values are examples only and must be reviewed against current provider pricing before configuration.
 - Sora Video API remains removed. Runway Dev is one technically documented candidate for an asynchronous video adapter, but it has not been selected or connected. A product-owner decision and secret/pricing configuration are still required.
+
+
+### Runway Dev video adapter source integration — 2026-11-14
+
+- Runway Dev is now the selected video provider adapter. The worker uses the official `POST /v1/text_to_video` and `GET /v1/tasks/{id}` contract, with API version `2024-11-06`.
+- Durable checkpoint states preserve provider task IDs and prevent duplicate submission after ambiguous network outcomes. The result is stored as a private MP4 artifact and MoreAI usage is reserved/settled against configured provider credit conversion and max-price policy.
+- Required configuration is documented in [Agent Configuration & Create Studio report](./PHASE-09-AGENT-CONFIGURATION-CAPABILITY-REGISTRY-CREATE-STUDIO-20261114.md). No Runway API key or pricing values were supplied, no provider request was made and the adapter is not live until the full configuration gate passes.
+- Official docs: [Runway Dev API Reference](https://docs.dev.runwayml.com/api/).
