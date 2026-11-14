@@ -65,6 +65,7 @@ class ModelCapabilityListResponse(BaseModel):
 class MediaCapabilityItemResponse(BaseModel):
     available: bool
     worker_count: int
+    provider: str | None = None
     reason: str | None = None
 
 
@@ -241,14 +242,20 @@ async def list_media_capabilities(
         "video_generation": set(),
         "file_generation": set(),
     }
+    provider_names = {
+        "image_generation": "openai",
+        "video_generation": "runway",
+        "file_generation": "supabase_storage",
+    }
     for snapshot in snapshots:
         capabilities = snapshot.get("capabilities") if isinstance(snapshot.get("capabilities"), dict) else {}
         media = capabilities.get("media") if isinstance(capabilities.get("media"), dict) else {}
+        providers = media.get("providers") if isinstance(media.get("providers"), dict) else {}
         worker_id = snapshot.get("worker_id")
         if not isinstance(worker_id, str):
             continue
         for key in media_workers:
-            if media.get(key) is True:
+            if media.get(key) is True and providers.get(key) == provider_names[key]:
                 media_workers[key].add(worker_id)
 
     def item(key: str) -> dict[str, Any]:
@@ -257,6 +264,7 @@ async def list_media_capabilities(
         return {
             "available": available,
             "worker_count": worker_count,
+            "provider": provider_names[key] if available else None,
             "reason": None if available else "No healthy worker currently advertises a registered adapter for this capability.",
         }
 
