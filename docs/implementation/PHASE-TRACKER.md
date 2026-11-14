@@ -1315,3 +1315,6 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 
 - PRD v1.2 / AGENTS alignment note: the EduTech UI additions were limited to the protected Customer EduTech and Tasks/Agent Run detail routes, solely to expose saved curriculum and Agent Run-linked learning artifacts. Existing MoreAI red/light-surface styling was preserved; no global token migration occurred. Before/after screenshots were not captured because real browser testing was explicitly prohibited; UI regression evidence remains NOT VERIFIED.
+
+
+- EduTech persistence scope extended: learner APIs now expose quiz attempts, assessment feedback and lesson version history; EduTech renders saved attempt outcomes and assessment summaries. Progress RPC now computes total curriculum completion and synchronizes enrollment/path status only when all canonical lessons are completed. Follow-up migrations `20261114081000` and `20261114082000` both returned success from Supabase. Phase 09 remains IN PROGRESS.
