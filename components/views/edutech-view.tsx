@@ -280,7 +280,7 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
             ))}
             {selectedLesson && (
               <div className="rounded-2xl border border-red-100 bg-white p-3">
-                <EdutechLessonView pathId={selectedLesson.pathId} lessonId={selectedLesson.lessonId} onBack={() => setSelectedLesson(null)} />
+                <EdutechLessonView pathId={selectedLesson.pathId} lessonId={selectedLesson.lessonId} onBack={() => setSelectedLesson(null)} onStartPrompt={onStartPrompt} />
               </div>
             )}
           </div>
