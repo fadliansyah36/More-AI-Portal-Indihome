@@ -139,3 +139,5 @@ Phase 09 remains **IN PROGRESS**. Source integration for available Customer cont
 - Durable checkpoint states preserve provider task IDs and prevent duplicate submission after ambiguous network outcomes. The result is stored as a private MP4 artifact and MoreAI usage is reserved/settled against configured provider credit conversion and max-price policy.
 - Required configuration is documented in [Agent Configuration & Create Studio report](./PHASE-09-AGENT-CONFIGURATION-CAPABILITY-REGISTRY-CREATE-STUDIO-20261114.md). No Runway API key or pricing values were supplied, no provider request was made and the adapter is not live until the full configuration gate passes.
 - Official docs: [Runway Dev API Reference](https://docs.dev.runwayml.com/api/).
+
+- The current Runway adapter is intentionally limited to model `gen4.5` and durations `5` or `10` seconds; other model/duration combinations remain unavailable until their API parameters and price map are explicitly added.
