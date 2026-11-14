@@ -55,6 +55,19 @@ class WorkerRpcClient:
         response.raise_for_status()
         return response.json()
 
+    async def publish_capabilities(
+        self, runtime_keys: list[str], capabilities: dict[str, Any], status: str = "healthy",
+    ) -> dict[str, Any]:
+        result = await self.rpc("moreai_worker_publish_capabilities", {
+            "p_worker_id": self.settings.worker_id,
+            "p_runtime_keys": runtime_keys,
+            "p_capabilities": capabilities,
+            "p_status": status,
+        })
+        if not isinstance(result, dict):
+            raise RuntimeError("worker_capability_heartbeat_invalid_response")
+        return result
+
     async def select(self, table: str, params: dict[str, str]) -> list[dict[str, Any]]:
         response = await self.client.get(
             f"{self.settings.supabase_url.rstrip('/')}/rest/v1/{table}",
