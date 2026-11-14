@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -503,3 +504,85 @@ async def create_calendar_event(
             "p_result_metadata": {"outcome":"provider_response_unavailable"},
         })
         raise HTTPException(502, "calendar_event_outcome_unknown_do_not_retry") from exc
+
+
+class InternalGoogleReadRequest(BaseModel):
+    user_id: UUID
+    run_id: UUID
+    query: str = Field(default="newer_than:30d", max_length=500)
+    limit: int = Field(default=20, ge=1, le=30)
+    time_min: datetime | None = None
+    time_max: datetime | None = None
+
+
+def _require_worker_internal(request: Request) -> None:
+    expected = os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", "")
+    supplied = request.headers.get("X-MoreAI-Worker-Token", "")
+    if not expected or not supplied or not hmac.compare_digest(expected, supplied):
+        raise HTTPException(401, "worker_internal_authentication_failed")
+
+
+async def _internal_google_connection(request: Request, user_id: str, run_id: str, scope: str) -> dict[str, Any]:
+    _require_worker_internal(request)
+    repo = repository(request)
+    runs = await repo.select("agent_runs", {
+        "id": f"eq.{run_id}", "user_id": f"eq.{user_id}",
+        "status": "eq.running", "select": "id", "limit": "1",
+    })
+    if not runs:
+        raise HTTPException(403, "worker_run_owner_or_status_mismatch")
+    rows = await repo.select("moreai_connections", {
+        "user_id": f"eq.{user_id}", "provider": "eq.google", "status": "eq.connected",
+        "select": "id,user_id,scopes,credential_ciphertext,credential_key_version,access_token_expires_at",
+        "order": "updated_at.desc", "limit": "20",
+    })
+    connection = next((row for row in rows if scope in (row.get("scopes") or [])), None)
+    if not connection:
+        raise HTTPException(403, "google_connection_scope_not_available")
+    return connection
+
+
+@router.post("/internal/google/gmail/search")
+async def internal_gmail_search(body: InternalGoogleReadRequest, request: Request):
+    connection = await _internal_google_connection(request, str(body.user_id), str(body.run_id), GOOGLE_SCOPE_MAP["gmail.read"])
+    token = await _google_access_token(request, connection)
+    response = await request.app.state.http.get(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+        params={"q": body.query, "maxResults": body.limit},
+        headers={"Authorization": "Bearer " + token}, timeout=20.0, follow_redirects=False,
+    )
+    if response.status_code != 200:
+        raise HTTPException(502, "gmail_search_failed")
+    items = []
+    for row in response.json().get("messages", [])[:body.limit]:
+        detail = await request.app.state.http.get(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/" + str(row["id"]),
+            params={"format":"metadata","metadataHeaders":["Subject","From","Date"]},
+            headers={"Authorization":"Bearer "+token}, timeout=15.0, follow_redirects=False,
+        )
+        if detail.status_code != 200:
+            continue
+        data = detail.json()
+        headers = {str(x.get("name","")).lower():x.get("value") for x in data.get("payload",{}).get("headers",[])}
+        items.append({"id":data.get("id"),"thread_id":data.get("threadId"),"subject":headers.get("subject"),
+            "from":headers.get("from"),"date":headers.get("date"),"snippet":data.get("snippet")})
+    return {"items":items,"count":len(items),"source":"google_gmail"}
+
+
+@router.post("/internal/google/calendar/list")
+async def internal_calendar_list(body: InternalGoogleReadRequest, request: Request):
+    if body.time_min is None or body.time_max is None or body.time_max <= body.time_min or (body.time_max-body.time_min).days > 90:
+        raise HTTPException(422, "calendar_range_invalid")
+    connection = await _internal_google_connection(request, str(body.user_id), str(body.run_id), GOOGLE_SCOPE_MAP["calendar.read"])
+    token = await _google_access_token(request, connection)
+    response = await request.app.state.http.get(
+        "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        params={"timeMin":body.time_min.isoformat(),"timeMax":body.time_max.isoformat(),
+            "maxResults":body.limit,"singleEvents":"true","orderBy":"startTime"},
+        headers={"Authorization":"Bearer "+token}, timeout=20.0, follow_redirects=False,
+    )
+    if response.status_code != 200:
+        raise HTTPException(502, "calendar_list_failed")
+    items = [{"id":event.get("id"),"summary":event.get("summary"),"start":event.get("start"),"end":event.get("end")}
+        for event in response.json().get("items",[])[:body.limit]]
+    return {"items":items,"count":len(items),"source":"google_calendar"}
