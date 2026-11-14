@@ -59,6 +59,17 @@ class ModelCapabilityListResponse(BaseModel):
     count: int
     source: str
 
+class MediaCapabilityItemResponse(BaseModel):
+    available: bool
+    worker_count: int
+    reason: str | None = None
+
+
+class CustomerMediaCapabilitiesResponse(BaseModel):
+    image_generation: MediaCapabilityItemResponse
+    video_generation: MediaCapabilityItemResponse
+    file_generation: MediaCapabilityItemResponse
+
 
 router = APIRouter(prefix="/api/v1", tags=["catalog"])
 
@@ -173,3 +184,43 @@ async def list_model_capabilities(request: Request, user: dict[str, Any] = Depen
 async def list_tools(user: dict[str, Any] = Depends(customer_principal)):
     # The catalog describes upstream tools; availability remains false until a safe adapter is enabled.
     return tool_catalog()
+
+
+
+@router.get("/media/capabilities", response_model=CustomerMediaCapabilitiesResponse)
+async def list_media_capabilities(
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
+):
+    """Expose only media/file adapters actually registered by a healthy live worker."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=90)).isoformat()
+    snapshots = await repository(request).select("moreai_worker_capability_snapshots", {
+        "last_seen_at": f"gt.{cutoff}",
+        "status": "eq.healthy",
+        "select": "worker_id,capabilities,last_seen_at",
+        "order": "last_seen_at.desc",
+        "limit": "100",
+    })
+    media_flags = {
+        "image_generation": False,
+        "video_generation": False,
+        "file_generation": False,
+    }
+    for snapshot in snapshots:
+        capabilities = snapshot.get("capabilities") if isinstance(snapshot.get("capabilities"), dict) else {}
+        media = capabilities.get("media") if isinstance(capabilities.get("media"), dict) else {}
+        for key in media_flags:
+            media_flags[key] = media_flags[key] or media.get(key) is True
+
+    def item(key: str) -> dict[str, Any]:
+        available = media_flags[key]
+        return {
+            "available": available,
+            "worker_count": len(snapshots) if available else 0,
+            "reason": None if available else "No healthy worker currently advertises a registered adapter for this capability.",
+        }
+
+    return {
+        "image_generation": item("image_generation"),
+        "video_generation": item("video_generation"),
+        "file_generation": item("file_generation"),
+    }
