@@ -56,9 +56,9 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
       .then(({ items }) => { if (active) setSavedPaths(items); })
       .catch((error) => { if (active) showToast(error instanceof Error ? error.message : 'Learning path gagal dimuat.', 'error'); })
       .finally(() => { if (active) setPathsLoading(false); });
-    learningApi.progress()
-      .then(({ total_count }) => {
-        if (active) setSavedProgressCount(total_count);
+    learningApi.progressDetail(500)
+      .then(({ count }) => {
+        if (active) setSavedProgressCount(count);
       })
       .catch((error) => {
         if (active) showToast(error instanceof Error ? error.message : 'Progress belajar gagal dimuat.', 'error');
