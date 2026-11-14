@@ -463,7 +463,8 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
         if relative == root_path and (git_sha != skill["source_blob_sha"] or digest != skill["content_sha256"]):
             raise HTTPException(409, "skill_root_provenance_hash_mismatch")
         media_type = str(item.get("content_type") or mimetypes.guess_type(relative)[0] or "application/octet-stream")[:120]
-        is_text = media_type.startswith("text/") or relative.lower().endswith((".md", ".txt", ".json", ".yaml", ".yml", ".toml", ".py", ".js", ".ts", ".svg"))
+        source_name = PurePosixPath(relative).name.lower()
+        is_text = media_type.startswith("text/") or source_name.startswith(("license", "licence", "copying", "notice", "readme", "third_party")) or relative.lower().endswith((".md", ".txt", ".json", ".yaml", ".yml", ".toml", ".py", ".js", ".ts", ".svg", ".lock", ".mod"))
         text_content = content.decode("utf-8", errors="strict") if is_text else None
         records.append({
             "skill_package_id": str(skill_id), "owner_user_id": user["id"],
