@@ -12,7 +12,7 @@ const permissions = [
 ] as const;
 
 type MailItem = { id: string; subject?: string; from?: string; date?: string; snippet?: string; unread?: boolean };
-type CalendarItem = { id: string; summary?: string; start?: { dateTime?: string; date?: string }; end?: { dateTime?: string; date?: string }; html_link?: string };
+type CalendarItem = { id: string; summary?: string; etag?: string; start?: { dateTime?: string; date?: string }; end?: { dateTime?: string; date?: string }; html_link?: string };
 
 export function ConnectionsCenterView() {
   const [items, setItems] = useState<CustomerConnection[]>([]);
@@ -80,6 +80,30 @@ export function ConnectionsCenterView() {
     finally { setBusy(null); }
   };
 
+  const updateEvent = async (connection: CustomerConnection, item: CalendarItem) => {
+    if (!item.etag) { setError('Versi agenda tidak tersedia. Muat ulang Calendar sebelum mengubah agenda.'); return; }
+    const nextSummary = window.prompt('Ubah judul agenda', item.summary || '');
+    if (nextSummary === null || !nextSummary.trim() || nextSummary.trim() === item.summary) return;
+    if (!window.confirm('Simpan perubahan judul agenda "' + nextSummary.trim() + '"?')) return;
+    setBusy(connection.id); setError(null);
+    try {
+      await connectionsApi.updateCalendarEvent(connection.id, item.id, item.etag, nextSummary.trim());
+      await loadCalendar(connection);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Perubahan agenda gagal atau hasilnya belum diketahui.'); }
+    finally { setBusy(null); }
+  };
+
+  const removeEvent = async (connection: CustomerConnection, item: CalendarItem) => {
+    if (!item.etag) { setError('Versi agenda tidak tersedia. Muat ulang Calendar sebelum menghapus agenda.'); return; }
+    if (!window.confirm('Hapus agenda "' + (item.summary || '(Tanpa judul)') + '" dari Google Calendar? Tindakan ini tidak dapat dibatalkan.')) return;
+    setBusy(connection.id); setError(null);
+    try {
+      await connectionsApi.deleteCalendarEvent(connection.id, item.id, item.etag);
+      setEvents(current => ({ ...current, [connection.id]: (current[connection.id] || []).filter(event => event.id !== item.id) }));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Penghapusan agenda gagal atau hasilnya belum diketahui.'); }
+    finally { setBusy(null); }
+  };
+
   const loadCalendar = async (connection: CustomerConnection) => {
     setBusy(connection.id); setError(null);
     try {
@@ -111,7 +135,7 @@ export function ConnectionsCenterView() {
           {(connection.scopes.includes('https://www.googleapis.com/auth/calendar.readonly')||connection.scopes.includes('https://www.googleapis.com/auth/calendar.events'))&&<button onClick={()=>void loadCalendar(connection)} disabled={busy===connection.id} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700"><CalendarDays className="h-3 w-3"/>Muat Calendar 30 hari</button>}
         </div>
         {mail[connection.id]&&<div className="space-y-1 rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-bold text-slate-700">Email terbaru</p>{mail[connection.id].length?mail[connection.id].map(item=><div key={item.id} className="border-t border-slate-200 py-2"><p className="text-xs font-semibold text-slate-800">{item.subject||'(Tanpa subjek)'}</p><p className="text-[10px] text-slate-500">{item.from} · {item.date}</p><p className="text-[10px] text-slate-600">{item.snippet}</p></div>):<p className="text-xs text-slate-500">Tidak ada email ditemukan.</p>}</div>}
-        {events[connection.id]&&<div className="space-y-1 rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-bold text-slate-700">Agenda 30 hari</p>{events[connection.id].length?events[connection.id].map(event=><div key={event.id} className="border-t border-slate-200 py-2"><p className="text-xs font-semibold text-slate-800">{event.summary||'(Tanpa judul)'}</p><p className="text-[10px] text-slate-500">{event.start?.dateTime||event.start?.date||'Waktu tidak tersedia'}</p></div>):<p className="text-xs text-slate-500">Tidak ada agenda.</p>}</div>}
+        {events[connection.id]&&<div className="space-y-1 rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-bold text-slate-700">Agenda 30 hari</p>{events[connection.id].length?events[connection.id].map(event=><div key={event.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 py-2"><div className="min-w-0"><p className="text-xs font-semibold text-slate-800">{event.summary||'(Tanpa judul)'}</p><p className="text-[10px] text-slate-500">{event.start?.dateTime||event.start?.date||'Waktu tidak tersedia'}</p></div>{connection.scopes.includes('https://www.googleapis.com/auth/calendar.events')&&<div className="flex shrink-0 gap-2"><button type="button" onClick={()=>void updateEvent(connection,event)} disabled={busy===connection.id||!event.etag} className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-700 disabled:opacity-40">Ubah judul</button><button type="button" onClick={()=>void removeEvent(connection,event)} disabled={busy===connection.id||!event.etag} className="rounded-lg border border-rose-200 px-2 py-1 text-[10px] font-semibold text-rose-700 disabled:opacity-40">Hapus</button></div>}</div>):<p className="text-xs text-slate-500">Tidak ada agenda.</p>}</div>}
         {connection.scopes.includes('https://www.googleapis.com/auth/gmail.send')&&<form onSubmit={event=>{event.preventDefault();void sendMail(connection);}} className="space-y-2 rounded-xl border border-slate-200 p-3">
           <p className="text-[10px] font-bold text-slate-700">Kirim Gmail · konfirmasi wajib</p>
           <input value={mailTo} onChange={event=>setMailTo(event.target.value)} placeholder="Penerima email (pisahkan koma)" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"/>
