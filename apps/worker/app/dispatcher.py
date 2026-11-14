@@ -43,6 +43,16 @@ class RegisteredAgentDispatcher(AgentDispatcher):
         if not isinstance(agent_key, str):
             raise ValueError("invalid_agent_key")
         runtime = self.registry.resolve(agent_key)
+        agent_config = payload.get("agent_config")
+        if agent_config is not None:
+            if not isinstance(agent_config, dict):
+                raise ValueError("saved_agent_configuration_invalid")
+            if agent_config.get("runtime_key") != agent_key:
+                raise PermissionError("saved_agent_runtime_mismatch")
+            if not isinstance(agent_config.get("id"), str) or not isinstance(agent_config.get("version"), int):
+                raise ValueError("saved_agent_configuration_identity_invalid")
+            if not isinstance(agent_config.get("tool_keys"), list):
+                raise ValueError("saved_agent_tool_configuration_invalid")
         # SWE is never dispatched without a separately deployed, authenticated
         # sandbox supervisor. The tool adapter repeats readiness before each
         # invocation so a supervisor outage cannot silently fall back to host exec.
