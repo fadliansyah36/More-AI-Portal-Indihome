@@ -639,6 +639,8 @@ export type CustomerAgentCatalogItem = {
   description: string;
   version: string;
   enabled: boolean;
+  capability_tags: string[];
+  tool_keys: string[];
 };
 
 
