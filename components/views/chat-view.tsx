@@ -352,7 +352,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       const queued = await customerApi.sendMessage(
         activeConversationId, prompt, crypto.randomUUID(), initialAgentKey,
         uploadedAttachments.map((attachment) => attachment.id),
-        initialAgentConfigurationId,
+        initialAgentConfigurationId, initialSkillIds,
       );
       if (filesToUpload.length > 0) setPendingAttachments([]);
       setActiveRunId(queued.run.id);
