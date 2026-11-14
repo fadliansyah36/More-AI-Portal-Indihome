@@ -644,6 +644,19 @@ export type CustomerAgentCatalogItem = {
 };
 
 
+export type CustomerAgentConfiguration = {
+  id: string;
+  runtime_key: 'manus' | 'toolcall';
+  name: string;
+  description: string;
+  system_prompt: string;
+  tool_keys: string[];
+  enabled: boolean;
+  version: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type CustomerPersonalMemoryItem = {
   id: string;
   title: string;
@@ -694,6 +707,18 @@ export const customerApi = {
     '/api/v1/customer/memory/' + encodeURIComponent(memoryId), { method: 'DELETE' },
   ).then(() => undefined),
 
+  agentConfigurations: () => moreAiCustomerApi<CustomerAgentConfiguration[]>('/api/v1/customer/agents/configurations'),
+  createAgentConfiguration: (payload: Pick<CustomerAgentConfiguration, 'runtime_key' | 'name' | 'description' | 'system_prompt' | 'tool_keys'>) =>
+    moreAiCustomerApi<CustomerAgentConfiguration>('/api/v1/customer/agents/configurations', {
+      method: 'POST', body: JSON.stringify(payload),
+    }),
+  updateAgentConfiguration: (id: string, payload: Partial<Pick<CustomerAgentConfiguration, 'name' | 'description' | 'system_prompt' | 'tool_keys' | 'enabled'>>) =>
+    moreAiCustomerApi<CustomerAgentConfiguration>('/api/v1/customer/agents/configurations/' + encodeURIComponent(id), {
+      method: 'PATCH', body: JSON.stringify(payload),
+    }),
+  deleteAgentConfiguration: (id: string) => moreAiCustomerFetch(
+    '/api/v1/customer/agents/configurations/' + encodeURIComponent(id), { method: 'DELETE' },
+  ).then(() => undefined),
   agents: () => moreAiCustomerApi<CustomerAgentCatalogItem[]>('/api/v1/agents'),
   context: () => moreAiCustomerApi<{ principal: { user_id: string; role: string }; tenant: null }>('/api/v1/customer/context'),
   conversations: (limit = 50, before?: string) => moreAiCustomerApi<CustomerConversation[]>(`/api/v1/customer/conversations?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
@@ -718,10 +743,11 @@ export const customerApi = {
   sendMessage: (
     conversationId: string, content: string, idempotencyKey: string,
     agentKey: 'manus' | 'planning' | 'toolcall' = 'manus', attachmentIds: string[] = [],
+    agentConfigurationId?: string | null,
   ) => moreAiCustomerApi<CustomerChatEnqueueResponse>(`/api/v1/customer/conversations/${conversationId}/messages`, {
     method: 'POST',
     headers: { 'Idempotency-Key': idempotencyKey },
-    body: JSON.stringify({ content, agent_key: agentKey, attachment_ids: attachmentIds }),
+    body: JSON.stringify({ content, agent_key: agentKey, attachment_ids: attachmentIds, agent_configuration_id: agentConfigurationId || null }),
   }),
   agentRuns: (limit = 50, before?: string) => moreAiCustomerApi<CustomerAgentRun[]>(`/api/v1/customer/agent-runs?limit=${Math.max(1, Math.min(100, limit))}${before ? '&before=' + encodeURIComponent(before) : ''}`),
   agentRunsPage: (limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerAgentRun>(
