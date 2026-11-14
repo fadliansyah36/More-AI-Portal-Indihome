@@ -1230,12 +1230,22 @@ class CustomerMemoryItemResponse(BaseModel):
     updated_at: datetime
 
 
+class CustomerEpisodicMemoryResponse(BaseModel):
+    id: UUID
+    prompt: str
+    outcome: str
+    workspace_id: UUID | None = None
+    created_at: datetime
+    expires_at: datetime
+
+
 class CustomerMemoryResponse(BaseModel):
     enabled: bool
     consent_version: str | None = None
     consented_at: datetime | None = None
     disabled_at: datetime | None = None
     items: list[CustomerMemoryItemResponse] = Field(default_factory=list)
+    episodes: list[CustomerEpisodicMemoryResponse] = Field(default_factory=list)
 
 
 @router.get("/memory", response_model=CustomerMemoryResponse)
@@ -1266,12 +1276,34 @@ async def customer_personal_memory(
         "order": "updated_at.desc,id.desc",
         "limit": "200",
     })
+    episode_rows = await repo.select("conversation_messages", {
+        "user_id": f"eq.{principal['id']}",
+        "metadata->>memory_type": "eq.episodic",
+        "metadata->>episode_expires_at": f"gt.{now.isoformat()}",
+        "select": "id,metadata,created_at",
+        "order": "created_at.desc,id.desc",
+        "limit": "100",
+    }) if preference.get("enabled") and preference.get("consent_version") == CUSTOMER_MEMORY_CONSENT_VERSION else []
+    episodes = []
+    for row in episode_rows:
+        metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+        episode = metadata.get("episode") if isinstance(metadata.get("episode"), dict) else {}
+        prompt, outcome = episode.get("prompt"), episode.get("outcome")
+        expires_at = metadata.get("episode_expires_at")
+        if not isinstance(prompt, str) or not isinstance(outcome, str) or not isinstance(expires_at, str):
+            continue
+        episodes.append({
+            "id": row["id"], "prompt": prompt[:900], "outcome": outcome[:1400],
+            "workspace_id": metadata.get("workspace_id"),
+            "created_at": row.get("created_at"), "expires_at": expires_at,
+        })
     return {
         "enabled": bool(preference.get("enabled", False)),
         "consent_version": preference.get("consent_version"),
         "consented_at": preference.get("consented_at"),
         "disabled_at": preference.get("disabled_at"),
         "items": items,
+        "episodes": episodes,
     }
 
 
@@ -1344,6 +1376,37 @@ async def update_customer_memory_consent(
     }
 
 
+@router.delete("/memory/episodes/{message_id}", status_code=204)
+async def delete_customer_episodic_memory(
+    message_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Remove only the episodic summary metadata, preserving chat and citations."""
+    principal = await require_customer_context(request, user)
+    repo = repository(request)
+    rows = await repo.select("conversation_messages", {
+        "id": f"eq.{message_id}",
+        "user_id": f"eq.{principal['id']}",
+        "metadata->>memory_type": "eq.episodic",
+        "select": "id,metadata",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "Episodic memory not found")
+    prior = rows[0].get("metadata") if isinstance(rows[0].get("metadata"), dict) else {}
+    cleaned = {
+        key: value for key, value in prior.items()
+        if key not in {"memory_type", "memory_scope", "workspace_id", "episode", "episode_expires_at"}
+    }
+    await repo.update(
+        "conversation_messages",
+        {"id": f"eq.{message_id}", "user_id": f"eq.{principal['id']}"},
+        {"metadata": cleaned},
+    )
+    return Response(status_code=204)
+
+
 @router.delete("/memory", status_code=204)
 async def clear_customer_memory(
     request: Request,
@@ -1353,6 +1416,17 @@ async def clear_customer_memory(
     principal = await require_customer_context(request, user)
     repo = repository(request)
     try:
+        preferences = await repo.select("moreai_customer_memory_preferences", {
+            "user_id": f"eq.{principal['id']}",
+            "select": "enabled,consent_version",
+            "limit": "1",
+        })
+        if preferences:
+            await repo.rpc("moreai_customer_set_memory_consent", {
+                "p_user_id": principal["id"],
+                "p_enabled": False,
+                "p_consent_version": preferences[0]["consent_version"],
+            })
         await _purge_customer_episodic_metadata(repo, principal["id"])
         await repo.delete("moreai_customer_memories", {
             "user_id": f"eq.{principal['id']}",
