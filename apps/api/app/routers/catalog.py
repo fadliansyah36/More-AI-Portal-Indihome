@@ -42,6 +42,9 @@ class ToolCatalogItemResponse(BaseModel):
     audit_category: str
     available_by_default: list[str]
     enabled_by_default: bool
+    registered: bool
+    active_workers: int
+    availability_reason: str | None = None
 
 
 class ModelCapabilityItemResponse(BaseModel):
@@ -181,9 +184,42 @@ async def list_model_capabilities(request: Request, user: dict[str, Any] = Depen
 
 
 @router.get("/tools", response_model=list[ToolCatalogItemResponse])
-async def list_tools(user: dict[str, Any] = Depends(customer_principal)):
-    # The catalog describes upstream tools; availability remains false until a safe adapter is enabled.
-    return tool_catalog()
+async def list_tools(
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
+):
+    """Return the canonical tool policy catalog plus live worker registration state."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=90)).isoformat()
+    snapshots = await repository(request).select("moreai_worker_capability_snapshots", {
+        "last_seen_at": f"gt.{cutoff}",
+        "status": "eq.healthy",
+        "select": "worker_id,capabilities",
+        "limit": "100",
+    })
+    tool_workers: dict[str, set[str]] = {}
+    for snapshot in snapshots:
+        worker_id = snapshot.get("worker_id")
+        capabilities = snapshot.get("capabilities") if isinstance(snapshot.get("capabilities"), dict) else {}
+        runtimes = capabilities.get("runtimes") if isinstance(capabilities.get("runtimes"), dict) else {}
+        if not isinstance(worker_id, str):
+            continue
+        for runtime in runtimes.values():
+            descriptor = runtime if isinstance(runtime, dict) else {}
+            keys = descriptor.get("tool_keys") if isinstance(descriptor.get("tool_keys"), list) else []
+            for key in keys:
+                if isinstance(key, str):
+                    tool_workers.setdefault(key, set()).add(worker_id)
+    items = []
+    for tool in tool_catalog():
+        key = str(tool.get("key") or "")
+        workers = tool_workers.get(key, set())
+        registered = bool(workers)
+        items.append({
+            **tool,
+            "registered": registered,
+            "active_workers": len(workers),
+            "availability_reason": None if registered else "No healthy worker currently registers this tool adapter.",
+        })
+    return items
 
 
 
