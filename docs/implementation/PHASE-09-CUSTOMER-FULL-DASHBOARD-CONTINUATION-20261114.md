@@ -75,3 +75,5 @@ Phase 09 remains **IN PROGRESS**. The Customer Dashboard integration must not be
 - Registry failures are displayed as a non-blocking warning and do not fabricate available models or imply that generation is possible.
 - Source commit: `33ea20b19a7bbe4d064ace8da8f9c83c336c9b09`.
 - Source-only change; no browser verification, API probe, tests, lint, typecheck or build was performed.
+
+- Follow-up copy correction commit: `83b694b410606d4e9c86d87654c430a87ea8cfc0`. The model registry panel distinguishes enabled provider/model registry entries from per-customer entitlement; actual execution remains subject to entitlement, quota, router and worker policy.
