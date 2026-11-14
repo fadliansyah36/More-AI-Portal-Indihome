@@ -3,7 +3,7 @@
 Date: 2026-11-14  
 Repository: `fadliansyah36/More-AI-Portal-Indihome`  
 Branch: `main`  
-Baseline HEAD: `f5306792c41c2e12e89c0a300ec5244b280c5fd8`  
+Baseline HEAD: `f5306792c41c2e12e89c0a300ec5244b280c5fd8`\nImplementation source snapshot before final report updates: `2a4ef0efd7927a040814f6baa33c33c0dc18a282`  
 Scope: implement the first canonical MoreAI EduTech data domain and expose its lifecycle to the existing Customer dashboard and OpenManus Agent Runtime. This is a source implementation report, not runtime acceptance.
 
 ## Product and architecture decision
@@ -37,13 +37,13 @@ Added `apps/worker/app/learning_tools.py` and registered five tools in the canon
 2. `lesson_generate` — write/revise lesson content and preserve prior content versions.
 3. `quiz_generate` — persist a quiz for a canonical lesson.
 4. `answer_assess` — persist a quiz attempt, score, feedback and assessment.
-5. `learning_progress_update` — update canonical lesson progress against the current owner-scoped Agent Run.
+5. `learning_progress_update` — update canonical lesson progress against the current owner-scoped Agent Run and synchronize path/enrollment completion only when every canonical lesson is completed.
 
 The tools are registered for Manus, Planning step execution (through the Manus step executor), and ToolCall. They use the existing worker Supabase RPC client and durable Agent Run identity; no separate learning engine or client-side database path was introduced.
 
 ## FastAPI and Customer UI integration
 
-- Added owner-scoped FastAPI reads for learning paths, path/module/lesson detail, canonical progress and learning artifacts created by a given Agent Run. Learner-facing quiz projections omit answer keys, explanations and grading notes.
+- Added owner-scoped FastAPI reads for learning paths, path/module/lesson detail, canonical progress, quiz attempts, assessments, lesson version history and learning artifacts created by a given Agent Run. Learner-facing quiz projections omit answer keys, explanations and grading notes.
 - Added typed Customer API contracts for the new routes.
 - Updated the existing EduTech view to display saved learning paths, enrollment/progress summaries, modules and canonical lessons.
 - Selecting a saved lesson hands its stored content and canonical IDs into the existing Chat → Planning Agent Run flow. Task detail also loads the learning artifacts associated with its Agent Run; EduTech progress counts use canonical lesson progress. Learner-facing quiz projections remove answer/answer_key/correct_answer/explanation/rationale/grading_notes/rubric fields before returning questions. The prompt explicitly instructs the agent to use the five persisted learning tools and never invent IDs or claim a write without a tool result.
@@ -64,7 +64,7 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 - `2e5bc04bfd26d3a4d5623190aae83e03ac470afd` — render saved curricula and lesson continuation in EduTech.
 - `95b344000d770e6a677004e13da9685921044e78` — count canonical lesson progress.
 - `4b8a89cdcccbd0e3ab348bd0c815a28c954672d2` / `2eff65742c5f998e8f22c8e12cc83a82b2a194c6` — display learning artifacts in Task detail and refresh them from Agent Run events.
-- `b3300d82b8e16674022b17b7dc5adce6f147a5ad` — prevent learner curriculum reads from exposing quiz answer keys.
+- `b3300d82b8e16674022b17b7dc5adce6f147a5ad` — prevent learner curriculum reads from exposing quiz answer keys.\n- `b559aa384f3034d1696ec64323073d9341bc541d` — expose owner-scoped quiz attempts, assessments and lesson version history.\n- `7204532551a9ceab01ea4d380321e226d41ac08c` — add typed contracts for quiz attempts and lesson versions.\n- `209123418038bdc425393dfbdd01f773c4912301` — display persisted quiz attempts and assessment summaries in EduTech.\n- `2d36f886bc1595e725a711d0b50bb554ea6a4b76` — add path/enrollment completion rollup to progress RPC; Supabase migration applied successfully.\n- `3877a917eec65cd6a82615b5f56d4d14fd737ee0` — calculate curriculum progress against total lesson count.\n- `4cc27f4d0a9c7eebcffb5825bd19f0bca0525254` — update typed total-lesson progress contract.\n- `2a4ef0efd7927a040814f6baa33c33c0dc18a282` — show completion against total curriculum lessons.
 
 ## UI change gate and visual preservation
 
