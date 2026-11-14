@@ -119,12 +119,80 @@ export default function SuperAdminPage() {
     return () => { active = false; };
   }, [load]);
 
+  const loadSkillReviews = useCallback(async () => {
+    setSkillReviewError(null);
+    try {
+      const result = await adminRequest<{ items: SkillReviewRow[] }>('/api/v1/admin/skills/pending');
+      setSkillReviews(result.items);
+    } catch (cause) {
+      setSkillReviewError(cause instanceof Error ? cause.message : 'Skill reviews tidak dapat dimuat.');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'skills') void loadSkillReviews();
+  }, [activeTab, loadSkillReviews]);
+
+  const loadSkillEvidence = async (skillId: string) => {
+    setSkillReviewBusy('evidence:' + skillId);
+    setSkillReviewError(null);
+    try {
+      const result = await adminRequest<{ files: Array<{path:string;sha256:string;byte_size:number;text_content:string|null}> }>(
+        '/api/v1/admin/skills/' + encodeURIComponent(skillId) + '/source-evidence',
+      );
+      setSkillEvidence(current => ({ ...current, [skillId]: result.files }));
+    } catch (cause) {
+      setSkillReviewError(cause instanceof Error ? cause.message : 'Bukti source tidak dapat dimuat.');
+    } finally {
+      setSkillReviewBusy(null);
+    }
+  };
+
+  const reviewPackage = async (skill: SkillReviewRow, licenseStatus: 'approved' | 'rejected') => {
+    setSkillReviewBusy(skill.id);
+    setSkillReviewError(null);
+    try {
+      await adminMutation('/api/v1/admin/skills/' + encodeURIComponent(skill.id) + '/review', 'PATCH', {
+        license_status: licenseStatus,
+        publication_status: licenseStatus === 'approved' && skill.validation_status === 'validated' ? 'published' : 'private',
+        review_note: 'Reviewed from MoreAI Super Admin Skill Registry.',
+      });
+      await loadSkillReviews();
+    } catch (cause) {
+      setSkillReviewError(cause instanceof Error ? cause.message : 'Review skill gagal.');
+    } finally {
+      setSkillReviewBusy(null);
+    }
+  };
+
+  const reviewInstall = async (skill: SkillReviewRow, install: SkillReviewRow['installations'][number], decision: 'approved' | 'rejected') => {
+    setSkillReviewBusy(install.id);
+    setSkillReviewError(null);
+    try {
+      await adminMutation(
+        '/api/v1/admin/skills/' + encodeURIComponent(skill.id) + '/permissions?install_id=' + encodeURIComponent(install.id),
+        'PATCH',
+        {
+          decision,
+          granted_permissions: decision === 'approved' ? (skillPermissionChoices[install.id] || []) : [],
+          review_note: 'Reviewed from MoreAI Super Admin Skill Registry.',
+        },
+      );
+      await loadSkillReviews();
+    } catch (cause) {
+      setSkillReviewError(cause instanceof Error ? cause.message : 'Permission review gagal.');
+    } finally {
+      setSkillReviewBusy(null);
+    }
+  };
+
   const tabs = [
     ['overview', 'Ringkasan'],
     ['partners', 'Organisasi Mitra'],
     ['runs', 'Agent Runs'],
     ['audit', 'Audit Log'],
-    ['providers', 'Provider & Model'],\n    ['skills', 'AI Skills Review'],
+    ['providers', 'Provider & Model'],
+    ['skills', 'AI Skills Review'],
   ] as const;
 
   return (
