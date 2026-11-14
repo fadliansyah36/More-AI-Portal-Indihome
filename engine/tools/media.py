@@ -21,8 +21,9 @@ class OpenAIImageGenerationAdapter:
         "webp": "image/webp",
     }
 
-    def __init__(self, *, http: httpx.AsyncClient, artifacts: Any, accounting: Any, estimator: Any):
+    def __init__(self, *, http: httpx.AsyncClient, client: Any, artifacts: Any, accounting: Any, estimator: Any):
         self.http = http
+        self.client = client
         self.artifacts = artifacts
         self.accounting = accounting
         self.estimator = estimator
@@ -134,15 +135,28 @@ class OpenAIImageGenerationAdapter:
         claim = await self.accounting.claim_request(
             user_id=user_id, run_id=run_id, request_key=request_key, request_hash=request_hash,
         )
+        request_id = str(claim["id"])
+        if claim.get("status") == "succeeded" and isinstance(claim.get("response_text"), str):
+            return claim["response_text"]
+        if claim.get("status") == "provider_succeeded":
+            rows = await self.client.select("llm_request_records", {
+                "id": f"eq.{request_id}", "select": "actual_cost", "limit": "1",
+            })
+            stored_cost = float(rows[0].get("actual_cost") or 0) if rows else 0.0
+            if not math.isfinite(stored_cost) or stored_cost <= 0 or not isinstance(claim.get("response_text"), str):
+                raise RuntimeError("image_provider_result_recovery_incomplete")
+            stored_credits = stored_cost * float(os.environ["MOREAI_CREDITS_PER_USD"])
+            await self.accounting.finalize(
+                request_id=request_id, actual_credits=stored_credits,
+                request_key=f"{request_key}:settle", provider_response_id=None,
+            )
+            return claim["response_text"]
         if not claim.get("created"):
-            if claim.get("status") == "succeeded" and isinstance(claim.get("response_text"), str):
-                return claim["response_text"]
             raise RuntimeError("image_generation_request_already_claimed")
 
         reservation_id: str | None = None
         provider_succeeded = False
         provider_outcome_unknown = False
-        request_id = str(claim["id"])
         try:
             estimate = await self.estimator.estimate(
                 route=route,
@@ -234,11 +248,15 @@ class OpenAIImageGenerationAdapter:
                 provider_response_id=provider_result["provider_response_id"],
             )
             return result_text
-        except Exception as exc:
-            await self.accounting.fail(
-                request_id=request_id,
-                error_code="image_generation_failed",
-                release_reservation=reservation_id is not None and not provider_succeeded and not provider_outcome_unknown,
-                request_key=f"{request_key}:release",
-            )
+        except Exception:
+            # Once the provider has returned successfully, preserve the request
+            # record/reservation for settlement recovery. Never release credits or
+            # mark the request failed after a billable image may have been created.
+            if not provider_succeeded:
+                await self.accounting.fail(
+                    request_id=request_id,
+                    error_code="image_generation_failed",
+                    release_reservation=reservation_id is not None and not provider_outcome_unknown,
+                    request_key=f"{request_key}:release",
+                )
             raise
