@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { customerApi } from '@/lib/api/client';
+import { customerApi, type CustomerToolCatalogItem } from '@/lib/api/client';
 import { AIAgent } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
@@ -30,6 +30,8 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
   const [agents, setAgents] = useState<AIAgent[]>([]);
   const [isLoadingAgents, setIsLoadingAgents] = useState(true);
   const [agentLoadError, setAgentLoadError] = useState<string | null>(null);
+  const [toolCatalog, setToolCatalog] = useState<CustomerToolCatalogItem[]>([]);
+  const [toolCatalogError, setToolCatalogError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
     customerApi.agents()
@@ -49,6 +51,9 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
       })
       .catch((cause) => { if (active) setAgentLoadError(cause instanceof Error ? cause.message : 'Katalog agent tidak tersedia.'); })
       .finally(() => { if (active) setIsLoadingAgents(false); });
+    customerApi.tools()
+      .then((rows) => { if (active) setToolCatalog(rows); })
+      .catch((cause) => { if (active) setToolCatalogError(cause instanceof Error ? cause.message : 'Katalog tool tidak tersedia.'); });
     return () => { active = false; };
   }, []);
 
@@ -179,6 +184,32 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
             <p className="text-xs text-slate-600 leading-relaxed">
               {selectedAgent.description}
             </p>
+            <section className="rounded-2xl border border-slate-100 bg-slate-50 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <h5 className="text-[11px] font-bold text-slate-800">Tool Policy · OpenManus</h5>
+                <span className="text-[9px] text-slate-500">Runtime {selectedAgent.id}</span>
+              </div>
+              {toolCatalogError ? (
+                <p className="text-[10px] text-amber-700">{toolCatalogError}</p>
+              ) : (
+                <>
+                  {toolCatalog.filter((tool) => tool.available_by_default.includes(selectedAgent.id) && tool.enabled_by_default).length ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {toolCatalog.filter((tool) => tool.available_by_default.includes(selectedAgent.id) && tool.enabled_by_default).map((tool) => (
+                        <span key={tool.key} title={tool.description + ' · ' + tool.permission_scope + ' · ' + tool.approval_mode}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-medium text-slate-700">
+                          {tool.key}
+                          <span className={tool.risk === 'critical' || tool.risk === 'high' ? 'text-rose-600' : 'text-slate-400'}>{tool.risk}</span>
+                        </span>
+                      ))}
+                    </div>
+                  ) : <p className="text-[10px] text-slate-500">Belum ada tool default yang dipetakan untuk runtime ini.</p>}
+                  <p className="text-[10px] leading-relaxed text-slate-500">
+                    Katalog menjelaskan kontrak, permission, dan kebutuhan approval. Tool yang memerlukan provider, sandbox, browser, atau adapter tetap mengikuti gate konfigurasi backend; katalog bukan bukti bahwa layanan eksternal sedang aktif.
+                  </p>
+                </>
+              )}
+            </section>
 
             <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
               <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
