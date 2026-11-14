@@ -1065,6 +1065,13 @@ async def customer_personal_memory(
 ):
     principal = await require_customer_context(request, user)
     repo = repository(request)
+    now = datetime.now(timezone.utc)
+    # Opportunistically purge expired owner records before returning the current memory view.
+    await repo.delete("moreai_customer_memories", {
+        "user_id": f"eq.{principal['id']}",
+        "expires_at": f"lte.{now.isoformat()}",
+        "select": "id",
+    })
     preferences = await repo.select("moreai_customer_memory_preferences", {
         "user_id": f"eq.{principal['id']}",
         "select": "enabled,consent_version,consented_at,disabled_at",
@@ -1075,7 +1082,7 @@ async def customer_personal_memory(
     # a scheduled database cleanup has not yet physically purged them.
     items = await repo.select("moreai_customer_memories", {
         "user_id": f"eq.{principal['id']}",
-        "expires_at": f"gt.{datetime.now(timezone.utc).isoformat()}",
+        "expires_at": f"gt.{now.isoformat()}",
         "select": "id,title,content,source_type,scope,expires_at,created_at,updated_at",
         "order": "updated_at.desc,id.desc",
         "limit": "200",
