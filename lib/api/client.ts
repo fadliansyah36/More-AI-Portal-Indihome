@@ -702,12 +702,22 @@ export type CustomerPersonalMemoryItem = {
   updated_at: string;
 };
 
+export type CustomerEpisodicMemoryItem = {
+  id: string;
+  prompt: string;
+  outcome: string;
+  workspace_id: string | null;
+  created_at: string;
+  expires_at: string;
+};
+
 export type CustomerPersonalMemoryState = {
   enabled: boolean;
   consent_version: string | null;
   consented_at: string | null;
   disabled_at: string | null;
   items: CustomerPersonalMemoryItem[];
+  episodes: CustomerEpisodicMemoryItem[];
 };
 
 export const customerApi = {
@@ -739,6 +749,9 @@ export const customerApi = {
   ),
   deletePersonalMemory: (memoryId: string) => moreAiCustomerFetch(
     '/api/v1/customer/memory/' + encodeURIComponent(memoryId), { method: 'DELETE' },
+  ).then(() => undefined),
+  deleteEpisodicMemory: (messageId: string) => moreAiCustomerFetch(
+    '/api/v1/customer/memory/episodes/' + encodeURIComponent(messageId), { method: 'DELETE' },
   ).then(() => undefined),
 
   agentConfigurations: () => moreAiCustomerApi<CustomerAgentConfiguration[]>('/api/v1/customer/agents/configurations'),
