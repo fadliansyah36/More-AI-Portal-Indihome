@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { GraduationCap, BookOpen, Brain, ClipboardCheck, Compass, Lightbulb, Sparkles } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-context';
+import { EdutechLessonView } from '@/components/views/edutech-lesson-view';
 import { learningApi, type CustomerLearningPathDetail, type CustomerLearningPathSummary } from '@/lib/api/client';
 
 interface EdutechViewProps {
@@ -45,6 +46,7 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
   const [nextPathCursor, setNextPathCursor] = useState<string | null>(null);
   const [loadingMorePaths, setLoadingMorePaths] = useState(false);
   const [selectedPath, setSelectedPath] = useState<CustomerLearningPathDetail | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<{ pathId: string; lessonId: string } | null>(null);
   const [lessonVersions, setLessonVersions] = useState<Array<{
     id: string; version: number; content_md: string; objectives: string[]; source_run_id: string | null; created_at: string;
   }>>([]);
@@ -199,7 +201,7 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
           <div className="space-y-3 border-t border-slate-100 pt-3">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-bold text-slate-900">{selectedPath.path.title}</h3>
-              <button type="button" onClick={() => setSelectedPath(null)} className="text-[11px] font-semibold text-slate-500">Tutup</button>
+              <button type="button" onClick={() => { setSelectedPath(null); setSelectedLesson(null); }} className="text-[11px] font-semibold text-slate-500">Tutup</button>
             </div>
             {selectedPath.assessments.length > 0 && (
               <div className="rounded-xl border border-slate-200 bg-white p-3">
@@ -221,10 +223,15 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
                 <div className="mt-2 space-y-1.5">
                   {module.lessons.map((lesson) => (
                     <div key={lesson.id} className="rounded-xl border border-slate-200 bg-white p-2.5">
-                      <button type="button" onClick={() => startLesson(selectedPath.path, module.title, lesson)} className="flex w-full items-center justify-between gap-2 text-left">
-                        <span className="min-w-0"><span className="block text-[11px] font-semibold text-slate-800">{lesson.lesson_index + 1}. {lesson.title}</span><span className="text-[10px] text-slate-500">{lesson.progress?.status === 'completed' ? 'Selesai' : lesson.progress?.status === 'in_progress' ? 'Sedang dipelajari' : 'Belum dimulai'} · v{lesson.content_version}</span></span>
-                        <span className="shrink-0 text-[10px] font-semibold text-red-600">Lanjutkan</span>
-                      </button>
+                      <div className="flex items-center justify-between gap-2">
+                        <button type="button" onClick={() => startLesson(selectedPath.path, module.title, lesson)} className="min-w-0 flex-1 text-left">
+                          <span className="block text-[11px] font-semibold text-slate-800">{lesson.lesson_index + 1}. {lesson.title}</span>
+                          <span className="text-[10px] text-slate-500">{lesson.progress?.status === 'completed' ? 'Selesai' : lesson.progress?.status === 'in_progress' ? 'Sedang dipelajari' : 'Belum dimulai'} · v{lesson.content_version}</span>
+                        </button>
+                        <button type="button" onClick={() => setSelectedLesson({ pathId: selectedPath.path.id, lessonId: lesson.id })} className="shrink-0 rounded-lg border border-red-200 px-2.5 py-1.5 text-[10px] font-semibold text-red-600 hover:bg-red-50" aria-label={'Baca materi ' + lesson.title}>
+                          Baca materi
+                        </button>
+                      </div>
                       <button
                         type="button"
                         onClick={() => void openLessonVersions(selectedPath.path.id, lesson.id)}
@@ -271,6 +278,11 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
                 </div>
               </div>
             ))}
+            {selectedLesson && (
+              <div className="rounded-2xl border border-red-100 bg-white p-3">
+                <EdutechLessonView pathId={selectedLesson.pathId} lessonId={selectedLesson.lessonId} onBack={() => setSelectedLesson(null)} />
+              </div>
+            )}
           </div>
         )}
       </div>

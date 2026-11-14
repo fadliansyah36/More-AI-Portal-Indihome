@@ -2,12 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, BookOpen, Clock, AlertCircle, Loader2, CheckCircle2, ClipboardCheck } from 'lucide-react';
-import { NavigationTab } from '@/types/moreai';
 import { learningApi, type CustomerLearningPathDetail } from '@/lib/api/client';
 
 interface EdutechLessonViewProps {
   onBack: () => void;
-  onNavigateTab: (tab: NavigationTab) => void;
   pathId: string;
   lessonId: string;
 }
