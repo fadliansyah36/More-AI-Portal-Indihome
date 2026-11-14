@@ -3394,3 +3394,304 @@ The extension is considered implemented only when evidence demonstrates:
 8. Phase 10 integration evidence and Phase 11 security/release gate are accepted before production activation.
 
 **Current status:** architecture specified; source import, production code, migrations, new UI activation, external provider configuration and runtime acceptance are not implied by this PRD change.
+
+---
+
+## 36. Detailed Source Reconciliation — OpenFuse, Visual Skills & Scenario Skills
+
+**Review basis and source pins (2026-11-14)**
+
+This section supplements Section 35 after a second, deeper review of the five supplied MoreAI × IndiHome reference boards and the upstream repository content. It is a capability-level specification, not a claim that upstream code has been imported or that any external service is configured.
+
+| Source | Reviewed reference | Source facts relevant to MoreAI | Adoption rule |
+|---|---|---|---|
+| OpenFuse | `CopilotKit/openfuse`, branch `main`, reviewed HEAD `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc` (Nov 13, 2026); MIT | Personal agent, AG-UI streamed chat, task worker, browser worker, persistent Chromium profiles, optional Linux/desktop computer, goals/tracking, ideas, documents/PDF, Gmail/Calendar adapters, personal context, notifications, rich threads, action reviews and receipts | Adopt capability contracts and hardened patterns only. Do not adopt its personal/single-owner auth, Hono API, PGlite/embedded database, CopilotKit Intelligence as MoreAI persistence, deployment topology or second task engine. |
+| Visual Skills | `smixs/visual-skills`, branch `main`; image and video skill entry points; CC BY 4.0 | Two skills (`image`, `video`) with mandatory progressive reference loading, model-specific prompt formats, creative direction, image editing, visual analysis, storyboards, multi-panel composition, character continuity, cinematography, dramaturgy, shot design, pacing and quality checks | Adapt as versioned MoreAI Skill content. Preserve attribution to Serge Shima and indicate modifications. Skill creates structured creative direction/prompts; it is not a media generator. |
+| Scenario Skills | `scenario-labs/skills`, branch `main`; repository LICENSE MIT; individual skill manifests also declare license metadata | Scenario MCP skill ecosystem for image, video, audio, 3D, model training, editing, asset search, consistency, workflow execution/authoring, moderation, reporting, team/admin and DCC/game-engine workflows | Integrate through server-side Scenario MCP/provider adapter and the existing Agent Runtime, wallet, run lifecycle and artifact system. Each skill/model contract and license must be inspected at the exact pinned commit before import. |
+
+The OpenFuse repository was recently renamed from OpenMuse to OpenFuse; the reviewed commit explicitly preserves backward compatibility for older install names and data. The source URL remains the requested CopilotKit repository. Pin updates require a new source review and manifest.
+
+### 36.1 Five attachment boards — product-surface reconciliation
+
+The supplied images are treated as product and UX reference evidence, not as permission to redesign protected screens. They show the following capability groups:
+
+1. **Customer entry and onboarding:** MoreAI × IndiHome landing/captive entry, sign-in/sign-up, service explanation, fast Wi-Fi + AI access value proposition, responsive customer onboarding.
+2. **Customer home/workspace:** welcome and personalized greeting, service summary, shortcuts, popular tasks/templates, recent projects, benefit/credit visibility, AI productivity positioning.
+3. **Core AI workspace:** Chat AI, Research, Create, Analyse, Code, Tasks, Files, Profile; recent task progress; generated content and documents; customer identity and credit/benefit information.
+4. **Mobile-first navigation:** bottom navigation for primary work areas, task status/progress, recent projects, quick creation, credit and benefit discovery; responsive layouts across phone and desktop.
+5. **Partner Wi-Fi and AI Access:** partner value proposition, partner onboarding/login, QR access, customer connection to partner Wi-Fi, MoreAI access, user/activity reporting, analytics, package management and partner support.
+
+**Coverage reconciliation:** These boards do not define new backend authority or override the existing routes. Existing captive portal, customer workspace, partner portal, wallet/entitlement, task, files, profile, and navigation requirements in the earlier PRD remain canonical. During implementation, map each board element to an existing route/component and API contract. Only a genuinely absent capability may add a component under the UI change gate in AGENTS.md. The boards do not provide authoritative API payloads, exact responsive breakpoints, interaction state machines or final design tokens; use PRD section 16 and existing implementation for those.
+
+### 36.2 OpenFuse full capability inventory and MoreAI mapping
+
+OpenFuse is broader than a browser/computer feature. The following inventory records implemented and planned source capabilities separately. “Adopt” means specify/adapt the capability; it does not imply MoreAI has imported it.
+
+| OpenFuse source capability | Detailed behavior observed in source | MoreAI target / canonical owner | Status boundary |
+|---|---|---|---|
+| Chat and delegated work | Headless chat, AG-UI event stream, direct mail/calendar reads, delegated durable tasks, confirmed outcomes, inline email/browser/PDF/plan/finance cards | Existing Chat UI + FastAPI stream contract + OpenManus Agent Runtime + existing durable Agent Runs | Extend existing Chat integration; do not add another chat runtime |
+| Follow-up queue and draft retention | Follow-up messages can be queued while work is active; stop control preserves draft; stop/cancel semantics distinguish current request from subsequent queued work | Conversation composer state plus run-control API; queued user intents linked to thread/run with explicit ordering and cancellation semantics | Add only if absent from current chat lifecycle; do not create a second run queue |
+| Rich Threads | Stable main conversation, side chats, rename, archive, restore, replay; tool results link to tasks/documents/browser sessions | Existing conversation/thread/message domain and event/artifact references in Supabase | Reuse MoreAI conversation persistence; do not require CopilotKit Intelligence |
+| Agent computer / browser | Persistent Chromium profiles, browser sessions, screenshots, visible page text, navigation/input, PDF download, reopen/close, session limits, idle close, error states, same-session takeover | Private Browser Worker behind FastAPI and existing worker/sandbox supervisor; session/profile metadata tenant-scoped | Browser worker is not public; all browser actions pass server authorization and destination policy |
+| Browser download pipeline | Download allowlist/limits, PDF signature/size validation, download failure records, import into owned Documents, then optional transfer into computer workspace | Existing Files/Storage/Artifact and content-scanning pipeline | Reuse canonical storage and file ownership; never trust browser-provided URLs or MIME claims |
+| Linux terminal/workspace | Optional isolated container; bounded Bash/Python/Node/Git command execution; non-root; persistent `/workspace`; text-file editing; saved output and exit-code receipts; PDF transfer | Existing sandbox execution boundary and workspace/artifact services | Do not run shell on API host; command execution is sandbox-only |
+| Desktop computer (optional source provider) | E2B Desktop option with GUI apps, browser/terminal/files, screenshot-driven actions, mouse/keyboard input, live stream and owner control | Optional future sandbox provider adapter under the same Computer service contract | E2B is not required by this PRD. Treat its source-documented public ports, network-enabled environment and bearer stream URL as high-risk; do not copy unsafe defaults |
+| Computer lifecycle | Start/stop/pause/resume, lease ownership, idle expiry, persistent files, command receipts, no implicit resume, concurrent viewer coordination | Existing durable session/workspace lifecycle + worker leases/checkpoints | Must not create independent user-facing task/job truth |
+| Action review / approval | Stored review before external high-impact actions; reviewed email/calendar writes; action-bound decisions; pending work invalidated when connected account changes | Existing approval domain + policy engine + Agent Run step; approval bound to exact action and identity | MoreAI policy is authoritative; approval cannot be replayed or widened |
+| Activity | Durable task plan, progress, input requests, pause/resume/cancel/retry, receipts, SQL lease recovery | Existing Agent Run/Step/Event/Checkpoint and worker queue/outbox | Extend missing projection/events only; do not create a parallel task engine |
+| Ideas | Source-backed suggestions; edit/accept/dismiss; suggestions tied to mail/goals; exclude completed matching work and sent replies | Existing Agent Runtime + evidence/source references + customer notifications/ideas projection if justified | Suggestions must be evidence-backed, deduplicated and user-controlled; never fabricate cross-connector context |
+| Goals and tracking | Goals, milestones, recurring public-page checks for text changes/availability/price thresholds, observations, deduplicated alerts, retry/backoff, pause/cancel | Existing workflow/scheduler/outbox + durable Agent Runs + notification inbox | Scheduler only enqueues runs; no direct LLM or browser work inside scheduler |
+| Adaptive planning / calendar reminders | Explicitly listed as future extension in OpenFuse feature inventory | Future workflow planning capability, subject to calendar connector policy | Not implemented in upstream reviewed scope; do not claim source parity |
+| Documents/PDF workflow | Import PDF, request typed missing form values, fill copy, preview/review, prepare reply, receipt; native/web PDF reader, paging, zoom, supported fields | Existing Files, artifact, document-processing/RAG pipeline and approval flow | OCR/scanned form support and additional field types are source roadmap gaps, not current guarantees |
+| Gmail and Calendar | Google OAuth adapters; complete mail threads, drafts/attachments; calendar discovery and reviewed create/update/delete; explicit time range, time zone, bounded result and partial-failure semantics | MoreAI connector registry and server-side provider adapters; tenant-scoped OAuth credential vault; approval service | Google is only one optional connector. No credential or connector status is assumed live |
+| Finance CSV | Import transaction CSV, derive categories/transactions/spending summary and savings-goal action | Existing Analyse/Research/Files/Agent Runtime; finance connector/domain only if product-approved | Treat user file as untrusted; not a replacement wallet or accounting ledger |
+| Generated results | Plans, reports, comparisons, finance metrics and scripts in private workspace | Existing Agent Run artifacts, files and result projections | Generated scripts remain sandboxed and are not silently installed as trusted tools |
+| Personal context | Editable identity/tone/avatar/memories; source-backed context and forget/edit controls | Existing Personal Memory + Profile + consent/privacy APIs | Must be separated from Conversation Memory and workspace Knowledge |
+| Notifications | Durable in-app inbox, source-linked change alerts, restart reconciliation | Existing notification domain/realtime/outbox | Device push (APNs/FCM) is not source-implemented; add only as separate provider adapter after consent and platform support |
+| Connector catalogue | Searchable capability and connection-status catalogue; Google and browser integrations | Existing Tool/Connector Registry with user/tenant connection state | Catalogue metadata is not proof of a connected/healthy provider |
+| OpenBot adapter | Disabled adapter with pinned protocol/identity tests; live session bridge/routines/computer backend wiring are future extensions | Not required for MoreAI; OpenManus remains runtime authority | Do not add OpenBot as another Agent Runtime |
+| Telemetry/operations | Runtime telemetry, usage attribution, health/readiness distinctions, worker availability/error reporting, verification documentation | Existing observability and audit domains | Telemetry must be privacy-minimized, tenant-scoped, configurable and must not include prompts/secrets by default |
+
+**Important upstream limitations that must not be mistaken for MoreAI-ready architecture:** OpenFuse README describes an alpha/self-hosting template; its default deployment is single-owner/shared-access-key, uses a Hono API and PGlite/embedded Postgres or PostgreSQL, relies on a separate CopilotKit Intelligence persistence service for rich threads, and has optional infrastructure/provider setup. Its Linux container is not a hostile-tenant VM; its optional E2B desktop documents network egress and publicly reachable sandbox ports. It also documents unimplemented autonomous checkout, graphical desktop in the default path, per-user VM orchestration, several connectors, OCR/scanned forms, push delivery, generated tool installation/versioning, and other roadmap items. These limitations are recorded as constraints, not silently promoted to supported MoreAI features.
+
+### 36.3 OpenFuse capability contracts to specify in MoreAI
+
+**A. Unified task and action lifecycle**
+- A task is an Agent Run projection, not a new task engine. Persist plan version, run status, current step, user-input request, pause/cancel intent, retry lineage, lease owner/expiry, checkpoints, evidence, outputs and action receipts.
+- A user follow-up received during active work must have an explicit policy: queue behind current run, attach as clarification, or start a new run. The UI must show which behavior occurred. Preserve the draft when stopping; never silently drop user input.
+- Retry must create a traceable retry attempt/new run according to existing MoreAI semantics; it must not replay uncertain external writes automatically.
+- Worker restart recovery must reconcile expired leases and idempotent outbox events before a run resumes. A task can be marked recoverable only if its checkpoint and external side-effect state are known.
+- Each action receipt records actor, tenant, run, step, tool, target, action hash, approval reference, idempotency key, timestamps, result summary, provider reference and evidence reference. Receipts are audit records, not hidden chain-of-thought.
+
+**B. Approval and human-in-the-loop**
+- Classify actions as read-only, reversible mutation, external communication, financial/legal/high-impact or destructive.
+- Define approval policies per tenant, tool, connector, resource and risk tier. Require approval for external send/post/submit/purchase/payment/deletion and policy-designated actions.
+- Bind approval to the exact normalized payload/action hash, user, tenant, run, step, connected account, expiry and idempotency key. Any payload, account, target or material parameter change invalidates approval.
+- Support approve, reject, request-changes, expire, revoke and audit. Rejection/cancellation prevents subsequent steps; an already accepted in-flight provider operation must be reconciled rather than represented as cancelled if it may have completed.
+- Computer/desktop instructions to “not click submit” are not a security control; enforce at the server/tool boundary wherever the action can be intercepted. Where GUI actions cannot be semantically intercepted, use least privilege, confirmation checkpoints and clearly disclose residual risk.
+
+**C. Browser service contract**
+- Separate browser worker from FastAPI and OpenManus process. The worker accepts only authenticated service-to-service requests; no worker token in browser/mobile.
+- Model browser session, profile, tabs/pages, navigation history, screenshot/read snapshots, downloads, errors, expiry and takeover grants as tenant/run-owned records or projections.
+- Enforce URL scheme and destination policy, DNS resolution checks, private/loopback/link-local/metadata IP denial, redirect revalidation, DNS rebinding resistance, port policy, response size/type limits, navigation/download timeouts, popup/service-worker/WebSocket policy and download quarantine.
+- Persist session identity before worker calls so a failed initial navigation can be retried against the same owned session without orphaning or cross-tenant reuse.
+- Define active-session/profile quotas, idle-close policy, retention and explicit close/delete semantics. Closing a browser may preserve an authorized profile; deleting a profile must revoke credentials/cookies and associated downloads according to retention policy.
+- Take Control must open the same browser session, use a short-lived scoped grant, show who controls it, revoke on expiry/sign-out/ownership change, and record takeover start/end events.
+- Distinguish process health from Chromium launch readiness and from a particular session's health. An HTTP health response alone does not prove the browser is usable.
+
+**D. Computer/sandbox contract**
+- Define provider-neutral computer lifecycle: provision, start, ready, execute, stream/screenshot, pause, stop, resume, expire, destroy, recover and reconcile.
+- Isolate each tenant/user/workspace as the security model requires; never assume OpenFuse single-owner container isolation is sufficient for MoreAI multi-tenant use.
+- Default to no outbound network, no host mounts, no Docker socket, no provider keys, no API/session credentials in the sandbox, non-root, read-only base, dropped capabilities, seccomp/AppArmor/equivalent, CPU/memory/PID/disk/output/time quotas and process-tree kill.
+- Support a bounded non-interactive command contract with argv (not shell interpolation), working directory allowlist, environment allowlist, output caps, timeout and structured exit receipts. An interactive PTY/desktop is a separate explicitly authorized capability.
+- Workspace file operations must be path-safe, traversal-resistant, quota-limited, scanned and owner-scoped. Browser downloads and app documents move through a controlled transfer service, not arbitrary filesystem paths.
+- Optional desktop streaming and screenshot-driven controls need short-lived bearer credentials, strict origin/port isolation, stream revocation and explicit risk acknowledgement. Do not expose public sandbox ports or uncontrolled network egress.
+- Separate command execution state from persistent workspace files. Stopping kills processes but does not implicitly delete owned files; deletion is explicit and audited.
+
+**E. Goals, monitoring and notification contract**
+- Goal definition includes owner/tenant, desired outcome, milestones, source scope, schedule/timezone, trigger type, threshold/change rule, cadence, quiet hours, notification channel, budget/credit cap, retry/backoff, pause/cancel and expiry.
+- Monitor runs are ordinary durable Agent Runs with a scheduler/outbox trigger. A scheduler cannot call LLMs, browsers or provider APIs directly.
+- Observations retain source URL/document hash, observed time, normalized value/text, comparison baseline, confidence and evidence. Deduplicate alerts by goal + source + change fingerprint; support changed-back/recovered state.
+- Price/availability monitoring must respect source terms, access controls and rate limits; never bypass login, paywall, anti-bot or access control.
+- Notifications are durable inbox events with source links, delivery status, read/archive state, deduplication and restart reconciliation. Device push is an optional transport, not canonical notification storage.
+
+**F. Ideas and proactive suggestions**
+- Idea object includes evidence/source references, reason, freshness, confidence, affected goal/project, suggested action, expiry, status (pending/accepted/edited/dismissed/expired), actor and audit.
+- Suggestions are generated only from sources the user/tenant authorized and can inspect. Completed work, sent messages and dismissed ideas must be excluded or suppressed according to explicit dedupe rules.
+- Accepting an idea creates an explicit Agent Run or workflow with a reviewable plan; it does not silently execute an external action.
+- Keep suggestions separate from memory writes; acceptance of an idea does not automatically authorize long-term memory retention.
+
+**G. Document and finance workflows**
+- PDF workflow: secure import → malware/content validation → extract supported fields → request typed missing values → create a separate filled copy → render preview → user review → approved external reply/action → immutable receipt. Preserve original source and provenance.
+- Distinguish text-based PDF extraction from OCR/scanned-document recognition; report unsupported fields, confidence and partial extraction. Never claim OCR support solely from the source alpha.
+- CSV workflow: schema/encoding/date/currency detection → preview → user confirmation → normalize rows → calculate transparent category/transaction summaries → generate report/artifact. Do not ingest transactions into MoreAI Wallet/Ledger or treat an analysis as bank-verified data.
+- Document signing, legal acceptance, email sending and calendar mutation remain separate approved actions.
+
+### 36.4 Visual Skills — complete skill execution specification
+
+The reviewed repository contains two primary skill entry points: `image` and `video`. Their `SKILL.md` files are intentionally thin routers; actual craft rules live in referenced files. A compliant MoreAI adaptation must preserve progressive loading and the mandatory reading sequence instead of copying only the entry-point text.
+
+**Image skill route and outputs**
+- Classify request: prompt creation vs actual image generation/editing; route motion/video to video skill, conceptual campaign/idea work to a separately reviewed creative strategy skill, and image work to image.
+- Select model based on explicit user preference or a documented capability comparison; use model-specific syntax and output controls. The source references Nano Banana family and GPT Image 2.5 variants, but MoreAI must not hardcode provider/model availability.
+- Read the universal model-selection rules, exactly one chosen model reference, universal prompt rules, then task-specific references only when applicable.
+- Task-specific domains include text rendering/infographics, image editing/restoration/colorization, character continuity, photorealism/de-AI appearance, presentation slides, storyboards/comics, structural/wireframe input, dimensional/2D-to-3D concepts, vision decomposition/image-to-prompt/style transfer, multi-panel grids, e-commerce product photography, fashion, food/beverage, portrait cinema, posters/illustration, character design, UI/social layouts, creative direction and complex prompt frameworks.
+- Prompt structure includes model, quality/size/aspect ratio, subject, context/action, environment, camera, lighting, mood, material, palette, intended use and constraints. Image editing includes explicit Change / Preserve / Constraints. Include assumptions when brief details are missing.
+- Quality rubric includes specificity, text correctness, visual hierarchy, reference-role clarity, character/brand consistency, composition, edit preservation, and rejection/fix checklist. Iterate one meaningful change at a time rather than blindly re-rolling.
+- Output can be ready-to-copy prompt, image-edit plan, visual analysis, storyboard/keyframe sheet or multi-panel brief. The skill itself does not generate the image; actual image generation is a separate provider tool action and must use the existing MoreAI Create/Agent Run/credit/artifact contracts.
+
+**Video skill route and outputs**
+- Route concept/script development separately from video prompting. If no script exists, return to approved creative-brief/strategy workflow; use image skill for still keyframes/character sheets, and video skill when a scene/script needs to be shot.
+- Mandatory loading sequence: dramaturgy reference → universal video rules → one selected model-family reference → task-shaped references → dramaturgy and three-detail checks.
+- Model-specific references include Seedance, Kling and Veo; model selection must be based on actual current provider schema/capability, not assumptions copied from static examples.
+- Task references include role modes (director/screenwriter/editor), animatic/keyframes, race/speed, patterns/genres, multi-clip continuity/fixes, camera/lighting vocabulary, and sound design.
+- Shot design requires causal scene beats, shot function, character/environment anchors, motivated camera and light, blocking/staging, action/consequence, rhythm/pacing, final image, continuity and sound/motif. Each shot must be reviewed against dramaturgy and three-detail checks.
+- Output formats: single prompt, multi-clip prompt sequence with repeated continuity block, storyboard/shot-list table, prompt audit, director treatment or supported structured JSON format for the selected model.
+- Output language follows user; the prompt may use a model-effective language while explaining any language transformation. Preserve character/style/reference continuity across clips.
+- The video skill writes creative direction/prompts; it does not submit a provider job or guarantee generation. Scenario or another approved media adapter performs execution.
+
+**Skill packaging and attribution**
+- Store skill manifest, immutable version, source repository/ref/commit/path, file hashes, license, required attribution, modification notice, supported model/tool contracts, references, dependency graph, trigger conditions, output schema and quality rubric.
+- Preserve the attribution line: “Serge Shima — github.com/smixs/visual-skills” for copied/adapted material; identify modified content. Verify the exact LICENSE and NOTICE files at the chosen source commit before redistribution.
+- Reference files must be loaded selectively; do not inject all creative reference content into every prompt or Agent context.
+- User-visible Create UI may expose “Image Director” and “Video Director” capabilities only after the relevant skill version is approved and the corresponding generator provider is actually configured.
+
+### 36.5 Scenario Skills — capability taxonomy and execution contracts
+
+Scenario Skills are not one generic “image generation skill”. The repository contains a broad skill family and references Scenario's server-hosted MCP at `https://mcp.scenario.com/mcp` using Streamable HTTP. The source recommends OAuth where available and explicitly prohibits asking agents to collect, encode or echo secrets. MoreAI must store credentials only in its server-side secret/connector vault.
+
+**Core Scenario MCP lifecycle**
+1. Resolve tenant/team/project scope and confirm connector authorization.
+2. Discover a capability/model using recommendation/search; do not assume a model ID is globally available.
+3. Fetch the exact model schema before building inputs. The schema is the execution contract.
+4. Validate required/optional fields, enums, file inputs, lengths, output count, duration, aspect ratio, supported reference inputs and model constraints.
+5. Use provider dry-run/cost preview when supported; present cost and credit impact before paid execution.
+6. Reserve MoreAI credits/entitlement and submit idempotently through a durable Agent Run tool call.
+7. For long jobs, persist provider job ID and state; wait/poll through bounded backoff and resume with pending job IDs after timeout. Do not busy-loop or create a replacement job on unknown outcome.
+8. Retrieve assets through provider APIs, validate file bytes/type/size and policy, then store in private Supabase Storage and create canonical MoreAI artifacts.
+9. Display previews using the correct media type; record provider attribution, model/schema version, input/output metadata, run linkage and credit settlement.
+10. Reconcile provider outcome before releasing or settling reserved credits. Never treat a workflow parent job's zero cost as the actual child-model cost.
+
+**Scenario skill family coverage to represent in Skill Registry**
+- **Core connection and asset operations:** Scenario setup/authentication, diagnostics, model recommendation/search, schema retrieval, model execution, job status/wait, asset search/display/download, project/team scope.
+- **Image:** text-to-image, image-to-image, image editing, inpainting, upscaling, thumbnails, comic creator, product shots, brand kits, text overlay, consistency/identity libraries, asset analysis and quality gates.
+- **Video:** text-to-video, image-to-video, video-to-video editing, lipsync, upscaling, video-to-motion, storyboards, ad variants, UGC, reels, music video, video assembly, captions, color grading and motion loops.
+- **Audio:** text-to-audio/music, sound effects, voice/speech, voice transformation/dubbing, video-to-audio, soundtrack, audio editing/cut/split/extract and composition.
+- **3D and spatial:** concept image → image-to-3D, text-to-3D where supported, mesh generation, asset retopology/rigging/export workflows, texture/PBR retexturing, skyboxes, orbit views, walkable rooms/worlds, Gaussian splats and 3D asset preview.
+- **Model training and asset intelligence:** custom model training, identity/consistency management, asset analysis, quality scoring, model comparison and refinement loops.
+- **Workflow/app graph:** list/search ready workflows, read workflow input contract, dry-run/validate/cost, execute workflow, wait for job, node-level approval/rejection, inspect child job/model attribution, create/edit/publish workflow graphs through the separate authoring capability.
+- **Governance/operations:** moderation, reporting, task tracking, team administration and admin analytics. These capabilities require explicit product/tenant authorization and must not be exposed to every customer by default.
+- **DCC and game-engine knowledge skills:** Blender, Maya, ZBrush and workflows for Unreal, Unity, Godot and Roblox. These are procedural guidance and tool requirements, not permission to execute arbitrary desktop scripts or modify user projects without approval.
+
+**Model and workflow correctness rules**
+- Model IDs and availability are dynamic by team/project/region/plan; discover at execution time or use a safely refreshed catalog.
+- `model_schema_get` (or exact current schema tool) is mandatory before `model_run`; never transfer parameters between model families.
+- Use provider dry-run where available. For long-running work, use wait/pending-job semantics and bounded retries; do not tight-poll.
+- File inputs must be uploaded/registered and passed as provider asset identifiers in the declared type; scalar/array mismatches can silently drop inputs or incur charges.
+- Validate string lengths and nested workflow input contracts before submit. A workflow's `inputs[]` names are authoritative; do not infer keys from editor node labels. Verify workflow is ready/published; drafts are not runnable.
+- Workflow approvals are node-specific and require workflow ID, workflow job ID and node ID. Rejection cancels the relevant workflow run.
+- A workflow is a graph that may contain child model jobs; persist child attribution and cost. ForEach loops can cause dry-run cost to represent one iteration only, so MoreAI must calculate and disclose total expected cost before execution.
+- Do not expose provider tool catalogues, team admin, moderation or training functions to end users unless their role, plan and tenant policy permit them.
+
+**Scenario adapter boundaries**
+- Scenario is an external execution/provider adapter, not the MoreAI Agent Runtime, Tool Registry, scheduler, canonical workflow engine, credit ledger, artifact store or memory database.
+- All MCP calls occur server-side through a private connector adapter. Do not let the browser/mobile call Scenario MCP directly or hold provider tokens.
+- Map Scenario jobs and workflow nodes into existing Agent Run/Step/Event/Checkpoint records; map provider assets into existing artifact/storage records; map billing into existing credit reservation/ledger settlement.
+- Preserve provider job IDs, model ID, schema fingerprint, team/project scope, provider timestamps and raw status transitions as auditable metadata with secrets redacted.
+- Provider rate limits, quota, region restrictions, model availability, content moderation, file retention, training-data terms and data residency must be represented in capability policy before a skill is published.
+- If provider API, OAuth or a skill dependency is unavailable, expose a clear unavailable/needs-connection state. Never show fabricated model availability or synthetic completed assets.
+
+### 36.6 Six memory types — operational contract and cross-domain mapping
+
+Section 35 defines the six memory categories. This subsection adds operational ownership and prevents category overlap:
+
+| Memory type | Write trigger | Retrieval scope | Source of truth | Expiry/deletion |
+|---|---|---|---|---|
+| Working | Run step/checkpoint update | Current run and explicitly linked subtask | Agent Run/Step/Checkpoint | Run retention/TTL; redact transient secrets immediately |
+| Conversation | User/assistant/tool message event | Current thread and authorized linked thread summary | Conversation/message store | Conversation retention/export/delete policy |
+| Long-term | User-confirmed preference/fact or approved memory policy | User-level personalization within consented scope | Personal Memory domain | User review/correction/consent withdrawal/deletion |
+| Episodic | Meaningful completed event with evidence | Relevant user/project/tenant timeline | Episode linked to source run/artifacts | Retention policy; source deletion invalidates dependent episode |
+| Semantic | Approved document/fact ingestion and indexing | Authorized workspace/project knowledge | Knowledge documents/chunks/structured facts | Source version, freshness, retention and access revocation |
+| Procedural | Skill/workflow approved and versioned | Matching task/Agent/tool context | Skill Registry/workflow template | Version deprecation/revocation; never becomes permission grant |
+
+Memory Coordinator must implement: classification, candidate extraction, source linking, consent and sensitivity gates, deduplication, conflict handling, summarization, retrieval ranking, freshness checks, source authorization, token-budget selection, write approval, retention/expiry, correction and deletion propagation. It may use hybrid retrieval (metadata filters + lexical + vector) only within authorized sources. A memory result must include source identity, scope, confidence/freshness and a safe citation/reference. Conflicting facts must retain provenance and timestamps rather than silently overwriting one another.
+
+Memory writes from browser pages, emails, PDFs, Scenario outputs, Skills and tool results are untrusted candidates. They cannot be promoted into long-term or procedural memory without policy approval. Memory retrieval must never include hidden chain-of-thought, raw secrets, credentials or unauthorized tenant data. Procedural memory can recommend a workflow but only current Tool Registry and authorization policy can grant execution.
+
+### 36.7 Cross-cutting architecture components and missing contracts
+
+Add these as logical capabilities inside existing MoreAI domains, not as independent services unless an ADR proves a deployment boundary is required:
+
+- **AG-UI/event protocol adapter:** translate OpenManus run/step/tool/approval/input events to the existing typed frontend streaming contract. Normalize message, run, step, tool-call, tool-result, state-delta, approval-request, user-input, artifact, error, cancellation and completion events. Preserve correlation IDs, ordering, replay cursor and reconnection semantics. AG-UI is an optional wire protocol/adapter pattern, not a second runtime or mandatory frontend replacement.
+- **Unified identity and connection vault:** bind OAuth connections, browser profiles, computer leases, provider team/project scopes and notifications to MoreAI principal + tenant + workspace. Revocation must invalidate pending connection-bound actions and short-lived grants.
+- **Capability and connector catalogue:** expose only approved capabilities with health, connection requirement, role/plan eligibility, region, data class, risk, pricing and availability timestamp. Catalogue listing is not proof of live service health.
+- **Durable worker coordination:** outbox dispatch, SQL/queue lease, heartbeat, retry policy, idempotency, poison/dead-letter handling, cancellation propagation, checkpoint resume, worker capacity and graceful shutdown. No hidden retry for uncertain external writes.
+- **Artifact and provenance pipeline:** import, scan, classify, hash, store, preview, sign URL, version, link to run/step/source, export and delete. Retain original files when creating transformed copies.
+- **Operational observability:** structured traces and logs across API, OpenManus, worker, sandbox and provider; per-run latency, queue delay, provider usage/cost, failure taxonomy, retry/recovery, sandbox resource usage and notification delivery. Redact prompts/PII/secrets by policy; make telemetry opt-out/retention explicit.
+- **Human input and clarification contract:** typed input requests with schema, validation, deadline, resume token, cancel/expire, and association to the exact run step. Missing dates/timezones, ambiguous target, unsupported form fields and model schema mismatch must request clarification instead of guessing.
+- **Connector lifecycle:** connect, consent, OAuth callback, credential encryption, scope display, health/diagnostics, refresh, disconnect, revocation and pending-action invalidation. Connector status and action permission are separate concepts.
+- **Policy and risk engine:** classify tool, input, destination, file and external side effect; combine user role, tenant policy, workspace, entitlement, credit, connector scopes and risk tier before tool execution. Tool descriptions/skill instructions never grant authority.
+
+### 36.8 MoreAI UI mapping and component requirements
+
+Preserve the current Customer Dashboard. Use the attachment boards only to confirm intended information architecture and responsive behavior.
+
+| Existing surface | Required capability coverage | UI states / controls |
+|---|---|---|
+| Home | Greeting, quick actions, recent projects, popular templates, recent activity, benefit/credit summary | Loading, no recent projects, service unavailable, real entitlement/credit source |
+| Chat AI | AG-UI-compatible stream projection, follow-up queue, retained draft, task plan/progress, tool cards, source evidence, approval/input request, browser/desktop cards, stop/retry/cancel | Streaming, reconnect/replay, queued, awaiting input/approval, stopped, failed, uncertain provider outcome |
+| Research / Analyse | Search/evidence, citations, source freshness, document/CSV analysis, report artifacts, comparison and finance summaries | Partial results, unsupported file, source unavailable, analysis pending |
+| Create | Image/video/audio/3D creative brief, Image/Video Director skills, storyboard, model/capability selection, schema-driven form, cost preview, generation job, revision and asset gallery | Needs connection, model unavailable, invalid schema, quota/credit denied, approval, job pending, failed/reconciling, completed artifact |
+| Code / Computer | Sandbox availability, start/stop, workspace files, bounded command history/receipts, browser session, screenshot/takeover | Sandbox unavailable, quota reached, session expired, blocked destination, approval required |
+| Tasks | Agent Run projection, dependencies, milestone, step status, pause/resume/cancel/retry, approvals, recovery and receipts | Queued, running, awaiting input, awaiting approval, paused, recovering, failed, completed |
+| Files | Upload/import, document preview, generated artifact, PDF transfer, metadata, provenance, retention and signed download | Uploading, scanning, unsupported, access denied, expired link, deleted |
+| Memory/Profile | Six memory types, source/scope, consent, confidence/freshness, edit/correct/delete, export and privacy settings | No memory, awaiting review, consent withdrawn, source removed, deletion pending/complete |
+| Benefits & Credit | Sponsored quota, paid credits, reservation, settlement, package, usage history and eligibility explanation | Sponsored vs paid separation, pending settlement, reversal, unavailable provider |
+| Partner portal/captive | Partner onboarding, QR access, verified network/session, package management, customer activity, analytics and support | Signed-context validation, network verification pending/failed, session expiry, partner-scope denial |
+
+The PRD's current approved design tokens, typography, spacing, breakpoints and existing component hierarchy remain authoritative. New UI must use the existing API client/FastAPI boundary and must not connect directly to Supabase data services from the browser. No screen may simulate a browser session, agent run, provider job, credit balance, partner network verification or memory result.
+
+### 36.9 Security, privacy and reliability threat model additions
+
+Explicitly include the following threats in the existing security review and acceptance matrix:
+
+- Prompt injection from web pages, mail, PDFs, files, images, Skill markdown, Scenario skill references and model/provider outputs.
+- SSRF through browser navigation, redirects, DNS rebinding, IPv4/IPv6/private/metadata destinations, downloads and URL previews.
+- Cross-tenant leakage through browser profiles, workspace volumes, OAuth connections, provider team/project IDs, artifacts, memory embeddings, notifications and task receipts.
+- Replay or confused-deputy attacks against worker tokens, session takeover links, approval IDs, signed downloads, MCP calls and idempotency keys.
+- Command injection, path traversal, symlink escape, archive bombs, malicious PDFs, oversized output, fork bombs, resource exhaustion and process persistence.
+- GUI/desktop residual risk: visible bearer stream URLs, public listening ports, unrestricted outbound network and UI-driven external submission.
+- Provider billing errors: duplicate submit after timeout, schema mismatch, partial workflow failure, parent/child cost mismatch, stale model catalog, price drift, unsupported region and job status uncertainty.
+- Memory privacy: overcollection, unauthorized promotion, conflicting/stale facts, embedding leakage, source deletion not propagated and summaries surviving deletion.
+- OAuth lifecycle: refresh-token exposure, scope creep, account switching, stale pending actions and incomplete revocation.
+- Notification leakage: sensitive previews, cross-device delivery, stale source links and duplicate alerts.
+
+Required controls include least privilege, tenant/owner checks at API and worker, server-side secrets, scoped/short-lived grants, action-bound approvals, idempotency, quotas, content scanning, URL/DNS validation, redacted audit, retention/deletion propagation, source authorization before retrieval and fail-closed behavior. The E2B desktop path documented by OpenFuse must not be treated as secure for hostile multi-tenant execution without a separate threat assessment and isolation redesign.
+
+### 36.10 Source governance, license and copy-paste decision
+
+- OpenFuse reviewed HEAD: `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`, MIT. Preserve upstream notices and record the exact commit, file hashes, dependency licenses and copied/adapted mapping. The recent rename from OpenMuse is part of the source history; do not mix old/new package names without compatibility mapping.
+- Visual Skills: CC BY 4.0 as declared by repository and skill manifests. Preserve required attribution “Serge Shima — github.com/smixs/visual-skills”, indicate modifications and include applicable NOTICE/license text. Its reference files are part of the skill's functional content; copying only `SKILL.md` is incomplete.
+- Scenario Skills: repository LICENSE declares MIT, while each skill has its own manifest license field. Validate each file, embedded asset and dependency at the pinned commit; preserve copyright notices. Do not assume all third-party model documentation, logos, sample assets or linked materials inherit the repository MIT license.
+- Import source material as versioned Skill content with immutable provenance and hash. Do not run upstream install scripts in production. Do not copy upstream runtime/database/auth implementation when it conflicts with AGENTS.md or MoreAI's canonical architecture.
+- A complete source inventory must record source ref/commit/tree, exact file paths, hashes, sizes, license, attribution, dependencies, security findings, selected/adapted/excluded status and MoreAI target mapping.
+- The current review did not perform a full file-by-file license scan of all nested assets/transitive dependencies. That remains a mandatory A0 source-governance deliverable before any mass import or redistribution.
+
+### 36.11 Corrected dependency-ordered implementation roadmap
+
+The official AGENTS.md Phase 00–11 gate is controlling. Section 35 A0–A10 is a post-review work-package map, not authorization to bypass the mandatory source-copy/backend integration gates. Use the following corrected sequence:
+
+| Order | Work package | Required output / dependency |
+|---|---|---|
+| P0 | Current mandatory Phase 00–11 baseline | Complete baseline, source pin/copy, backend parity, schema reconciliation, FastAPI, worker, LLM/tools/workflows, Phase 09 UI integration, Phase 10 evidence and Phase 11 release acceptance exactly as AGENTS.md requires |
+| P1 | Source governance closeout | Pin and inventory OpenFuse, Visual Skills and Scenario Skills at exact commits; full file/license/dependency/security manifest; attribution and import decision |
+| P2 | Capability parity and architecture ADRs | OpenFuse capability matrix, upstream feature gap register, AG-UI/event adapter contract, action/approval and worker lifecycle ADRs; map every capability to existing MoreAI owner |
+| P3 | Memory lifecycle completion | Six-type schema/API/RAG/run mapping, coordinator policy, source authorization, conflict/dedupe, retention and deletion propagation |
+| P4 | Skill Registry and resolver | Manifest/parser, immutable version, references/assets/dependencies, license/provenance, validation/review/publish, deterministic resolution and progressive loading |
+| P5 | Visual Skills pack | Import approved image/video skills and full referenced materials; creative brief → treatment/storyboard/keyframes/prompts → user review; attribution retained |
+| P6 | Scenario MCP and media capability packs | Private MCP auth, capability/model discovery, schema validation, cost preview, durable job mapping, image/video/audio/3D/workflow execution, artifacts and credit settlement |
+| P7 | OpenFuse Browser capability | Isolated browser worker, persistent profile/session, SSRF/download policy, screenshot/read/input, same-session takeover, run/event/checkpoint mapping |
+| P8 | OpenFuse Computer capability | Provider-neutral sandbox lifecycle, terminal/files, optional desktop only after threat model, quotas, receipts, file transfer and isolation acceptance |
+| P9 | Goals, Ideas, Documents and Notifications | Durable monitors, evidence-backed ideas, PDF/form pipeline, CSV analysis, notification inbox and optional push adapter |
+| P10 | Customer UI activation | Only genuinely missing controls in existing surfaces, design-token compliance, mobile/desktop states and before/after evidence; requires applicable phase gate or written exception |
+| P11 | Security/operations acceptance | Tenant isolation, RLS, threat model, sandbox tests, provider E2E, cost/recovery, observability, privacy/deletion and UI regression acceptance |
+
+**No-duplication rule for Phase 09:** Phase 09 remains the single workstream for wiring the existing customer dashboard actions to the canonical FastAPI/OpenManus/worker/Supabase contracts. Do not create a second Chat, Tasks, Workflow, Agent Studio, Create, Research/Analyse, Files, Wallet, event stream or frontend API client. P1–P9 are platform capability/parity work packages only after the mandatory AGENTS.md phase gate permits them; existing Phase 09 functionality must be reused and extended rather than reimplemented. P10 is customer UI activation only for a proven missing surface. Do not change the official tracker status based on PRD text.
+
+### 36.12 Acceptance and traceability matrix
+
+Before a capability is marked complete, its evidence must include:
+- **Source parity:** exact upstream file/feature inventory, source commit and file-to-target mapping; documented omissions and reasons.
+- **Runtime ownership:** one MoreAI Agent Runtime, one canonical FastAPI API boundary, one durable run/worker lifecycle and one Supabase system of record.
+- **Task lifecycle:** follow-up queue semantics, draft retention, input/approval wait, pause/resume/cancel/retry, worker lease recovery and action receipts.
+- **Browser/computer:** isolated owner-scoped sessions, SSRF and download controls, takeover revocation, command/file quotas, sandbox teardown and no credential leakage.
+- **Goals/ideas:** source evidence, schedule/timezone, deduplication, backoff, pause/cancel and explicit user acceptance before consequential work.
+- **Documents/finance:** source-preserving PDF flow, typed input/preview/review/receipt, explicit OCR capability status, CSV provenance and no wallet/ledger conflation.
+- **Connectors:** OAuth consent/revocation, credential vault, scope, health, connection-bound action invalidation and per-action approval.
+- **Visual Skills:** complete references loaded in required order, model-specific prompt, continuity, storyboard/shot quality checks and attribution.
+- **Scenario:** model/schema discovery, dry-run/cost, idempotent submit, wait/recovery, child-job attribution, artifact validation/storage and credit reconciliation.
+- **Memory:** six types, provenance, consent, retrieval authorization, conflict/freshness, correction, retention and deletion propagation.
+- **UI/operations:** existing MoreAI UI preserved, responsive states, typed API contracts, redacted observability and no fabricated state.
+
+**Review conclusion:** Section 35 captured the high-level architecture and major extension concepts but did not yet enumerate the full OpenFuse feature surface, the internal Visual Skills reference-loading and creative-quality process, nor the breadth and schema-sensitive execution rules of Scenario Skills. Section 36 closes those specification gaps at the capability and contract level. This is a documentation enhancement only; it does not certify that the features are present in code, imported, configured, tested or production-ready.
+
