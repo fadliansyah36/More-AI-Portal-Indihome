@@ -223,6 +223,7 @@ export default function App() {
     promptText: string,
     agentKey: 'manus' | 'planning' | 'toolcall' = 'manus',
     agentConfigurationId?: string | null,
+    skillIds: string[] = [],
   ) => {
     setChatInitialPrompt(promptText);
     setChatInitialAgentKey(agentKey);
@@ -260,6 +261,7 @@ export default function App() {
                   initialPrompt={chatInitialPrompt}
                   initialAgentKey={chatInitialAgentKey}
                   initialAgentConfigurationId={chatInitialAgentConfigurationId}
+                  initialSkillIds={chatInitialSkillIds}
                   onNavigateTab={handleNavigate}
                 />
               )}
@@ -300,6 +302,7 @@ export default function App() {
                       `Saya ingin bekerja dengan ${agent.name}. ${agent.description}`,
                       agent.id === 'planning' ? 'planning' : agent.id === 'toolcall' ? 'toolcall' : 'manus',
                       agent.configurationId,
+                      skillIds,
                     )
                   }
                   onOpenWorkflow={() => handleNavigate('workflow_progress')}
