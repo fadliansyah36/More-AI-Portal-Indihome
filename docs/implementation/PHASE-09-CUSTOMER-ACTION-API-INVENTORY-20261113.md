@@ -230,3 +230,11 @@ Knowledge Search returns an explicit validated `citation_marker` for each chunk.
 - Runway task submission uses durable checkpoint intent/reservation/submitting/task-id/polling/artifact/completed states. If provider submission outcome is ambiguous before task ID persistence, the adapter retains the reservation and refuses to submit a duplicate task.
 - Successful MP4 output is stored in private Supabase Storage with deterministic artifact identity; worker recovery can re-use the same task ID and artifact.
 - Tool catalog and Create Studio now report provider-specific live capability. No provider secret was created/read and no Runway API request was made.
+
+
+## Supabase media artifact bucket capacity
+
+- Read-only configuration inspection found the existing `moreai-artifacts` bucket was private but limited to 2 MiB, which was insufficient for generated image/video artifacts.
+- Added and successfully applied migration `20261114070000_moreai_media_artifact_bucket_capacity.sql`: it preserves `public=false` and raises the bucket file size limit to 150,000,000 bytes (150 MB), matching the worker's bounded media artifact limit.
+- The migration does not make Storage public and does not change Customer direct access. The Worker service-role artifact pipeline remains the only write path.
+- No generated media was requested from a provider; no tests or runtime checks were run.
