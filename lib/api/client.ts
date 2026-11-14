@@ -617,6 +617,21 @@ export type CustomerUsageAnalytics = {
   period: { since: string; until: string };
 };
 
+export type CustomerToolCatalogItem = {
+  key: string;
+  version: string;
+  description: string;
+  capability_tags: string[];
+  permission_scope: string;
+  risk: string;
+  approval_mode: string;
+  execution_environment: string;
+  timeout_seconds: number;
+  idempotency: string;
+  available_by_default: string[];
+  enabled_by_default: boolean;
+};
+
 export type CustomerAgentCatalogItem = {
   id: string;
   key: string;
@@ -647,6 +662,15 @@ export type CustomerPersonalMemoryState = {
 };
 
 export const customerApi = {
+  tools: () => moreAiCustomerApi<CustomerToolCatalogItem[]>('/api/v1/tools'),
+  modelCapabilities: () => moreAiCustomerApi<{
+    items: Array<{
+      provider_key: string; provider_name: string; model_key: string; model_name: string;
+      capabilities: string[]; max_input_tokens: number | null; max_output_tokens: number | null;
+    }>;
+    count: number; source: string;
+  }>('/api/v1/models/capabilities'),
+
   personalMemory: () => moreAiCustomerApi<CustomerPersonalMemoryState>('/api/v1/customer/memory'),
   setPersonalMemoryConsent: (enabled: boolean) => moreAiCustomerApi<{
     enabled: boolean; consent_version: string; consented_at: string | null;
