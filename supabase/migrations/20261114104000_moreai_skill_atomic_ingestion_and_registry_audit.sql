@@ -100,13 +100,14 @@ begin
   if not found then raise exception 'skill_install_not_found' using errcode='P0002'; end if;
   select * into v_package from public.moreai_skill_packages where id=p_skill_id for share;
   if not found then raise exception 'skill_not_found' using errcode='P0002'; end if;
-  v_requested:=coalesce(v_install.permission_request,'{}'::text[]);
+  select coalesce(array_agg(value),'{}'::text[]) into v_requested
+    from jsonb_array_elements_text(coalesce(v_install.permission_request,'[]'::jsonb)) as value;
   if p_decision='approved' and not (p_granted_permissions <@ v_requested) then
     raise exception 'granted_permissions_must_be_subset_of_requested' using errcode='22023';
   end if;
   update public.moreai_skill_installs set
     permission_status=p_decision,
-    granted_permissions=case when p_decision='approved' then p_granted_permissions else '{}'::text[] end,
+    granted_permissions=case when p_decision='approved' then to_jsonb(p_granted_permissions) else '[]'::jsonb end,
     execution_enabled=(p_decision='approved' and p_execution_enabled
       and v_package.validation_status='validated' and v_package.license_status='approved'
       and v_package.publication_status='published'),
