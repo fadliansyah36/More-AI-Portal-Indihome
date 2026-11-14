@@ -1275,13 +1275,53 @@ async def customer_personal_memory(
     }
 
 
+async def _purge_customer_episodic_metadata(repo: Any, user_id: str) -> int:
+    """Delete episodic memory metadata while preserving chat content and citations."""
+    removed = 0
+    for _ in range(20):
+        rows = await repo.select("conversation_messages", {
+            "user_id": f"eq.{user_id}",
+            "metadata->>memory_type": "eq.episodic",
+            "select": "id,metadata",
+            "order": "created_at.asc,id.asc",
+            "limit": "500",
+        })
+        if not rows:
+            return removed
+        for row in rows:
+            prior = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+            cleaned = {
+                key: value for key, value in prior.items()
+                if key not in {
+                    "memory_type", "memory_scope", "workspace_id",
+                    "episode", "episode_expires_at",
+                }
+            }
+            await repo.update(
+                "conversation_messages",
+                {"id": f"eq.{row['id']}", "user_id": f"eq.{user_id}"},
+                {"metadata": cleaned},
+            )
+            removed += 1
+    remaining = await repo.select("conversation_messages", {
+        "user_id": f"eq.{user_id}",
+        "metadata->>memory_type": "eq.episodic",
+        "select": "id",
+        "limit": "1",
+    })
+    if remaining:
+        raise RuntimeError("episodic_memory_cleanup_requires_background_continuation")
+    return removed
+
+
 @router.put("/memory/consent")
 async def update_customer_memory_consent(
     body: CustomerMemoryConsentUpdate, request: Request,
     user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
-    result = await repository(request).rpc("moreai_customer_set_memory_consent", {
+    repo = repository(request)
+    result = await repo.rpc("moreai_customer_set_memory_consent", {
         "p_user_id": principal["id"],
         "p_enabled": body.enabled,
         "p_consent_version": body.consent_version,
@@ -1290,6 +1330,11 @@ async def update_customer_memory_consent(
         result = result[0] if result else None
     if not isinstance(result, dict):
         raise HTTPException(502, "Memory consent state was not persisted")
+    if not body.enabled:
+        try:
+            await _purge_customer_episodic_metadata(repo, principal["id"])
+        except Exception as exc:
+            raise HTTPException(503, "Memory consent was disabled, but episodic metadata cleanup is pending; retry the clear-memory action") from exc
     return {
         "enabled": bool(result.get("enabled", False)),
         "consent_version": result.get("consent_version"),
@@ -1297,6 +1342,25 @@ async def update_customer_memory_consent(
         "disabled_at": result.get("disabled_at"),
         "updated_at": result.get("updated_at"),
     }
+
+
+@router.delete("/memory", status_code=204)
+async def clear_customer_memory(
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Clear owner-authored Personal Memory and episodic summaries, never chat history."""
+    principal = await require_customer_context(request, user)
+    repo = repository(request)
+    try:
+        await _purge_customer_episodic_metadata(repo, principal["id"])
+        await repo.delete("moreai_customer_memories", {
+            "user_id": f"eq.{principal['id']}",
+            "select": "id",
+        })
+    except Exception as exc:
+        raise HTTPException(503, "Customer memory cleanup is incomplete; retry the operation") from exc
+    return Response(status_code=204)
 
 
 @router.post("/memory", status_code=201, response_model=CustomerMemoryItemResponse)
