@@ -1200,8 +1200,8 @@ async def retry_customer_agent_run(
         raise HTTPException(400, "A 12–128 character Idempotency-Key header is required")
     repo = repository(request)
     original = await repo.owned_record("agent_runs", run_id, principal["id"])
-    if original.get("status") not in {"failed", "cancelled", "timed_out", "expired"}:
-        raise HTTPException(409, "Only a terminal unsuccessful run can be retried")
+    if original.get("status") not in {"failed", "timed_out", "expired"}:
+        raise HTTPException(409, "Only failed, timed-out, or expired runs can be manually retried")
     source = original.get("input") if isinstance(original.get("input"), dict) else {}
     prompt = source.get("prompt")
     agent_key = source.get("agent_key", "manus")
@@ -1215,6 +1215,27 @@ async def retry_customer_agent_run(
     except (ValueError, TypeError, AttributeError):
         raise HTTPException(409, "Original conversation is unavailable")
     await repo.owned_record("conversations", conversation_id, principal["id"])
+    # A manual rerun is only safe before any non-read-only tool has started.
+    # Side-effecting tools may have partially completed even when their final event failed.
+    safe_replay_tools = {
+        "create_chat_completion", "knowledge_search", "google_search",
+        "planning", "workspace_read_file", "terminate",
+    }
+    events = await repo.select("agent_run_events", {
+        "run_id": f"eq.{run_id}",
+        "select": "event_type,payload",
+        "order": "sequence.asc",
+        "limit": "1000",
+    })
+    for event in events:
+        event_type = str(event.get("event_type") or "")
+        payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
+        tool_key = payload.get("tool")
+        if event_type.startswith("tool.") and isinstance(tool_key, str) and tool_key not in safe_replay_tools:
+            raise HTTPException(
+                409,
+                "Manual rerun blocked because this run reached a side-effecting tool. Review its durable steps/artifacts before creating a new task.",
+            )
     raw_attachment_ids = source.get("attachment_ids") or []
     if not isinstance(raw_attachment_ids, list) or len(raw_attachment_ids) > 10:
         raise HTTPException(409, "Original attachment references are invalid")
