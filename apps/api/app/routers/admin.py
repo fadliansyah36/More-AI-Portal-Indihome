@@ -370,3 +370,38 @@ async def review_skill_permissions(skill_id: UUID, install_id: UUID, body: Skill
         "review_note": body.review_note,
         "notice": "Permission decision and audit record were committed atomically. Execution remains disabled unless both server release gates and all package trust gates are satisfied.",
     }
+
+
+@router.get("/skills/{skill_id}/source-evidence")
+async def get_skill_source_evidence(
+    skill_id: UUID, request: Request, principal=Depends(skill_registry_reviewer),
+):
+    repo = repository(request)
+    packages = await repo.select("moreai_skill_packages", {
+        "id": f"eq.{skill_id}", "select": "id,owner_user_id,name,source_repository,source_commit,source_path",
+        "limit": "1",
+    })
+    if not packages:
+        raise HTTPException(404, "skill_not_found")
+    package = packages[0]
+    files = await repo.select("moreai_skill_source_files", {
+        "skill_package_id": f"eq.{skill_id}", "owner_user_id": f"eq.{package['owner_user_id']}",
+        "select": "relative_path,content_sha256,media_type,byte_size,text_content",
+        "order": "relative_path.asc", "limit": "40",
+    })
+    evidence = []
+    for item in files:
+        path = str(item.get("relative_path") or "")
+        name = path.rsplit("/",1)[-1].lower()
+        if not (name.startswith(("license","licence","copying","notice","readme","third_party"))
+            or name in {"skill.md","skill.yaml","skill.yml","skill.json","manifest.json","package.json","package-lock.json","pyproject.toml","requirements.txt","cargo.lock","go.mod","composer.lock","pnpm-lock.yaml","yarn.lock"}):
+            continue
+        content = item.get("text_content")
+        evidence.append({
+            "path": path, "sha256": item.get("content_sha256"),
+            "media_type": item.get("media_type"), "byte_size": item.get("byte_size"),
+            "text_content": content[:30000] if isinstance(content,str) else None,
+            "content_available": isinstance(content,str),
+        })
+    return {"skill": {key:package.get(key) for key in ("id","name","source_repository","source_commit","source_path")},
+        "files": evidence, "count":len(evidence)}
