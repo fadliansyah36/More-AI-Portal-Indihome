@@ -143,7 +143,9 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
   - `MOREAI_RUNWAY_VIDEO_COSTS_JSON` with a maximum USD reservation for each allowed `model:duration:ratio` combination; default registration requires `gen4.5:5:1280:720`
   - `MOREAI_RUNWAY_CREDIT_USD` (USD conversion for one provider credit, based on the provider account's current pricing)
   - `MOREAI_RUNWAY_OUTPUT_HOST_SUFFIXES` (comma-separated HTTPS output host suffix allowlist)
-  - optional `MOREAI_VIDEO_PROVIDER_TIMEOUT_SECONDS=540`, `MOREAI_RUNWAY_POLL_INTERVAL_SECONDS=5`, `MOREAI_MEDIA_MAX_ARTIFACT_BYTES=100000000`
+  - optional `MOREAI_VIDEO_PROVIDER_TIMEOUT_SECONDS=420`, `MOREAI_RUNWAY_POLL_INTERVAL_SECONDS=5`, `MOREAI_MEDIA_MAX_ARTIFACT_BYTES=100000000`
 - No Runway key was created/read, no price/host configuration was supplied, and no provider request was made. The adapter is source-integrated but not registered/active in the current deployment.
 - Runway Dev official reference: [API Reference — Text to video and Task management](https://docs.dev.runwayml.com/api/). Its task detail API advises against polling more frequently than every five seconds; this adapter uses a five-second minimum interval.
 - Source commits include `ededd298`, `58844894`, `3bbf2884`, `0cf8c640`, `d07dbf2e`, `66240d5a`, `93ff1f22`, `fb6ba9d3`, `6570beb4`, `1a97b941`, `f830f508`, and `b4a39920`.
+
+- Provider-specific tool execution bounds were added: image generation defaults to 360 seconds (HTTP timeout 300 seconds); video generation defaults to 600 seconds with a maximum 420-second provider poll window to leave time for download, private artifact storage and usage settlement. These bounds are independent from the general 120-second tool timeout.
