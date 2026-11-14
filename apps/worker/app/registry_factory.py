@@ -37,6 +37,7 @@ def build_agent_registry(
     image_tools = (
         OpenAIImageGenerationAdapter.from_environment(
             http=http_client,
+            client=client,
             artifacts=storage_tools,
             accounting=SupabaseUsageAccounting(client),
             estimator=ConfiguredCreditEstimator(),
