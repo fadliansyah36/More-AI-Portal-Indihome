@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import base64
 from urllib.parse import urlsplit
 
 import httpx
@@ -95,6 +96,22 @@ class BrowserSupervisor:
         response.raise_for_status()
         payload = response.json()
         updated_state = payload.pop("storage_state", None)
+        downloads = payload.pop("downloads", [])
+        if not isinstance(downloads, list): raise RuntimeError("browser_download_contract_invalid")
+        stored_downloads = []
+        for item in downloads:
+            if not isinstance(item, dict) or item.get("scan_status") != "clean": raise RuntimeError("browser_download_not_scanner_approved")
+            try: content = base64.b64decode(item["content_base64"], validate=True)
+            except Exception as exc: raise RuntimeError("browser_download_payload_invalid") from exc
+            uploaded = await self.http.post(
+                f"{self.api_url}/api/v1/artifacts/internal/browser-download", content=content,
+                headers={**headers, "Content-Type": "application/octet-stream", "X-Agent-Run-Id": run_id,
+                    "X-Owner-User-Id": user_id, "X-Filename": str(item.get("filename") or "download"),
+                    "X-Declared-Mime": str(item.get("mime_type") or ""),
+                    "X-Declared-SHA256": str(item.get("checksum_sha256") or ""), "X-Scanner-Status": "clean"},
+                timeout=httpx.Timeout(35.0, connect=5.0))
+            uploaded.raise_for_status()
+            stored_downloads.append(uploaded.json())
         if not isinstance(updated_state, dict):
             raise RuntimeError("browser_session_state_missing_from_supervisor")
         saved = await self.http.put(
@@ -103,6 +120,7 @@ class BrowserSupervisor:
             headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
         )
         saved.raise_for_status()
+        payload["downloads"] = stored_downloads
         payload["session_id"] = session_id
         payload["session_persistence"] = "saved"
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
+import os
 import re
 from datetime import datetime
 from typing import Any
@@ -16,6 +18,7 @@ from app.pagination import decode_created_at_id_cursor, encode_created_at_id_cur
 
 router = APIRouter(prefix="/api/v1/artifacts", tags=["artifacts"])
 MAX_ARTIFACT_BYTES = 2_000_000
+MAX_BROWSER_DOWNLOAD_BYTES = 10_000_000
 _SAFE_FILENAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._ -]{0,179}$")
 
 
@@ -76,6 +79,69 @@ def _validate_owner_path(user_id: str, path: str) -> str:
     ):
         raise HTTPException(403, "Artifact storage path is outside the authenticated owner scope")
     return path
+
+
+
+@router.post("/internal/browser-download", status_code=201)
+async def persist_browser_download(
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+    run_id: UUID = Header(alias="X-Agent-Run-Id"),
+    owner_user_id: UUID = Header(alias="X-Owner-User-Id"),
+    filename: str = Header(alias="X-Filename", max_length=180),
+    declared_mime: str = Header(alias="X-Declared-Mime", max_length=100),
+    declared_sha256: str = Header(alias="X-Declared-SHA256", min_length=64, max_length=64),
+    scanner_status: str = Header(alias="X-Scanner-Status"),
+):
+    expected = os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", "")
+    if len(expected) < 32 or not x_moreai_worker_token or not hmac.compare_digest(expected, x_moreai_worker_token):
+        raise HTTPException(401, "worker_internal_authentication_failed")
+    if scanner_status != "clean": raise HTTPException(422, "browser_download_scan_not_clean")
+    if not _SAFE_FILENAME.fullmatch(filename) or filename in {".", ".."}: raise HTTPException(400, "browser_download_filename_invalid")
+    content = await request.body()
+    if not content or len(content) > MAX_BROWSER_DOWNLOAD_BYTES: raise HTTPException(413, "browser_download_size_limit")
+    digest = hashlib.sha256(content).hexdigest()
+    if not hmac.compare_digest(digest, declared_sha256.lower()): raise HTTPException(422, "browser_download_checksum_mismatch")
+    valid = {
+        "application/pdf": content.startswith(b"%PDF-"),
+        "image/png": content.startswith(b"\\x89PNG\\r\\n\\x1a\\n"),
+        "image/jpeg": content.startswith(b"\\xff\\xd8\\xff"),
+        "image/webp": content.startswith(b"RIFF") and content[8:12] == b"WEBP",
+        "application/zip": content.startswith((b"PK\\x03\\x04", b"PK\\x05\\x06")),
+        "text/plain": b"\\x00" not in content, "text/csv": b"\\x00" not in content,
+        "application/json": b"\\x00" not in content,
+    }
+    if declared_mime not in valid or not valid[declared_mime]: raise HTTPException(415, "browser_download_signature_or_mime_invalid")
+    if declared_mime in {"text/plain", "text/csv", "application/json"}:
+        try:
+            decoded = content.decode("utf-8", errors="strict")
+            if declared_mime == "application/json":
+                import json
+                json.loads(decoded)
+        except Exception as exc: raise HTTPException(415, "browser_download_text_validation_failed") from exc
+    repo = repository(request)
+    runs = await repo.select("agent_runs", {"id": f"eq.{run_id}", "user_id": f"eq.{owner_user_id}",
+        "status": "in.(running,completed)", "select": "id", "limit": "1"})
+    if not runs: raise HTTPException(403, "browser_download_run_owner_mismatch")
+    headers = _storage_headers(request)
+    await _require_private_bucket(request, headers)
+    artifact_id = str(uuid4())
+    storage_path = f"{owner_user_id}/{artifact_id}/{filename}"
+    object_url = _storage_url(request, "object/{bucket}/" + quote(storage_path, safe="/"))
+    stored = await request.app.state.http.post(object_url, content=content,
+        headers={**headers, "Content-Type": declared_mime, "x-upsert": "false"}, timeout=35.0)
+    if stored.status_code >= 400: raise HTTPException(502, "browser_download_storage_upload_failed")
+    try:
+        row = await repo.insert("artifacts", {"id": artifact_id, "user_id": str(owner_user_id), "run_id": str(run_id),
+            "storage_path": storage_path, "mime_type": declared_mime, "size_bytes": len(content),
+            "checksum_sha256": digest, "metadata": {"source": "openfuse_browser_download", "filename": filename,
+            "scanner": "clamav", "scan_status": "clean", "scan_policy": "fail_closed",
+            "source_run_id": str(run_id), "mime_validation": "signature_and_content"}})
+    except Exception:
+        await request.app.state.http.delete(object_url, headers=headers, timeout=15.0)
+        raise
+    return {"artifact_id": row["id"], "run_id": str(run_id), "filename": filename,
+        "mime_type": declared_mime, "size_bytes": len(content), "checksum_sha256": digest, "scan_status": "clean"}
 
 
 @router.get("", response_model=list[CustomerArtifactResponse])
