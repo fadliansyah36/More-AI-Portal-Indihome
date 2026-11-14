@@ -361,7 +361,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
                       <p className="mt-0.5 text-[10px] text-slate-500">{configuration.runtime_key} · {configuration.tool_keys.length} tool · v{configuration.version}</p>
                       {configuration.description && <p className="mt-1 text-[10px] text-slate-600">{configuration.description}</p>}
                     </div>
-                    <button type="button" onClick={() => useConfiguration(configuration)} className="rounded-lg bg-red-600 px-2.5 py-1.5 text-[10px] font-bold text-white">Gunakan</button>
+                    <button type="button" disabled={!agents.some((agent) => agent.id === configuration.runtime_key && agent.runtimeAvailable)} onClick={() => useConfiguration(configuration)} title={!agents.some((agent) => agent.id === configuration.runtime_key && agent.runtimeAvailable) ? 'Worker runtime belum online' : 'Gunakan konfigurasi ini'} className="rounded-lg bg-red-600 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Gunakan</button>
                     <button type="button" onClick={() => editConfiguration(configuration)} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-semibold text-slate-700">Edit</button>
                     <button type="button" onClick={() => void removeConfiguration(configuration)} className="rounded-lg border border-rose-200 px-2.5 py-1.5 text-[10px] font-semibold text-rose-700">Hapus</button>
                   </div>
