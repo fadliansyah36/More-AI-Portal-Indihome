@@ -52,6 +52,7 @@ class ConversationMessageResponse(BaseModel):
     run_id: UUID | None = None
     created_at: datetime
     attachments: list[ConversationMessageAttachmentResponse] = Field(default_factory=list)
+    citations: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ConversationDetailResponse(BaseModel):
@@ -179,8 +180,22 @@ async def list_conversations(
 async def get_conversation(conversation_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
     conversation = await repo.owned_record("conversations", conversation_id, user["id"])
-    messages = await repo.select("conversation_messages", {"conversation_id": f"eq.{conversation_id}", "user_id": f"eq.{user['id']}", "select": "id,role,content,model_key,run_id,created_at", "order": "created_at.asc", "limit": "500"})
-    return {"conversation": conversation, "messages": messages}
+    messages = await repo.select("conversation_messages", {
+        "conversation_id": f"eq.{conversation_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,role,content,model_key,run_id,metadata,created_at",
+        "order": "created_at.asc", "limit": "500",
+    })
+    hydrated = []
+    for message in messages:
+        metadata = message.get("metadata") if isinstance(message.get("metadata"), dict) else {}
+        citations = metadata.get("citations") if isinstance(metadata.get("citations"), list) else []
+        safe_citations = [
+            item for item in citations[:50]
+            if isinstance(item, dict)
+            and all(isinstance(item.get(key), str) for key in ("id", "document_id", "title", "marker"))
+        ]
+        hydrated.append({**message, "citations": safe_citations})
+    return {"conversation": conversation, "messages": hydrated}
 
 
 @router.post("/{conversation_id}/messages", status_code=202, response_model=ConversationMessageEnqueueResponse)
