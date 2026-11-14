@@ -1373,3 +1373,13 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Workflow detail now explicitly distinguishes automatic worker checkpoint recovery (same durable Agent Run) from manual safe retry (new Agent Run, subject to backend replay safety); no manual checkpoint rewind is implied.
 - Source commit: `f7920c16af02968f1faaaadc9e6f69162a2f695d`. Report: `PHASE-09-CUSTOMER-WORKFLOW-LIFECYCLE-RECOVERY-PROJECTION-20261114.md`.
 - No tests, lint, typecheck, build, browser/API/worker/provider operations, staging, deployment or live Supabase mutation. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-15 — Unified Memory Semantic Recall
+
+- Added a bounded MemoryContextCoordinator that reuses the canonical Knowledge/RAG worker adapter and pgvector retrieval RPC; no second vector store or embedding provider was introduced.
+- OpenManus durable runs now perform tenant-scoped semantic recall when the existing Knowledge adapter is configured. Retrieval is limited to six chunks with a 0.45 similarity floor and bounded context; retrieved text is explicitly untrusted source material.
+- Existing transcript/run history remains the episodic context source, approved Skill Resolver content remains procedural context, and Personal Memory remains separately consented.
+- Semantic retrieval errors do not abort otherwise valid runs; a typed run event records only the exception class.
+- Source commits: `bcd845aa`, `77ee55fa`, `ff503c27`. Report: `PHASE-09-UNIFIED-MEMORY-SEMANTIC-RECALL-20261115.md`.
+- No tests, lint, typecheck, build, browser/API/worker/provider operations, staging, deployment or live Supabase mutation were performed. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
