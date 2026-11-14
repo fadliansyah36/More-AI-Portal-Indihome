@@ -56,6 +56,11 @@ class AgentRegistry:
                 "image_generation": "image_generate" in all_tool_keys,
                 "video_generation": "video_generate" in all_tool_keys,
                 "file_generation": "file_saver" in all_tool_keys,
+                "providers": {
+                    "image_generation": "openai" if "image_generate" in all_tool_keys else None,
+                    "video_generation": "runway" if "video_generate" in all_tool_keys else None,
+                    "file_generation": "supabase_storage" if "file_saver" in all_tool_keys else None,
+                },
             },
             "source": "registered_worker_adapters",
         }
