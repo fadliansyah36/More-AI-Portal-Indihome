@@ -10,7 +10,8 @@ type Overview = {
   recent_partners: Array<{ id: string; display_name: string; status: string; created_at: string }>;
   count_note: string;
 };
-type Row = Record<string, string | number | null>;
+type Row = Record<string, string | number | boolean | null>;
+type ProviderCatalog = { providers: Array<{id:string;key:string;display_name:string;enabled:boolean}>; models: Array<{id:string;provider_id:string;key:string;display_name:string;enabled:boolean;input_cost_per_million:number;output_cost_per_million:number;capabilities:string[]}>; routing_policies: Array<{id:string;task_type:string;model_id:string;fallback_model_id:string|null;priority:number;enabled:boolean}> };
 
 const API = (process.env.NEXT_PUBLIC_MOREAI_API_URL || '').replace(/\/$/, '');
 
@@ -43,31 +44,35 @@ export default function SuperAdminPage() {
   const [partners, setPartners] = useState<Row[]>([]);
   const [runs, setRuns] = useState<Row[]>([]);
   const [audit, setAudit] = useState<Row[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'runs' | 'audit'>('overview');
+  const [providerCatalog, setProviderCatalog] = useState<ProviderCatalog | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'runs' | 'audit' | 'providers'>('overview');
   const [principal, setPrincipal] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [context, summary, partnerRows, runRows, auditRows] = await Promise.all([
+      const [context, summary, partnerRows, runRows, auditRows, providerRows] = await Promise.all([
         adminRequest<{ principal: { roles: string[] } }>('/api/v1/admin/context'),
         adminRequest<Overview>('/api/v1/admin/overview'),
         adminRequest<{ items: Row[] }>('/api/v1/admin/partners?limit=50'),
         adminRequest<{ items: Row[] }>('/api/v1/admin/agent-runs?limit=50'),
         adminRequest<{ items: Row[] }>('/api/v1/admin/audit?limit=50'),
+        adminRequest<ProviderCatalog>('/api/v1/admin/providers'),
       ]);
       setPrincipal(context.principal.roles);
       setOverview(summary);
       setPartners(partnerRows.items);
       setRuns(runRows.items);
       setAudit(auditRows.items);
+      setProviderCatalog(providerRows);
       setError(null);
     } catch (err) {
       setOverview(null);
       setPartners([]);
       setRuns([]);
       setAudit([]);
+      setProviderCatalog(null);
       setError(err instanceof Error ? err.message : 'Workspace Super Admin gagal dimuat.');
     } finally {
       setLoading(false);
@@ -85,6 +90,7 @@ export default function SuperAdminPage() {
     ['partners', 'Organisasi Mitra'],
     ['runs', 'Agent Runs'],
     ['audit', 'Audit Log'],
+    ['providers', 'Provider & Model'],
   ] as const;
 
   return (
@@ -125,7 +131,8 @@ export default function SuperAdminPage() {
         {!loading && activeTab === 'partners' && <DataTable title="Organisasi Mitra" rows={partners} columns={['display_name', 'legal_name', 'status', 'created_at']} />}
         {!loading && activeTab === 'runs' && <DataTable title="Agent Runs" rows={runs} columns={['id', 'status', 'attempt', 'created_at']} />}
         {!loading && activeTab === 'audit' && <DataTable title="Audit Log" rows={audit} columns={['action', 'resource_type', 'outcome', 'created_at']} />}
-        <footer className="border-t border-slate-200 pt-4 text-xs text-slate-500">MoreAI · Administrative data is read-only in this release. Mutations require explicit permission contracts and audit coverage.</footer>
+        {!loading && activeTab === 'providers' && providerCatalog && <ProviderManagement catalog={providerCatalog} />}
+        <footer className="border-t border-slate-200 pt-4 text-xs text-slate-500">MoreAI · Provider/model/routing changes use server-side platform permissions and audited database procedures. Credential values are never exposed to the browser.</footer>
       </div>
     </main>
   );
@@ -136,4 +143,34 @@ function DataTable({ title, rows, columns }: { title: string; rows: Row[]; colum
     <div className="border-b border-slate-100 px-4 py-3 font-bold">{title} <span className="ml-1 text-xs font-normal text-slate-400">({rows.length})</span></div>
     {rows.length === 0 ? <p className="p-5 text-sm text-slate-500">Belum ada data.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-left text-xs"><thead className="bg-slate-50 text-slate-500"><tr>{columns.map(column => <th key={column} className="px-4 py-3 font-semibold">{column.replaceAll('_', ' ')}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={String(row.id || index)} className="border-t border-slate-100">{columns.map(column => <td key={column} className="max-w-[260px] truncate px-4 py-3 text-slate-700">{row[column] == null ? '—' : String(row[column])}</td>)}</tr>)}</tbody></table></div>}
   </section>;
+}
+
+
+function ProviderManagement({ catalog }: { catalog: ProviderCatalog }) {
+  const providerRows: Row[] = catalog.providers.map(provider => ({
+    id: provider.id, provider: provider.display_name, key: provider.key,
+    status: provider.enabled ? 'Enabled · credential gate enforced' : 'Disabled',
+    models: catalog.models.filter(model => model.provider_id === provider.id).length,
+  }));
+  const modelRows: Row[] = catalog.models.map(model => ({
+    id: model.id, model: model.display_name, key: model.key,
+    status: model.enabled ? 'Enabled' : 'Disabled',
+    input_cost_per_million: model.input_cost_per_million,
+    output_cost_per_million: model.output_cost_per_million,
+    capabilities: model.capabilities.join(', '),
+  }));
+  const routeRows: Row[] = catalog.routing_policies.map(route => ({
+    id: route.id, task: route.task_type, model_id: route.model_id,
+    fallback_model_id: route.fallback_model_id, priority: route.priority,
+    status: route.enabled ? 'Enabled' : 'Disabled',
+  }));
+  return <div className="space-y-5">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <h2 className="font-bold">LLM Provider Registry</h2>
+      <p className="mt-1 text-xs text-slate-500">Metadata only. Secret values and provider config are never returned. Activation requires verified server-side credentials and provider readiness.</p>
+      <div className="mt-4"><DataTable title="Provider" rows={providerRows} columns={['provider', 'key', 'status', 'models']} /></div>
+    </section>
+    <DataTable title="Model Catalog & Pricing" rows={modelRows} columns={['model', 'key', 'status', 'input_cost_per_million', 'output_cost_per_million', 'capabilities']} />
+    <DataTable title="Platform Routing Policies" rows={routeRows} columns={['task', 'model_id', 'fallback_model_id', 'priority', 'status']} />
+  </div>;
 }
