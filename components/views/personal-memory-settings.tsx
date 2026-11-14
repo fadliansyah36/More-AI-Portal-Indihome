@@ -94,6 +94,19 @@ export const PersonalMemorySettings: React.FC = () => {
     } finally { setSaving(false); }
   };
 
+  const clearAllMemory = async () => {
+    if (saving || !state || !window.confirm('Hapus seluruh Personal Memory secara permanen dan nonaktifkan penggunaannya?')) return;
+    setSaving(true);
+    try {
+      await customerApi.clearPersonalMemory();
+      setState((current) => current ? { ...current, enabled: false, disabled_at: new Date().toISOString(), items: [] } : current);
+      setEditingId(null);
+      showToast('Seluruh Personal Memory berhasil dihapus.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Penghapusan seluruh Memory gagal.', 'error');
+    } finally { setSaving(false); }
+  };
+
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs space-y-4">
       <div className="flex items-start gap-3">
@@ -159,7 +172,15 @@ export const PersonalMemorySettings: React.FC = () => {
             <div className="border-t border-slate-100 pt-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-slate-800">Memory tersimpan</p>
-                  <span className="text-[10px] text-slate-500">{state.items.length} catatan</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-slate-500">{state.items.length} catatan</span>
+                    {state.items.length > 0 && (
+                      <button type="button" onClick={() => void clearAllMemory()} disabled={saving}
+                        className="text-[10px] font-semibold text-rose-600 hover:text-rose-700 disabled:opacity-50">
+                        Hapus semua
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {state.items.length === 0 ? (
                   <p className="text-[11px] text-slate-500 rounded-xl bg-slate-50 p-3">Belum ada catatan pribadi.</p>
