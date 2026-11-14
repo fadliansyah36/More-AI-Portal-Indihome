@@ -854,3 +854,34 @@ Implement a first-party **Connections & Integrations** capability inside the exi
 **Scheduling interpretation:** the server worker's scheduled task status and monitor cadence are durable agent-work scheduling primitives, not a general-purpose calendar automation builder. The MoreAI design must model user schedules, recurrence/timezone, trigger events, connector authorization, run receipts and pause/resume independently of the OpenFuse demo UI while still dispatching execution through the single OpenManus runtime.
 
 **Count:** ten more distinct full-file reviews; OpenFuse content review is now **88/219**, with **131 remaining**. No tests/build/install/lint/typecheck, staging, deployment, live connector calls or Supabase mutations were performed.
+
+
+---
+
+## 22. Thirteenth continuation increment — OpenFuse entrypoints, worker lifecycle and isolated fixture source
+
+**Date:** 2026-11-14. Ten additional distinct files fetched in full at pinned commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/server/src/index.ts` | `079e34882a9da5700ed2b0f2fe9d19c210994803` |
+| `apps/worker/src/demo-entry.ts` | `143ec5bac4e09abc8f805be0843261460d0000df` |
+| `apps/worker/src/errors.ts` | `9656f488a96ef33370b573812f0bf11ad0ddfa95` |
+| `apps/worker/src/index.ts` | `fb2deed81c5807e331c670a3e05299349a2d09d7` |
+| `apps/worker/tests/close-resilience.test.ts` | `d8249f43352b955998230eefd536db5c01bc0dcd` |
+| `apps/worker/tests/docker.test.ts` | `9ecc2219d4d1b00fc3615bb7fa121e784e29b49e` |
+| `apps/worker/tests/fixture-worker.ts` | `702650b150070238d8783d1d6cfedf484c597d71` |
+| `apps/worker/tests/fixtures.ts` | `0be9b5b869421f2183d58aa4d65d9f14c9e45d7b` |
+| `apps/worker/tests/run-docker.mjs` | `bb4e859c7b741c55d132b9db54a0adc1de4cfc80` |
+| `apps/worker/tests/worker-checks.ts` | `2a5bce77c26d0f6a572503875de39da4ff28caf0` |
+
+**Findings and MoreAI disposition:**
+- Server entrypoint creates the configured store and app, and starts the task worker conditionally. This reinforces that worker lifecycle is coupled to OpenFuse's own store/runtime; MoreAI must run its own trusted FastAPI worker boundary against Supabase durable records and dispatch OpenManus runs.
+- Worker production and demo entrypoints bind to loopback by default and require a server-held worker token. The demo entrypoint uses separate local profiles and must remain excluded from production paths.
+- Worker error class is a typed transport/runtime error utility; MoreAI should map provider/worker errors to stable API error codes without leaking secrets or raw provider bodies.
+- Worker tests are source evidence only in this audit. They define disposable fixture infrastructure, assert unauthenticated requests are rejected, verify screenshots/navigation/download/profile behavior, and check metadata-service blocking. These test files were read, not executed, in accordance with the user's explicit no-testing instruction.
+- Fixture server deliberately exposes controlled pages and a proxy test endpoint. Fixture-only origin and test data must not be shipped as a production connector endpoint or seed data.
+- Docker test harness creates a disposable container with resource limits and read-only fixture mounts. It is a useful containment reference but does not establish MoreAI's deployed security posture. No container was built or started.
+- Test worker checks exercise bearer auth and session endpoints. For MoreAI, every route must independently authorize tenant/user/session; worker token is service-to-service authentication, not end-user authorization.
+
+**Count:** ten additional distinct full-file reviews; current tracked full-file review count is **98/219**, with **121 remaining**. This increment is source inspection only; no test, build, install, lint, typecheck, container build/run, staging, deployment, live connector call or Supabase mutation occurred.
