@@ -469,6 +469,59 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                         </button>
                       )}
                     </div>
+                    {expandedRunId === run.id && (() => {
+                      const mediaArtifacts = artifacts.filter((artifact) =>
+                        artifact.run_id === run.id
+                        && ['image', 'video'].includes(String(artifact.metadata?.media_type || '').toLowerCase()),
+                      );
+                      const mediaActivities = (runActivity[run.id]?.items || []).filter((event) =>
+                        ['image_generate', 'video_generate'].includes(String(event.tool || '').toLowerCase()),
+                      );
+                      if (mediaArtifacts.length === 0 && mediaActivities.length === 0) return null;
+                      const mediaStatus = mediaArtifacts.length > 0
+                        ? 'succeeded'
+                        : isActiveAgentRunStatus(run.status) ? 'processing' : run.status === 'failed' ? 'failed' : 'unknown';
+                      const mediaStatusLabel: Record<string, string> = {
+                        succeeded: 'Artifact tersimpan',
+                        processing: 'Agent Run sedang memproses media',
+                        failed: 'Agent Run gagal',
+                        unknown: 'Status hasil media belum dapat dipastikan',
+                      };
+                      return (
+                        <section className="mt-3 rounded-xl border border-indigo-200 bg-indigo-50/50 p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-indigo-900">Media job · OpenManus Agent Run</p>
+                            <span className="rounded-full bg-white px-2 py-1 text-[9px] font-semibold text-indigo-700">{mediaStatusLabel[mediaStatus]}</span>
+                          </div>
+                          <p className="mt-1 text-[10px] leading-relaxed text-indigo-800">
+                            Lifecycle media mengikuti run durable, checkpoint worker, accounting, dan artifact tersimpan. Status provider yang tidak dipublikasikan backend tidak ditebak oleh dashboard.
+                          </p>
+                          {mediaArtifacts.length > 0 ? (
+                            <div className="mt-2 space-y-1.5">
+                              {mediaArtifacts.map((artifact) => (
+                                <div key={artifact.id} className="flex items-center justify-between gap-2 rounded-lg border border-indigo-100 bg-white p-2">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-[10px] font-semibold text-slate-800">
+                                      {String(artifact.metadata?.filename || artifact.storage_path.split('/').pop())}
+                                    </p>
+                                    <p className="text-[9px] text-slate-500">
+                                      {String(artifact.metadata?.media_type)} · {artifact.mime_type || 'MIME tidak tersedia'} · {artifact.size_bytes === null ? 'Ukuran tidak tersedia' : (artifact.size_bytes / 1048576).toFixed(2) + ' MB'}
+                                    </p>
+                                  </div>
+                                  <button type="button" onClick={() => void downloadRunArtifact(artifact.id)} disabled={downloadingArtifactId === artifact.id}
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-indigo-200 px-2 py-1 text-[10px] font-semibold text-indigo-700 disabled:opacity-50">
+                                    {downloadingArtifactId === artifact.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                    Unduh
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-[10px] text-indigo-800">Tool media tercatat pada aktivitas run, tetapi artifact final belum tersedia. Periksa status run dan checkpoint untuk mengetahui hasil pemrosesan.</p>
+                          )}
+                        </section>
+                      );
+                    })()}
                     {expandedRunId === run.id && (
                       <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3">
                         {runProgress[run.id] && (
