@@ -19,7 +19,7 @@ class OpenAIImageGenerationAdapter:
         "png": "image/png",
         "jpeg": "image/jpeg",
         "webp": "image/webp",
-     }
+    }
 
     def __init__(self, *, http: httpx.AsyncClient, artifacts: Any, accounting: Any, estimator: Any):
         self.http = http
@@ -79,7 +79,13 @@ class OpenAIImageGenerationAdapter:
 
     def _image_cost(self, size: str, quality: str) -> float:
         costs = json.loads(os.environ["MOREAI_OPENAI_IMAGE_COSTS_JSON"])
-        keys = (f"{size}:{quality}", f"{size}:auto", f"auto:{quality}", "auto:auto")
+        keys = [f"{size}:{quality}"]
+        if size == "auto" and quality != "auto":
+            keys.append(f"auto:{quality}")
+        if quality == "auto" and size != "auto":
+            keys.append(f"{size}:auto")
+        if size == "auto" and quality == "auto":
+            keys.append("auto:auto")
         for key in keys:
             value = costs.get(key)
             if isinstance(value, (int, float)) and not isinstance(value, bool):
