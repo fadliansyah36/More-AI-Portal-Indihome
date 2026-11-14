@@ -127,7 +127,7 @@ def build_agent_registry(
     # Reuse the durable, policy-enforced tool loop with the upstream ToolCall prompt;
     # this preserves MoreAI approval, metering, checkpoint and tenant boundaries.
     toolcall = DurableOpenManusRuntime(
-        gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, skill_resolver=skill_resolver, knowledge_tools=knowledge_tools, learning_tools=learning_tools,
+        gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, skill_resolver=skill_resolver, connection_tools=connection_tools, knowledge_tools=knowledge_tools, learning_tools=learning_tools,
         plan_store=plan_store, search_tools=search_tools, storage_tools=storage_tools,
         image_tools=image_tools, video_tools=video_tools, workspace_tools=workspace_tools, browser_tools=browser_tools,
         attachment_loader=attachment_loader,
