@@ -327,3 +327,185 @@ These are exact reviewed-file decisions and family-level rules, **not** a comple
 6. Close P1 only when unresolved license, provenance, security and disposition rows are zero or explicitly accepted by project governance.
 
 **Phase sequence remains unchanged:** P1 is not complete. On closure, return to the earliest incomplete mandatory phase in `AGENTS.md`: Phase 04, then 06/07/08 and Phase 09 according to dependencies. Phase 10/11 remain unaccepted under the no-real-testing constraint.
+
+
+---
+
+## 11. Third content-audit increment — OAuth, finance, vault, worker, visual references and Scenario skill families
+
+**Audit date:** 2026-11-14  
+**Source pins unchanged.** This increment adds deeper source evidence, a machine-readable per-file handling manifest, and a lockfile-derived SPDX package inventory.
+
+### 11.1 OpenFuse — requested security and capability families
+
+#### Google OAuth and vault
+
+Additional exact source review:
+- `apps/server/src/google-auth.ts` (blob `ae56eb481b6cab1a52b3994d59090156ba97e193`);
+- `packages/integrations/src/vault.ts` (blob `d36efce472df11916f23cd325084918c38439c78`);
+- `packages/integrations/src/google.ts` (blob `12a0a28f2c08f44be844e137b4aa8b9670a9ee3e`);
+- `apps/server/src/app.ts` (pinned app assembly).
+
+Observed controls:
+- OAuth uses a cryptographically random state and PKCE verifier/challenge (S256); state expires after 10 minutes and is consumed on callback.
+- A generation token and compare-and-swap protect connect/disconnect races. Access/refresh credentials are encrypted in a versioned AES-256-GCM envelope with 32-byte base64 key validation and authenticated additional data.
+- Refresh is serialized per owner/connection in-process; disconnect first invalidates the generation and then requests Google token revocation.
+- Gmail/Calendar scopes are read-only by default; send/write scopes are added only when the caller explicitly requests write access.
+- Action proposals bind the owner, Google connection, target and target version into a SHA-256 hash, expire after 30 minutes, require an approve/deny decision and support idempotency.
+
+**Disposition:** ADAPT the OAuth PKCE, credential-envelope, scope-minimization, connection-generation and approval-hash patterns. Do not reuse the OpenFuse `Store`, session/auth owner model or its system-wide OAuth state persistence. MoreAI must bind every credential and callback to Supabase Auth user + tenant authorization, use its server-side credential vault, persist immutable approval/audit receipts, and avoid exposing provider tokens to the browser. Google provider logic is not a substitute for MoreAI's provider router.
+
+#### Finance
+
+Reviewed `apps/server/src/engine/finance.ts` (blob `ff92e07452f1bce22fab99da12c32da4c4afae02`). It is a bounded CSV spending analyzer:
+- 500 KB input cap and 5,000-row cap;
+- validates date, description, amount and category columns; rejects duplicate required headers, malformed rows and unsafe numeric ranges;
+- positive amounts represent expenses and negative amounts income; it explicitly does not infer currency conversion.
+
+It is **not** an open-banking connector, account balance provider, payment rail or ledger. **Disposition: ADAPT parser/normalization logic only** into MoreAI Files/Analyse, with source currency and import provenance explicit. Do not map this feature to wallet balance, payment execution or immutable credit ledger.
+
+#### Worker, network/proxy and downloads
+
+Reviewed `apps/worker/src/network.ts`, `proxy.ts`, `browser.ts`, `downloads.ts`, `server.ts`, `index.ts`, worker README and worker package manifest:
+- Worker API requires a shared bearer token of at least 32 characters (except process health); documented deployment binds to loopback. App server is responsible for authentication and owner identity.
+- Browser sessions are UUID-keyed, with a maximum of 3 active sessions, 20 persisted profiles and 30-minute idle close. Profiles/cookies/PDFs persist in a local Docker volume.
+- URL validation allows only HTTP(S) on ports 80/443, rejects credentials/private/reserved destinations, resolves DNS and rejects if any answer is non-public. Proxy connects to the validated IP rather than resolving again, mitigating DNS rebinding at application level.
+- Browser read returns visible page text; it accepts no user script/selector/evaluation input. Playwright service workers and WebSockets are disabled.
+- PDF downloads are capped at 10 MiB each and 20 per session; actual stream bytes and PDF signature are checked; interrupted/failed outcomes are journaled and recoverable. The latest 100 failures are retained.
+- Worker is a separate Node/Playwright service and its local profile volume contains sensitive login cookies/downloads. Its worker bearer token is a service-to-service secret, not a per-user session authorization contract.
+
+**Security limitations from the upstream worker README:** this is application-level egress control, not a kernel firewall or proof against a Chromium exploit. Playwright's default Chromium launch disables Chromium's internal sandbox. The documented container does run as `pwuser`, without Docker socket, app/provider secrets or Linux capabilities, with read-only root filesystem and memory/process limits. The persistent profile volume must receive the same access control as user documents.
+
+**Disposition:** ADAPT URL/SSRF validation, exact-IP proxy, bounded download and failure-journal patterns. DEFER direct worker runtime integration until MoreAI supplies a dedicated isolated browser service, kernel/network egress policy, per-tenant session binding, secure cookie vault, lease/quota, approval, audit receipt and lifecycle recovery. The OpenFuse service token must remain server-only. Browser/computer execution cannot be activated from the Customer Dashboard merely by importing this worker.
+
+#### Computer and E2B desktop
+
+Reviewed `apps/server/src/computer-backend.ts`, `computer.ts`, `computer-e2b-desktop.ts`, `computer-routes.ts` and `computer-tools.ts`.
+- Docker backend explicitly checks a single-owner container and volume; non-root UID 1000, read-only rootfs, no privileged mode, drop all capabilities, no-new-privileges, no host binds/devices/port mappings, private IPC, resource caps and `NetworkMode=none`.
+- E2B desktop is a distinct provider with outbound network enabled; its own agent instructions warn that listening ports are publicly reachable without app authentication and prohibit sending/submitting/signing in/buying/uploading without explicit user request.
+- Computer operations have per-operation IDs, receipts, output/disk caps, and no automatic retry after an uncertain timeout/interruption.
+- Computer HTTP routes are owner-scoped by the OpenFuse app middleware, but this does not make the standalone OpenFuse auth identity suitable for MoreAI.
+
+**Disposition:** Docker isolation checks and operation receipts are ADAPTABLE patterns; the computer service itself is DEFERRED pending MoreAI sandbox integration. E2B outbound-network desktop is not approved for unrestricted autonomous actions. Human takeover must bind to the same durable run/session and an explicit approval receipt.
+
+### 11.2 Visual Skills — all Markdown and vector assets reviewed
+
+Pinned content review now covers all 39 Markdown files in the Visual Skills repository:
+- 2 entrypoints (`image/SKILL.md`, `video/SKILL.md`);
+- image model routing, golden rules, prompt framework, creative direction, character consistency, de-slop, editing, dimensional/structural control, text rendering, slides, storyboards, multi-panel and seven industry pattern libraries;
+- video dramaturgy, universal rules, role modes, keyframes, camera/light/sound vocabulary, montage/genres, race/speed, continuity fixes and model-family references.
+
+All 15 SVG files were read as text and inspected for external references, embedded images, remote-use elements and comments. The SVGs contain only the SVG namespace reference; no embedded raster data or external `use` references were found. This is a static SVG inspection, not a trademark or visual-asset legal clearance. The binary `assets/hero.webp` was inventoried but not visually inspected and remains DEFER.
+
+**Attribution finding:** the exact NOTICE states copyright © 2026 Serge Shima, CC BY 4.0, and requires credit to Serge Shima plus the source repository. It separately acknowledges methods adapted/re-written after studying `agentara/skills` under MIT in named reference files. CC BY 4.0 does not grant trademark rights, so all 13 provider-logo variants remain DEFER for customer-facing use pending provider-brand permission/brand-guideline review. The two dramaturgy banners can be considered for attributed adaptation only after their embedded visual authorship is confirmed; hero binary remains held.
+
+**Product mapping:** the image and video entrypoints are knowledge for Skill Registry/Create prompt planning, not model execution adapters. Their model names, quality/size claims, token limits and provider availability are time-sensitive content and must be treated as editorial hints, not authoritative live capabilities. MoreAI must use its own model router/provider schema discovery before execution. Skills cannot grant tool permission or bypass entitlements.
+
+### 11.3 Scenario Skills — 179 entrypoints and family mapping
+
+All 179 `SKILL.md` entrypoints were fetched and reviewed at entrypoint level:
+- 172 product skill entrypoints under `skills/`;
+- 7 internal repository-maintenance/skill-authoring entrypoints under `.agents/skills/`, disposition ARCHIVE-ONLY.
+
+Scenario recursive tree:
+- 2,114 files total; 1,664 beneath `skills/`;
+- 179 skill entrypoints;
+- 1,147 script/source-like files by extension/path inventory classifier;
+- 92 asset-like files;
+- 372 test/test-support-like paths (318 under `tests/`);
+- 702 directories; `truncated=false`.
+
+Major DCC/game-engine content families:
+- DCC: Blender 98 files / 15 skill entrypoints; Maya 81 / 11; ZBrush 72 / 9.
+- Game engines: Godot 307 files / 14 entrypoints; Roblox 292 / 14; Unity 388 / 14; Unreal 79 / 10.
+- Remaining Scenario creative/provider/workflow/operations skills: 85 entrypoints.
+
+#### Family decisions
+
+| Family | File / entrypoint evidence | MoreAI owner | Decision |
+|---|---:|---|---|
+| General image/video/audio/3D, texture, skybox, sprites, storyboard, ad/creative | Skill entrypoints and references | Skill Registry + Create + provider router | **ADAPT KNOWLEDGE**; keep model schema dynamic |
+| Provider-specific image/video/audio/3D | Model-family skill entrypoints | Provider adapters + Model Router | **ADAPT GUIDANCE ONLY**; discover model and schema live; no hardcoded model id or price |
+| Scenario workflows and authoring | `scenario-workflows`, `scenario-workflow-authoring` | Existing MoreAI Workflow + OpenManus orchestration | **ADAPT CONTRACT PATTERNS**; no external workflow graph as second orchestration authority |
+| Task tracking, admin, analytics, moderation, quality gates | Relevant operations skills | Existing Agent Runs, admin/control plane, audit and moderation | **SELECTIVE KNOWLEDGE ADAPTATION**; no external identity/admin authority |
+| Blender/Maya/ZBrush | 35 skill entrypoints across three DCCs plus scripts/references/assets | Optional isolated DCC execution agent | **DEFER EXECUTION**; knowledge can be selectively adapted, scripts require licensed installed software, sandbox and explicit authorization |
+| Godot/Roblox/Unity/Unreal | 52 skill entrypoints across four game engines plus source/assets/templates | Optional isolated game-engine execution agent | **DEFER EXECUTION**; do not import toolchains or scripts into FastAPI/Customer runtime |
+| Repository maintainer/skill creator tools | 7 `.agents/skills` entrypoints | Source governance archive | **ARCHIVE-ONLY** |
+
+The core Scenario skill prescribes: resolve team/project scope; discover/recommend model; fetch the exact schema; check plan/entitlement; dry-run cost; run idempotently; wait on returned job IDs; inspect/download artifacts; and account for credit usage. Provider-specific skills emphasize that schemas and limits vary per model and must be re-fetched. This maps to MoreAI's provider adapter → Model Router → durable Agent Run/Step/Events → Files/Artifacts → Wallet/ledger. The external Scenario workflow graph remains a provider feature, not a replacement for MoreAI's canonical workflow engine.
+
+Nested licensing: Scenario root MIT license; `.agents/skills/skill-creator/LICENSE.txt` is Apache-2.0. Root MIT cannot be used to erase that nested license. Skill frontmatter and supporting source/assets must retain their own notices/provenance.
+
+**Review boundary:** all 179 entrypoints have entrypoint-level content review, but not every linked `references/`, `scripts/`, `assets/`, `tests/`, plugin metadata and nested dependency has been individually read and signed off. A skill entrypoint's MIT field does not establish license clearance for every embedded third-party asset or external tutorial. All unreviewed supporting files remain held.
+
+### 11.4 Per-file handling manifest — all 2,393 source paths now have explicit conservative decisions
+
+Updated `docs/implementation/external-source-file-inventory.json` to schema 1.1. Every row now includes:
+- `decision`: one of `copy`, `adapt`, `archive-only`, `exclude`, `defer`;
+- `decision_basis` and `decision_owner`;
+- `review_status` distinct from the decision.
+
+Current counts:
+
+| Decision | Files |
+|---|---:|
+| defer | 1,515 |
+| archive-only | 487 |
+| adapt | 330 |
+| exclude | 56 |
+| copy | 5 |
+| **Total** | **2,393** |
+
+Review status:
+- 258 files have recorded content/static review evidence (25 OpenFuse files, 39 Visual Skills Markdown, 15 Visual Skills SVG, and 179 Scenario entrypoints);
+- 2,135 files remain `pending-content-review`.
+
+A decision of ADAPT means an adaptation path is selected, not that source copying/execution is approved. A DEFER decision is a deliberate hold. Pending rows are not import-approved. This is a complete per-path **handling decision manifest**, not a claim that every source file passed legal/security review.
+
+### 11.5 Dependency SBOM and exact-version license status
+
+Created `docs/implementation/sbom/P1-EXTERNAL-NPM-DEPENDENCIES.spdx.json` (SPDX 2.3):
+- OpenFuse root pnpm v9 lockfile: 1,452 package rows;
+- Scenario Skills pnpm v9 lockfile: 466 package rows;
+- total: 1,918 lockfile package rows, representing 1,808 unique package@version coordinates across both repositories;
+- exact pinned lockfile blobs: OpenFuse `1f64461ae3c5e6c69b5c8c04826fe7bdbac1f016`, Scenario `a9bfa48bafc6cbd1b4c4652972ae6eeeaa27e098`.
+
+Also inspected the independent OpenFuse browser-worker npm `package-lock.json` (blob `37c93ea2a3410032df594b2893e1a015b2342749`, lockfile v3). Its six package entries expose exact pinned versions and license values, including Playwright/Playwright Core Apache-2.0, TypeScript Apache-2.0, and `@types/node`, `fsevents`, `undici-types` MIT.
+
+Read-only npm package registry metadata was collected for 37 direct dependency coordinates. Nine current registry latest versions exactly matched their lockfile pins (8 MIT, 1 ISC). The other 28 records expose only the package's current latest-version license and are **not** treated as evidence for the older pinned versions. Combining exact-version matches with the independent worker package-lock resolved license metadata establishes 15 unique package@version coordinates (16 SBOM rows due to repository duplicates). Current SPDX counts:
+- 11 rows MIT;
+- 3 rows Apache-2.0;
+- 2 rows ISC;
+- 1,902 rows remain `NOASSERTION`.
+
+The SBOM is therefore a valid lockfile-derived package inventory, but **not yet a license-complete SBOM**. pnpm lockfiles do not include license fields; package metadata from the latest tag cannot be projected backward onto older versions. Remaining 1,793 unique coordinates still need exact-version license resolution. No package was installed and no dependency code was executed.
+
+Created `docs/implementation/sbom/P1-DIRECT-DEPENDENCY-LICENSE-OBSERVATIONS-20261114.json` with source URLs, registry latest version, observed license, pinned version, exact-match flag and limitations for the 37 direct dependencies.
+
+### 11.6 Updated P1 gate
+
+| Gate | Evidence | Status |
+|---|---|---|
+| Recursive source-tree parity | 2,393 paths across 3 pinned sources; all trees complete | **GREEN** |
+| Per-file conservative handling decision | Every 2,393 rows has one of five decisions, owner and rationale | **GREEN for decision coverage** |
+| Per-file content/provenance review | 258 reviewed; 2,135 pending | **OPEN** |
+| OpenFuse requested high-risk family samples | OAuth/Google, finance, vault, worker, network/proxy, downloads and computer source read | **PARTIAL**; remaining server/package files need review |
+| Visual Skills Markdown/SVG | 39 Markdown and 15 SVG reviewed | **PARTIAL**; binary hero, provider brand rights and embedded asset provenance open |
+| Scenario skill entrypoints | 179 entrypoints reviewed; family routing mapped | **GREEN for entrypoints only** |
+| Scenario linked references/scripts/assets/tests/metadata | 1,935 files under Scenario remain outside the entrypoint-level review boundary | **OPEN** |
+| Lockfile SBOM | 1,918 package rows; 1,808 unique coordinates | **GREEN for lockfile inventory** |
+| Exact-version package license resolution | 15 unique package@version coordinates resolved; 1,793 unique coordinates still NOASSERTION | **OPEN** |
+| P1 closure | Content, provenance and exact-license gates not all closed | **NOT CLOSED** |
+
+**No-test compliance:** no dependency installation, script execution, build, lint, typecheck, tests, browser/API/provider probing, staging, Supabase mutation/migration or deployment was performed. This work is static source and metadata review only.
+
+### 11.7 Next bounded P1 work
+
+1. Resolve exact-version licenses for the remaining 1,793 unique package@version coordinates; use immutable version metadata/artifacts and retain unknowns rather than inheriting latest package licenses.
+2. Review the remaining OpenFuse server/package files by source path, including finance/workspace integration, vault/Google API error paths, auth middleware, browser API routes, Docker/E2B lifecycle and dependency/license notices.
+3. Review Visual Skills binary hero asset and source/provenance of every provider logo/banner; determine whether any third-party assets are bundled or referenced. Keep brand marks deferred until cleared.
+4. For Scenario, traverse all entrypoint-linked files and resolve every script, reference, asset, test, plugin manifest and nested license to a per-file review status; prioritize general image/video/audio/3D provider skills and workflows, then DCC/game-engine scripts.
+5. Reconcile the final manifest so no row remains pending-content-review; retain explicit `defer` for items not approved for MoreAI.
+6. Only then close P1 and resume the earliest incomplete mandatory phase under `AGENTS.md`: Phase 04, then 06/07/08 and Phase 09 according to dependency order.
+
+**P1 remains open.** The next implementation work remains source governance and dependency/license resolution, not importing unreviewed engines or skipping to Phase 09.
