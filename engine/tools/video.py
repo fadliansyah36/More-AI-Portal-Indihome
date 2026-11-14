@@ -70,6 +70,9 @@ class RunwayVideoGenerationAdapter:
             max_bytes = int(os.getenv("MOREAI_MEDIA_MAX_ARTIFACT_BYTES", "100000000"))
         except (TypeError, ValueError, json.JSONDecodeError):
             return None
+        configured_model = os.getenv("MOREAI_RUNWAY_VIDEO_MODEL", "gen4.5")
+        if configured_model not in cls.SUPPORTED_MODELS:
+            return None
         if (
             len(normalized) != len(costs)
             or any(not math.isfinite(value) or value <= 0 for value in normalized.values())
@@ -324,8 +327,14 @@ class RunwayVideoGenerationAdapter:
         if not isinstance(artifact_json, str):
             download = await self.http.get(output_url, timeout=120.0)
             download.raise_for_status()
-            raw = download.content
+            content_type = (download.headers.get("content-type") or "").split(";", 1)[0].lower()
+            if content_type not in {"video/mp4", "application/octet-stream"}:
+                raise RuntimeError("runway_video_artifact_mime_type_invalid")
+            content_length = download.headers.get("content-length")
             max_bytes = int(os.getenv("MOREAI_MEDIA_MAX_ARTIFACT_BYTES", "100000000"))
+            if content_length and int(content_length) > max_bytes:
+                raise RuntimeError("runway_video_artifact_size_invalid")
+            raw = download.content
             if not raw or len(raw) > max_bytes:
                 raise RuntimeError("runway_video_artifact_size_invalid")
             artifact_id = str(uuid5(NAMESPACE_URL, f"moreai:{user_id}:{run_id}:{request_hash}"))
