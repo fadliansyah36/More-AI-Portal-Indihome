@@ -45,11 +45,11 @@ class AgentRegistry:
                 if isinstance(name, str) and name:
                     tool_keys.append(name)
             runtimes[key] = {"tool_keys": sorted(set(tool_keys))}
-        all_tool_keys = {
-            key for descriptor in runtimes.values()
-            for key in descriptor.get("tool_keys", [])
-            if isinstance(key, str)
-        }
+        all_tool_keys: set[str] = set()
+        for descriptor in runtimes.values():
+            registered_keys = descriptor.get("tool_keys")
+            if isinstance(registered_keys, list):
+                all_tool_keys.update(key for key in registered_keys if isinstance(key, str))
         return {
             "runtimes": runtimes,
             "media": {
