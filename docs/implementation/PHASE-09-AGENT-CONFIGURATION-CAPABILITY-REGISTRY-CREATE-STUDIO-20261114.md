@@ -108,7 +108,7 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 
 ## OpenAI Image Generation adapter — source integration follow-up
 
-- Added `engine/tools/media.py` with a server-side OpenAI Images API adapter using the current `gpt-image-2` model and `POST /v1/images/generations`.
+- Added `engine/tools/media.py` with a server-side OpenAI Images API adapter using the current `gpt-image-2.5-flare` model and `POST /v1/images/generations`.
 - Added private binary artifact persistence to `SupabaseArtifactTool.binary_saver`. The adapter stores the generated image in the configured private artifact bucket and returns only the owner-scoped artifact reference/metadata; it does not return a public Storage URL.
 - Added `image_generate` to the canonical OpenManus tool catalog and registered it in Manus/ToolCall only when all server-side secret, wallet, entitlement, quota and price configuration is present.
 - Image generation reserves wallet credits and media quota before provider invocation through the existing idempotent request/reservation lifecycle. It settles against an explicit per-image USD price map; provider timeouts/ambiguous outcomes retain the reservation and block duplicate execution instead of silently releasing credits.
@@ -120,8 +120,8 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
   - `MOREAI_MEDIA_QUOTA_METRIC_KEY`
   - `MOREAI_CREDIT_WALLET_CURRENCY`
   - `MOREAI_CREDITS_PER_USD`
-  - `MOREAI_OPENAI_IMAGE_COSTS_JSON` (explicit map such as `{"1024x1024:low":0.006,"1024x1024:medium":0.053,"1024x1024:high":0.211}`; confirm current OpenAI pricing before configuration)
-  - optional `MOREAI_OPENAI_IMAGE_MODEL=gpt-image-2` and `MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS=600`
+  - `MOREAI_OPENAI_IMAGE_COSTS_JSON` (explicit map such as a numeric USD price map per size/quality (derive values from the current official calculator; default registration requires `1024x1024:medium`); confirm current OpenAI pricing before configuration)
+  - optional `MOREAI_OPENAI_IMAGE_MODEL=gpt-image-2.5-flare` (or `gpt-image-2.5-sunburst`) and `MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS=600`
 - The worker does not register the adapter unless every required variable is present and valid. No key was created or read, no provider request was made, and the adapter is not claimed active in the current deployment.
 - GPT Image organization verification may be required by OpenAI. See [Image generation docs](https://developers.openai.com/api/docs/guides/image-generation) and [pricing details](https://developers.openai.com/api/docs/guides/image-generation#cost-and-latency).
 - Source changes are recorded in the repository history on `main`; this report intentionally avoids a partial or unverified commit-hash list.
@@ -159,3 +159,5 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 - Added and successfully applied migration `20261114070000_moreai_media_artifact_bucket_capacity.sql`: it preserves `public=false` and raises the bucket file size limit to 150,000,000 bytes (150 MB), matching the worker's bounded media artifact limit.
 - The migration does not make Storage public and does not change Customer direct access. The Worker service-role artifact pipeline remains the only write path.
 - No generated media was requested from a provider; no tests or runtime checks were run.
+
+- Image adapter model alignment was updated to current documented `gpt-image-2.5-flare` by default, with `gpt-image-2.5-sunburst` as the precision-focused alternative. The tool schema supports the current quality options `low/medium/high/xhigh/max/auto` and background `auto/opaque/transparent`; the operator's price map remains mandatory.
