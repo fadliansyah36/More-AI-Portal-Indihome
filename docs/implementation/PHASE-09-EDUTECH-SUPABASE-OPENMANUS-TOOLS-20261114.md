@@ -74,7 +74,7 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 - `4cc27f4d0a9c7eebcffb5825bd19f0bca0525254` — update typed total-lesson progress contract.
 - `2a4ef0efd7927a040814f6baa33c33c0dc18a282` — show completion against total curriculum lessons.
 - `ae3257864c5d4cf522aabbae55809ebba47d42ea` — add a database-side progress summary view for the curriculum list.
-- `2303b0f72a7a4fed8037c6b79c0f011af87e4407` — use the summary view instead of fetching all lesson rows for path-list cards.
+- `2303b0f72a7a4fed8037c6b79c0f011af87e4407` — use the summary view instead of fetching all lesson rows for path-list cards.\n- `376736eaf2082b79938ca863ebdae90072bb99f6` — add age-appropriate learner privacy guidance to EduTech sessions.
 
 ## UI change gate and visual preservation
 
@@ -89,7 +89,7 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 - Worker RPCs validate run ownership and learning-resource ownership before mutation.
 - No direct browser Supabase PostgREST, Storage, RPC or Realtime access was added.
 - Generated lesson/quiz/assessment content is AI-assisted learning material, not an accredited syllabus, official grade or certificate.
-- Assessment scores and progress should only be persisted when supported by the actual learner response/session evidence; the model must not invent a completion event.
+- Assessment scores and progress should only be persisted when supported by the actual learner response/session evidence; the model must not invent a completion event. The EduTech prompt now instructs the tutor to avoid collecting personal/sensitive data and keep content age-appropriate; guardian/school consent and formal age gating remain not implemented.
 - Existing media/payment/OTP/gateway provider configuration remains deferred per product-owner instruction.
 
 ## Verification and deployment
