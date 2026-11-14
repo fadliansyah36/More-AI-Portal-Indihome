@@ -177,6 +177,22 @@ async def get_learning_path(
         "order": "created_at.desc",
         "limit": "200",
     })
+    quiz_ids = ",".join(str(row["id"]) for row in quizzes)
+    attempts = await repo.select("learning_quiz_attempts", {
+        "user_id": f"eq.{user['id']}", "quiz_id": f"in.({quiz_ids})" if quiz_ids else "eq.00000000-0000-0000-0000-000000000000",
+        "select": "id,quiz_id,score,passed,feedback,submitted_at",
+        "order": "submitted_at.desc",
+        "limit": "500",
+    }) if quizzes else []
+    assessments = await repo.select("learning_assessments", {
+        "user_id": f"eq.{user['id']}", "path_id": f"eq.{path_id}",
+        "select": "id,module_id,lesson_id,quiz_id,run_id,assessment_type,score,rubric,feedback,created_at",
+        "order": "created_at.desc",
+        "limit": "500",
+    })
+    attempts_by_quiz: dict[str, list[dict[str, Any]]] = {}
+    for attempt in attempts:
+        attempts_by_quiz.setdefault(str(attempt["quiz_id"]), []).append(attempt)
     progress_by_lesson = {str(row["lesson_id"]): row for row in progress}
     enrollment_rows = await repo.select("learning_enrollments", {
         "path_id": f"eq.{path_id}", "user_id": f"eq.{user['id']}",
@@ -199,6 +215,7 @@ async def get_learning_path(
             safe_quizzes.append({
                 "id": quiz["id"], "title": quiz["title"], "questions": safe_questions,
                 "question_count": len(safe_questions), "pass_score": quiz["pass_score"],
+                "attempts": attempts_by_quiz.get(str(quiz["id"]), []),
                 "created_at": quiz["created_at"],
             })
         lesson["quizzes"] = safe_quizzes
@@ -211,7 +228,7 @@ async def get_learning_path(
         "lessons_completed": sum(1 for row in progress if row["status"] == "completed"),
         "average_percent": round(sum(float(row["progress_percent"]) for row in progress) / len(progress), 1) if progress else 0,
     }
-    return {"path": path, "modules": modules, "enrollment": enrollment_rows[0] if enrollment_rows else None}
+    return {"path": path, "modules": modules, "assessments": assessments, "enrollment": enrollment_rows[0] if enrollment_rows else None}
 
 
 @router.get("/progress/detail")
@@ -248,5 +265,28 @@ async def list_learning_run_artifacts(
         "select": "id,artifact_type,resource_id,payload,created_at",
         "order": "created_at.asc,id.asc",
         "limit": "200",
+    })
+    return {"items": items, "count": len(items)}
+
+
+@router.get("/paths/{path_id}/lessons/{lesson_id}/versions")
+async def list_learning_lesson_versions(
+    path_id: UUID,
+    lesson_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    owned_lesson = await repo.select("learning_lessons", {
+        "id": f"eq.{lesson_id}", "path_id": f"eq.{path_id}", "owner_user_id": f"eq.{user['id']}",
+        "select": "id", "limit": "1",
+    })
+    if not owned_lesson:
+        raise HTTPException(404, "Learning lesson not found")
+    items = await repo.select("learning_lesson_versions", {
+        "lesson_id": f"eq.{lesson_id}", "owner_user_id": f"eq.{user['id']}",
+        "select": "id,version,content_md,objectives,source_run_id,created_at",
+        "order": "version.desc",
+        "limit": "100",
     })
     return {"items": items, "count": len(items)}
