@@ -648,3 +648,33 @@ No application code or Supabase data/schema was changed. No builds, tests, insta
 **Audit count correction:** a fresh set-based reconciliation of the previously named reviewed paths against the pinned 219-blob tree showed that the prior increment's stated 42/219 count had included ten paths that were not in the enumerated set. The reproducible count before this increment was **32**. This increment adds ten distinct fully reviewed paths, bringing the verified total to **42/219**, with **177 paths remaining**. This corrected count supersedes the earlier paragraph's count; the per-file list above is the evidence for the ten new paths.
 
 No MoreAI application code, dependencies, or Supabase schema/data were changed. No install, build, test, lint, typecheck, staging or deployment was run.
+
+
+---
+
+## 16. Eighth continuation increment — OpenFuse agent UI state, approvals and browser tool presentation
+
+**Date:** 2026-11-14. Six additional source files were fetched in full at the pinned OpenFuse commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/mobile/src/assistant-response.tsx` | `9b89ffbbf74f4723e235d0c109bcb13454ef159e` |
+| `apps/mobile/src/background-updates.tsx` | `76fb20cd8cdd1565548b6a90c1957152498b73b0` |
+| `apps/mobile/src/browser-address.ts` | `5e02f43c9c634040ce37688e680a73ca989bc1fc` |
+| `apps/mobile/src/browser-tool-card.tsx` | `c5e0f689fffb5f84839c2b12ccdb0a7707468ef9` |
+| `apps/mobile/src/agent-ui.tsx` | `4939c12c7363f9562950336427d63b4b5eb18b0d` |
+| `apps/mobile/src/agent-workspace.tsx` | `9ddf2a397b4b57dd44e6243cafcee51d16e41151` |
+
+**Findings and MoreAI disposition:**
+- Agent workspace UI reads a dedicated `/api/agent` API and keeps its own client-side cache/context. This is a useful reference for dashboard activity, task state and notifications, but MoreAI must bind those surfaces to the existing customer dashboard and OpenManus run/task model through FastAPI, not create a second Agent workspace API or runtime.
+- Agent UI explicitly represents `waiting_approval` and `waiting_input` task states. Preserve this UX concept in MoreAI: show pending action, exact scope/target, impact, requester, expiry, approve/deny, and immutable audit receipt. Approval must be enforced server-side and bound to a single action payload/version, not merely a client button.
+- Background update hook refreshes workspace data; adapt only the UX behavior if needed. Production update delivery should use authenticated FastAPI/Supabase Realtime channels with tenant filters, not trust client-side polling as an authorization boundary.
+- Browser tool card retrieves a session by ID from the API and presents session status/control. MoreAI must authorize every session lookup/action against the verified user and tenant; unguessable IDs alone are not access control.
+- Browser address helper accepts HTTP(S) addresses and normalizes host input. It is only client-side syntax validation. Server-side browser/navigation tools still require SSRF defenses, private/link-local IP rejection, DNS rebinding/redirect checks and egress policy.
+- Assistant response renderer is a presentation utility. Do not port OpenFuse UI wholesale; align any missing MoreAI components with its Master PRD design tokens and existing frontend CSS/components.
+
+Three additional guessed filenames in this batch (`approval-card.tsx`, `task-card.tsx`, `markdown.tsx`, `tool-card.tsx`) returned NOT_FOUND and were not counted or treated as source evidence.
+
+**Reconciled path count:** the reproducible pinned-tree set is now **48/219 fully reviewed paths**, with **171 remaining**. This count is derived from the explicit reviewed-path set, not the previous narrative totals.
+
+No MoreAI product code or Supabase was changed. No tests, builds, installs, lint, typechecks, staging or deployment were run.
