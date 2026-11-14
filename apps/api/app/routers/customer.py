@@ -1084,7 +1084,8 @@ def _validate_customer_agent_tool_keys(runtime_key: str, tool_keys: list[str]) -
     available = {
         str(item["key"])
         for item in tool_catalog()
-        if runtime_key in item.get("available_by_default", [])
+        if str(item["key"]) != "run"
+        and runtime_key in item.get("available_by_default", [])
         and bool(item.get("enabled_by_default"))
     }
     normalized = sorted({key.strip() for key in tool_keys if isinstance(key, str) and key.strip()})
