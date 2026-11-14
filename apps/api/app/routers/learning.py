@@ -91,3 +91,141 @@ async def set_learning_progress(
             "message": "Learning progress can only be updated after a first-party MoreAI learning path supplies an owner-scoped canonical module and lesson record.",
         },
     )
+
+
+
+@router.get("/paths")
+async def list_learning_paths(
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=100),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """List the authenticated learner's first-party paths and enrollment state."""
+    repo = repository(request)
+    paths = await repo.select("learning_paths", {
+        "owner_user_id": f"eq.{user['id']}",
+        "select": "id,title,description,education_level,learning_goal,status,created_by_run_id,created_at,updated_at",
+        "order": "updated_at.desc,id.desc",
+        "limit": str(limit),
+    })
+    if not paths:
+        return {"items": [], "count": 0}
+    path_ids = ",".join(str(item["id"]) for item in paths)
+    enrollments = await repo.select("learning_enrollments", {
+        "user_id": f"eq.{user['id']}", "path_id": f"in.({path_ids})",
+        "select": "id,path_id,status,enrolled_at,completed_at,updated_at",
+    })
+    progress = await repo.select("learning_progress", {
+        "user_id": f"eq.{user['id']}", "path_id": f"in.({path_ids})",
+        "select": "id,path_id,lesson_id,status,progress_percent,completed_at,updated_at",
+        "limit": "1000",
+    })
+    enrollment_by_path = {str(row["path_id"]): row for row in enrollments}
+    progress_by_path: dict[str, list[dict[str, Any]]] = {}
+    for row in progress:
+        progress_by_path.setdefault(str(row["path_id"]), []).append(row)
+    items = []
+    for path in paths:
+        key = str(path["id"])
+        rows = progress_by_path.get(key, [])
+        items.append({
+            **path,
+            "enrollment": enrollment_by_path.get(key),
+            "progress": {
+                "lessons_started": len(rows),
+                "lessons_completed": sum(1 for row in rows if row["status"] == "completed"),
+                "average_percent": round(sum(float(row["progress_percent"]) for row in rows) / len(rows), 1) if rows else 0,
+            },
+        })
+    return {"items": items, "count": len(items)}
+
+
+@router.get("/paths/{path_id}")
+async def get_learning_path(
+    path_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Return only a path and nested curriculum owned by the authenticated learner."""
+    repo = repository(request)
+    rows = await repo.select("learning_paths", {
+        "id": f"eq.{path_id}", "owner_user_id": f"eq.{user['id']}",
+        "select": "*", "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "Learning path not found")
+    path = rows[0]
+    modules = await repo.select("learning_modules", {
+        "path_id": f"eq.{path_id}", "owner_user_id": f"eq.{user['id']}",
+        "select": "id,path_id,module_index,title,summary,estimated_minutes,created_at",
+        "order": "module_index.asc",
+    })
+    lessons = await repo.select("learning_lessons", {
+        "path_id": f"eq.{path_id}", "owner_user_id": f"eq.{user['id']}",
+        "select": "id,path_id,module_id,lesson_index,title,content_md,objectives,content_version,status,source_run_id,created_at,updated_at",
+        "order": "lesson_index.asc",
+        "limit": "1000",
+    })
+    progress = await repo.select("learning_progress", {
+        "path_id": f"eq.{path_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,lesson_id,status,progress_percent,started_at,completed_at,updated_at",
+        "limit": "1000",
+    })
+    quizzes = await repo.select("learning_quizzes", {
+        "path_id": f"eq.{path_id}", "owner_user_id": f"eq.{user['id']}",
+        "select": "id,lesson_id,title,questions,pass_score,created_at",
+        "order": "created_at.desc",
+        "limit": "200",
+    })
+    progress_by_lesson = {str(row["lesson_id"]): row for row in progress}
+    lessons_by_module: dict[str, list[dict[str, Any]]] = {}
+    for lesson in lessons:
+        lesson["progress"] = progress_by_lesson.get(str(lesson["id"]))
+        lesson["quizzes"] = [quiz for quiz in quizzes if str(quiz["lesson_id"]) == str(lesson["id"])]
+        lessons_by_module.setdefault(str(lesson["module_id"]), []).append(lesson)
+    for module in modules:
+        module["lessons"] = lessons_by_module.get(str(module["id"]), [])
+    return {"path": path, "modules": modules, "enrollment": (
+        await repo.select("learning_enrollments", {
+            "path_id": f"eq.{path_id}", "user_id": f"eq.{user['id']}",
+            "select": "id,status,enrolled_at,completed_at,updated_at", "limit": "1",
+        })
+    )[:1]}
+
+
+@router.get("/progress/detail")
+async def list_canonical_learning_progress(
+    request: Request,
+    limit: int = Query(default=100, ge=1, le=500),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    rows = await repo.select("learning_progress", {
+        "user_id": f"eq.{user['id']}",
+        "select": "id,path_id,module_id,lesson_id,status,progress_percent,last_run_id,started_at,completed_at,updated_at",
+        "order": "updated_at.desc,id.desc",
+        "limit": str(limit),
+    })
+    return {"items": rows, "count": len(rows)}
+
+
+@router.get("/runs/{run_id}/artifacts")
+async def list_learning_run_artifacts(
+    run_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    owned_run = await repo.select("agent_runs", {
+        "id": f"eq.{run_id}", "user_id": f"eq.{user['id']}",
+        "select": "id", "limit": "1",
+    })
+    if not owned_run:
+        raise HTTPException(404, "Agent Run not found")
+    items = await repo.select("learning_run_artifacts", {
+        "run_id": f"eq.{run_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,artifact_type,resource_id,payload,created_at",
+        "order": "created_at.asc,id.asc",
+        "limit": "200",
+    })
+    return {"items": items, "count": len(items)}
