@@ -641,6 +641,10 @@ export type CustomerAgentCatalogItem = {
   enabled: boolean;
   capability_tags: string[];
   tool_keys: string[];
+  runtime_available: boolean;
+  active_workers: number;
+  live_tool_keys: string[];
+  last_seen_at: string | null;
 };
 
 
