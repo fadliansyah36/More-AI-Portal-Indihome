@@ -1238,7 +1238,7 @@ async def retry_customer_agent_run(
         event_type = str(event.get("event_type") or "")
         payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
         tool_key = payload.get("tool")
-        if event_type.startswith("tool.") and isinstance(tool_key, str) and tool_key not in safe_replay_tools:
+        if event_type.startswith("tool.") and (not isinstance(tool_key, str) or tool_key not in safe_replay_tools):
             raise HTTPException(
                 409,
                 "Manual rerun blocked because this run reached a side-effecting tool. Review its durable steps/artifacts before creating a new task.",
