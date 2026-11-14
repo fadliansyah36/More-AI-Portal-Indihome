@@ -294,24 +294,24 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
                     continue
                 if resolved not in seen and resolved not in queue:
                     queue.append(resolved)
-    existing = await repo.select("moreai_skill_source_files", {
-        "skill_package_id": f"eq.{skill_id}", "owner_user_id": f"eq.{user['id']}",
-        "select": "id", "limit": "1",
-    })
-    if existing:
-        raise HTTPException(409, "skill_source_already_ingested_immutable")
-    for record in records:
-        await repo.insert("moreai_skill_source_files", record)
-    await repo.update("moreai_skill_packages", {
-        "id": f"eq.{skill_id}", "owner_user_id": f"eq.{user['id']}",
-    }, {
-        "validation_status": "review_required",
-        "validation_report": {
-            "scope": "pinned_github_content_integrity",
-            "file_count": len(records), "total_bytes": total_bytes,
-            "files": [{"path": x["relative_path"], "git_blob_sha": x["git_blob_sha"], "sha256": x["content_sha256"], "bytes": x["byte_size"]} for x in records],
-            "findings": ["Files, nested directories, local references, manifests, scripts, licenses, NOTICE files and assets under the skill source directory were fetched at the pinned commit and Git blob SHA verified.", "Dependency resolution, script safety and asset rights still require separate review."],
-        },
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    })
+    validation_report = {
+        "scope": "pinned_github_content_integrity",
+        "file_count": len(records), "total_bytes": total_bytes,
+        "files": [{"path": x["relative_path"], "git_blob_sha": x["git_blob_sha"], "sha256": x["content_sha256"], "bytes": x["byte_size"]} for x in records],
+        "findings": [
+            "Files, nested directories, local references, manifests, scripts, licenses, NOTICE files and assets under the skill source directory were fetched at the pinned commit and Git blob SHA verified.",
+            "Dependency resolution, script safety and asset rights still require separate review.",
+        ],
+    }
+    try:
+        stored = await repo.rpc("moreai_ingest_skill_source", {
+            "p_skill_id": str(skill_id),
+            "p_owner_user_id": str(user["id"]),
+            "p_files": records,
+            "p_validation_report": validation_report,
+        })
+    except Exception as exc:
+        raise HTTPException(409, "skill_source_atomic_persistence_failed") from exc
+    if not isinstance(stored, dict) or stored.get("integrity") != "verified":
+        raise HTTPException(409, "skill_source_atomic_persistence_failed")
     return {"skill_id": str(skill_id), "source_commit": skill["source_commit"], "file_count": len(records), "total_bytes": total_bytes, "integrity": "verified", "execution_enabled": False}
