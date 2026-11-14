@@ -586,3 +586,130 @@ async def internal_calendar_list(body: InternalGoogleReadRequest, request: Reque
     items = [{"id":event.get("id"),"summary":event.get("summary"),"start":event.get("start"),"end":event.get("end")}
         for event in response.json().get("items",[])[:body.limit]]
     return {"items":items,"count":len(items),"source":"google_calendar"}
+
+
+class InternalGoogleWriteRequest(BaseModel):
+    user_id: UUID
+    run_id: UUID
+    to: list[str] = Field(default_factory=list, max_length=5)
+    subject: str = Field(default="", max_length=240)
+    body: str = Field(default="", max_length=20000)
+    summary: str = Field(default="", max_length=240)
+    description: str = Field(default="", max_length=4000)
+    start: str | None = None
+    end: str | None = None
+    timezone: str = Field(default="Asia/Jakarta", max_length=64)
+
+
+async def _finish_internal_action(repo: Any, action_id: str, user_id: str, status: str, resource_id: str, metadata: dict[str, Any]) -> Any:
+    return await repo.rpc("moreai_finish_connection_action", {
+        "p_action_id": action_id, "p_user_id": user_id, "p_status": status,
+        "p_provider_resource_id": resource_id, "p_result_metadata": metadata,
+    })
+
+
+@router.post("/internal/google/gmail/send")
+async def internal_gmail_send(
+    body: InternalGoogleWriteRequest, request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+):
+    if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
+        raise HTTPException(400, "idempotency_key_required")
+    if not body.to or any(not re.fullmatch(r"[^\\s@]+@[^\\s@]+\\.[^\\s@]+", address) for address in body.to):
+        raise HTTPException(422, "recipient_email_invalid")
+    if not body.subject.strip() or not body.body.strip():
+        raise HTTPException(422, "gmail_message_content_required")
+    connection = await _internal_google_connection(request, str(body.user_id), str(body.run_id), GOOGLE_SCOPE_MAP["gmail.send"])
+    message = EmailMessage()
+    message["To"] = ", ".join(body.to)
+    message["Subject"] = body.subject
+    message.set_content(body.body)
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode().rstrip("=")
+    payload_hash = hashlib.sha256(json.dumps({"to":body.to,"subject":body.subject,"body":body.body},sort_keys=True).encode()).hexdigest()
+    token = await _google_access_token(request, connection)
+    repo = repository(request)
+    claim = await repo.rpc("moreai_begin_connection_action", {
+        "p_user_id": str(body.user_id), "p_connection_id": str(connection["id"]),
+        "p_action_type": "gmail.send", "p_idempotency_key": idempotency_key,
+        "p_payload_sha256": payload_hash,
+    })
+    if not isinstance(claim, dict):
+        raise HTTPException(409, "gmail_action_claim_failed")
+    if claim.get("replay"):
+        if claim.get("status") == "completed":
+            return {"status":"completed","replayed":True,"message_id":claim.get("provider_resource_id")}
+        raise HTTPException(409, "gmail_action_already_started_or_outcome_unknown")
+    try:
+        response = await request.app.state.http.post(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+            headers={"Authorization":"Bearer "+token}, json={"raw":raw}, timeout=30.0, follow_redirects=False,
+        )
+        if response.status_code != 200:
+            await _finish_internal_action(repo, claim["action_id"], str(body.user_id),
+                "unknown" if response.status_code >= 500 else "failed", "", {"http_status":response.status_code})
+            raise HTTPException(502, "gmail_send_provider_rejected")
+        result = response.json()
+        receipt = await _finish_internal_action(repo, claim["action_id"], str(body.user_id),
+            "completed", str(result.get("id") or ""), {"thread_id":result.get("threadId"),"source":"openmanus"})
+        return {"status":"completed","replayed":False,"receipt":receipt}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        await _finish_internal_action(repo, claim["action_id"], str(body.user_id),
+            "unknown", "", {"outcome":"provider_response_unavailable","source":"openmanus"})
+        raise HTTPException(502, "gmail_send_outcome_unknown_do_not_retry") from exc
+
+
+@router.post("/internal/google/calendar/create")
+async def internal_calendar_create(
+    body: InternalGoogleWriteRequest, request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+):
+    if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
+        raise HTTPException(400, "idempotency_key_required")
+    if not body.summary.strip() or not body.start or not body.end:
+        raise HTTPException(422, "calendar_event_fields_required")
+    try:
+        start = datetime.fromisoformat(body.start.replace("Z","+00:00"))
+        end = datetime.fromisoformat(body.end.replace("Z","+00:00"))
+    except ValueError as exc:
+        raise HTTPException(422, "calendar_event_datetime_invalid") from exc
+    if start.tzinfo is None or end.tzinfo is None or end <= start or end-start > timedelta(days=7):
+        raise HTTPException(422, "calendar_event_time_invalid")
+    connection = await _internal_google_connection(request, str(body.user_id), str(body.run_id), GOOGLE_SCOPE_MAP["calendar.write"])
+    event_payload = {"summary":body.summary,"description":body.description,
+        "start":{"dateTime":start.isoformat(),"timeZone":body.timezone},
+        "end":{"dateTime":end.isoformat(),"timeZone":body.timezone}}
+    payload_hash = hashlib.sha256(json.dumps(event_payload,sort_keys=True).encode()).hexdigest()
+    token = await _google_access_token(request, connection)
+    repo = repository(request)
+    claim = await repo.rpc("moreai_begin_connection_action", {
+        "p_user_id":str(body.user_id),"p_connection_id":str(connection["id"]),
+        "p_action_type":"calendar.create","p_idempotency_key":idempotency_key,
+        "p_payload_sha256":payload_hash,
+    })
+    if not isinstance(claim,dict):
+        raise HTTPException(409,"calendar_action_claim_failed")
+    if claim.get("replay"):
+        if claim.get("status")=="completed":
+            return {"status":"completed","replayed":True,"event_id":claim.get("provider_resource_id")}
+        raise HTTPException(409,"calendar_action_already_started_or_outcome_unknown")
+    try:
+        response = await request.app.state.http.post(
+            "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+            headers={"Authorization":"Bearer "+token},json=event_payload,timeout=30.0,follow_redirects=False,
+        )
+        if response.status_code not in {200,201}:
+            await _finish_internal_action(repo,claim["action_id"],str(body.user_id),
+                "unknown" if response.status_code>=500 else "failed","",{"http_status":response.status_code})
+            raise HTTPException(502,"calendar_event_provider_rejected")
+        result=response.json()
+        receipt=await _finish_internal_action(repo,claim["action_id"],str(body.user_id),
+            "completed",str(result.get("id") or ""),{"html_link":result.get("htmlLink"),"source":"openmanus"})
+        return {"status":"completed","replayed":False,"receipt":receipt}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        await _finish_internal_action(repo,claim["action_id"],str(body.user_id),
+            "unknown","",{"outcome":"provider_response_unavailable","source":"openmanus"})
+        raise HTTPException(502,"calendar_event_outcome_unknown_do_not_retry") from exc
