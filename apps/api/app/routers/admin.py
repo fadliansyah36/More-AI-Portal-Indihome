@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+import os
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -335,20 +336,46 @@ async def review_skill_permissions(skill_id: UUID, install_id: UUID, body: Skill
     })
     if not rows:
         raise HTTPException(404, "skill_installation_not_found")
-    results = []
-    for install in rows:
-        requested = install.get("permission_request") if isinstance(install.get("permission_request"), list) else []
-        if body.decision == "approved" and (not set(body.granted_permissions).issubset(set(requested))):
-            raise HTTPException(422, "granted_permissions_must_be_subset_of_requested")
-        updated = await repo.update("moreai_skill_installs", {
-            "id": f"eq.{install['id']}", "owner_user_id": f"eq.{install['owner_user_id']}",
-        }, {
-            "permission_status": body.decision,
-            "granted_permissions": body.granted_permissions if body.decision == "approved" else [],
-            "execution_enabled": False,
-            "updated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
-        })
-        if updated:
-            results.append(updated[0])
-    return {"items": results, "count": len(results), "execution_enabled": False,
-            "notice": "Permission approval is recorded; runtime activation remains separately gated until the OpenManus skill resolver is integrated and security-reviewed."}
+    install = rows[0]
+    requested = install.get("permission_request") if isinstance(install.get("permission_request"), list) else []
+    if body.decision == "approved" and not set(body.granted_permissions).issubset(set(requested)):
+        raise HTTPException(422, "granted_permissions_must_be_subset_of_requested")
+    package_rows = await repo.select("moreai_skill_packages", {
+        "id": f"eq.{skill_id}",
+        "select": "id,validation_status,license_status,publication_status,content_sha256,version",
+        "limit": "1",
+    })
+    if not package_rows:
+        raise HTTPException(404, "skill_not_found")
+    package = package_rows[0]
+    source_files = await repo.select("moreai_skill_source_files", {
+        "skill_package_id": f"eq.{skill_id}", "owner_user_id": f"eq.{install['owner_user_id']}",
+        "select": "id", "limit": "1",
+    })
+    release_gate = (
+        os.getenv("MOREAI_SKILL_RUNTIME_ENABLED", "false").lower() == "true"
+        and os.getenv("MOREAI_SKILL_RELEASE_GATE_PASSED", "false").lower() == "true"
+    )
+    package_ready = (
+        package.get("validation_status") == "validated"
+        and package.get("license_status") == "approved"
+        and package.get("publication_status") == "published"
+        and bool(source_files)
+    )
+    execution_enabled = body.decision == "approved" and release_gate and package_ready
+    updated = await repo.update("moreai_skill_installs", {
+        "id": f"eq.{install['id']}", "owner_user_id": f"eq.{install['owner_user_id']}",
+    }, {
+        "permission_status": body.decision,
+        "granted_permissions": body.granted_permissions if body.decision == "approved" else [],
+        "execution_enabled": execution_enabled,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    })
+    if not updated:
+        raise HTTPException(409, "skill_permission_review_conflict")
+    return {
+        "items": updated, "count": len(updated), "execution_enabled": execution_enabled,
+        "release_gate_passed": release_gate, "package_ready": package_ready,
+        "review_note": body.review_note,
+        "notice": "Execution remains disabled unless both server release gates are enabled and the immutable source, validation, license and publication gates are satisfied.",
+    }
