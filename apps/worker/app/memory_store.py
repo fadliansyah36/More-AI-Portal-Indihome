@@ -230,6 +230,7 @@ class SupabasePersonalMemoryStore:
         preferences = await self.client.select("moreai_customer_memory_preferences", {
             "user_id": f"eq.{user_id}",
             "enabled": "eq.true",
+            "consent_version": "eq.2026-11-14.v1",
             "select": "user_id,enabled,consent_version",
             "limit": "1",
         })
