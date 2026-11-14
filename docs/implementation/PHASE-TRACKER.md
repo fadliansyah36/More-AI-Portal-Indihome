@@ -1182,3 +1182,15 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - This increment is a source-reconciliation/documentation commit, **not** implementation of Provider Management. No schema migration, API/UI code, credentials, provider activation or deployment was changed.
 - No tests, lint, typecheck, build, browser/API/worker runtime checks, provider calls, staging or E2E were run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED under the mandatory `AGENTS.md` gate and the current no-test/no-staging instruction.
 - Source report commit: `172e00c976321c0aa3e0bda34c66a6c454abf1ad`.
+
+
+## 2026-11-14 — Provider Control Plane API/UI implementation increment
+
+- Added permission-gated FastAPI endpoints for provider registry, model catalog/pricing/capabilities, and platform routing policy using existing audited Supabase RPCs.
+- Provider metadata response deliberately excludes `llm_providers.config`; provider mutation forces `credentials_ready=false`, so this API cannot mark a provider operational without the separately governed credential-readiness path.
+- Added the Provider & Model tab to the existing Super Admin view. No Customer UI redesign or global token migration.
+- Existing canonical schema and permission matrix were inspected read-only. Existing provider mutation RPC currently supports Google, OpenAI and Anthropic. No new migration or live database mutation was made.
+- Vercel account currently has two MoreAI projects: `more-ai-portal-indihome` (Next.js Customer) and `more-ai-api` (FastAPI). Latest deployment records were QUEUED at inspection time. Admin and Partner Portal do not yet have complete independent app roots, so separate Vercel projects were not created; creating them now would point at incomplete apps.
+- Implementation report: [Phase 09 Provider Control Plane API/UI](./PHASE-09-PROVIDER-CONTROL-PLANE-API-UI-20261114.md).
+- Commits: API `804c97197487450f7e739be45cebf2371c1d198a`; UI `ca52ea1537a2feaabbb889cf5aa2959e4e032f56`; report `3775efe1bfb0bd519a9ccfc9387c4cbf91c415e`.
+- No tests, lint, typecheck, build, runtime verification, provider calls, staging or deployment were run. Phase 09 remains IN PROGRESS; Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
