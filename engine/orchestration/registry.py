@@ -45,4 +45,17 @@ class AgentRegistry:
                 if isinstance(name, str) and name:
                     tool_keys.append(name)
             runtimes[key] = {"tool_keys": sorted(set(tool_keys))}
-        return {"runtimes": runtimes, "source": "registered_worker_adapters"}
+        all_tool_keys = {
+            key for descriptor in runtimes.values()
+            for key in descriptor.get("tool_keys", [])
+            if isinstance(key, str)
+        }
+        return {
+            "runtimes": runtimes,
+            "media": {
+                "image_generation": "image_generate" in all_tool_keys,
+                "video_generation": "video_generate" in all_tool_keys,
+                "file_generation": "file_saver" in all_tool_keys,
+            },
+            "source": "registered_worker_adapters",
+        }
