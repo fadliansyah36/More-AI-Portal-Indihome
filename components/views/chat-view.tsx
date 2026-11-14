@@ -726,11 +726,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
                   <Copy className="h-3 w-3" /> Salin
                 </button>
               )}
-              {message.sender === 'assistant' && message.runId && ['failed', 'cancelled', 'timed_out', 'expired'].includes(message.runStatus || '') && (
+              {message.sender === 'assistant' && message.runId && ['failed', 'timed_out', 'expired'].includes(message.runStatus || '') && (
                 <button type="button" onClick={() => void handleRetryRun(message.runId as string)}
                   disabled={isLoading || retryingRunId !== null}
                   className="mt-2 ml-3 inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 disabled:opacity-50">
-                  <Sparkles className="h-3 w-3" /> {retryingRunId === message.runId ? 'Menjalankan ulang…' : 'Regenerate'}
+                  <Sparkles className="h-3 w-3" /> {retryingRunId === message.runId ? 'Menjalankan ulang…' : 'Jalankan ulang'}
                 </button>
               )}
             </div>
