@@ -104,3 +104,24 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 - Agent Studio only offers tool choices reported by a live healthy worker and disables saved Agent launch while its runtime is offline.
 - Follow-up migration `moreai_agent_config_retry_snapshot` was applied successfully; no runtime verification was performed.
 - Follow-up source commits include `c2ab2538`, `4bc4dc2e`, `502089b9`, `e4df5a37`, `1069b152`, `57978256`, `deb8d374`, and `e8c9bc36`.
+
+
+## OpenAI Image Generation adapter — source integration follow-up
+
+- Added `engine/tools/media.py` with a server-side OpenAI Images API adapter using the current `gpt-image-2` model and `POST /v1/images/generations`.
+- Added private binary artifact persistence to `SupabaseArtifactTool.binary_saver`. The adapter stores the generated image in the configured private artifact bucket and returns only the owner-scoped artifact reference/metadata; it does not return a public Storage URL.
+- Added `image_generate` to the canonical OpenManus tool catalog and registered it in Manus/ToolCall only when all server-side secret, wallet, entitlement, quota and price configuration is present.
+- Image generation reserves wallet credits and media quota before provider invocation through the existing idempotent request/reservation lifecycle. It settles against an explicit per-image USD price map; provider timeouts/ambiguous outcomes retain the reservation and block duplicate execution instead of silently releasing credits.
+- The adapter does not assume Image API token usage fields. Image output cost is configured per size/quality; the usage ledger records the configured USD cost and leaves LLM token counters at zero for this media operation.
+- Required Worker environment:
+  - `OPENAI_API_KEY` (server-only secret)
+  - `MOREAI_MEDIA_BILLING_ENABLED=true`
+  - `MOREAI_MEDIA_ENTITLEMENT_KEY`
+  - `MOREAI_MEDIA_QUOTA_METRIC_KEY`
+  - `MOREAI_CREDIT_WALLET_CURRENCY`
+  - `MOREAI_CREDITS_PER_USD`
+  - `MOREAI_OPENAI_IMAGE_COSTS_JSON` (explicit map such as `{"1024x1024:low":0.006,"1024x1024:medium":0.053,"1024x1024:high":0.211}`; confirm current OpenAI pricing before configuration)
+  - optional `MOREAI_OPENAI_IMAGE_MODEL=gpt-image-2` and `MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS=600`
+- The worker does not register the adapter unless every required variable is present and valid. No key was created or read, no provider request was made, and the adapter is not claimed active in the current deployment.
+- GPT Image organization verification may be required by OpenAI. See [Image generation docs](https://developers.openai.com/api/docs/guides/image-generation) and [pricing details](https://developers.openai.com/api/docs/guides/image-generation#cost-and-latency).
+- Source commits include `b1c403ab`, `373d7c79`, `021e49a9`, `f8afe5ab`, `9a19ee26`, `3b5f51cc`, `d45b3168`, `1aec9d87`, `2944db69`, `7d2bfa5d`, `f427b2e3`, and `f6428265`.
