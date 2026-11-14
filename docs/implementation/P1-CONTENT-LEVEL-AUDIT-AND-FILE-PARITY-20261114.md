@@ -1092,3 +1092,34 @@ The mobile documentation strengthens the product mapping for a single Connection
 4. No Google credentials were used, no provider request was made, no test was run and no user/tenant data was created.
 
 **Count:** ten additional distinct full-file source reviews; tracked total is **154/219**, with **65 remaining**. No package installation, script execution, build/lint/typecheck/test run, staging, deployment or Supabase mutation occurred.
+
+
+---
+
+## 28. Nineteenth continuation increment — OpenFuse computer boundary, runtime wiring and search safety
+
+**Date:** 2026-11-14. Six additional distinct OpenFuse files were fetched in full at pinned commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`, statically reviewed, and reconciled into the canonical external-source inventory.
+
+| Path | Pinned blob SHA | Disposition |
+|---|---|---|
+| `apps/computer/Dockerfile` | `4ef4cf8525201112601b7e597d29b6b21a6c7ae7` | ARCHIVE-ONLY / sandbox reference |
+| `apps/computer/files.py` | `270a5f1f3e3d521d5da67f156cb51fd87793de21` | ADAPT bounded filesystem safeguards only |
+| `apps/server/src/agent.ts` | `1d6bc4dfb87fae01c680be1add4840e54710a24b` | EXCLUDE OpenFuse runtime and Intelligence authority |
+| `apps/server/src/engine/routes.ts` | `0d616aa9db5eb312a28911bba71f2c19f3f6e0ba` | ADAPT selected API semantics only; exclude owner-store implementation |
+| `apps/server/src/rate-limit.ts` | `95c1f5ff6a2be4a1b4a1f9ee0fc09b6e5eabae59` | ADAPT bounded pre-auth limiter pattern; not distributed tenant quota |
+| `apps/server/src/search.ts` | `6f70602ed153c22f978471f60fcbefe91a3aa085` | ADAPT provider transport safeguards only; MoreAI provider policy remains canonical |
+
+### Findings
+
+- **Computer image:** pinned Node 22 Debian image provisions a dedicated `/workspace`, runs as UID 1000, and exposes only a sleeping container entrypoint. The Dockerfile alone does not establish the full supervisor/network policy. It is not a replacement for MoreAI's separately authenticated sandbox supervisor.
+- **Filesystem bridge:** the Python bridge requires absolute `/workspace` paths, rejects traversal and NUL, opens each directory component with `O_NOFOLLOW`, rejects symlinks/special files for reads and replacements, limits directory entries, bounds text reads to 256 KiB and PDF operations to 10 MiB, validates base64/PDF magic, and uses an exclusive temporary file plus atomic replace. Adapt these defense-in-depth semantics only inside the existing MoreAI isolated workspace boundary; they do not replace tenant authorization, file malware scanning or workspace CAS.
+- **Agent runtime:** OpenFuse constructs CopilotKit Runtime with an AG-UI/HTTP-agent option and a separate CopilotKit Intelligence persistence dependency. Its owner identity comes from OpenFuse auth. This is expressly excluded: MoreAI OpenManus remains the only Agent Runtime and Supabase/FastAPI remain identity and persistence authorities.
+- **Agent routes:** the route family includes tasks, goals, monitors, ideas, memories, identity and notifications. The source uses an owner-keyed generic Store and a standalone task service. MoreAI already has canonical durable runs, memory and workflow modules; only missing request/response semantics may be adapted, not the standalone service or storage model.
+- **Rate limiting:** the limiter is bounded in-memory, keys pre-auth requests using the socket or explicitly trusted proxy headers, and fails closed when capacity is exhausted. It is process-local and unsuitable as the canonical distributed per-user/tenant/provider quota. Keep it as infrastructure defense only; durable limits remain MoreAI quota/credit policy.
+- **Search transport:** MCP HTTP requests disable redirects, apply a 45-second deadline and 1 MiB response cap, validate HTTP(S) result URLs and bound returned source count/excerpt size. This is a useful adapter pattern, but MoreAI must use its own provider allowlist, server-side secrets, run-scoped usage accounting and untrusted-result treatment.
+
+### Manifest reconciliation and count correction
+
+The audit narrative previously reported **154/219 reviewed and 65 remaining**, while the machine-readable inventory still showed **194 OpenFuse rows pending**. Those were not synchronized and therefore the 65 figure must not be treated as a manifest-derived count. This increment updates six exact rows after matching pinned blob SHA values. The manifest now records **188 OpenFuse rows pending-content-review** (31 rows with non-pending review statuses) across the full 219-file tree. The historical 154/65 count remains an audit-ledger figure only; it is not asserted as the current canonical manifest state. Further path-by-path reconciliation is required before any P1 sign-off.
+
+**Validation:** static source review and manifest bookkeeping only. No packages were installed, no upstream scripts/tests/builds were run, no browser/provider/API calls were made, and no staging, deployment or Supabase mutation occurred. P1 remains OPEN.
