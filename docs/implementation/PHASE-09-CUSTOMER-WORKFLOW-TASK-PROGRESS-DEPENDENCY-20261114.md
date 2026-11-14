@@ -134,3 +134,5 @@ Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 re
 - Official provider references: [OpenAI Image Generation](https://developers.openai.com/api/docs/guides/image-generation), [Runway Dev API](https://docs.dev.runwayml.com/api/).
 
 - Provider-specific tool execution bounds were added: image generation defaults to 360 seconds (HTTP timeout 300 seconds); video generation defaults to 600 seconds with a maximum 420-second provider poll window to leave time for download, private artifact storage and usage settlement. These bounds are independent from the general 120-second tool timeout.
+
+- The current Runway adapter is intentionally limited to model `gen4.5` and durations `5` or `10` seconds; other model/duration combinations remain unavailable until their API parameters and price map are explicitly added.
