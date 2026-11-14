@@ -786,3 +786,36 @@ Implement a first-party **Connections & Integrations** capability inside the exi
 - Shared UI primitives and date format helpers are presentational. MoreAI's own component library and design tokens remain authoritative.
 
 **Count:** ten more distinct full-file reviews; OpenFuse content review is now **68/219**, with **151 remaining**. No tests/build/install/lint/typecheck, staging, deployment, live mail send, calendar write or Supabase mutation was performed.
+
+
+---
+
+## 20. Eleventh continuation increment — OpenFuse server action, identity, storage and worker core
+
+**Date:** 2026-11-14. Ten additional distinct files fetched in full at the pinned OpenFuse commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/server/src/actions.ts` | `e430a3d10b8e3be2e7c44122974520e0eb495572` |
+| `apps/server/src/agent.ts` | `1d6bc4dfb87fae01c680be1add4840e54710a24b` |
+| `apps/server/src/app.ts` | `811a5f520ca0b3b36f1b865460de85d0866e0050` |
+| `apps/server/src/config.ts` | `34084326bf9846b688612cd61a8a6f51f6139700` |
+| `apps/server/src/db.ts` | `e3103c9ee2ffd5413aabf32044c541d48ce9cc0b` |
+| `apps/server/src/engine/tanstack-agent.ts` | `9ebf2bf85d18ddc73db507856f41f31e8ce145ac` |
+| `apps/server/src/engine/worker.ts` | `b69fe63486dbdd3f8617aed59bbd1e48b92e344a` |
+| `apps/server/src/errors.ts` | `63d6be2816a67e5fd553b4e5981b43b2cefe4006` |
+| `apps/server/src/files.ts` | `14453455caa4a3425c255a21810710b2e4436e50` |
+| `apps/server/src/jev/adapter.ts` | `1054914155bd4e91dc75d290d060adde89417dea` |
+
+**Findings and MoreAI disposition:**
+- Action proposals are owner-scoped, bind prepared provider actions to connection IDs and target event versions, and require review before execution. MoreAI should adopt the prepare → review → execute lifecycle with Supabase transaction/CAS semantics, action payload hash, ETag/version and idempotency. Ensure approval state and execution state cannot be forged by client input.
+- OpenFuse agent runtime can select sample/model/AG-UI backends and resolves identity through its own auth helper. MoreAI must not add a second agent runtime: OpenManus is sole planner/executor, and FastAPI derives actor/tenant from verified Supabase Auth.
+- Hono app composes auth, files, Google, workspace, browser, computer, agent and CopilotKit Intelligence. This confirms OpenFuse is a complete standalone app composition. MoreAI should adapt selected service/capability boundaries, not mount its app wholesale or duplicate the existing dashboard.
+- Config includes model/provider credentials, Google OAuth, worker token, Docker/E2B desktop and storage settings. All secrets remain server-side. E2B and Docker are distinct execution trust classes and need separate policy.
+- OpenFuse DB implements generic owner/kind/id records and imports PGlite. This is explicitly excluded as MoreAI persistence; use Supabase PostgreSQL, RLS, typed repositories and tenant-scoped transactions.
+- TanStack agent adapter resolves provider/model combinations and defines state tools. Reuse only provider adapter design patterns where compatible with the MoreAI Model Router; do not let a UI-level agent SDK choose or own the canonical MoreAI model/runtime.
+- Task worker supports scheduled task eligibility, leases, checkpoints, approval waits and cancellation/abort. This is useful execution-engine reference, but MoreAI schedule definitions, leases, run events and receipts must be persisted in Supabase and dispatched by the trusted FastAPI worker boundary. OpenManus remains execution authority.
+- Files service creates owner-scoped metadata, deterministic operation IDs and signed content URLs over local filesystem storage. MoreAI should preserve deterministic idempotency and signed-access concepts but use private Supabase Storage, malware quarantine, RLS-backed metadata and tenant ACL checks.
+- JEV adapter is a provider-mediated interaction selector/ranker. It is not a general plugin framework; if used, its output is untrusted suggestion data and must never override MoreAI authorization or action policy.
+
+**Count:** ten more distinct full-file reviews; OpenFuse content review is now **78/219**, with **141 remaining**. No test/build/install/lint/typecheck, staging, deployment, live provider call or Supabase mutation was performed.
