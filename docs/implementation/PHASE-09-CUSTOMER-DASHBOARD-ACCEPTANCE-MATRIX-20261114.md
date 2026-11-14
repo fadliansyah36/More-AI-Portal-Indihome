@@ -22,9 +22,10 @@ Scope: source-level Customer UI → FastAPI → worker/engine → Supabase integ
 | New conversation / message enqueue | `chat-view.tsx` | Idempotent FastAPI enqueue RPC, agent key, attachment IDs, workspace permission preflight | CONNECTED (source) | NOT VERIFIED |
 | Chat streaming / activity timeline | `chat-view.tsx` | Authenticated SSE, Last-Event-ID replay, safe activity projection, agent/planning/tool/approval/resume lifecycle | CONNECTED (source) | NOT VERIFIED |
 | Chat stop/cancel | `chat-view.tsx` | Owner-scoped durable cancel RPC and terminal status reconciliation | CONNECTED (source) | NOT VERIFIED |
-| Chat retry / regenerate | Existing Chat action surface | No safe customer manual-retry contract; worker auto-retry remains server policy | UNAVAILABLE / FAIL-CLOSED | NOT VERIFIED |
+| Chat retry / regenerate | `chat-view.tsx` | Owner-scoped idempotent safe-replay endpoint; creates a new Agent Run only when original failed before side-effecting tool activity; preserves attachments and immutable saved Agent config snapshot | CONNECTED (source; new-run replay only) | NOT VERIFIED |
 | Chat citations/source display | `chat-view.tsx` | RAG retrieval marker → final response → Agent Run output → owner-scoped conversation history/page → Chat restore | CONNECTED (source) | NOT VERIFIED |
-| Agent catalog / Agent Studio | `agent-studio-view.tsx` | Authenticated catalog exposes enabled definitions backed by registered runtime adapters only | CONNECTED (source) | NOT VERIFIED |
+| Agent catalog / Agent Studio | `agent-studio-view.tsx` | Authenticated runtime catalog plus owner-scoped Agent configuration CRUD, versioned config snapshot, user-role instructions, live worker heartbeat and tool allowlist | CONNECTED (source) | NOT VERIFIED |
+| Dynamic Agent/tool capability | Agent Studio | Worker heartbeat snapshots expose healthy runtime/tool registrations; API fails closed when no healthy worker advertises requested runtime | CONNECTED (source) | NOT VERIFIED |
 | Agent detail / start agent task | `agent-studio-view.tsx`, `chat-view.tsx` | Supported agent key routes through durable Agent Run enqueue and worker dispatcher | CONNECTED (source) | NOT VERIFIED |
 | Model selector / provider routing | Existing Chat and catalog surfaces | Server-side Model Router/provider capability policy; browser does not select or call provider directly | PARTIAL / GATED | NOT VERIFIED |
 | Tools directory | `tools-catalog-view.tsx` | Authenticated tool catalog; unsafe tools remain unavailable until isolated adapter and policy gates pass | PARTIAL / GATED | NOT VERIFIED |
@@ -34,15 +35,18 @@ Scope: source-level Customer UI → FastAPI → worker/engine → Supabase integ
 | Tasks queue / run history | `tasks-view.tsx` | Keyset-paged owner-scoped Agent Runs, status and artifact linkage | CONNECTED (source) | NOT VERIFIED |
 | Task detail / progress / steps | `tasks-view.tsx`, `workflow-progress-view.tsx` | Owner-scoped run, safe steps, logs, thinking, progress and replayable events | CONNECTED (source) | NOT VERIFIED |
 | Task pause/cancel | Tasks/Workflow/Chat | Durable cancellation and approval pause/resume state machine | CONNECTED (source) | NOT VERIFIED |
-| Task retry from checkpoint | Existing Tasks surface | No customer manual retry endpoint; no UI retry is claimed | UNAVAILABLE / FAIL-CLOSED | NOT VERIFIED |
+| Task retry / replay | `tasks-view.tsx` | Idempotent manual retry creates a new run only for safe replayable failed/timed-out/expired source runs; it is not an in-place checkpoint resume. Automatic worker retry and approval continuation resume the existing durable run/checkpoints | CONNECTED (source; new-run replay + server checkpoint recovery) | NOT VERIFIED |
 | Task artifacts / download | Tasks, Results, Research, Workflow | Owner-scoped artifact pages, signed download, run relationship | CONNECTED (source) | NOT VERIFIED |
 | Workspace files / upload / preview | `files-view.tsx` | Workspace owner/member authorization, private storage, CAS upload, immutable version history, soft delete/restore | CONNECTED (source) | NOT VERIFIED |
 | Generated artifacts | `artifacts-result-view.tsx`, Files, Tasks | Private artifact storage, metadata owner checks, signed URL | CONNECTED (source) | NOT VERIFIED |
 | Analyse / Knowledge Library | `analyse-view.tsx`, `knowledge-library-view.tsx` | Owner-scoped upload, ingestion, keyset chunk pages, selected-document retrieval and provenance | CONNECTED (source) | NOT VERIFIED |
 | Research | `research-view.tsx` | Keyset Agent Run/artifact pages and signed download | CONNECTED (source) | NOT VERIFIED |
 | Code Assistant | `code-view.tsx` | Analysis through durable Agent Run; code snapshots/artifacts | PARTIAL / GATED | NOT VERIFIED |
+| Create Studio file output | `create-view.tsx` | Manus `file_saver` artifact path, gated by live worker adapter capability | PARTIAL / GATED | NOT VERIFIED |
+| Create Studio image output | `create-view.tsx` | Requires actual worker `image_generate` adapter and OpenAI credentials; currently fail-closed | UNAVAILABLE / FAIL-CLOSED | NOT VERIFIED |
+| Create Studio rendered video | `create-view.tsx` | Script/storyboard only. OpenAI Sora Videos API was shut down 2026-09-24; no replacement provider selected/configured | UNAVAILABLE / FAIL-CLOSED | NOT VERIFIED |
 | Python/browser/SWE execution | Tools/Code surfaces | Supervisor isolation, provider, approval and policy gates required; not advertised as active when gates are closed | PARTIAL / GATED | NOT VERIFIED |
-| Memory summary / consent / correction / deletion | No dedicated Customer Memory screen | Runtime conversation memory exists; no complete customer memory review/consent/correction/deletion API contract is available | UNAVAILABLE / FAIL-CLOSED | NOT VERIFIED |
+| Personal Memory / consent / correction / retention / deletion | `profile-settings-view.tsx` | Owner-scoped FastAPI consent, list, create, update, item delete and clear-all; worker reads only explicitly consented personal records; scheduled expiry purge | CONNECTED (source) | NOT VERIFIED |
 | Wallet / credit balance | `benefit-credit-view.tsx`, Home | Owner-scoped wallet, entitlement and quota read APIs | CONNECTED (read-only) | NOT VERIFIED |
 | Credit ledger / usage | `token-ledger-view.tsx`, Analytics | Owner-scoped keyset ledger/usage and aggregate analytics | CONNECTED (read-only) | NOT VERIFIED |
 | Credit package / top-up / checkout | Account upgrade surface | No verified payment intent, checkout, webhook settlement or credit mutation provider contract | UNAVAILABLE / FAIL-CLOSED | NOT VERIFIED |
@@ -83,8 +87,18 @@ Scope: source-level Customer UI → FastAPI → worker/engine → Supabase integ
 This matrix records source integration status, not release acceptance. No tests, lint, typecheck, build, browser checks, API probes, worker execution, provider calls, staging or deployment were performed. The owner explicitly requested no real tests/staging; therefore every runtime acceptance cell remains NOT VERIFIED.
 
 Phase 09 source integration is substantially reconciled, but the following remain open before declaring the phase fully complete:
-1. Complete source-level review of all PRD Customer navigation actions and close remaining unavailable/gated contracts only when official backend/provider contracts exist.
-2. Review manual retry/regenerate policy and add a customer endpoint only if a safe idempotent retry-from-checkpoint contract is approved.
-3. Complete Memory privacy lifecycle and UI only after its schema, consent, retention and deletion API contract is defined.
+1. Continue the Customer API action-to-screen contract audit, including complete pagination, response/error/idempotency parity and any remaining UI actions without a real backend contract.
+2. Complete workflow/task lifecycle edge cases: durable step dependencies, artifact linkage and result projection, approval pause/resume, cancellation and safe retry semantics. Manual retry is explicitly a new run; no same-run manual checkpoint rewind is exposed.
+3. Memory privacy lifecycle is implemented at source level; runtime consent, retention purge and deletion still require later authorized verification.
 4. Complete connector OAuth lifecycle, payment/subscription settlement and partner OTP/gateway lifecycle only with real provider contracts and credentials.
 5. Runtime acceptance remains intentionally unperformed. Phase 10 End-to-End Integration Verification and Phase 11 Integration Release Gate are dependency-next and not performed.
+
+
+## 2026-11-14 dependency projection and lifecycle reconciliation
+
+- Both Customer and shared Agent Run step endpoints now expose only validated zero-based dependency indexes from private step input; prompts, step input/output/error bodies remain excluded from the response.
+- Tasks and Workflow existing detail surfaces display prerequisite step numbers without changing their visual structure.
+- PlanningAgentRuntime already persists the plan manifest and step outputs, validates dependency indexes, skips successful persisted steps on recovery, and only executes a step after its prerequisites are complete. This increment connects dependency metadata to the Customer UI rather than replacing that durable runtime.
+- Manual Customer retry is a new run for a safely replayable failed source run; automatic worker retry and approval continuation retain the same run/checkpoints. These semantics are intentionally distinguished in UI and API documentation.
+- Source commits: `5da2642f`, `474d3146`, `42850aec`, `cc15f03b`, `7360613b`, and `9ee77d08`.
+- OpenAI Image API has an available generation endpoint and GPT Image models, but no provider credentials/secret reference or media credit reservation/metering contract is configured in this repository context. OpenAI's Sora Videos API and Sora 2 models were removed on 2026-09-24, with no one-to-one replacement; a real alternative video provider must be selected and onboarded. See official OpenAI docs: [Image Generation](https://developers.openai.com/api/docs/guides/image-generation) and [API deprecations](https://developers.openai.com/api/docs/deprecations).
