@@ -88,10 +88,10 @@ begin
   insert into public.moreai_connections(user_id,provider,external_account_id,display_name,scopes,status,
     credential_ciphertext,credential_key_version,access_token_expires_at,token_updated_at,last_error_code,updated_at)
   values(p_user_id,'google',p_external_account_id,left(p_display_name,240),p_scopes,'connected',
-    p_credential_ciphertext,1,p_expires_at,now(),null,now())
+    p_credential_ciphertext,substring(split_part(p_credential_ciphertext,'.',1) from 2)::integer,p_expires_at,now(),null,now())
   on conflict(user_id,provider,external_account_id) do update set
     display_name=excluded.display_name,scopes=excluded.scopes,status='connected',
-    credential_ciphertext=excluded.credential_ciphertext,credential_key_version=1,
+    credential_ciphertext=excluded.credential_ciphertext,credential_key_version=substring(split_part(excluded.credential_ciphertext,'.',1) from 2)::integer,
     access_token_expires_at=excluded.access_token_expires_at,token_updated_at=now(),
     last_error_code=null,updated_at=now()
   returning * into v_connection;
