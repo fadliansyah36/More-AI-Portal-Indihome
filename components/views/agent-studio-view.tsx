@@ -164,7 +164,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
       description: configuration.description || runtimeAgent.description,
       configurationId: configuration.id,
       toolKeys: configuration.tool_keys,
-    });
+    }, selectedSkillIds);
   };
 
   const selectedAgent = agents.find((a) => a.id === selectedAgentId) || agents[0] || null;
