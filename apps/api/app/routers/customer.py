@@ -1126,6 +1126,8 @@ async def create_customer_memory(
     user: dict[str, Any] = Depends(customer_principal),
 ):
     principal = await require_customer_context(request, user)
+    if not body.title.strip() or not body.content.strip():
+        raise HTTPException(422, "Memory title and content cannot be blank")
     repo = repository(request)
     preferences = await repo.select("moreai_customer_memory_preferences", {
         "user_id": f"eq.{principal['id']}", "select": "enabled,consent_version", "limit": "1",
@@ -1152,14 +1154,19 @@ async def update_customer_memory(
     changes = body.model_dump(exclude_unset=True)
     if not changes:
         raise HTTPException(422, "At least one memory field must be supplied")
-    payload: dict[str, Any] = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if any(changes.get(field) is None for field in ("title", "content", "retention_days") if field in changes):
+        raise HTTPException(422, "Memory updates cannot contain null values")
+    if any(not changes[field].strip() for field in ("title", "content") if field in changes):
+        raise HTTPException(422, "Memory title and content cannot be blank")
+    now = datetime.now(timezone.utc)
+    payload: dict[str, Any] = {"updated_at": now.isoformat()}
     if "title" in changes:
         payload["title"] = changes["title"].strip()
     if "content" in changes:
         payload["content"] = changes["content"].strip()
     if "retention_days" in changes:
         payload["expires_at"] = (
-            datetime.now(timezone.utc) + timedelta(days=changes["retention_days"])
+            now + timedelta(days=changes["retention_days"])
         ).isoformat()
     rows = await repository(request).update("moreai_customer_memories", {
         "id": f"eq.{memory_id}", "user_id": f"eq.{principal['id']}",
