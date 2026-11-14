@@ -1326,7 +1326,7 @@ export const connectionsApi = {
   gmailMessages: (connectionId: string, query = 'newer_than:30d') => moreAiCustomerApi<{ items: Array<{id:string;thread_id:string;subject?:string;from?:string;date?:string;snippet?:string;unread?:boolean}>; count: number }>(
     '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/gmail/messages?q=' + encodeURIComponent(query),
   ),
-  calendarEvents: (connectionId: string, timeMin: string, timeMax: string) => moreAiCustomerApi<{ items: Array<{id:string;summary?:string;status?:string;start?:{dateTime?:string;date?:string};end?:{dateTime?:string;date?:string};html_link?:string}>; count: number }>(
+  calendarEvents: (connectionId: string, timeMin: string, timeMax: string) => moreAiCustomerApi<{ items: Array<{id:string;summary?:string;status?:string;start?:{dateTime?:string;date?:string};end?:{dateTime?:string;date?:string};html_link?:string;etag?:string}>; count: number }>(
     '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/calendar/events?time_min=' + encodeURIComponent(timeMin) + '&time_max=' + encodeURIComponent(timeMax),
   ),
   disconnect: (connectionId: string) => moreAiCustomerApi<{id:string;status:string}>(
@@ -1339,5 +1339,13 @@ export const connectionsApi = {
   createCalendarEvent: (connectionId: string, summary: string, start: string, end: string, description = '') => moreAiCustomerApi<{status:string;replayed:boolean;receipt?:Record<string,unknown>}>(
     '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/calendar/events',
     { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ summary, description, start, end, timezone: 'Asia/Jakarta', confirmed: true }) },
+  ),
+  updateCalendarEvent: (connectionId: string, eventId: string, etag: string, summary: string) => moreAiCustomerApi<{status:string;replayed:boolean;event?:{id:string;summary?:string;etag?:string}}>(
+    '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/calendar/events/' + encodeURIComponent(eventId),
+    { method: 'PATCH', headers: { 'If-Match': etag, 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ summary, confirmed: true }) },
+  ),
+  deleteCalendarEvent: (connectionId: string, eventId: string, etag: string) => moreAiCustomerApi<{status:string;replayed:boolean;event_id:string}>(
+    '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/calendar/events/' + encodeURIComponent(eventId) + '?confirmed=true',
+    { method: 'DELETE', headers: { 'If-Match': etag, 'Idempotency-Key': crypto.randomUUID() } },
   ),
 };
