@@ -765,7 +765,7 @@ export const customerApi = {
   sendMessage: (
     conversationId: string, content: string, idempotencyKey: string,
     agentKey: 'manus' | 'planning' | 'toolcall' = 'manus', attachmentIds: string[] = [],
-    agentConfigurationId?: string | null,
+    agentConfigurationId?: string | null, skillIds: string[] = [],
   ) => moreAiCustomerApi<CustomerChatEnqueueResponse>(`/api/v1/customer/conversations/${conversationId}/messages`, {
     method: 'POST',
     headers: { 'Idempotency-Key': idempotencyKey },
