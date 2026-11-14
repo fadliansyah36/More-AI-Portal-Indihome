@@ -1213,3 +1213,65 @@ Pinned OpenFuse file `apps/server/src/auth.ts` was fetched and statically review
 - No code was copied. The follow-up path guesses for separate OAuth/Google/worker files returned 404 at the pinned commit and are not counted as reviewed files; those capabilities must be located through the actual pinned tree before conclusions are drawn.
 
 **P1 remains OPEN.** Static review only; no test execution, provider calls, staging, deployment or Supabase mutation.
+
+
+---
+
+## 32. Twenty-third continuation increment — OpenFuse Google OAuth, durable worker, browser egress and credential vault
+
+The following exact files were located through the pinned recursive Git tree and fetched at OpenFuse commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Blob SHA | Static review result |
+|---|---|---|
+| `apps/server/src/google-auth.ts` | `ae56eb481b6cab1a52b3994d59090156ba97e193` | OAuth/security boundary |
+| `apps/server/src/engine/worker.ts` | `b69fe63486dbdd3f8617aed59bbd1e48b92e344a` | Durable task/lease pattern |
+| `apps/worker/src/network.ts` | `b824809a9404e752206eb15620731f1bf20c23e7` | SSRF/DNS policy |
+| `apps/worker/src/proxy.ts` | `d4297573c2a277b0f413c590dde692b404af1171` | Destination-pinned proxy |
+| `apps/worker/src/browser.ts` | `2f53e731f7c086a7799f767cdb036ece343a8235` | Browser session boundary |
+| `packages/integrations/src/google.ts` | `12a0a28f2c08f44be844e137b4aa8b9670a9ee3e` | Gmail/Calendar adapter |
+| `packages/integrations/src/vault.ts` | `d36efce472df11916f23cd325084918c38439c78` | AES-GCM secret envelope |
+| `apps/worker/README.md` | `f8bedb780b0dcd782884242e54dcea07e1e04e63` | Deployment and threat-boundary documentation |
+
+### Google OAuth
+
+- OAuth state is random, one-time consumed, short-lived (10 minutes), owner-bound and tied to a credential generation. PKCE S256 is used.
+- OAuth tokens are encrypted before persistence; generation compare-and-swap protects against stale callback/refresh races and disconnect races.
+- Access-token refresh is deduplicated per owner/connection in-process. Google token/profile calls have 15-second timeouts. Gmail profile email is schema-validated.
+- Requested scopes start with Gmail read and Calendar event/calendar-list read. Write scopes are added only for explicit write-connect flow.
+- **MoreAI adaptation:** route all OAuth lifecycle through FastAPI Connections Center; bind state to authenticated Supabase subject + tenant + connection intent; keep secrets server-side; persist encrypted credentials in the existing Supabase-backed connection model; use least-privilege scopes and explicit re-consent for write scopes. In-process refresh deduplication is an optimization, not a distributed lock.
+- **Do not import:** OpenFuse owner-keyed Store or its fixed application assumptions. Existing MoreAI connection and credential contracts remain authoritative.
+
+### Durable task worker
+
+- Worker polls queued/scheduled/expired-lease tasks, limits local concurrency to three, claims work with compare-and-swap lease IDs, renews leases by heartbeat, exposes abort/guard/checkpoint/event primitives and records run outcomes.
+- It treats lost lease/cancellation differently from execution failure and attempts to settle task/run state accordingly.
+- **MoreAI adaptation:** use existing durable Agent Run/Worker lifecycle and database atomic claims. OpenFuse's task domain is not a second workflow engine. Scheduling and workflow must resolve to the existing Agent Run authority; tenant ID, run ID, idempotency key, lease fencing, retries and approval state must be explicit.
+- **Risk:** the worker's in-memory `inFlight`, timer, and active-controller maps are process-local. They do not replace durable distributed concurrency/leases or recovery.
+
+### Browser worker, network and proxy
+
+- The worker README documents a separate authenticated Playwright service, loopback-only host binding, worker-token server-to-server authentication, bounded sessions/profiles/downloads, read-only root filesystem, non-root container, no Docker socket, resource limits, and a separate persistent browser-profile volume.
+- Network policy allows only public HTTP(S) ports 80/443, validates DNS answers and subrequests, rejects private/reserved destinations, and pins proxy sockets to the validated IP to reduce DNS rebinding. QUIC and non-proxied WebRTC UDP are disabled.
+- Browser session endpoints do not accept arbitrary script/evaluation input; reads are visible-page text only. Downloads are bounded and PDF signature checked.
+- README explicitly states that application egress controls are not kernel firewall guarantees, Chromium's internal sandbox is disabled by default in Playwright launch, and browser profile storage contains sensitive login state.
+- **MoreAI adaptation:** implement browser/computer use only as an isolated, separately credentialed sandbox capability behind FastAPI and OpenManus tool invocation. Require tenant-scoped session ownership, user-visible approval for consequential actions, URL allow/deny policy, DNS/IP pinning, strict egress firewall at infrastructure layer, download scanning and lifecycle cleanup. No browser worker token, cookies, profile files or provider credentials reach the customer browser.
+- **Do not import:** standalone OpenFuse worker deployment as another product backend or a second Agent Runtime. The existing MoreAI execution boundary must own the capability.
+
+### Google API integration
+
+The pinned Google adapter is a substantial Gmail/Calendar client, including strict response schemas, bounded JSON reads, MIME parsing depth and message-body limits, attachment count/size limits, date/time normalization, and write helpers. The complete file is large; this review confirms its adapter surface and safety mechanisms, not full method-by-method parity for every Google endpoint.
+
+**MoreAI adaptation:** implement Gmail/Calendar first through the existing Connections Center/provider adapter contracts; Drive/Docs follow only after scopes, ownership, API surface and audit semantics are reconciled. Connector actions must be invoked by OpenManus through FastAPI, with approval/idempotency for sends and event mutations.
+
+### Credential vault
+
+- The vault validates a canonical 32-byte base64 key and encrypts with AES-256-GCM, random 12-byte nonce, 16-byte tag, versioned envelope, and authenticated associated data.
+- Decryption accepts a legacy AAD identifier for backward compatibility.
+- **MoreAI adaptation:** use envelope/versioned encryption and AAD binding to tenant, subject, provider, connection ID and schema version; support key rotation and explicit legacy migration. Store encryption keys in the deployment secret manager, never in browser code or database plaintext.
+- Do not reuse OpenFuse's AAD identifiers or credential persistence model.
+
+### Scope and evidence
+
+The README was reviewed as architecture documentation; no Docker image, browser, tests, provider API or external OAuth flow was run. The Google client was reviewed for adapter structure and safety patterns; a full exhaustive review of its 32 KB implementation remains outstanding. These eight records are audit-report evidence only; the machine-readable inventory remains unmodified in this increment because the connector did not return a reliable complete manifest payload.
+
+**P1 remains OPEN.** No tests/scripts/builds/install, provider calls, staging, deployment or Supabase mutation occurred.
