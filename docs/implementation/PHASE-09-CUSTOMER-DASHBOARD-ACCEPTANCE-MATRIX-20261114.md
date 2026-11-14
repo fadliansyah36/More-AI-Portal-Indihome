@@ -136,3 +136,11 @@ Phase 09 source integration is substantially reconciled, but the following remai
 - Chat model-routing visibility: the Customer composer now reads `/api/v1/models/capabilities` through the typed catalog client and displays enabled provider/model capability metadata. The UI correctly describes routing as automatic and backend-controlled; no customer-side provider override was added. Commit `33ea20b19a7bbe4d064ace8da8f9c83c336c9b09`. Source-only; not browser-verified.
 
 - Chat model registry wording was tightened after source reconciliation: enabled registry entries are not equivalent to customer entitlement. UI now explicitly states that execution eligibility remains subject to entitlement, quota, routing and worker policy. Commit `83b694b410606d4e9c86d87654c430a87ea8cfc0`.
+
+
+## 2026-11-14 Manual retry contract parity
+
+- FastAPI `POST /api/v1/customer/agent-runs/{run_id}/retry` permits manual retry only for `failed`, `timed_out`, and `expired` runs; it rejects `cancelled` and other statuses with HTTP 409. It also checks execution enablement, idempotency key, supported runtime, conversation ownership, and safe replay (no side-effecting tool already reached).
+- The Tasks detail button already displayed only for the three backend-eligible statuses, but its handler guard accepted every terminal status. Tightened the handler guard to exactly the FastAPI allowlist so the UI action and API policy remain aligned even if invoked outside the current button path.
+- Source commit: `79378c9aa6c12f52ce81268335552efbaea39527`.
+- Source-only reconciliation. No tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment were performed.
