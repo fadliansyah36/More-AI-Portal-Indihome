@@ -186,6 +186,7 @@ async def request_skill_permissions(skill_id: UUID, body: SkillPermissionRequest
 
 import base64
 import hashlib
+import mimetypes
 from urllib.parse import quote, unquote
 from pathlib import PurePosixPath
 
@@ -219,7 +220,8 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
     if len(parts) != 2 or skill["source_commit"] not in PINNED_SKILL_SOURCES.get((parts[0], parts[1]), set()):
         raise HTTPException(403, "skill_source_repository_or_commit_not_pinned")
     root_path = _safe_skill_path(str(skill["source_path"]))
-    queue = [root_path]
+    source_root = str(PurePosixPath(root_path).parent)
+    queue = [root_path] + ([source_root] if source_root != "." else [])
     seen: set[str] = set()
     records: list[dict[str, Any]] = []
     total_bytes = 0
@@ -236,6 +238,16 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
         if response.status_code != 200:
             raise HTTPException(502, "skill_source_fetch_failed")
         item = response.json()
+        if isinstance(item, list):
+            # Directory traversal captures nested scripts, manifests, licenses,
+            # NOTICE files and referenced assets at the same immutable commit.
+            for child in item:
+                if not isinstance(child, dict) or child.get("type") not in {"file", "dir"}:
+                    raise HTTPException(422, "skill_source_symlink_or_special_file_rejected")
+                child_path = _safe_skill_path(str(child.get("path") or ""))
+                if child_path not in seen and child_path not in queue:
+                    queue.append(child_path)
+            continue
         if not isinstance(item, dict) or item.get("type") != "file" or item.get("encoding") != "base64":
             raise HTTPException(422, "skill_source_file_type_unsupported")
         encoded = item.get("content")
@@ -257,7 +269,7 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
         digest = hashlib.sha256(content).hexdigest()
         if relative == root_path and (git_sha != skill["source_blob_sha"] or digest != skill["content_sha256"]):
             raise HTTPException(409, "skill_root_provenance_hash_mismatch")
-        media_type = str(item.get("content_type") or "application/octet-stream")[:120]
+        media_type = str(item.get("content_type") or mimetypes.guess_type(relative)[0] or "application/octet-stream")[:120]
         is_text = media_type.startswith("text/") or relative.lower().endswith((".md", ".txt", ".json", ".yaml", ".yml", ".toml", ".py", ".js", ".ts", ".svg"))
         text_content = content.decode("utf-8", errors="strict") if is_text else None
         records.append({
@@ -298,7 +310,7 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
             "scope": "pinned_github_content_integrity",
             "file_count": len(records), "total_bytes": total_bytes,
             "files": [{"path": x["relative_path"], "git_blob_sha": x["git_blob_sha"], "sha256": x["content_sha256"], "bytes": x["byte_size"]} for x in records],
-            "findings": ["File contents and local Markdown references were fetched at the pinned commit and Git blob SHA verified.", "License, nested dependency, script safety and asset rights still require separate review."],
+            "findings": ["Files, nested directories, local references, manifests, scripts, licenses, NOTICE files and assets under the skill source directory were fetched at the pinned commit and Git blob SHA verified.", "Dependency resolution, script safety and asset rights still require separate review."],
         },
         "updated_at": datetime.now(timezone.utc).isoformat(),
     })
