@@ -235,6 +235,8 @@ async def google_oauth_callback(request: Request, code: str | None = None, state
             "access_token": access_token, "refresh_token": token_data.get("refresh_token") or previous_refresh,
             "token_type": token_data.get("token_type", "Bearer"), "scope": granted_scopes,
         }
+        if not isinstance(credential.get("refresh_token"), str) or not credential["refresh_token"]:
+            raise HTTPException(502, "google_refresh_token_missing_reauthorize_with_offline_access")
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=max(60, int(token_data.get("expires_in") or 3600)))
         stored = await repo.rpc("moreai_store_google_connection", {
             "p_user_id": user_id, "p_external_account_id": profile["id"],
