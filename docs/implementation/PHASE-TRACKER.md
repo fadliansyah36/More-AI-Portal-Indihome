@@ -1365,3 +1365,11 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Dashboard callback wiring is additive; no visual redesign, browser-side business database access, new assessment engine, or new table.
 - Report: `PHASE-09-EDUTECH-QUIZ-AGENT-RUNTIME-INTEGRATION-20261114.md`. Source commits `9788e270` and `1b36c2d4`; report commit `fcf3cb7b`.
 - No tests, lint, typecheck, build, browser/API/worker/provider calls, staging, deployment, or live Supabase mutation were performed. Phase 09 remains IN PROGRESS.
+
+
+## 2026-11-14 — Customer Workflow lifecycle projection
+
+- Customer Workflow step detail now maps known OpenManus planning statuses into clear Indonesian lifecycle labels and concise explanations for queued, dependency-blocked, running, succeeded, failed, skipped, cancelled, timed-out, approval-waiting and paused states. Unknown statuses remain visible as normalized raw backend values rather than being treated as success.
+- Workflow detail now explicitly distinguishes automatic worker checkpoint recovery (same durable Agent Run) from manual safe retry (new Agent Run, subject to backend replay safety); no manual checkpoint rewind is implied.
+- Source commit: `f7920c16af02968f1faaaadc9e6f69162a2f695d`. Report: `PHASE-09-CUSTOMER-WORKFLOW-LIFECYCLE-RECOVERY-PROJECTION-20261114.md`.
+- No tests, lint, typecheck, build, browser/API/worker/provider operations, staging, deployment or live Supabase mutation. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
