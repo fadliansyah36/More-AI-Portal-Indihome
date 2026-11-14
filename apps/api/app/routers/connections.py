@@ -362,7 +362,8 @@ async def list_calendar_events(
     items = []
     for event in response.json().get("items", [])[:limit]:
         items.append({"id": event.get("id"), "summary": event.get("summary"), "status": event.get("status"),
-            "start": event.get("start"), "end": event.get("end"), "html_link": event.get("htmlLink")})
+            "start": event.get("start"), "end": event.get("end"), "html_link": event.get("htmlLink"),
+            "etag": event.get("etag")})
     return {"items": items, "count": len(items)}
 
 
@@ -506,6 +507,180 @@ async def create_calendar_event(
             "p_result_metadata": {"outcome":"provider_response_unavailable"},
         })
         raise HTTPException(502, "calendar_event_outcome_unknown_do_not_retry") from exc
+
+
+class CalendarUpdateRequest(BaseModel):
+    summary: str | None = Field(default=None, min_length=1, max_length=240)
+    description: str | None = Field(default=None, max_length=4000)
+    start: datetime | None = None
+    end: datetime | None = None
+    timezone: str = Field(default="Asia/Jakarta", max_length=64)
+    confirmed: bool = False
+
+
+async def _calendar_mutation_claim(request: Request, *, user_id: str, connection_id: UUID,
+                                  action: str, idempotency_key: str, payload: dict[str, Any]) -> dict[str, Any]:
+    payload_hash = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    claim = await repository(request).rpc("moreai_begin_connection_action", {
+        "p_user_id": user_id, "p_connection_id": str(connection_id), "p_action_type": action,
+        "p_idempotency_key": idempotency_key, "p_payload_sha256": payload_hash,
+    })
+    if not isinstance(claim, dict):
+        raise HTTPException(409, "calendar_action_claim_failed")
+    if claim.get("replay"):
+        if claim.get("status") == "completed":
+            return {"replayed": True, "event_id": claim.get("provider_resource_id")}
+        raise HTTPException(409, "calendar_action_already_started_or_outcome_unknown")
+    return {"replayed": False, "claim": claim}
+
+
+@router.patch("/{connection_id}/calendar/events/{event_id}")
+async def update_calendar_event(
+    connection_id: UUID, event_id: str, body: CalendarUpdateRequest, request: Request,
+    if_match: str | None = Header(default=None, alias="If-Match"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    if body.confirmed is not True:
+        raise HTTPException(409, "explicit_confirmation_required")
+    if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
+        raise HTTPException(400, "idempotency_key_required")
+    if not if_match or len(if_match) > 256:
+        raise HTTPException(428, "calendar_event_etag_required")
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,256}", event_id):
+        raise HTTPException(422, "calendar_event_id_invalid")
+    if (body.start is None) != (body.end is None):
+        raise HTTPException(422, "calendar_event_time_pair_required")
+    if body.start is not None and (
+        body.start.tzinfo is None or body.end is None or body.end.tzinfo is None
+        or body.end <= body.start or body.end - body.start > timedelta(days=7)
+    ):
+        raise HTTPException(422, "calendar_event_time_invalid")
+    if body.summary is None and body.description is None and body.start is None:
+        raise HTTPException(422, "calendar_event_update_empty")
+    connection = await _owned_google_connection(request, user["id"], connection_id)
+    if GOOGLE_SCOPE_MAP["calendar.write"] not in (connection.get("scopes") or []):
+        raise HTTPException(403, "calendar_write_permission_not_granted")
+    token = await _google_access_token(request, connection)
+    headers = {"Authorization": "Bearer " + token}
+    url = "https://www.googleapis.com/calendar/v3/calendars/primary/events/" + event_id
+    current = await request.app.state.http.get(url, headers=headers, timeout=20.0, follow_redirects=False)
+    if current.status_code == 404:
+        raise HTTPException(404, "calendar_event_not_found")
+    if current.status_code != 200:
+        raise HTTPException(502, "calendar_event_version_fetch_failed")
+    current_etag = current.json().get("etag")
+    if not isinstance(current_etag, str) or not hmac.compare_digest(current_etag, if_match):
+        raise HTTPException(412, "calendar_event_changed_refresh_before_update")
+    patch: dict[str, Any] = {}
+    if body.summary is not None:
+        patch["summary"] = body.summary
+    if body.description is not None:
+        patch["description"] = body.description
+    if body.start is not None and body.end is not None:
+        patch["start"] = {"dateTime": body.start.isoformat(), "timeZone": body.timezone}
+        patch["end"] = {"dateTime": body.end.isoformat(), "timeZone": body.timezone}
+    mutation = await _calendar_mutation_claim(
+        request, user_id=str(user["id"]), connection_id=connection_id, action="calendar.update",
+        idempotency_key=idempotency_key, payload={"event_id": event_id, "etag": current_etag, "patch": patch},
+    )
+    if mutation["replayed"]:
+        return {"status": "completed", "replayed": True, "event_id": mutation["event_id"]}
+    claim = mutation["claim"]
+    try:
+        response = await request.app.state.http.patch(
+            url, headers={**headers, "If-Match": current_etag}, json=patch,
+            timeout=30.0, follow_redirects=False,
+        )
+        if response.status_code != 200:
+            await repository(request).rpc("moreai_finish_connection_action", {
+                "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+                "p_status": "unknown" if response.status_code >= 500 else "failed",
+                "p_provider_resource_id": event_id, "p_result_metadata": {"http_status": response.status_code},
+            })
+            raise HTTPException(502, "calendar_event_update_provider_rejected")
+        result = response.json()
+        receipt = await repository(request).rpc("moreai_finish_connection_action", {
+            "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+            "p_status": "completed", "p_provider_resource_id": event_id,
+            "p_result_metadata": {"etag": result.get("etag"), "html_link": result.get("htmlLink")},
+        })
+        return {"status": "completed", "replayed": False, "receipt": receipt,
+                "event": {"id": event_id, "summary": result.get("summary"), "etag": result.get("etag")}}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        await repository(request).rpc("moreai_finish_connection_action", {
+            "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+            "p_status": "unknown", "p_provider_resource_id": event_id,
+            "p_result_metadata": {"outcome": "provider_response_unavailable"},
+        })
+        raise HTTPException(502, "calendar_event_update_outcome_unknown_do_not_retry") from exc
+
+
+@router.delete("/{connection_id}/calendar/events/{event_id}")
+async def delete_calendar_event(
+    connection_id: UUID, event_id: str, request: Request,
+    if_match: str | None = Header(default=None, alias="If-Match"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    confirmed: bool = Query(default=False),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    if confirmed is not True:
+        raise HTTPException(409, "explicit_confirmation_required")
+    if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
+        raise HTTPException(400, "idempotency_key_required")
+    if not if_match or len(if_match) > 256:
+        raise HTTPException(428, "calendar_event_etag_required")
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,256}", event_id):
+        raise HTTPException(422, "calendar_event_id_invalid")
+    connection = await _owned_google_connection(request, user["id"], connection_id)
+    if GOOGLE_SCOPE_MAP["calendar.write"] not in (connection.get("scopes") or []):
+        raise HTTPException(403, "calendar_write_permission_not_granted")
+    token = await _google_access_token(request, connection)
+    headers = {"Authorization": "Bearer " + token}
+    url = "https://www.googleapis.com/calendar/v3/calendars/primary/events/" + event_id
+    current = await request.app.state.http.get(url, headers=headers, timeout=20.0, follow_redirects=False)
+    if current.status_code == 404:
+        raise HTTPException(404, "calendar_event_not_found")
+    if current.status_code != 200:
+        raise HTTPException(502, "calendar_event_version_fetch_failed")
+    current_etag = current.json().get("etag")
+    if not isinstance(current_etag, str) or not hmac.compare_digest(current_etag, if_match):
+        raise HTTPException(412, "calendar_event_changed_refresh_before_delete")
+    mutation = await _calendar_mutation_claim(
+        request, user_id=str(user["id"]), connection_id=connection_id, action="calendar.delete",
+        idempotency_key=idempotency_key, payload={"event_id": event_id, "etag": current_etag},
+    )
+    if mutation["replayed"]:
+        return {"status": "completed", "replayed": True, "event_id": mutation["event_id"]}
+    claim = mutation["claim"]
+    try:
+        response = await request.app.state.http.delete(
+            url, headers={**headers, "If-Match": current_etag}, timeout=30.0, follow_redirects=False,
+        )
+        if response.status_code not in {200, 204}:
+            await repository(request).rpc("moreai_finish_connection_action", {
+                "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+                "p_status": "unknown" if response.status_code >= 500 else "failed",
+                "p_provider_resource_id": event_id, "p_result_metadata": {"http_status": response.status_code},
+            })
+            raise HTTPException(502, "calendar_event_delete_provider_rejected")
+        receipt = await repository(request).rpc("moreai_finish_connection_action", {
+            "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+            "p_status": "completed", "p_provider_resource_id": event_id,
+            "p_result_metadata": {"deleted": True},
+        })
+        return {"status": "completed", "replayed": False, "receipt": receipt, "event_id": event_id}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        await repository(request).rpc("moreai_finish_connection_action", {
+            "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+            "p_status": "unknown", "p_provider_resource_id": event_id,
+            "p_result_metadata": {"outcome": "provider_response_unavailable"},
+        })
+        raise HTTPException(502, "calendar_event_delete_outcome_unknown_do_not_retry") from exc
 
 
 class InternalGoogleReadRequest(BaseModel):
