@@ -417,7 +417,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                               <li key={step.id} className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2 last:border-0 last:pb-0">
                                 <div className="min-w-0">
                                   <p className="text-[11px] font-semibold text-slate-800">{step.sequence}. {step.step_key}</p>
-                                  <p className="mt-0.5 text-[10px] text-slate-400">{step.started_at ? new Date(step.started_at).toLocaleString('id-ID') : 'Belum dimulai'}{step.finished_at ? ' · selesai ' + new Date(step.finished_at).toLocaleString('id-ID') : ''}</p>
+                                  <p className="mt-0.5 text-[10px] text-slate-400">{step.started_at ? new Date(step.started_at).toLocaleString('id-ID') : 'Belum dimulai'}{step.finished_at ? ' · selesai ' + new Date(step.finished_at).toLocaleString('id-ID') : ''}</p><p className="mt-0.5 text-[10px] text-slate-400">{step.dependencies.length ? 'Bergantung pada langkah ' + step.dependencies.map((dependency) => dependency + 1).join(', ') : 'Tanpa dependensi'}</p>
                                 </div>
                                 <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{step.status}</span>
                               </li>
