@@ -6,7 +6,9 @@ Branch: `main`
 Baseline HEAD: `f5306792c41c2e12e89c0a300ec5244b280c5fd8`  
 Scope: implement the first canonical MoreAI EduTech data domain and expose its lifecycle to the existing Customer dashboard and OpenManus Agent Runtime. This is a source implementation report, not runtime acceptance.
 
-## Product and architecture decision\n\nImplementation follows Master PRD v1.2 (11 November 2026), particularly the Phase 09 existing-frontend integration gate and Design System section 16: existing screens are the visual source of truth; white/light surfaces, MoreAI red, deep navy, cool-gray borders and subtle elevation remain authoritative. The UI changes below are additive and limited to missing persisted-data visibility; no global token or component-library migration was introduced.
+## Product and architecture decision
+
+Implementation follows Master PRD v1.2 (11 November 2026), particularly the Phase 09 existing-frontend integration gate and Design System section 16: existing screens are the visual source of truth; white/light surfaces, MoreAI red, deep navy, cool-gray borders and subtle elevation remain authoritative. The UI changes below are additive and limited to missing persisted-data visibility; no global token or component-library migration was introduced.
 
 EduTech is a first-party MoreAI capability for students and university students. It does not depend on an external EduTech catalogue provider. Existing Next.js Customer screens remain the product UI. The browser uses the existing typed FastAPI client; FastAPI and the worker access Supabase through the existing server-only repository/RPC boundaries.
 
@@ -58,9 +60,20 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 - `e9f7bacc4f0753b378356b9a5281ec5fb325c10f` — add owner-scoped FastAPI learning reads and Agent Run artifact lookup.
 - `eac7d3a73e786066e3ee73a9e8ed80d7ee7064e1` — add typed Customer API contracts.
 - `4cdad90e947c11a18d183984da597c177de8d3a4` — surface saved curricula and resumable lessons.
-- `d387581b664e7e634b6f746b84adf30847d09e13` — route EduTech prompts through persisted learning tools.\n- `2e5bc04bfd26d3a4d5623190aae83e03ac470afd` — render saved curricula and lesson continuation in EduTech.\n- `95b344000d770e6a677004e13da9685921044e78` — count canonical lesson progress.\n- `4b8a89cdcccbd0e3ab348bd0c815a28c954672d2` / `2eff65742c5f998e8f22c8e12cc83a82b2a194c6` — display learning artifacts in Task detail and refresh them from Agent Run events.\n- `b3300d82b8e16674022b17b7dc5adce6f147a5ad` — prevent learner curriculum reads from exposing quiz answer keys.
+- `d387581b664e7e634b6f746b84adf30847d09e13` — route EduTech prompts through persisted learning tools.
+- `2e5bc04bfd26d3a4d5623190aae83e03ac470afd` — render saved curricula and lesson continuation in EduTech.
+- `95b344000d770e6a677004e13da9685921044e78` — count canonical lesson progress.
+- `4b8a89cdcccbd0e3ab348bd0c815a28c954672d2` / `2eff65742c5f998e8f22c8e12cc83a82b2a194c6` — display learning artifacts in Task detail and refresh them from Agent Run events.
+- `b3300d82b8e16674022b17b7dc5adce6f147a5ad` — prevent learner curriculum reads from exposing quiz answer keys.
 
-## UI change gate and visual preservation\n\n- Protected baseline routes touched: Customer Dashboard → AI Content & EduTech; Customer Dashboard → Tasks & Workflow → Agent Run detail.\n- Exact missing behaviors: the EduTech screen could start a learning session but could not display canonical saved learning paths/modules/lessons or resume a lesson; Task detail could display generic artifacts but not the learning artifacts created by its own Agent Run.\n- Minimal changes: additive saved-curriculum and lesson-list section in the existing EduTech screen; additive learning-artifact section in the existing Task detail; no navigation shell, global CSS, Tailwind token, typography or component-library redesign. Existing MoreAI red/light-surface component styling was retained.\n- Before/after browser screenshots and visual regression comparison were not captured because the owner explicitly prohibited real testing/browser checks. Therefore visual regression evidence is NOT VERIFIED.\n\n## Security and integrity boundaries
+## UI change gate and visual preservation
+
+- Protected baseline routes touched: Customer Dashboard → AI Content & EduTech; Customer Dashboard → Tasks & Workflow → Agent Run detail.
+- Exact missing behaviors: the EduTech screen could start a learning session but could not display canonical saved learning paths/modules/lessons or resume a lesson; Task detail could display generic artifacts but not the learning artifacts created by its own Agent Run.
+- Minimal changes: additive saved-curriculum and lesson-list section in the existing EduTech screen; additive learning-artifact section in the existing Task detail; no navigation shell, global CSS, Tailwind token, typography or component-library redesign. Existing MoreAI red/light-surface component styling was retained.
+- Before/after browser screenshots and visual regression comparison were not captured because the owner explicitly prohibited real testing/browser checks. Therefore visual regression evidence is NOT VERIFIED.
+
+## Security and integrity boundaries
 
 - Customer-facing data reads filter by authenticated `user_id` / `owner_user_id`; path detail also scopes nested modules, lessons, quizzes and progress.
 - Worker RPCs validate run ownership and learning-resource ownership before mutation.
