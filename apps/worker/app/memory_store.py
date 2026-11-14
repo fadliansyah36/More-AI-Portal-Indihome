@@ -144,8 +144,17 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
 
         metadata: dict[str, Any] = {"message_key": message_key}
         if isinstance(message.metadata, dict):
-            # Persist bounded provenance alongside the existing message record.
-            supplied = message.metadata
+            # Episodic recall/write is opt-in; citations remain attached to the chat
+            # message even when the owner has not enabled long-term memory.
+            supplied = dict(message.metadata)
+            if supplied.get("memory_type") == "episodic":
+                preferences = await self.client.select("moreai_customer_memory_preferences", {
+                    "user_id": f"eq.{user_id}", "enabled": "eq.true",
+                    "select": "user_id", "limit": "1",
+                })
+                if not preferences:
+                    for key in ("memory_type", "memory_scope", "workspace_id", "episode"):
+                        supplied.pop(key, None)
             if len(json.dumps(supplied, ensure_ascii=False, default=str)) > 12000:
                 raise ValueError("conversation_message_metadata_exceeds_limit")
             metadata.update(supplied)
