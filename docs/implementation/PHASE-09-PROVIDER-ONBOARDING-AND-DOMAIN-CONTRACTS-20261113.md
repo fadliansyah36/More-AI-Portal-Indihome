@@ -91,3 +91,25 @@ The repository and production database do not identify a configured live gateway
 - No real tests, staging, runtime API/provider calls, worker execution, browser checks, lint, typecheck, build or E2E were run.
 - No production migration or provider activation was performed in this increment.
 - No production deployment was performed; prior deployment quota limitation remains as previously reported.
+
+
+## Reconciliation update — 2026-11-14
+
+- Re-read the controlling `AGENTS.md`, current Customer Dashboard Acceptance Matrix, Customer API inventory, current provider onboarding report, FastAPI Customer router and typed frontend API client on `main`.
+- Confirmed the current Customer UI actions with real source contracts remain the supported integration surface: Chat/message enqueue and durable session events, Agent Runs/steps/activity/cancel, tool/model capability catalog, workspace files/version history, artifacts, knowledge/RAG citations, wallet/ledger/usage reads, learning progress, notifications, profile and network-session history/access-code redemption.
+- Confirmed the Customer browser boundary remains Supabase Auth only; business actions continue through typed FastAPI API client. No direct browser PostgREST, Storage, RPC or Realtime data path was added.
+- Provider/domain inventory remains unchanged: production schema has no identified payment checkout/settlement or subscription contract, no authoritative EduTech catalog/enrollment/video delivery provider, no support ticket lifecycle, no provisioned gateway/OTP adapter or signed provider callback contract, and no complete customer Memory privacy lifecycle. Existing wallet/ledger and learning-progress tables do not establish those missing provider services.
+- These are external contract prerequisites, not missing UI widgets that can safely be completed with invented APIs. The existing dashboard must remain fail-closed for these actions until the provider identity, official API/webhook specs, secret references, lifecycle policy and tenant ownership are available.
+- No provider credentials were supplied in this increment; no vendor account was provisioned, no payment/OTP/gateway/support/learning provider was selected, and no production schema was altered.
+- No tests, lint, typecheck, build, browser/API/worker runtime checks, provider calls, staging, deployment or E2E verification were run. Phase 10 and Phase 11 therefore cannot be marked accepted under the explicit `AGENTS.md` gates.
+
+### Phase status
+Phase 09 remains **IN PROGRESS**. Source integration for available Customer contracts is present; remaining PRD gaps are provider/domain gated and cannot be represented as complete. Phase 10 remains NOT STARTED/BLOCKED; Phase 11 remains BLOCKED.
+
+### Required provider inputs to close the gates
+1. Captive gateway/ISP/RADIUS: vendor/product, exact API/protocol version, signed callback contract, partner/network mapping and secret-vault reference.
+2. OTP: selected SMS/WhatsApp/email provider, merchant account, delivery/verification APIs, sender/template approval and rate-limit/expiry policy.
+3. Payment/subscription: Indonesian payment provider and merchant account, checkout/webhook signatures, settlement/refund/chargeback/subscription contracts and SKU/credit mapping.
+4. EduTech: content owner/provider, course/enrollment API, protected media/CDN token contract, license and progress callbacks.
+5. Support: official ticketing/CRM backend and create/list/detail/reply/status/SLA/attachment contracts.
+6. Memory privacy: approved consent/retention/deletion policy and a server-side customer API backed by canonical persistence.
