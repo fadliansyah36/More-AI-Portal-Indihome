@@ -188,6 +188,29 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 
+SPDX_COMMON_IDS = {
+    "MIT","Apache-2.0","BSD-2-Clause","BSD-3-Clause","ISC","MPL-2.0",
+    "LGPL-2.1-only","LGPL-3.0-only","GPL-2.0-only","GPL-3.0-only",
+    "AGPL-3.0-only","CC-BY-4.0","CC0-1.0","Unlicense","Zlib","0BSD",
+    "Artistic-2.0","BSL-1.0","EPL-2.0","OFL-1.1","PostgreSQL",
+}
+
+
+def _spdx_expression(value: Any) -> str:
+    if not isinstance(value, str):
+        return "NOASSERTION"
+    raw = value.strip()
+    if raw in SPDX_COMMON_IDS:
+        return raw
+    parts = re.split(r"\\s+(AND|OR)\\s+", raw)
+    if len(parts) >= 3 and len(parts) % 2 == 1:
+        ids = parts[::2]
+        operators = parts[1::2]
+        if all(item in SPDX_COMMON_IDS for item in ids) and all(op in {"AND","OR"} for op in operators):
+            return raw
+    return "NOASSERTION"
+
+
 async def _resolve_exact_dependency_licenses(http: Any, dependencies: list[dict[str, Any]]) -> dict[str, Any]:
     semaphore = asyncio.Semaphore(8)
     async def resolve(item: dict[str, Any]) -> dict[str, Any]:
@@ -226,7 +249,8 @@ async def _resolve_exact_dependency_licenses(http: Any, dependencies: list[dict[
                     license_value = version_data.get("license")
                 return {
                     **item, "registry_metadata_status": "resolved",
-                    "license_declared": str(license_value)[:240] if license_value else "NOASSERTION",
+                    "license_declared": _spdx_expression(license_value),
+                    "license_declared_raw": str(license_value)[:240] if license_value else None,
                     "registry_metadata_url": url,
                 }
             except Exception:
