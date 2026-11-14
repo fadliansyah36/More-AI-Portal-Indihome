@@ -57,3 +57,12 @@ Per product-owner instruction, no tests, lint, typecheck, build, browser screens
 ## Phase status and dependency
 
 Phase 09 remains **IN PROGRESS**. The Customer Dashboard integration must not be marked complete while source-level action/contract gaps and provider-dependent gates remain unresolved. Phase 10 E2E verification and Phase 11 release gate remain dependency-next and are intentionally not executed under the current instruction.
+
+## Tasks lifecycle UI correction — 2026-11-14
+
+- Fixed the Tasks view's projection of terminal Agent Run states. Only `succeeded` is presented as successful completion; failed, cancelled, timed-out and expired runs remain terminal but are not shown with success styling.
+- The Active filter now excludes all terminal states; the Selesai filter shows terminal outcomes while preserving their actual status labels.
+- Removed nested button markup in the task card so the card itself remains the single interactive detail target.
+- Added optional canonical `status` to the TaskItem presentation type.
+- Commits: `41d394731bbcc512ca35ebb2cd2c63f64f9740f8`, `e2cff38d614f87dcda1013f777849af8a358717b`.
+- Not browser-verified; all runtime acceptance remains NOT VERIFIED.
