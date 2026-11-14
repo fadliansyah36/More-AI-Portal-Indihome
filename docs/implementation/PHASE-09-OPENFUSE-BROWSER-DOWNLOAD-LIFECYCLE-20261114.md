@@ -29,3 +29,12 @@ No migration was required: the existing artifact schema and private bucket alrea
 
 ## Verification
 Source-only implementation. No tests, lint, typecheck, build, browser/API/scanner probes, Supabase mutations, staging or deployment were run, per instruction. Runtime behavior and scanner availability are NOT VERIFIED. Phase 09 remains IN PROGRESS.
+
+
+## Main-branch source review follow-up
+
+- Download interception and FastAPI persistence were committed in `c91080104662ba27a23788dc4d43662f583d25b5`.
+- Binary-signature escape correction was committed in `678ba70b6aba2cdadb85f1474b06e34154655875`.
+- Browser context restore was explicitly wired to the persisted encrypted storage state in `1541dc1de186cc875b60f54b433a16fc386a7ec1`.
+- Current source includes browser session restore and state save, ClamAV INSTREAM, internal worker-authenticated artifact persistence, and the existing customer artifact list/signed URL projection.
+- This remains source review only. No test, build, lint, API call, scanner probe or deployment has been performed.
