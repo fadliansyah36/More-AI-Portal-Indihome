@@ -327,6 +327,9 @@ export type CustomerToolCatalogItem = {
   timeout_seconds: number;
   enabled_by_default: boolean;
   available_by_default: string[];
+  registered: boolean;
+  active_workers: number;
+  availability_reason: string | null;
 };
 
 export type CustomerModelCapability = {
