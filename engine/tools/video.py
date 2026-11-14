@@ -189,12 +189,29 @@ class RunwayVideoGenerationAdapter:
 
         request_rows = await self.client.select("llm_request_records", {
             "id": f"eq.{request_id}",
-            "select": "id,status,reservation_id,quota_reservation",
+            "select": "id,status,reservation_id,quota_reservation,actual_cost",
             "limit": "1",
         })
         if not request_rows:
             raise RuntimeError("runway_video_usage_request_missing")
         request_row = request_rows[0]
+        if claim.get("status") == "provider_succeeded":
+            stored_cost = request_row.get("actual_cost")
+            try:
+                stored_cost = float(stored_cost)
+            except (TypeError, ValueError):
+                stored_cost = 0.0
+            if not math.isfinite(stored_cost) or stored_cost <= 0:
+                raise RuntimeError("runway_video_provider_result_cost_missing")
+            stored_credits = stored_cost * float(os.environ["MOREAI_CREDITS_PER_USD"])
+            await self.accounting.finalize(
+                request_id=request_id, actual_credits=stored_credits,
+                request_key=f"{request_key}:settle",
+                provider_response_id=state.get("task_id") if isinstance(state.get("task_id"), str) else None,
+            )
+            if isinstance(claim.get("response_text"), str):
+                return claim["response_text"]
+            raise RuntimeError("runway_video_provider_result_text_missing")
         reservation_id = request_row.get("reservation_id")
         if not reservation_id:
             quota_reservation = request_row.get("quota_reservation")
