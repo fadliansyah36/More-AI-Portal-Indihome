@@ -591,12 +591,6 @@ export const FilesView: React.FC = () => {
               {historyLoading ? <div className="flex items-center gap-2 rounded-2xl bg-slate-50 p-5 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Memuat riwayat versi…</div> : historyError ? <div role="alert" className="rounded-2xl border border-red-100 bg-red-50 p-4 text-xs text-red-600">{historyError}</div> : fileVersions.length === 0 ? <div className="rounded-2xl bg-slate-50 p-5 text-xs text-slate-500">Belum ada riwayat versi tersimpan.</div> : fileVersions.map((version) => (
                 <div key={version.id + ':' + version.version} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 p-3"><div className="min-w-0"><p className="text-xs font-semibold text-slate-900">Versi {version.version}{version.current ? ' · Saat ini' : ''}</p><p className="mt-1 text-[10px] text-slate-500">{formatSize(version.size_bytes)} · {new Date(version.committed_at).toLocaleString('id-ID')}</p><p className="mt-1 truncate text-[10px] text-slate-400">SHA-256: {version.sha256}</p></div><button type="button" disabled={downloadingVersion === version.version} onClick={() => void downloadWorkspaceVersion(version.version)} className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">{downloadingVersion === version.version ? 'Menyiapkan…' : 'Unduh'}</button></div>
               ))}
-              {historyNextCursor && (
-                <button type="button" onClick={() => void loadMoreVersions()} disabled={loadingMoreVersions}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50">
-                  {loadingMoreVersions ? 'Memuat versi…' : 'Muat versi sebelumnya'}
-                </button>
-              )}
             </div>
             <div className="mt-4 flex justify-end"><button type="button" onClick={() => setHistoryFile(null)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">Tutup</button></div>
           </div>
