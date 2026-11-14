@@ -115,36 +115,25 @@ async def list_learning_paths(
         "user_id": f"eq.{user['id']}", "path_id": f"in.({path_ids})",
         "select": "id,path_id,status,enrolled_at,completed_at,updated_at",
     })
-    progress = await repo.select("learning_progress", {
-        "user_id": f"eq.{user['id']}", "path_id": f"in.({path_ids})",
-        "select": "id,path_id,lesson_id,status,progress_percent,completed_at,updated_at",
-        "limit": "1000",
-    })
-    lessons = await repo.select("learning_lessons", {
+    summaries = await repo.select("learning_path_progress_summary", {
         "owner_user_id": f"eq.{user['id']}", "path_id": f"in.({path_ids})",
-        "select": "id,path_id", "limit": "3000",
+        "select": "path_id,lessons_started,lessons_completed,lessons_total,average_percent",
+        "limit": str(limit),
     })
     enrollment_by_path = {str(row["path_id"]): row for row in enrollments}
-    progress_by_path: dict[str, list[dict[str, Any]]] = {}
-    lessons_by_path: dict[str, list[dict[str, Any]]] = {}
-    for row in progress:
-        progress_by_path.setdefault(str(row["path_id"]), []).append(row)
-    for row in lessons:
-        lessons_by_path.setdefault(str(row["path_id"]), []).append(row)
+    summary_by_path = {str(row["path_id"]): row for row in summaries}
     items = []
     for path in paths:
         key = str(path["id"])
-        rows = progress_by_path.get(key, [])
-        total = len(lessons_by_path.get(key, []))
-        completed = sum(1 for row in rows if row["status"] == "completed")
+        summary = summary_by_path.get(key, {})
         items.append({
             **path,
             "enrollment": enrollment_by_path.get(key),
             "progress": {
-                "lessons_started": len(rows),
-                "lessons_completed": completed,
-                "lessons_total": total,
-                "average_percent": round(sum(float(row["progress_percent"]) for row in rows) / total, 1) if total else 0,
+                "lessons_started": int(summary.get("lessons_started") or 0),
+                "lessons_completed": int(summary.get("lessons_completed") or 0),
+                "lessons_total": int(summary.get("lessons_total") or 0),
+                "average_percent": float(summary.get("average_percent") or 0),
             },
         })
     return {"items": items, "count": len(items)}
