@@ -42,6 +42,8 @@ interface ChatMessage {
   source?: string;
   citations?: ChatCitation[];
   activity?: ChatRunActivity[];
+  runId?: string;
+  runStatus?: string;
   attachments?: Array<{ id: string; filename: string; mime_type?: string | null; size_bytes?: number | null }>;
 }
 
@@ -84,6 +86,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [retryingRunId, setRetryingRunId] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const sentInitialPrompt = useRef(false);
   const suppressAutoScroll = useRef(false);
@@ -345,6 +348,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
         text: '',
         time: timeLabel(),
         source: 'MoreAI Agent Runtime',
+        runId: queued.run.id,
+        runStatus: queued.run.status,
       }]);
 
       await moreAiApiStream(customerApi.streamRun(queued.run.id), ({ event, data }) => {
@@ -473,30 +478,32 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
             )
           : [];
         setMessages((previous) => previous.map((message) =>
-          message.id === assistantId ? { ...message, text: outputText, citations, activity: [...lifecycleActivity] } : message,
+          message.id === assistantId ? { ...message, text: outputText, citations, activity: [...lifecycleActivity], runStatus: 'succeeded' } : message,
         ));
       } else if (terminalStatus === 'cancelled') {
         setMessages((previous) => previous.map((message) =>
-          message.id === assistantId ? { ...message, text: streamedText || 'Proses dihentikan sesuai permintaan.', source: 'Agent Runtime · cancelled' } : message,
+          message.id === assistantId ? { ...message, text: streamedText || 'Proses dihentikan sesuai permintaan.', source: 'Agent Runtime · cancelled', runStatus: 'cancelled' } : message,
         ));
       } else if (terminalStatus === 'failed') {
-        throw new Error('Agent run failed. Silakan periksa riwayat tugas sebelum mencoba kembali.');
+        setMessages((previous) => previous.map((message) =>
+          message.id === assistantId ? { ...message, text: streamedText || 'Agent Run gagal. Anda dapat menjalankan ulang dari pesan ini.', source: 'Agent Runtime · failed', runStatus: 'failed' } : message,
+        ));
       } else if (terminalStatus === 'timed_out') {
         setMessages((previous) => previous.map((message) =>
           message.id === assistantId
-            ? { ...message, text: streamedText || 'Agent melewati batas waktu eksekusi. Silakan coba kembali atau pecah tugas menjadi langkah yang lebih kecil.', source: 'Agent Runtime · timed_out' }
+            ? { ...message, text: streamedText || 'Agent melewati batas waktu eksekusi. Anda dapat menjalankan ulang permintaan ini.', source: 'Agent Runtime · timed_out', runStatus: 'timed_out' }
             : message,
         ));
       } else if (terminalStatus === 'expired') {
         setMessages((previous) => previous.map((message) =>
           message.id === assistantId
-            ? { ...message, text: streamedText || 'Sesi Agent telah kedaluwarsa. Silakan kirim ulang permintaan untuk memulai sesi baru.', source: 'Agent Runtime · expired' }
+            ? { ...message, text: streamedText || 'Sesi Agent telah kedaluwarsa. Anda dapat menjalankan ulang permintaan ini.', source: 'Agent Runtime · expired', runStatus: 'expired' }
             : message,
         ));
       } else {
         setMessages((previous) => previous.map((message) =>
           message.id === assistantId
-            ? { ...message, text: streamedText || 'Run masih diproses. Periksa statusnya pada riwayat tugas.', source: `Agent Runtime · ${terminalStatus}` }
+            ? { ...message, text: streamedText || 'Run masih diproses. Periksa statusnya pada riwayat tugas.', source: `Agent Runtime · ${terminalStatus}`, runStatus: terminalStatus }
             : message,
         ));
       }
@@ -516,6 +523,78 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       setIsLoading(false);
     }
   }, [inputText, pendingAttachments, isLoading, isRestoringConversation, conversationId, showToast, initialAgentKey, selectedWorkspaceId, workspaceLoading]);
+
+  const handleRetryRun = useCallback(async (sourceRunId: string) => {
+    if (retryingRunId || isLoading) return;
+    setRetryingRunId(sourceRunId);
+    setIsLoading(true);
+    let assistantId = crypto.randomUUID();
+    try {
+      const queued = await customerApi.retryRun(sourceRunId, crypto.randomUUID());
+      const userText = typeof queued.message?.content === 'string' ? queued.message.content : 'Menjalankan ulang permintaan sebelumnya.';
+      setMessages((previous) => [...previous,
+        {
+          id: queued.message?.id || crypto.randomUUID(),
+          sender: 'user',
+          text: userText,
+          time: timeLabel(),
+        },
+        {
+          id: assistantId,
+          sender: 'assistant',
+          text: '',
+          time: timeLabel(),
+          source: 'MoreAI Agent Runtime · retry',
+          runId: queued.run.id,
+          runStatus: queued.run.status,
+        },
+      ]);
+      setActiveRunId(queued.run.id);
+      let outputText = '';
+      let terminalStatus = queued.run.status;
+      await moreAiApiStream(customerApi.streamRun(queued.run.id), ({ event, data }) => {
+        const payload = data.payload && typeof data.payload === 'object'
+          ? data.payload as Record<string, unknown> : data;
+        if (event === 'run.progress' || event === 'worker.checkpoint') {
+          const checkpoint = (data.checkpoint || payload.checkpoint) as Record<string, unknown> | undefined;
+          if (typeof checkpoint?.text === 'string') {
+            outputText = checkpoint.text;
+            setMessages((previous) => previous.map((message) =>
+              message.id === assistantId ? { ...message, text: outputText } : message,
+            ));
+          }
+        } else if (event === 'run.completed') {
+          terminalStatus = 'succeeded';
+          const output = data.output as Record<string, unknown> | undefined;
+          outputText = typeof output?.text === 'string' ? output.text : typeof output?.content === 'string' ? output.content : outputText;
+        } else if (['run.failed', 'run.cancelled', 'run.timed_out', 'run.expired'].includes(event)) {
+          terminalStatus = event.replace('run.', '');
+        }
+      });
+      const latest = await customerApi.getRun(queued.run.id);
+      terminalStatus = latest.status || terminalStatus;
+      const output = latest.output as Record<string, unknown> | undefined;
+      outputText = typeof output?.text === 'string' ? output.text : typeof output?.content === 'string' ? output.content : outputText;
+      setMessages((previous) => previous.map((message) => message.id === assistantId ? {
+        ...message,
+        text: outputText || (terminalStatus === 'succeeded' ? 'Agent menyelesaikan permintaan.' : 'Agent Run ' + terminalStatus + '.'),
+        runStatus: terminalStatus,
+        source: 'MoreAI Agent Runtime · ' + terminalStatus,
+      } : message));
+      showToast(terminalStatus === 'succeeded' ? 'Permintaan berhasil dijalankan ulang.' : 'Retry berakhir dengan status ' + terminalStatus + '.', terminalStatus === 'succeeded' ? 'success' : 'info');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Retry Agent Run gagal.';
+      setMessages((previous) => [...previous, {
+        id: assistantId, sender: 'assistant', text: message, time: timeLabel(),
+        source: 'MoreAI API · retry gagal',
+      }]);
+      showToast(message, 'error');
+    } finally {
+      setActiveRunId(null);
+      setRetryingRunId(null);
+      setIsLoading(false);
+    }
+  }, [retryingRunId, isLoading, showToast]);
 
   const handleCancelRun = useCallback(async () => {
     if (!activeRunId || isCancelling) return;
@@ -645,6 +724,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
               {message.sender === 'assistant' && message.text && (
                 <button type="button" onClick={() => navigator.clipboard.writeText(message.text)} className="mt-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800">
                   <Copy className="h-3 w-3" /> Salin
+                </button>
+              )}
+              {message.sender === 'assistant' && message.runId && ['failed', 'cancelled', 'timed_out', 'expired'].includes(message.runStatus || '') && (
+                <button type="button" onClick={() => void handleRetryRun(message.runId as string)}
+                  disabled={isLoading || retryingRunId !== null}
+                  className="mt-2 ml-3 inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 disabled:opacity-50">
+                  <Sparkles className="h-3 w-3" /> {retryingRunId === message.runId ? 'Menjalankan ulang…' : 'Regenerate'}
                 </button>
               )}
             </div>
