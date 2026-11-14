@@ -4,6 +4,8 @@ import base64
 import hashlib
 import json
 import os
+import re
+from email.message import EmailMessage
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
@@ -34,6 +36,23 @@ GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 
 class GoogleAuthorizeRequest(BaseModel):
     permissions: list[Literal["gmail.read", "gmail.send", "calendar.read", "calendar.write"]] = Field(min_length=1, max_length=4)
+
+
+
+class GmailSendRequest(BaseModel):
+    to: list[str] = Field(min_length=1, max_length=5)
+    subject: str = Field(min_length=1, max_length=240)
+    body: str = Field(min_length=1, max_length=20000)
+    confirmed: bool = False
+
+
+class CalendarCreateRequest(BaseModel):
+    summary: str = Field(min_length=1, max_length=240)
+    description: str = Field(default="", max_length=4000)
+    start: datetime
+    end: datetime
+    timezone: str = Field(default="Asia/Jakarta", max_length=64)
+    confirmed: bool = False
 
 
 class ConnectionSummary(BaseModel):
@@ -303,3 +322,133 @@ async def disconnect_google(connection_id: UUID, request: Request, user: dict[st
     return await repository(request).rpc("moreai_disconnect_connection", {
         "p_connection_id": str(connection_id), "p_user_id": str(user["id"]),
     })
+
+
+@router.post("/{connection_id}/gmail/send")
+async def send_gmail_message(
+    connection_id: UUID, body: GmailSendRequest, request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    if body.confirmed is not True:
+        raise HTTPException(409, "explicit_confirmation_required")
+    if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
+        raise HTTPException(400, "idempotency_key_required")
+    if any(not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", address) for address in body.to):
+        raise HTTPException(422, "recipient_email_invalid")
+    connection = await _owned_google_connection(request, user["id"], connection_id)
+    if GOOGLE_SCOPE_MAP["gmail.send"] not in (connection.get("scopes") or []):
+        raise HTTPException(403, "gmail_send_permission_not_granted")
+    message = EmailMessage()
+    message["To"] = ", ".join(body.to)
+    message["Subject"] = body.subject
+    message.set_content(body.body)
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode().rstrip("=")
+    payload_hash = hashlib.sha256(json.dumps({"to":body.to,"subject":body.subject,"body":body.body},sort_keys=True).encode()).hexdigest()
+    repo = repository(request)
+    claim = await repo.rpc("moreai_begin_connection_action", {
+        "p_user_id": str(user["id"]), "p_connection_id": str(connection_id),
+        "p_action_type": "gmail.send", "p_idempotency_key": idempotency_key,
+        "p_payload_sha256": payload_hash,
+    })
+    if not isinstance(claim, dict):
+        raise HTTPException(409, "gmail_action_claim_failed")
+    if claim.get("replay"):
+        if claim.get("status") == "completed":
+            return {"status": "completed", "replayed": True, "message_id": claim.get("provider_resource_id")}
+        raise HTTPException(409, "gmail_action_already_started_or_outcome_unknown")
+    token = await _google_access_token(request, connection)
+    try:
+        response = await request.app.state.http.post(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+            headers={"Authorization":"Bearer "+token}, json={"raw":raw}, timeout=30.0, follow_redirects=False,
+        )
+        if response.status_code not in {200, 202}:
+            await repo.rpc("moreai_finish_connection_action", {
+                "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+                "p_status": "unknown" if response.status_code >= 500 else "failed",
+                "p_provider_resource_id": "", "p_result_metadata": {"http_status": response.status_code},
+            })
+            raise HTTPException(502, "gmail_send_provider_rejected")
+        result = response.json()
+        receipt = await repo.rpc("moreai_finish_connection_action", {
+            "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+            "p_status": "completed", "p_provider_resource_id": str(result.get("id") or ""),
+            "p_result_metadata": {"thread_id": result.get("threadId")},
+        })
+        return {"status":"completed","replayed":False,"receipt":receipt}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        await repo.rpc("moreai_finish_connection_action", {
+            "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+            "p_status": "unknown", "p_provider_resource_id": "",
+            "p_result_metadata": {"outcome":"provider_response_unavailable"},
+        })
+        raise HTTPException(502, "gmail_send_outcome_unknown_do_not_retry") from exc
+
+
+@router.post("/{connection_id}/calendar/events")
+async def create_calendar_event(
+    connection_id: UUID, body: CalendarCreateRequest, request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    if body.confirmed is not True:
+        raise HTTPException(409, "explicit_confirmation_required")
+    if not idempotency_key or not 12 <= len(idempotency_key) <= 128:
+        raise HTTPException(400, "idempotency_key_required")
+    if body.start.tzinfo is None or body.end.tzinfo is None or body.end <= body.start:
+        raise HTTPException(422, "calendar_event_time_invalid")
+    if body.end - body.start > timedelta(days=7):
+        raise HTTPException(422, "calendar_event_duration_exceeded")
+    connection = await _owned_google_connection(request, user["id"], connection_id)
+    if GOOGLE_SCOPE_MAP["calendar.write"] not in (connection.get("scopes") or []):
+        raise HTTPException(403, "calendar_write_permission_not_granted")
+    event_payload = {
+        "summary": body.summary, "description": body.description,
+        "start": {"dateTime": body.start.isoformat(), "timeZone": body.timezone},
+        "end": {"dateTime": body.end.isoformat(), "timeZone": body.timezone},
+    }
+    payload_hash = hashlib.sha256(json.dumps(event_payload,sort_keys=True).encode()).hexdigest()
+    repo = repository(request)
+    claim = await repo.rpc("moreai_begin_connection_action", {
+        "p_user_id": str(user["id"]), "p_connection_id": str(connection_id),
+        "p_action_type": "calendar.create", "p_idempotency_key": idempotency_key,
+        "p_payload_sha256": payload_hash,
+    })
+    if not isinstance(claim, dict):
+        raise HTTPException(409, "calendar_action_claim_failed")
+    if claim.get("replay"):
+        if claim.get("status") == "completed":
+            return {"status":"completed","replayed":True,"event_id":claim.get("provider_resource_id")}
+        raise HTTPException(409, "calendar_action_already_started_or_outcome_unknown")
+    token = await _google_access_token(request, connection)
+    try:
+        response = await request.app.state.http.post(
+            "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+            headers={"Authorization":"Bearer "+token}, json=event_payload, timeout=30.0, follow_redirects=False,
+        )
+        if response.status_code not in {200, 201}:
+            await repo.rpc("moreai_finish_connection_action", {
+                "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+                "p_status": "unknown" if response.status_code >= 500 else "failed",
+                "p_provider_resource_id": "", "p_result_metadata": {"http_status": response.status_code},
+            })
+            raise HTTPException(502, "calendar_event_provider_rejected")
+        result = response.json()
+        receipt = await repo.rpc("moreai_finish_connection_action", {
+            "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+            "p_status": "completed", "p_provider_resource_id": str(result.get("id") or ""),
+            "p_result_metadata": {"html_link": result.get("htmlLink")},
+        })
+        return {"status":"completed","replayed":False,"receipt":receipt}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        await repo.rpc("moreai_finish_connection_action", {
+            "p_action_id": claim["action_id"], "p_user_id": str(user["id"]),
+            "p_status": "unknown", "p_provider_resource_id": "",
+            "p_result_metadata": {"outcome":"provider_response_unavailable"},
+        })
+        raise HTTPException(502, "calendar_event_outcome_unknown_do_not_retry") from exc
