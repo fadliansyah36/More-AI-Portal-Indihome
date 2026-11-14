@@ -134,3 +134,5 @@ Phase 09 source integration is substantially reconciled, but the following remai
 - This is source-level correction only. No browser, accessibility, test, lint, typecheck or build verification was run.
 
 - Chat model-routing visibility: the Customer composer now reads `/api/v1/models/capabilities` through the typed catalog client and displays enabled provider/model capability metadata. The UI correctly describes routing as automatic and backend-controlled; no customer-side provider override was added. Commit `33ea20b19a7bbe4d064ace8da8f9c83c336c9b09`. Source-only; not browser-verified.
+
+- Chat model registry wording was tightened after source reconciliation: enabled registry entries are not equivalent to customer entitlement. UI now explicitly states that execution eligibility remains subject to entitlement, quota, routing and worker policy. Commit `83b694b410606d4e9c86d87654c430a87ea8cfc0`.
