@@ -25,6 +25,7 @@ class MessageCreate(BaseModel):
     agent_key: Literal["manus", "planning", "toolcall"] = "manus"
     attachment_ids: list[UUID] = Field(default_factory=list, max_length=10)
     agent_configuration_id: UUID | None = None
+    skill_ids: list[UUID] = Field(default_factory=list, max_length=10)
 
 
 class ConversationResponse(BaseModel):
@@ -224,6 +225,7 @@ async def send_message(
             "p_idempotency_key": idempotency_key,
             "p_agent_config_id": str(body.agent_configuration_id),
             "p_attachment_ids": [str(item) for item in body.attachment_ids],
+            "p_skill_ids": [str(item) for item in body.skill_ids],
         })
     return await repo.rpc("moreai_enqueue_chat_run_with_attachments", {
         "p_user_id": user["id"],
@@ -232,6 +234,7 @@ async def send_message(
         "p_agent_key": body.agent_key,
         "p_idempotency_key": idempotency_key,
         "p_attachment_ids": [str(item) for item in body.attachment_ids],
+        "p_skill_ids": [str(item) for item in body.skill_ids],
     })
 
 
