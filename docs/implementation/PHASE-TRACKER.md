@@ -1296,3 +1296,5 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - No generated media was requested from a provider; no tests or runtime checks were run.
 
 - Image adapter model alignment was updated to current documented `gpt-image-2.5-flare` by default, with `gpt-image-2.5-sunburst` as the precision-focused alternative. The tool schema supports the current quality options `low/medium/high/xhigh/max/auto` and background `auto/opaque/transparent`; the operator's price map remains mandatory.
+
+- Runway Dev's official Text-to-Video reference confirms Gen-4.5 accepts 2–10 second duration and `1280:720` / `720:1280` ratios; the worker tool schema and adapter now expose that range. See [Runway Text to Video API](https://docs.dev.runwayml.com/api/) and [input/ratio constraints](https://docs.dev.runwayml.com/assets/inputs/).
