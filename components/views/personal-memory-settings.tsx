@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Brain, Plus, Pencil, Trash2, Save, X, ShieldCheck, ShieldOff } from 'lucide-react';
 import { customerApi, CustomerPersonalMemoryItem, CustomerPersonalMemoryState } from '@/lib/api/client';
 import { useToast } from '@/components/ui/toast-context';
@@ -20,11 +20,6 @@ export const PersonalMemorySettings: React.FC = () => {
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editRetention, setEditRetention] = useState<RetentionDays>(90);
-
-  const refresh = useCallback(async () => {
-    const next = await customerApi.personalMemory();
-    setState(next);
-  }, []);
 
   useEffect(() => {
     let active = true;
