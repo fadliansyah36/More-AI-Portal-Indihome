@@ -122,3 +122,5 @@ Phase 09 source integration is substantially reconciled, but the following remai
 - Remaining EduTech product boundary: the first-party AI-guided learning workspace and persistence tools are present, but institutional LMS features such as instructor/cohort administration, enrollment management for third-party courses, formal grading governance and certificates are not claimed as implemented.
 - Remaining AI Content boundary: no image/video generation can be declared operational without real provider configuration and billing/metering integration. The existing UI handoff is not equivalent to a completed media generation job.
 - No tests, lint, typecheck, build, browser/API probes, screenshots, worker execution, provider calls, staging or deployment were performed. Runtime acceptance remains NOT VERIFIED.
+
+- Additional source commit `a2f722bfbe607107ab5f073fbedbbe05b887a9f0`: active EduTech curriculum detail now exposes the existing owner-scoped lesson-version history endpoint and displays saved version metadata/objectives/content preview. Source-only; browser rendering remains NOT VERIFIED.
