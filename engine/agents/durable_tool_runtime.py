@@ -385,6 +385,7 @@ class DurableOpenManusRuntime:
         ]
         round_no = max(completed_rounds, default=0) + 1
         tool_definitions = self.tools.definitions()
+        selected_tools: set[str] | None = None
         if isinstance(agent_config, dict):
             configured_tools = agent_config.get("tool_keys")
             if not isinstance(configured_tools, list) or any(not isinstance(key, str) for key in configured_tools):
@@ -532,6 +533,8 @@ class DurableOpenManusRuntime:
                         raise ValueError("provider_tool_arguments_invalid") from exc
                     if not isinstance(arguments, dict):
                         raise ValueError("provider_tool_arguments_must_be_object")
+                    if selected_tools is not None and function.name not in selected_tools and function.name not in {"create_chat_completion", "terminate"}:
+                        raise PermissionError("saved_agent_tool_not_allowed")
                     digest = hashlib.sha256(json.dumps(arguments, sort_keys=True).encode()).hexdigest()
                     await save(f"openmanus.round.{round_no}.tool.{index}.intent", {
                         "tool_call_id": call.id, "tool": function.name,
