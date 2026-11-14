@@ -50,7 +50,7 @@ export const AccountUpgradeView: React.FC<AccountUpgradeViewProps> = ({ onBack }
         <div>
           <h2 className="text-lg font-black tracking-tight">Lebih Banyak Ruang &amp; Kuota AI</h2>
           <p className="text-xs text-red-100 mt-1 max-w-xs mx-auto">
-            Simpan riwayat tugas permanen, akses AI tanpa batas kuota venue, dan aktifkan semua autonomous agent.
+            Detail manfaat, batas kuota AI, penyimpanan tugas, dan fitur Agent akan mengikuti paket resmi yang dikonfirmasi backend.
           </p>
         </div>
       </div>
