@@ -5,6 +5,7 @@ from app.sandbox_tools import IsolatedSandboxToolAdapter
 from app.llm_gateway import create_metered_gateway
 from app.llm_accounting import ConfiguredCreditEstimator, SupabaseUsageAccounting
 from app.memory_store import SupabaseConversationMemoryStore, SupabasePersonalMemoryStore
+from app.skill_resolver import SupabaseSkillResolver
 from app.knowledge_tools import SupabaseKnowledgeTools
 from app.learning_tools import SupabaseLearningTools
 from app.attachment_loader import CustomerChatAttachmentLoader
@@ -30,6 +31,7 @@ def build_agent_registry(
     plan_store = SupabasePlanStore(client)
     memory_store = SupabaseConversationMemoryStore(client)
     personal_memory_store = SupabasePersonalMemoryStore(client)
+    skill_resolver = SupabaseSkillResolver(client)
     knowledge_tools = SupabaseKnowledgeTools(client, http_client) if os.getenv("MOREAI_EMBEDDING_BASE_URL") and os.getenv("MOREAI_EMBEDDING_MODEL") else None
     learning_tools = SupabaseLearningTools(client)
     attachment_loader = CustomerChatAttachmentLoader(client)
@@ -84,7 +86,7 @@ def build_agent_registry(
 
     manus = DurableOpenManusRuntime(
         gateway,
-        memory_store=memory_store, personal_memory_store=personal_memory_store,
+        memory_store=memory_store, personal_memory_store=personal_memory_store, skill_resolver=skill_resolver,
         knowledge_tools=knowledge_tools,
         learning_tools=learning_tools,
         attachment_loader=attachment_loader,
@@ -121,7 +123,7 @@ def build_agent_registry(
     # Reuse the durable, policy-enforced tool loop with the upstream ToolCall prompt;
     # this preserves MoreAI approval, metering, checkpoint and tenant boundaries.
     toolcall = DurableOpenManusRuntime(
-        gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, knowledge_tools=knowledge_tools, learning_tools=learning_tools,
+        gateway, memory_store=memory_store, personal_memory_store=personal_memory_store, skill_resolver=skill_resolver, knowledge_tools=knowledge_tools, learning_tools=learning_tools,
         plan_store=plan_store, search_tools=search_tools, storage_tools=storage_tools,
         image_tools=image_tools, video_tools=video_tools, workspace_tools=workspace_tools, browser_tools=browser_tools,
         attachment_loader=attachment_loader,
