@@ -200,22 +200,27 @@ async def list_media_capabilities(
         "order": "last_seen_at.desc",
         "limit": "100",
     })
-    media_flags = {
-        "image_generation": False,
-        "video_generation": False,
-        "file_generation": False,
+    media_workers: dict[str, set[str]] = {
+        "image_generation": set(),
+        "video_generation": set(),
+        "file_generation": set(),
     }
     for snapshot in snapshots:
         capabilities = snapshot.get("capabilities") if isinstance(snapshot.get("capabilities"), dict) else {}
         media = capabilities.get("media") if isinstance(capabilities.get("media"), dict) else {}
-        for key in media_flags:
-            media_flags[key] = media_flags[key] or media.get(key) is True
+        worker_id = snapshot.get("worker_id")
+        if not isinstance(worker_id, str):
+            continue
+        for key in media_workers:
+            if media.get(key) is True:
+                media_workers[key].add(worker_id)
 
     def item(key: str) -> dict[str, Any]:
-        available = media_flags[key]
+        worker_count = len(media_workers[key])
+        available = worker_count > 0
         return {
             "available": available,
-            "worker_count": len(snapshots) if available else 0,
+            "worker_count": worker_count,
             "reason": None if available else "No healthy worker currently advertises a registered adapter for this capability.",
         }
 
