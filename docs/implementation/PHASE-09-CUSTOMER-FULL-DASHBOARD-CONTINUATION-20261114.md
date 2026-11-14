@@ -77,3 +77,12 @@ Phase 09 remains **IN PROGRESS**. The Customer Dashboard integration must not be
 - Source-only change; no browser verification, API probe, tests, lint, typecheck or build was performed.
 
 - Follow-up copy correction commit: `83b694b410606d4e9c86d87654c430a87ea8cfc0`. The model registry panel distinguishes enabled provider/model registry entries from per-customer entitlement; actual execution remains subject to entitlement, quota, router and worker policy.
+
+
+## Manual retry policy parity — 2026-11-14
+
+- Compared the Tasks retry action against FastAPI `POST /api/v1/customer/agent-runs/{run_id}/retry`.
+- Backend permits manual new-run retry only for `failed`, `timed_out`, and `expired`, and independently blocks retries when execution is disabled, the original conversation/runtime is unavailable, or a side-effecting tool was reached. `cancelled` is terminal but not manually retryable.
+- Tightened the Tasks handler guard to the same exact status allowlist; the detail button and handler now agree with the FastAPI contract. Backend safety checks remain authoritative.
+- Commit: `79378c9aa6c12f52ce81268335552efbaea39527`.
+- Source-level only; no runtime verification or prohibited checks were performed.
