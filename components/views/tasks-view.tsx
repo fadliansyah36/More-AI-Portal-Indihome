@@ -19,7 +19,7 @@ import {
   Layers,
   ArrowLeft,
 } from 'lucide-react';
-import { artifactApi, customerApi, type CustomerAgentRun, type CustomerAgentRunActivity, type CustomerWorkflowStep, type CustomerArtifact } from '@/lib/api/client';
+import { artifactApi, customerApi, moreAiApiStream, type CustomerAgentRun, type CustomerAgentRunActivity, type CustomerWorkflowStep, type CustomerArtifact } from '@/lib/api/client';
 import { agentRunStatusLabel, isTerminalAgentRunStatus } from '@/lib/api/agent-run-status';
 import { TaskItem } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
@@ -103,6 +103,51 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
     if (errors.length) setRunDetailError(errors.join(' · '));
     setRunDetailLoading(false);
   };
+
+  // Keep an opened Task detail synchronized with the durable worker event stream.
+  // The run snapshot and event cursor remain server-authoritative; reconnect/replay
+  // is handled by the shared authenticated SSE client.
+  useEffect(() => {
+    if (!selectedRun || isTerminalAgentRunStatus(selectedRun.status)) return;
+    const controller = new AbortController();
+    let active = true;
+    const runId = selectedRun.id;
+    const refreshSnapshot = async () => {
+      const [runResult, stepsResult, activityResult] = await Promise.allSettled([
+        customerApi.getRun(runId),
+        customerApi.getRunSteps(runId),
+        customerApi.getRunActivity(runId, 0, 200),
+      ]);
+      if (!active) return;
+      if (runResult.status === 'fulfilled') {
+        const fresh = runResult.value;
+        setSelectedRun(fresh);
+        setRuns(current => current.map(item => item.id === runId ? fresh : item));
+        setTasks(current => current.map(task => task.id === runId
+          ? { ...task, completed: isTerminalAgentRunStatus(fresh.status), category: agentRunStatusLabel(fresh.status) }
+          : task));
+      }
+      if (stepsResult.status === 'fulfilled') setRunSteps(stepsResult.value);
+      if (activityResult.status === 'fulfilled') setRunActivity(activityResult.value.items);
+    };
+    void moreAiApiStream(customerApi.streamRun(runId), ({ event }) => {
+      if (!active) return;
+      if (['run.started', 'run.progress', 'worker.checkpoint', 'planning.step.started',
+        'planning.step.completed', 'planning.step.failed', 'tool.started', 'tool.completed',
+        'tool.failed', 'tool.approval_requested', 'run.resume_queued', 'run.completed',
+        'run.failed', 'run.cancelled', 'run.timed_out', 'run.expired'].includes(event)) {
+        void refreshSnapshot();
+      }
+    }, { signal: controller.signal, maxReconnects: 20 }).catch(error => {
+      if (active && !(error instanceof DOMException && error.name === 'AbortError')) {
+        setRunDetailError(error instanceof Error ? error.message : 'Stream Agent Run terputus; muat ulang detail untuk mencoba lagi.');
+      }
+    });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [selectedRun?.id, selectedRun?.status]);
 
   const cancelSelectedRun = async () => {
     if (!selectedRun || isTerminalAgentRunStatus(selectedRun.status) || cancellingRun) return;
