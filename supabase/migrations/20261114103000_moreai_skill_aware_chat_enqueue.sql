@@ -1,4 +1,6 @@
 -- Skill-aware atomic chat enqueue. The message, Agent Run, attachments and authorized skill snapshot are committed together.
+drop function if exists public.moreai_enqueue_chat_run_with_attachments(uuid,uuid,text,text,text,uuid[]);
+drop function if exists public.moreai_enqueue_chat_run_with_config(uuid,uuid,text,text,text,uuid,uuid[]);
 create or replace function public.moreai_enqueue_chat_run_with_attachments(
   p_user_id uuid,
   p_conversation_id uuid,
@@ -80,7 +82,8 @@ begin
   if found then
     if v_run.input->>'prompt' is distinct from p_content
        or v_run.input->>'agent_key' is distinct from p_agent_key
-       or coalesce(v_run.input->'attachment_ids','[]'::jsonb) is distinct from to_jsonb(v_attachment_ids) then
+       or coalesce(v_run.input->'attachment_ids','[]'::jsonb) is distinct from to_jsonb(v_attachment_ids)
+       or coalesce(v_run.input->'skill_ids','[]'::jsonb) is distinct from to_jsonb(v_skill_ids) then
       raise exception 'chat_idempotency_key_payload_conflict' using errcode = '22023';
     end if;
     return pg_catalog.jsonb_build_object('run',pg_catalog.to_jsonb(v_run),'message',null,'replayed',true);
