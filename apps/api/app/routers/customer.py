@@ -1329,11 +1329,19 @@ async def _purge_customer_episodic_metadata(repo: Any, user_id: str) -> int:
                     "episode", "episode_expires_at",
                 }
             }
-            await repo.update(
+            updated = await repo.update(
                 "conversation_messages",
                 {"id": f"eq.{row['id']}", "user_id": f"eq.{user_id}"},
                 {"metadata": cleaned},
             )
+            if not updated:
+                still_present = await repo.select("conversation_messages", {
+                    "id": f"eq.{row['id']}", "user_id": f"eq.{user_id}",
+                    "metadata->>memory_type": "eq.episodic",
+                    "select": "id", "limit": "1",
+                })
+                if still_present:
+                    raise RuntimeError("episodic_memory_metadata_delete_failed")
             removed += 1
     remaining = await repo.select("conversation_messages", {
         "user_id": f"eq.{user_id}",
@@ -1399,11 +1407,13 @@ async def delete_customer_episodic_memory(
         key: value for key, value in prior.items()
         if key not in {"memory_type", "memory_scope", "workspace_id", "episode", "episode_expires_at"}
     }
-    await repo.update(
+    updated = await repo.update(
         "conversation_messages",
         {"id": f"eq.{message_id}", "user_id": f"eq.{principal['id']}"},
         {"metadata": cleaned},
     )
+    if not updated:
+        raise HTTPException(409, "Episodic memory changed; refresh and retry")
     return Response(status_code=204)
 
 
