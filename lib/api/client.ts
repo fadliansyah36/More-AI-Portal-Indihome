@@ -1184,7 +1184,7 @@ export type CustomerLearningPathSummary = {
   created_at: string;
   updated_at: string;
   enrollment: { id: string; status: string; enrolled_at: string } | null;
-  progress: { lessons_started: number; lessons_completed: number; average_percent: number };
+  progress: { lessons_started: number; lessons_completed: number; lessons_total: number; average_percent: number };
 };
 
 export type CustomerLearningPathDetail = {
