@@ -52,6 +52,11 @@ class OpenAIImageGenerationAdapter:
             }
             if len(normalized_costs) != len(costs) or any(not math.isfinite(value) or value <= 0 for value in normalized_costs.values()):
                 return None
+            if "1024x1024:medium" not in normalized_costs:
+                return None
+            configured_model = os.getenv("MOREAI_OPENAI_IMAGE_MODEL", "gpt-image-2")
+            if configured_model not in {"gpt-image-2", "gpt-image-1.5", "gpt-image-1", "gpt-image-1-mini"}:
+                return None
             credits_per_usd = float(os.environ["MOREAI_CREDITS_PER_USD"])
             timeout_seconds = float(os.getenv("MOREAI_IMAGE_PROVIDER_TIMEOUT_SECONDS", "600"))
         except (TypeError, ValueError, json.JSONDecodeError):
