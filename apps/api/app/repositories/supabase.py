@@ -64,3 +64,15 @@ class SupabaseRepository:
         if not rows:
             raise HTTPException(404, "Resource not found")
         return rows[0]
+
+    async def delete(self, table: str, params: dict[str, str]) -> list[dict[str, Any]]:
+        """Delete only records selected by explicit caller-supplied ownership filters."""
+        response = await self.http.delete(
+            f"{self.url}/rest/v1/{table}", params=params,
+            headers=self._headers("return=representation"), timeout=12.0,
+        )
+        if response.status_code >= 500:
+            raise HTTPException(503, "Database service unavailable")
+        if response.status_code >= 400:
+            raise HTTPException(502, "Database deletion failed")
+        return response.json() if response.content else []
