@@ -4,7 +4,7 @@ Date: 2026-11-14
 Repository: `fadliansyah36/More-AI-Portal-Indihome`  
 Branch: `main`  
 Baseline HEAD: `f5306792c41c2e12e89c0a300ec5244b280c5fd8`
-Implementation source snapshot before final report updates: `2a4ef0efd7927a040814f6baa33c33c0dc18a282`  
+Implementation source snapshot before final report updates: `376736eaf2082b79938ca863ebdae90072bb99f6`  
 Scope: implement the first canonical MoreAI EduTech data domain and expose its lifecycle to the existing Customer dashboard and OpenManus Agent Runtime. This is a source implementation report, not runtime acceptance.
 
 ## Product and architecture decision
@@ -74,7 +74,8 @@ The tools are registered for Manus, Planning step execution (through the Manus s
 - `4cc27f4d0a9c7eebcffb5825bd19f0bca0525254` — update typed total-lesson progress contract.
 - `2a4ef0efd7927a040814f6baa33c33c0dc18a282` — show completion against total curriculum lessons.
 - `ae3257864c5d4cf522aabbae55809ebba47d42ea` — add a database-side progress summary view for the curriculum list.
-- `2303b0f72a7a4fed8037c6b79c0f011af87e4407` — use the summary view instead of fetching all lesson rows for path-list cards.\n- `376736eaf2082b79938ca863ebdae90072bb99f6` — add age-appropriate learner privacy guidance to EduTech sessions.
+- `2303b0f72a7a4fed8037c6b79c0f011af87e4407` — use the summary view instead of fetching all lesson rows for path-list cards.
+- `376736eaf2082b79938ca863ebdae90072bb99f6` — add age-appropriate learner privacy guidance to EduTech sessions.
 
 ## UI change gate and visual preservation
 
