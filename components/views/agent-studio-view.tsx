@@ -45,6 +45,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
           id: row.key, name: row.name, specialty: 'Runtime ' + row.version,
           description: row.description, iconName: 'Bot', color: 'bg-slate-500',
           creditsRequired: 0, active: row.enabled,
+          capabilityTags: row.capability_tags, toolKeys: row.tool_keys,
         }));
         setAgents(mapped);
         setSelectedAgentId(mapped[0]?.id || '');
