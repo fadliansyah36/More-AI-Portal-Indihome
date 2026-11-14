@@ -1312,3 +1312,6 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 
 - EduTech lifecycle hardening follow-up: path creation, lesson generation, quiz generation and quiz assessment now have run/resource uniqueness and replay-safe RPC behavior; learner-facing lesson detail strips answer keys, explanations and grading notes. Task detail now reads Agent Run-linked learning artifacts, and EduTech progress counts canonical lesson progress. Follow-up migration `20261114081000_moreai_edutech_tool_idempotency.sql` applied successfully. No tests/runtime checks were run.
+
+
+- PRD v1.2 / AGENTS alignment note: the EduTech UI additions were limited to the protected Customer EduTech and Tasks/Agent Run detail routes, solely to expose saved curriculum and Agent Run-linked learning artifacts. Existing MoreAI red/light-surface styling was preserved; no global token migration occurred. Before/after screenshots were not captured because real browser testing was explicitly prohibited; UI regression evidence remains NOT VERIFIED.
