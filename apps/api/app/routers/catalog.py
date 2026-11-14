@@ -88,6 +88,8 @@ async def list_agents(request: Request, user: dict[str, Any] = Depends(customer_
     })
     runtime_workers: dict[str, list[dict[str, Any]]] = {}
     for snapshot in worker_snapshots:
+        if snapshot.get("status") != "healthy":
+            continue
         runtime_keys = snapshot.get("runtime_keys") if isinstance(snapshot.get("runtime_keys"), list) else []
         for runtime_key in runtime_keys:
             if isinstance(runtime_key, str):
