@@ -66,3 +66,12 @@ Phase 09 remains **IN PROGRESS**. The Customer Dashboard integration must not be
 - Added optional canonical `status` to the TaskItem presentation type.
 - Commits: `41d394731bbcc512ca35ebb2cd2c63f64f9740f8`, `e2cff38d614f87dcda1013f777849af8a358717b`.
 - Not browser-verified; all runtime acceptance remains NOT VERIFIED.
+
+## Chat model-routing transparency — 2026-11-14
+
+- The FastAPI `/api/v1/models/capabilities` endpoint and typed client were present but the Customer Chat composer did not expose the enabled model registry.
+- Added a compact, collapsible **Model & capability tersedia** section to Chat. It reads enabled provider/model names and normalized capability tags from the authenticated catalog endpoint.
+- The UI explicitly communicates that actual model selection remains automatic in the backend Model Router, based on task/capability/policy. It does not let a customer bypass provider routing, entitlements or quotas.
+- Registry failures are displayed as a non-blocking warning and do not fabricate available models or imply that generation is possible.
+- Source commit: `33ea20b19a7bbe4d064ace8da8f9c83c336c9b09`.
+- Source-only change; no browser verification, API probe, tests, lint, typecheck or build was performed.
