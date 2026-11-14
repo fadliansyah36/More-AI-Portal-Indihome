@@ -1409,10 +1409,6 @@ async def retry_customer_agent_run(
         raise HTTPException(409, "Original attachment references are invalid")
     saved_configuration = source.get("agent_config")
     if isinstance(saved_configuration, dict) and isinstance(saved_configuration.get("id"), str):
-        try:
-            configuration_id = UUID(saved_configuration["id"])
-        except (ValueError, TypeError, AttributeError):
-            raise HTTPException(409, "Original Agent configuration reference is invalid")
         return await repo.rpc("moreai_enqueue_chat_run_with_config_snapshot", {
             "p_user_id": principal["id"],
             "p_source_run_id": str(run_id),
