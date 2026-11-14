@@ -1205,3 +1205,14 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Report: [Customer Task Lifecycle Streaming](./PHASE-09-CUSTOMER-TASK-LIFECYCLE-STREAMING-20261114.md).
 - Phase 09 remains IN PROGRESS. Customer retry/regenerate, distinct generation mapping, Memory privacy lifecycle and several vendor-gated domain flows remain open. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
 - No tests, lint, typecheck, build, browser/API/worker runtime, provider calls, staging or deployment were run, per owner instruction.
+
+
+## Latest direct-main increment — 2026-11-14
+
+- Create Studio now routes multi-step document summarization, presentation planning and video storyboard requests through the existing `planning` runtime; straightforward text authoring and translation use `manus`.
+- Runtime selection is passed through the existing Chat handoff and typed Customer enqueue contract. Prompt sections now use real newline separators.
+- Image generation remains unavailable/fail-closed because no verified media provider contract exists. Video action creates only a script/storyboard task, not a rendered video.
+- Source commit: `d741e657bae8cdd1bcb5525e00e01691ba24208f`.
+- Report: [Create Studio runtime routing increment](./PHASE-09-CUSTOMER-CREATE-STUDIO-RUNTIME-ROUTING-20261114.md).
+- No tests, lint, typecheck, build, browser/API/worker runtime checks, provider calls, staging, migration or deployment were run.
+- Phase 09 remains IN PROGRESS. Next: Customer Memory privacy lifecycle and safe retry/regenerate contract reconciliation, followed by remaining Customer action closure. Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
