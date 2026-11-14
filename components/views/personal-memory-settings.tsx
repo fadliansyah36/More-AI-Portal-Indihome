@@ -180,8 +180,8 @@ export const PersonalMemorySettings: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-slate-800">Memory tersimpan</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-500">{state.items.length} catatan</span>
-                    {state.items.length > 0 && (
+                    <span className="text-[10px] text-slate-500">{state.items.length} catatan · {state.episodes.length} pengalaman</span>
+                    {(state.items.length > 0 || state.episodes.length > 0) && (
                       <button type="button" onClick={() => void clearAllMemory()} disabled={saving}
                         className="text-[10px] font-semibold text-rose-600 hover:text-rose-700 disabled:opacity-50">
                         Hapus semua
