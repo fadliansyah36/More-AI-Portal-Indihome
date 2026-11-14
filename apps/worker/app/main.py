@@ -119,6 +119,11 @@ async def run_worker() -> None:
             )
             outbox_task = asyncio.create_task(publisher.run(stop_outbox), name="moreai-event-outbox")
             poll_seconds = max(1, min(30, int(os.getenv("WORKER_POLL_SECONDS", "3"))))
+            memory_purge_interval_seconds = max(
+                3600, min(86400, int(os.getenv("MOREAI_MEMORY_PURGE_INTERVAL_SECONDS", "21600"))),
+            )
+            next_memory_purge_at = 0.0
+            monotonic = asyncio.get_running_loop().time
             try:
                 # A transient Supabase/PostgREST failure while claiming the next run
                 # must not terminate the long-lived worker process. Startup remains
@@ -126,6 +131,18 @@ async def run_worker() -> None:
                 # above); only the steady-state claim/poll loop uses bounded backoff.
                 consecutive_poll_failures = 0
                 while True:
+                    now = monotonic()
+                    if now >= next_memory_purge_at:
+                        try:
+                            purged_memories = await rpc.rpc("moreai_worker_purge_expired_customer_memories", {})
+                            logger.info("personal_memory_retention_purge_completed deleted=%s", purged_memories)
+                            next_memory_purge_at = now + memory_purge_interval_seconds
+                        except asyncio.CancelledError:
+                            raise
+                        except Exception:
+                            logger.exception("personal_memory_retention_purge_failed")
+                            next_memory_purge_at = now + 300
+
                     try:
                         processed = await runtime.run_once()
                         if not processed:
