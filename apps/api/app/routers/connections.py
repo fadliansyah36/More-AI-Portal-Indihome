@@ -518,7 +518,7 @@ class InternalGoogleReadRequest(BaseModel):
 def _require_worker_internal(request: Request) -> None:
     expected = os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", "")
     supplied = request.headers.get("X-MoreAI-Worker-Token", "")
-    if not expected or not supplied or not hmac.compare_digest(expected, supplied):
+    if len(expected) < 32 or not supplied or not hmac.compare_digest(expected, supplied):
         raise HTTPException(401, "worker_internal_authentication_failed")
 
 
