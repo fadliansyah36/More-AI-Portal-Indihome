@@ -112,3 +112,13 @@ This is source-contract inspection only. It does not establish live Supabase/RLS
 - Source commit: `913b0cd422ccec76bf82c47c62f90ec91f48599f`.
 - This does not add manual checkpoint rewind. Automatic retry/approval continuation continue to use backend-owned durable recovery semantics.
 - Source-only implementation; no tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment were performed.
+
+## Durable workflow checkpoint visibility — 2026-11-14
+
+- Workflow detail now retrieves the authenticated Agent Run event endpoint in addition to step/activity/progress projections.
+- It renders only checkpoint projections supplied by FastAPI's `_event_with_checkpoint_state` safe serializer. Private tool arguments, observations and credential-bearing fields remain excluded by the backend.
+- Checkpoint snapshots refresh when the durable event stream reports planning/tool/checkpoint/run lifecycle changes; event retrieval is performed alongside the existing run/step/activity/progress snapshot.
+- This is observability and recovery-state visibility, not a client-side resume or checkpoint mutation control. Worker remains the authority for checkpoint reconciliation, dependency execution and recovery.
+- API client event type now models the nullable safe checkpoint payload.
+- Source commits: `16fd19ac39160fe629f2b52c4bc3b2d16df5aef8`, `58a63b417567b238db3f87587c1f05ae1ca72732`, `139f5af87f4861eec3ba1c0ba86c1fca010daf8a`.
+- Source-only; no tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment.
