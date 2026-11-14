@@ -1153,3 +1153,39 @@ Six previously pending Visual Skills files were fetched at pinned commit `61a60d
 All **60/60 Visual Skills paths** now have a non-pending content/static review status in the manifest: 45 content-reviewed references/metadata and 15 static SVG reviews. This is not a rights clearance for all assets: the hero remains deferred and the 13 provider marks remain excluded/deferred. The two procedural skill entrypoints and 23 image/video reference files were already recorded as content-reviewed in the earlier manifest.
 
 **P1 remains OPEN.** Scenario Skills still has a large supporting-file review backlog. No skills/assets were imported into the MoreAI product. No tests, scripts, installs, builds, provider calls, staging, deployment or Supabase mutation occurred.
+
+
+---
+
+## 30. Twenty-first continuation increment — Scenario skill-creator supporting files
+
+Ten Scenario Skills files were fetched and statically reviewed at pinned commit `94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9`. The exact pinned blob SHAs were checked against the previously retrieved source inventory before review.
+
+| Path | Pinned blob SHA | Review disposition |
+|---|---|---|
+| `.agents/skills/pr-handle-comments/agents/openai.yaml` | `94adbd2736fbef2831c2791d656e9eeaa2c895ca` | ARCHIVE-ONLY metadata |
+| `.agents/skills/pr-squash-message/agents/openai.yaml` | `d3426f87784b9cf7bc825b0e6e0c06601f51fa8d` | ARCHIVE-ONLY metadata |
+| `.agents/skills/pr-summary/agents/openai.yaml` | `20fea1f67ca7748085db57fd2ae4189279a84e5d` | ARCHIVE-ONLY metadata |
+| `.agents/skills/skill-creator/LICENSE.txt` | `4f881c52d1f72f4cfb720e339e2d35c3058d01a9` | Apache-2.0 notice; preserve for any derivative |
+| `.agents/skills/skill-creator/agents/analyzer.md` | `14e41d6068635f4dd3fb878fd1626312395dda63` | EVALUATION-ONLY reference |
+| `.agents/skills/skill-creator/agents/comparator.md` | `80e00eb45db3ee53a132fc2ba97fd59a7339e563` | EVALUATION-ONLY reference |
+| `.agents/skills/skill-creator/agents/grader.md` | `558ab05c0a9a8bb062ef4c51823d4d76c3acf7c4` | EVALUATION-ONLY reference |
+| `.agents/skills/skill-creator/references/schemas.md` | `b6eeaa2d4a34c1653069585c6c5603da39a5bdbe` | EVALUATION SCHEMA reference |
+| `.agents/skills/skill-creator/scripts/quick_validate.py` | `ed8e1dddce77b16af13c6f36b3fe86c4ac7c590c` | SECURITY REVIEW; do not execute |
+| `.agents/skills/skill-creator/scripts/package_skill.py` | `f48eac444656ddc41204aac1760a217951ce609e` | SECURITY REVIEW; do not execute |
+
+### Findings and MoreAI mapping
+
+- The three `agents/openai.yaml` files are display-name/description/default-prompt metadata for PR maintenance skills. They are not a provider manifest, tool permission grant, or user-facing skill contract.
+- The skill-creator analyzer/comparator/grader are a benchmark loop: blind comparison, post-hoc causal analysis, and expectation grading. This is useful as a future *curation/evaluation* concept for Skill Registry, but it must remain offline governance tooling and must not be called from the customer Agent Runtime.
+- The reference schemas describe eval outputs, transcripts, timing, claims, and benchmark metrics. They do not define MoreAI run/memory/skill persistence schemas. Any future mapping must use existing tenant-scoped Supabase schemas and durable Agent Run IDs, with source attribution and immutable skill versions.
+- `quick_validate.py` parses YAML frontmatter and checks a small allowlist of fields/name/description lengths. It does not inspect transitive references, permissions, dependency provenance, prompt injection, filesystem safety, network access, or runtime behavior. It imports PyYAML and must not be executed as an upstream trust shortcut.
+- `package_skill.py` recursively walks a skill folder and writes a ZIP. It excludes common build artifacts but does not visibly reject symlink traversal, impose archive file-count/expanded-size limits, or generate a provenance/license manifest. MoreAI packaging must implement these protections within its own trusted service boundary and preserve source hashes.
+- The nested Apache-2.0 LICENSE applies to this skill-creator subtree. It is distinct from the repository's top-level license and must be tracked as a nested license. Any reuse must preserve the license, copyright/NOTICE requirements where applicable, and prominent modified-file notices.
+- No skill-creator script or evaluator was executed. No Scenario skill content was installed into the customer catalog.
+
+### Ledger limitation
+
+The source inventory JSON is a large 2,393-row file and the connected file-read surface returned an empty/truncated payload on a subsequent read. The ten reviews above are therefore recorded here with exact pinned blob SHAs, but **the machine-readable inventory was not updated in this increment**. Do not count these ten as reconciled manifest rows until the manifest can be safely fetched and updated with its current blob SHA. This is an explicit bookkeeping limitation, not a completed ledger update.
+
+**P1 remains OPEN.** This is static review only; no tests/scripts/builds/install, provider requests, staging, deployment or Supabase mutation occurred.
