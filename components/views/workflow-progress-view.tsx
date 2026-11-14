@@ -197,7 +197,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     const controller = new AbortController();
     let active = true;
     const refreshSnapshot = async () => {
-      const [runResult, stepsResult, activityResult, progressResult] = await Promise.allSettled([
+      const [runResult, stepsResult, activityResult, progressResult, eventsResult] = await Promise.allSettled([
         customerApi.getRun(expandedRunId),
         customerApi.getRunSteps(expandedRunId),
         customerApi.getRunActivity(expandedRunId, 0, 200),
@@ -219,10 +219,6 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
       if (progressResult.status === 'fulfilled') {
         setRunProgress((current) => ({ ...current, [expandedRunId]: progressResult.value }));
       }
-      const eventsResult = await Promise.resolve(customerApi.getRunEvents(expandedRunId, 0)).then(
-        (value) => ({ status: 'fulfilled' as const, value }),
-        (reason) => ({ status: 'rejected' as const, reason }),
-      );
       if (eventsResult.status === 'fulfilled') {
         setRunCheckpoints((current) => ({
           ...current,
