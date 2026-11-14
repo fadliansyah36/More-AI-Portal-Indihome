@@ -1324,3 +1324,6 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 
 - EduTech prompt guardrails now require age-appropriate explanations and prohibit requesting personal/sensitive identifiers, passwords, contact details or precise location. Formal age verification, guardian/school consent and institutional governance remain unimplemented and must be addressed before scaling access to minors.
+
+
+- Phase 09 Customer retry parity follow-up (2026-11-14): Tasks manual retry handler now matches FastAPI's exact allowed statuses (`failed`, `timed_out`, `expired`); cancelled runs remain terminal but cannot be manually retried. Backend additionally enforces execution gate, idempotency, supported runtime, conversation ownership and safe-replay/no-side-effect rules. Commit `79378c9aa6c12f52ce81268335552efbaea39527`; acceptance/continuation docs updated in `392b8c5d3ad7e0b5fc4687ad0df3256e753a722f` and `3a7fad8b6e3ccc35791cc812f25f90c237d87551`. Source-level only; Phase 09 remains IN PROGRESS and no tests/runtime checks were run.
