@@ -1,6 +1,6 @@
 # MoreAI Implementation Phase Tracker
 
-Updated: 2026-11-14
+Updated: 2026-11-15
 
 Implementation is proceeding directly on `main`. In this Phase 09 continuation, additive Supabase migrations were applied to the canonical project; no tests, build, lint, typecheck, browser/API verification, staging or application deployment were run.
 
@@ -1383,3 +1383,18 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Semantic retrieval errors do not abort otherwise valid runs; a typed run event records only the exception class.
 - Source commits: `bcd845aa`, `77ee55fa`, `ff503c27`. Report: `PHASE-09-UNIFIED-MEMORY-SEMANTIC-RECALL-20261115.md`.
 - No tests, lint, typecheck, build, browser/API/worker/provider operations, staging, deployment or live Supabase mutation were performed. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-15 — Episodic Memory, Citation Provenance & Skill Lifecycle
+
+- Added consent-gated episodic memory retrieval (up to eight records) scoped to exact owner/workspace and injected only as untrusted historical context.
+- Successful OpenManus Agent Runs now persist bounded episode provenance in existing `conversation_messages.metadata`: prompt/outcome, run/model identity, citations, skill snapshots and safe tool/outcome labels. Existing chat transcript and citation references are retained separately.
+- Episodic memory requires current consent `2026-11-14.v1`; configurable retention defaults to 90 days (`MOREAI_EPISODIC_MEMORY_RETENTION_DAYS`, accepted 7–3650), with expiry metadata cleanup that does not delete chat messages.
+- Customer Memory API now lists episodes, supports per-episode deletion, and `DELETE /api/v1/customer/memory` disables consent and clears Personal Memory plus episodic metadata while preserving chat history/citations.
+- Existing Personal Memory settings UI now shows Agent experience summaries, outcomes, expiry and delete actions. No global styling or design tokens changed. Screenshot/browser visual regression was not performed under the no-test constraint.
+- Citation metadata is persisted with assistant messages; existing Customer API citation projection and Chat citation UI remain canonical.
+- Skill Resolver resolved/executed audit inserts are idempotent; successful normal Agent completion now records skill execution. Approved immutable skill snapshots and permission enforcement remain authoritative.
+- Existing Agent Studio immutable configuration snapshots and tool allowlists were inspected and reused; no duplicate configuration subsystem was added.
+- Report: `PHASE-09-EPISODIC-MEMORY-CITATION-SKILL-LIFECYCLE-20261115.md`.
+- Source-only commits include `95da575a`, `5f830145`, `e8155f7c`, `1afc45f4`, `4d9063c1`, `56f95a7e`, `2abaddd5`, `04811efc`, `b7830095`, `4779d1d4`, `9aba25b7`, `c666d09d`, `8d1f4a4e`, `af00baea`, `dc25e4f9`.
+- No tests, lint, typecheck, build, browser/API/worker/provider operations, staging, deployment or live Supabase mutation were performed. UI visual regression remains NOT VERIFIED. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
