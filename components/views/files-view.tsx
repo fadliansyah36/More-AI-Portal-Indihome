@@ -24,6 +24,9 @@ type ArtifactFile = {
   date: string;
   type: FileCategory;
   checksum: string | null;
+  runId: string | null;
+  source: string | null;
+  scanStatus: string | null;
 };
 
 const categoryFor = (mime: string | null, path: string): FileCategory => {
@@ -90,6 +93,9 @@ export const FilesView: React.FC = () => {
       date: new Date(row.created_at).toLocaleString('id-ID'),
       type: categoryFor(row.mime_type, row.storage_path),
       checksum: row.checksum_sha256,
+      runId: typeof metadata.run_id === 'string' ? metadata.run_id : null,
+      source: typeof metadata.source === 'string' ? metadata.source : null,
+      scanStatus: typeof metadata.scan_status === 'string' ? metadata.scan_status : null,
     };
   });
 
@@ -490,6 +496,7 @@ export const FilesView: React.FC = () => {
               <span className="min-w-0">
                 <span className="block truncate text-xs font-bold text-slate-900 group-hover:text-red-600">{file.name}</span>
                 <span className="mt-0.5 flex gap-2 text-[10px] text-slate-500"><span>{file.size}</span><span>·</span><span>{file.date}</span></span>
+                {file.source === 'openfuse_browser_download' && <span className="mt-1 block text-[10px] text-slate-600">OpenFuse Browser · Scan {file.scanStatus || 'belum tersedia'}{file.runId ? ' · Run ' + file.runId.slice(0, 8) : ''}</span>}
               </span>
             </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />

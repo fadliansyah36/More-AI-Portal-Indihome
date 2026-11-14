@@ -507,6 +507,23 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
                         </button>
                       )}
                     </div>
+                    {expandedRunId === run.id && artifacts.some((artifact) => artifact.run_id === run.id && artifact.metadata?.source === 'openfuse_browser_download') && (
+                      <section className="mt-3 rounded-xl border border-slate-200 bg-white p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-800">Browser downloads · OpenFuse</p>
+                          <span className="text-[9px] font-semibold text-emerald-700">Artifact tersimpan</span>
+                        </div>
+                        {artifacts.filter((artifact) => artifact.run_id === run.id && artifact.metadata?.source === 'openfuse_browser_download').map((artifact) => (
+                          <div key={artifact.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 p-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-[11px] font-semibold text-slate-800">{String(artifact.metadata?.filename || artifact.id)}</p>
+                              <p className="text-[9px] text-slate-500">{artifact.mime_type || 'MIME tidak tersedia'} · {artifact.size_bytes == null ? 'Ukuran tidak tersedia' : (artifact.size_bytes / 1024).toFixed(1) + ' KB'} · Scan {String(artifact.metadata?.scan_status || 'tidak tersedia')}</p>
+                            </div>
+                            <button type="button" onClick={() => void downloadRunArtifact(artifact.id)} disabled={downloadingArtifactId === artifact.id} className="shrink-0 rounded-lg border border-slate-200 px-2 py-1.5 text-[9px] font-semibold text-slate-700 disabled:opacity-50">{downloadingArtifactId === artifact.id ? '…' : 'Unduh'}</button>
+                          </div>
+                        ))}
+                      </section>
+                    )}
                     {expandedRunId === run.id && (() => {
                       const mediaArtifacts = artifacts.filter((artifact) =>
                         artifact.run_id === run.id
