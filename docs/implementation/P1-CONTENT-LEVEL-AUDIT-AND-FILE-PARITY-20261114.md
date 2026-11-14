@@ -1051,3 +1051,44 @@ The mobile documentation strengthens the product mapping for a single Connection
 | Telemetry | MoreAI approved observability | No third-party identity leakage or unapproved telemetry binding |
 
 **Count:** twelve additional distinct full-file reviews; tracked total is **144/219**, with **75 remaining**. Documentation/configuration was inspected statically only. No command in these guides was executed. No package installation, build/lint/typecheck/tests, live browser/Google/provider/API probe, staging, deployment or Supabase mutation occurred.
+
+
+---
+
+## 27. Eighteenth continuation increment — OpenFuse approval, OAuth, Google and durable workflow regression-source review
+
+**Date:** 2026-11-14. Ten additional distinct test files were fetched in full and reviewed as source at pinned commit 7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc. The test programs were **not executed**.
+
+| Path | Pinned blob SHA | Source-review coverage |
+|---|---|---|
+| tests/actions.test.ts | e875b05864f61d233cd2ae9f792c53256341e971 | approval races, idempotency, target version, expiry, uncertain writes, cancellation |
+| tests/agent-api.test.ts | 432730180b406066b2cb01a7a34baeb19acf231d | owner-scoped task APIs, memory, goals, ideas, notifications, monitor recovery |
+| tests/api.test.ts | 627b29b1634005747025e761b2ad0b0b14493f68 | session revocation, origin checks, file recovery, AG-UI stream, signed links |
+| tests/auth-startup.test.ts | 3abe91ec0ba066d5fa65c07ed568276e0b4d5b6a | concurrent key initialization, persistence and deployment identity |
+| tests/google.test.ts | 6f16a3432d5e0ca83805b71bf43dad72452d28d0 | Gmail parsing/attachments, calendar zones, versioned writes, provider uncertainty |
+| tests/oauth.test.ts | 91c5330bf49ce78238127c8805ed85b169707573 | PKCE state single-use, account-switch race, disconnect/refresh invalidation |
+| tests/workflows.test.ts | 91ab56e7b82b9e5e176c5b637eb19453827f6fa5 | durable task recovery, review/resume, retries, milestones, scheduler/watch backoff |
+| tests/rate-limit.test.ts | c34e889195bd3b5d4070d03eb0fba821ba223cc3 | pre-auth key spoofing, bounded memory, capacity fail-closed |
+| tests/vault.test.ts | 81516e0296c9da2953833508fe188786acb03a67 | AES-GCM envelope integrity, malformed key rejection, legacy AAD compatibility |
+| tests/rich-threads.test.ts | a2697f3e9d4af23d66885ddc8251456872637e88 | owner-scoped thread provision/list/rename/archive, replay and error handling |
+
+### Findings and MoreAI integration requirements
+
+- **Approval lifecycle:** upstream regression cases explicitly cover single-consumption under concurrent approval, owner/hash/expiry validation, target-version binding, cancellation racing execution, and preservation of uncertain provider writes. MoreAI's Connections Center must use the same safety invariants but bind approval to tenant + authenticated user + canonical Agent Run/Step + exact connector/action payload hash + target version + expiry + idempotency key. An uncertain send/calendar mutation must never be blindly retried.
+- **OAuth lifecycle:** account replacement and disconnect invalidate in-flight authorization/refresh operations. MoreAI's Google OAuth state must be one-time, tenant/user-bound and race-safe; token refresh and disconnect require generation/CAS semantics and encrypted server-only credential storage.
+- **Google Workspace:** source cases cover Gmail MIME parsing, header injection rejection, attachment size limits, thread detail, all-day calendar boundaries, IANA time zones, selected calendars, pagination, recurring event restrictions, optimistic version checks and outcome-unknown for interrupted/5xx writes. These are high-value acceptance requirements for Gmail and Calendar adapters. Provider read errors must not be presented as an empty inbox.
+- **Scheduling and automation:** monitor tests document baseline snapshots, repeated-change deduplication, relative-time normalization, price-only changes, backoff, pause after repeated failures and independent alert streaks after resume. MoreAI scheduler must persist timezone/UTC semantics, trigger state, retry/backoff, pause/resume and run history while enqueuing the canonical Agent Run; it must not use browser memory or an independent OpenFuse task engine as its source of truth.
+- **Durable workflow:** document tasks wait for review and resume from persisted receipts; retries recover already-produced artifacts after checkpoint loss; attachment import and reconnection are idempotent; cancellation denies pending actions; milestones do not complete on failed/cancelled/review-blocked work. These map to MoreAI's durable run checkpoints, artifact store, approval state and workflow coordinator.
+- **API and file boundary:** regression source expects origin restrictions, revocable sessions, owner-bound signed links, file recovery after metadata persistence failure and stable AG-UI events. MoreAI must instead use Supabase Auth + FastAPI JWT/tenant enforcement and its existing Supabase Storage artifact boundary.
+- **Rate limiting:** the upstream limiter has bounded in-memory state and fails closed at capacity, with proxy headers trusted only behind an explicit trusted-proxy setting. It is not a distributed tenant quota/rate-limit store; MoreAI must enforce durable per-user/tenant/provider quota at FastAPI/worker and keep infrastructure rate limiting separate.
+- **Vault:** AES-256-GCM authenticated envelopes and legacy associated-data compatibility are useful migration requirements. MoreAI must use its canonical server-side secret vault/key management and never copy credential ciphertext into customer-readable tables or browser state.
+- **Rich Threads:** thread identity and pagination are owner-bound and provider errors remain errors. MoreAI may adapt protocol/UX semantics, but its Supabase conversations and OpenManus Agent Run lifecycle remain canonical.
+
+### Security and product decisions
+
+1. Treat these test files as **specification evidence**, not proof that MoreAI already implements the behavior.
+2. Do not import OpenFuse's Store, auth, task engine, Rich Threads service, or worker to satisfy these cases.
+3. Re-express the approved invariants through MoreAI's existing FastAPI, OpenManus runtime, durable Worker, Supabase schema and customer API client.
+4. No Google credentials were used, no provider request was made, no test was run and no user/tenant data was created.
+
+**Count:** ten additional distinct full-file source reviews; tracked total is **154/219**, with **65 remaining**. No package installation, script execution, build/lint/typecheck/test run, staging, deployment or Supabase mutation occurred.
