@@ -17,7 +17,7 @@ interface CreateViewProps {
 }
 
 export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
-  const [activeTab, setActiveTab] = useState<'semua' | 'teks' | 'gambar' | 'video'>('semua');
+  const [activeTab, setActiveTab] = useState<'semua' | 'teks' | 'gambar' | 'video' | 'file'>('semua');
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = useState('');
   const [handoffNotice, setHandoffNotice] = useState<string | null>(null);
@@ -89,6 +89,17 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
       color: 'bg-indigo-50 text-indigo-600 border-indigo-200',
       samplePrompt: 'Buat script video TikTok 15 detik tentang kemudahan akses AI di jaringan Global Partner ISP.',
     },
+    {
+      id: 'file-gen',
+      agentKey: 'manus' as const,
+      name: 'Generate File',
+      altName: 'Buat File',
+      category: 'file',
+      desc: 'Buat dokumen kerja dan simpan hasilnya sebagai artifact pada workspace MoreAI.',
+      icon: FileText,
+      color: 'bg-sky-50 text-sky-700 border-sky-200',
+      samplePrompt: 'Buat dokumen kerja yang rapi berdasarkan instruksi saya. Pilih format yang sesuai (TXT, Markdown, CSV, atau JSON), simpan file nyata ke workspace menggunakan tool file_saver, dan berikan nama file serta ringkasan hasilnya. Jangan mengklaim file tersimpan jika tool gagal.',
+    },
   ];
 
   const filteredTools = tools.filter((tool) => {
@@ -107,12 +118,10 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     const selected = tools.find((tool) => tool.id === selectedTool);
     if (!selected) return;
 
-    // Image generation requires a configured media provider and remains
-    // unavailable until that provider is integrated. The existing video tool
-    // describes script/storyboard authoring, which is text work supported by
-    // the current OpenManus Chat path. Do not claim a rendered video exists.
+    // Image and rendered-video generation require a real media provider adapter.
+    // Until the worker advertises one, keep those actions fail-closed.
     if (selected.category === 'gambar') {
-      setHandoffNotice('Generasi gambar belum tersedia pada runtime OpenManus yang terhubung. Tidak ada gambar atau kredit yang dibuat.');
+      setHandoffNotice('Provider Image Generation belum terhubung ke worker MoreAI. Tidak ada gambar yang dibuat dan tidak ada kredit yang dipotong.');
       return;
     }
     if (!onNavigateToChat) {
@@ -121,13 +130,18 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     }
 
     const isVideoScript = selected.id === 'video-gen';
+    const isFileGeneration = selected.category === 'file';
     const taskInstruction = isVideoScript
       ? 'Buat naskah, storyboard per adegan, arahan visual, voice-over, dan timing untuk video. Hasilkan dokumen teks saja; jangan mengklaim membuat atau merender file video.'
-      : 'Gunakan kemampuan AI MoreAI untuk tugas ' + selected.name + '.';
+      : isFileGeneration
+        ? 'Buat artifact file nyata berdasarkan instruksi pengguna. Gunakan tool file_saver dengan nama file dan MIME type yang sesuai. Pastikan hasil tool mengonfirmasi penyimpanan sebelum menyatakan file selesai.'
+        : 'Gunakan kemampuan AI MoreAI untuk tugas ' + selected.name + '.';
     setHandoffNotice(
       isVideoScript
-        ? 'Brief naskah dan storyboard dibuka di Chat AI. Kirim pesan untuk menjalankan Agent; file video tidak dibuat.'
-        : 'Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.'
+        ? 'Brief naskah dan storyboard dibuka di Chat AI. File video belum dirender.'
+        : isFileGeneration
+          ? 'Brief pembuatan file dibuka di Chat AI. Agent akan menyimpan artifact hanya jika tool storage berhasil.'
+          : 'Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.'
     );
     onNavigateToChat(taskInstruction + '\n\nInstruksi pengguna:\n' + customPrompt.trim(), selected.agentKey);
   };
@@ -144,7 +158,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
 
       {/* Category Tabs */}
       <div className="flex items-center gap-1.5 p-1 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-        {(['semua', 'teks', 'gambar', 'video'] as const).map((tab) => (
+        {(['semua', 'teks', 'gambar', 'video', 'file'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
