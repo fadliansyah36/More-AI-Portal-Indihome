@@ -238,3 +238,11 @@ Knowledge Search returns an explicit validated `citation_marker` for each chunk.
 - Added and successfully applied migration `20261114070000_moreai_media_artifact_bucket_capacity.sql`: it preserves `public=false` and raises the bucket file size limit to 150,000,000 bytes (150 MB), matching the worker's bounded media artifact limit.
 - The migration does not make Storage public and does not change Customer direct access. The Worker service-role artifact pipeline remains the only write path.
 - No generated media was requested from a provider; no tests or runtime checks were run.
+
+
+## Additional Customer fallback-content audit
+
+- EduTech screens contain no seeded/demo course or lesson records; they show an explicit unavailable state and only read the user's persisted learning progress.
+- Account Upgrade reads actual entitlements and keeps checkout/activation disabled. Replaced unverified “unlimited AI” plan marketing copy with a statement that benefits and quotas will follow backend-confirmed packages.
+- Captive OTP inputs and verification are disabled until gateway send/verify contracts exist; no demo OTP is accepted. Captive Portal remains explicitly labelled as a preview, and the success screen independently checks for a real active network session before displaying connected status.
+- Support screen does not invent a contact address or create a fake ticket; it explicitly reports that the official support channel is not configured.
