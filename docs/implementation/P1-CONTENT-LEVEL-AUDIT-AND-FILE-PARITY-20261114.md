@@ -1189,3 +1189,27 @@ Ten Scenario Skills files were fetched and statically reviewed at pinned commit 
 The source inventory JSON is a large 2,393-row file and the connected file-read surface returned an empty/truncated payload on a subsequent read. The ten reviews above are therefore recorded here with exact pinned blob SHAs, but **the machine-readable inventory was not updated in this increment**. Do not count these ten as reconciled manifest rows until the manifest can be safely fetched and updated with its current blob SHA. This is an explicit bookkeeping limitation, not a completed ledger update.
 
 **P1 remains OPEN.** This is static review only; no tests/scripts/builds/install, provider requests, staging, deployment or Supabase mutation occurred.
+
+
+---
+
+## 31. Twenty-second continuation increment — OpenFuse authentication and signed-link boundary
+
+Pinned OpenFuse file `apps/server/src/auth.ts` was fetched and statically reviewed at commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`, blob SHA `a053d0e9cd9a2ca4af5a5e72a367014f487cf51e`.
+
+### Findings
+
+- Session tokens are random 32-byte base64url values; only SHA-256 digests are persisted. The live-mode access-key comparison hashes both values before constant-time comparison.
+- Session rows are stored under a global `system/sessions` namespace with a fixed owner string `local-user`. This is explicitly single-user/local-product behavior and cannot be carried into MoreAI's tenant/customer identity model.
+- Expired sessions are rejected and best-effort deleted. Revocation removes the digest-keyed session.
+- Document links use an HMAC-SHA256 over owner, path and expiry with a 15-minute expiry. Verification checks required parameters, expiry, signature shape and constant-time signature equality.
+- The signing key is stored in a private data directory using mode 0600; creation uses a unique temporary file and hard-link publication to avoid concurrent process overwrite. The data directory is created with mode 0700.
+
+### MoreAI disposition
+
+- **ADAPT:** token hashing, constant-time secret comparison, short-lived signed artifact URL semantics, best-effort expired-session cleanup, and race-safe key creation patterns.
+- **EXCLUDE:** fixed `local-user`, global owner namespace, app-owned session lifecycle, and any replacement of Supabase Auth/JWT tenant context.
+- MoreAI signed artifact URLs must additionally bind tenant, authenticated subject, artifact ID/version, allowed method and expiry; authorization must be rechecked at the FastAPI boundary and object access must remain scoped to the correct Supabase storage path. HMAC validity alone is not authorization.
+- No code was copied. The follow-up path guesses for separate OAuth/Google/worker files returned 404 at the pinned commit and are not counted as reviewed files; those capabilities must be located through the actual pinned tree before conclusions are drawn.
+
+**P1 remains OPEN.** Static review only; no test execution, provider calls, staging, deployment or Supabase mutation.
