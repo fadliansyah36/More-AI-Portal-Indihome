@@ -29,7 +29,7 @@ class OpenAIImageGenerationAdapter:
         self.estimator = estimator
 
     @classmethod
-    def from_environment(cls, *, http: httpx.AsyncClient, artifacts: Any, accounting: Any, estimator: Any):
+    def from_environment(cls, *, http: httpx.AsyncClient, client: Any, artifacts: Any, accounting: Any, estimator: Any):
         required = (
             "OPENAI_API_KEY",
             "MOREAI_MEDIA_ENTITLEMENT_KEY",
@@ -64,7 +64,7 @@ class OpenAIImageGenerationAdapter:
             return None
         if not math.isfinite(credits_per_usd) or credits_per_usd <= 0 or not 1 <= timeout_seconds <= 300:
             return None
-        return cls(http=http, artifacts=artifacts, accounting=accounting, estimator=estimator)
+        return cls(http=http, client=client, artifacts=artifacts, accounting=accounting, estimator=estimator)
 
     def _route(self, model: str, image_cost: float) -> ResolvedModelRoute:
         # The existing usage ledger is reused for atomic wallet/quota reservation.
