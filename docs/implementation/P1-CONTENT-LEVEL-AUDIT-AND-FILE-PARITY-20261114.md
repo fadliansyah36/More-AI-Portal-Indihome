@@ -1001,3 +1001,53 @@ The mobile documentation strengthens the product mapping for a single Connection
 5. Native/PDF/Browser components from OpenFuse are not imported; missing MoreAI UI is built only after the mandatory integration gates and using the protected MoreAI design system.
 
 **Count:** fourteen additional distinct full-file reviews; tracked total is **132/219**, with **87 remaining**. Static source/config/documentation review only. No dependency installation, script execution, build/lint/typecheck/tests, browser/provider/API probe, staging, deployment or Supabase mutation occurred.
+
+
+---
+
+## 26. Seventeenth continuation increment — OpenFuse capability guides, Rich Threads and deployment-boundary review
+
+**Date:** 2026-11-14. Twelve additional distinct files fetched in full at pinned commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA | Disposition |
+|---|---|---|
+| `docs/COMPUTER.md` | `ce1d49bf16fe42768936e8feeab4aea955bfaf58` | ARCHIVE-ONLY / security guidance |
+| `docs/DEMO.md` | `8cf6c2496e616dda156b1c09a13b196198677973` | ARCHIVE-ONLY |
+| `docs/EXPERIENCE.md` | `faa1df54d36763890587e32ecda2b613e4bfec09` | ADAPT interaction contracts |
+| `docs/OPENBOT-INTEGRATION.md` | `65a4e1c707a2434efe8d0ffbe6afe3b16edf97f6` | ARCHIVE-ONLY / adapter reference |
+| `docs/README.md` | `0c6d24e08127a465043f7d68bfab441d9b8a7c5c` | ARCHIVE-ONLY |
+| `docs/RICH-THREADS.md` | `35b1a18b1839b4719fef87b5d1dff447aa59b148` | ADAPT protocol/lifecycle patterns |
+| `docs/TELEMETRY.md` | `80837007717f5860d3206d042032b18254c1ff11` | EXCLUDE external telemetry identity/config |
+| `docs/demos/jev-generative-ui.md` | `4ac616682fce26c4a59a8a505524623c3b792d5a` | ARCHIVE-ONLY |
+| `infra/compose.yaml` | `703291bd72854a537d3bbabdc27820435dabead9` | ARCHIVE-ONLY / security reference |
+| `render.yaml` | `6da545d6c82b79428bdd6cc31cc8f9a406720fcd` | EXCLUDE from MoreAI deployment |
+| `renovate.json` | `22a994324a0eaa41756cba09e125fdca2ed29fce` | ARCHIVE-ONLY |
+| `pnpm-workspace.yaml` | `cc8eef0d5bd3b2f4c5d142ef590960815f630cf7` | EXCLUDE from MoreAI workspace |
+
+### Findings and MoreAI disposition
+
+- The computer guide confirms two distinct execution models: Docker with network disabled and E2B desktop with outbound network. The latter exposes a live desktop stream URL that behaves as a bearer capability. Neither model is directly activated in MoreAI by importing UI code; MoreAI requires its own authenticated, tenant-bound, revocable session, secure stream transport, action approvals and isolated egress policy.
+- The guide explicitly states there is no host-shell fallback when Docker is unavailable. MoreAI must preserve this fail-closed property: missing sandbox/runtime means unavailable, never execute on the FastAPI host.
+- Experience documentation distinguishes foreground conversation, local follow-up draft queue and durable delegated tasks. MoreAI's durable Agent Run state remains canonical; the browser may keep drafts/queue presentation but cannot claim queued work was durably accepted until FastAPI confirms it.
+- Structured action review retains exact recipient/target and accept/reject controls. MoreAI approval must additionally bind authenticated tenant, user, run, step, canonical payload hash, target version, expiry, idempotency key and immutable receipt.
+- Rich Threads documentation shows thread persistence and replay are a separately configured CopilotKit Intelligence service. Its API key and telemetry ID must remain server-only. It is not a replacement for MoreAI's canonical conversation/message persistence, Supabase tenant authorization or Agent Run event store.
+- OpenFuse's documented single-user workspace model is incompatible with MoreAI's multi-tenant customer product. Do not copy shared access-key authentication, local owner identity, PGlite persistence, or direct Intelligence identity into MoreAI.
+- OpenBot documentation describes an optional HTTP/AG-UI adapter and a separate authentication model. This remains a protocol/adapter reference only; no second agent runtime or identity authority is approved.
+- Telemetry configuration binds events to an external CopilotKit/Clerk identity and project. MoreAI must use its own approved analytics/consent model and must not leak tenant/user data or assume OpenFuse telemetry attribution.
+- The Compose file binds the browser worker to loopback, requires a 32-character worker token, uses a persistent browser-profile volume, read-only filesystem, dropped capabilities, no-new-privileges and resource limits. These are useful deployment-hardening patterns but are not proof of hostile-tenant isolation or network firewall enforcement.
+- Render Blueprint provisions a separate API, browser worker and static Expo UI; it uses generated OpenFuse access/encryption keys, PGlite disk and a browser worker profile volume. This deployment topology and service names must not be copied into MoreAI's existing hosting/runtime architecture.
+- OpenFuse pnpm workspace contains only Expo mobile and browser worker packages. Its dependency graph is not a package workspace specification for MoreAI. Importing it would introduce a competing app shell and worker lifecycle.
+- Demo guide explicitly separates scripted agent conversation from actual tool/browser results and warns that a demo is not an evaluation of live model reasoning. MoreAI must retain the same strict distinction between sample/demo and live production state.
+
+### Customer capability mapping reinforced by this increment
+
+| Customer capability | MoreAI integration owner | Constraint |
+|---|---|---|
+| Persistent chat/thread and replay | Existing conversation store + FastAPI + OpenManus events | Supabase remains canonical; external thread provider cannot override ownership |
+| Stop and follow-up drafts | Existing chat composer + Agent Run cancellation | Draft queue is not a durable worker queue |
+| Mail/Calendar action review | Connections Center + connector service + approval/audit | Write scope and side effect require explicit approval |
+| Browser/Computer | Tool registry + isolated sandbox + durable run | Blocked until sandbox/egress/security gates pass |
+| Files/PDF/artifacts | Files/Artifacts service + Supabase Storage | Bounded parsing, quarantine and tenant ownership |
+| Telemetry | MoreAI approved observability | No third-party identity leakage or unapproved telemetry binding |
+
+**Count:** twelve additional distinct full-file reviews; tracked total is **144/219**, with **75 remaining**. Documentation/configuration was inspected statically only. No command in these guides was executed. No package installation, build/lint/typecheck/tests, live browser/Google/provider/API probe, staging, deployment or Supabase mutation occurred.
