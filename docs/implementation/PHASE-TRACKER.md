@@ -1309,3 +1309,6 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Implementation report: [First-party EduTech persistence and OpenManus tools](./PHASE-09-EDUTECH-SUPABASE-OPENMANUS-TOOLS-20261114.md).
 - Supabase migration application returned success. No tests, lint, typecheck, build, SQL verification query, browser/API/worker runtime checks, provider calls, staging or deployment were run per owner instruction.
 - Phase 09 remains IN PROGRESS. Next: finish the full Customer API action and workflow/task lifecycle audit, then close the remaining Customer dashboard integrations backed by existing contracts. Payment, OTP/Gateway and external media provider configuration remain deferred. Phase 10 is NOT ACCEPTED; Phase 11 remains BLOCKED.
+
+
+- EduTech lifecycle hardening follow-up: path creation, lesson generation, quiz generation and quiz assessment now have run/resource uniqueness and replay-safe RPC behavior; learner-facing lesson detail strips answer keys, explanations and grading notes. Task detail now reads Agent Run-linked learning artifacts, and EduTech progress counts canonical lesson progress. Follow-up migration `20261114081000_moreai_edutech_tool_idempotency.sql` applied successfully. No tests/runtime checks were run.
