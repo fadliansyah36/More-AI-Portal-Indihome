@@ -184,7 +184,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
   };
 
   const retrySelectedRun = async () => {
-    if (!selectedRun || !isTerminalAgentRunStatus(selectedRun.status) || retryingRun) return;
+    if (!selectedRun || !['failed', 'timed_out', 'expired'].includes(selectedRun.status) || retryingRun) return;
     setRetryingRun(true);
     setRunDetailError(null);
     try {
