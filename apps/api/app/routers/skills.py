@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import asyncio
 import json
 import tomllib
 from datetime import datetime, timezone
@@ -186,6 +187,91 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+
+async def _resolve_exact_dependency_licenses(http: Any, dependencies: list[dict[str, Any]]) -> dict[str, Any]:
+    semaphore = asyncio.Semaphore(8)
+    async def resolve(item: dict[str, Any]) -> dict[str, Any]:
+        ecosystem = item.get("ecosystem")
+        name = item.get("name")
+        version = item.get("exact_version")
+        if not isinstance(name, str) or not isinstance(version, str):
+            return {**item, "registry_metadata_status": "not_exactly_pinned", "license_declared": "NOASSERTION"}
+        if ecosystem == "npm":
+            url = "https://registry.npmjs.org/" + quote(name, safe="@") + "/" + quote(version, safe="")
+        elif ecosystem == "pypi":
+            url = "https://pypi.org/pypi/" + quote(name, safe="") + "/" + quote(version, safe="") + "/json"
+        elif ecosystem == "cargo":
+            url = "https://crates.io/api/v1/crates/" + quote(name, safe="") + "/" + quote(version, safe="")
+        else:
+            return {**item, "registry_metadata_status": "registry_not_supported", "license_declared": "NOASSERTION"}
+        async with semaphore:
+            try:
+                response = await http.get(url, headers={"Accept":"application/json","User-Agent":"MoreAI-Skill-SBOM/1.0"}, timeout=12.0, follow_redirects=False)
+                if response.status_code != 200:
+                    return {**item, "registry_metadata_status": "not_found_or_unavailable", "license_declared": "NOASSERTION"}
+                payload = response.json()
+                license_value = None
+                if ecosystem == "npm":
+                    license_value = payload.get("license")
+                    if isinstance(license_value, dict):
+                        license_value = license_value.get("type")
+                elif ecosystem == "pypi":
+                    info = payload.get("info") if isinstance(payload.get("info"), dict) else {}
+                    license_value = info.get("license")
+                    if not license_value:
+                        classifiers = info.get("classifiers") or []
+                        license_value = "; ".join(value.split("::")[-1].strip() for value in classifiers if "License ::" in value) or None
+                elif ecosystem == "cargo":
+                    version_data = payload.get("version") if isinstance(payload.get("version"), dict) else {}
+                    license_value = version_data.get("license")
+                return {
+                    **item, "registry_metadata_status": "resolved",
+                    "license_declared": str(license_value)[:240] if license_value else "NOASSERTION",
+                    "registry_metadata_url": url,
+                }
+            except Exception:
+                return {**item, "registry_metadata_status": "fetch_failed", "license_declared": "NOASSERTION"}
+    bounded = dependencies[:100]
+    resolved = await asyncio.gather(*(resolve(item) for item in bounded))
+    if len(dependencies) > len(bounded):
+        resolved.extend({**item, "registry_metadata_status":"resolution_limit_exceeded","license_declared":"NOASSERTION"} for item in dependencies[len(bounded):])
+    exact = [item for item in resolved if item.get("exact_version")]
+    return {
+        "packages": resolved,
+        "exact_version_count": len(exact),
+        "registry_metadata_resolved_count": sum(1 for item in exact if item.get("registry_metadata_status") == "resolved"),
+        "license_assertion_count": sum(1 for item in exact if item.get("license_declared") != "NOASSERTION"),
+        "unresolved_count": sum(1 for item in resolved if item.get("registry_metadata_status") != "resolved"),
+        "note": "Registry metadata is version-specific evidence only. It does not prove license compatibility, source provenance, transitive completeness or asset rights; human review remains mandatory.",
+    }
+
+
+def _spdx_skill_sbom(skill: dict[str, Any], packages: list[dict[str, Any]]) -> dict[str, Any]:
+    spdx_packages = []
+    for index, item in enumerate(packages, start=1):
+        name = str(item.get("name") or "unknown")
+        version = str(item.get("exact_version") or item.get("requested") or "UNKNOWN")
+        spdx_packages.append({
+            "name": name, "SPDXID": f"SPDXRef-Dependency-{index}",
+            "versionInfo": version,
+            "downloadLocation": "NOASSERTION",
+            "filesAnalyzed": False,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": str(item.get("license_declared") or "NOASSERTION"),
+            "copyrightText": "NOASSERTION",
+            "externalRefs": [],
+            "comment": f"{item.get('ecosystem')} · {item.get('registry_metadata_status')} · {item.get('source_manifest')}",
+        })
+    return {
+        "spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0",
+        "SPDXID": "SPDXRef-DOCUMENT", "name": f"MoreAI Skill {skill.get('slug','unknown')} SBOM",
+        "documentNamespace": f"https://moreai.invalid/sbom/skills/{skill.get('id','unknown')}/{skill.get('content_sha256','unknown')}",
+        "creationInfo": {"creators":["Tool: MoreAI-Skill-Registry"],"created":datetime.now(timezone.utc).isoformat()},
+        "packages": spdx_packages,
+        "relationships": [{"spdxElementId":"SPDXRef-DOCUMENT","relationshipType":"DESCRIBES","relatedSpdxElement":package["SPDXID"]} for package in spdx_packages],
+    }
+
+
 async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
     rows = await repo.select("moreai_skill_packages", {
@@ -203,6 +289,17 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
         "limit": "40",
     })
     source_inventory = _source_review_inventory(files)
+    registry_inventory = await _resolve_exact_dependency_licenses(request.app.state.http, source_inventory["dependencies"])
+    sbom = _spdx_skill_sbom(skill, registry_inventory["packages"])
+    source_inventory["registry_resolution"] = {
+        "exact_version_count": registry_inventory["exact_version_count"],
+        "registry_metadata_resolved_count": registry_inventory["registry_metadata_resolved_count"],
+        "license_assertion_count": registry_inventory["license_assertion_count"],
+        "unresolved_count": registry_inventory["unresolved_count"],
+        "note": registry_inventory["note"],
+    }
+    source_inventory["sbom"] = sbom
+    source_inventory["dependencies"] = registry_inventory["packages"]
     manifest = skill.get("manifest") if isinstance(skill.get("manifest"), dict) else {}
     if not manifest or not source_inventory["manifest_files"]:
         findings.append("A source-controlled SKILL.md or package manifest is required; user-entered metadata alone is not a skill manifest.")
@@ -218,6 +315,8 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
             break
     if not skill.get("license_evidence") or not source_inventory["license_files"]:
         findings.append("Repository LICENSE/NOTICE evidence is incomplete; legal approval is required.")
+    if registry_inventory["unresolved_count"]:
+        findings.append("One or more dependency versions or registry license metadata remain unresolved; inspect the generated SPDX SBOM.")
     if not skill.get("source_path") or ".." in str(skill["source_path"]).split("/"):
         findings.append("Unsafe source path.")
     if not skill.get("source_blob_sha") or not skill.get("content_sha256"):
