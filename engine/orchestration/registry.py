@@ -26,3 +26,23 @@ class AgentRegistry:
 
     def enabled_keys(self) -> tuple[str, ...]:
         return tuple(sorted(self._agents))
+
+    def capability_snapshot(self) -> dict[str, object]:
+        """Describe capabilities from registered runtime adapters, not static catalog claims."""
+        runtimes: dict[str, dict[str, object]] = {}
+        for key, runtime in sorted(self._agents.items()):
+            tool_runtime = runtime
+            if key == "planning":
+                tool_runtime = getattr(runtime, "step_executor", runtime)
+            registry = getattr(tool_runtime, "tools", None)
+            definitions = registry.definitions() if registry is not None else []
+            tool_keys: list[str] = []
+            for definition in definitions:
+                if not isinstance(definition, dict):
+                    continue
+                function = definition.get("function")
+                name = function.get("name") if isinstance(function, dict) else None
+                if isinstance(name, str) and name:
+                    tool_keys.append(name)
+            runtimes[key] = {"tool_keys": sorted(set(tool_keys))}
+        return {"runtimes": runtimes, "source": "registered_worker_adapters"}
