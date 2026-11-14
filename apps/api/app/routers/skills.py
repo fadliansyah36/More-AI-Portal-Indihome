@@ -104,9 +104,24 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
         raise HTTPException(404, "skill_not_found")
     skill = rows[0]
     findings: list[str] = []
+    files = await repo.select("moreai_skill_source_files", {
+        "skill_package_id": f"eq.{skill_id}", "owner_user_id": f"eq.{user['id']}",
+        "select": "relative_path,git_blob_sha,content_sha256,byte_size,text_content,binary_content_base64",
+        "limit": "40",
+    })
     manifest = skill.get("manifest") if isinstance(skill.get("manifest"), dict) else {}
     if not manifest:
         findings.append("Skill manifest is missing; package is not executable.")
+    if not files:
+        findings.append("Pinned source files have not been ingested and integrity-verified.")
+    if len(files) > 40 or sum(int(item.get("byte_size") or 0) for item in files) > 5 * 1024 * 1024:
+        findings.append("Source package exceeds the file-count or expanded-size limit.")
+    if files and not any(item.get("git_blob_sha") == skill.get("source_blob_sha") and item.get("content_sha256") == skill.get("content_sha256") for item in files):
+        findings.append("Root entrypoint does not match the immutable provenance hashes.")
+    for item in files:
+        if not SHA40.fullmatch(str(item.get("git_blob_sha") or "")) or not SHA64.fullmatch(str(item.get("content_sha256") or "")):
+            findings.append("One or more source file hashes are malformed.")
+            break
     if not skill.get("license_evidence"):
         findings.append("License evidence is missing; legal approval is required.")
     if not skill.get("source_path") or ".." in str(skill["source_path"]).split("/"):
