@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from typing import Any
+from datetime import datetime, timedelta, timezone
 import json
+import os
 
 from app.client import WorkerRpcClient
 from engine.agents.memory import ConversationMemoryStore
@@ -101,9 +103,37 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
         })
         if not preferences:
             return []
+        try:
+            retention_days = int(os.getenv("MOREAI_EPISODIC_MEMORY_RETENTION_DAYS", "90"))
+        except ValueError:
+            retention_days = 90
+        if not 7 <= retention_days <= 3650:
+            retention_days = 90
+        now = datetime.now(timezone.utc)
+        cutoff = (now - timedelta(days=retention_days)).isoformat()
+        # Expire episodic metadata without deleting the underlying chat transcript
+        # or its independent citation provenance.
+        expired = await self.client.select("conversation_messages", {
+            "user_id": f"eq.{user_id}",
+            "metadata->>memory_type": "eq.episodic",
+            "created_at": f"lt.{cutoff}",
+            "select": "id,metadata",
+            "order": "created_at.asc,id.asc",
+            "limit": "100",
+        })
+        for row in expired:
+            prior = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+            cleaned = {key: value for key, value in prior.items()
+                       if key not in {"memory_type", "memory_scope", "workspace_id", "episode"}}
+            await self.client.update(
+                "conversation_messages",
+                {"id": f"eq.{row['id']}", "user_id": f"eq.{user_id}"},
+                {"metadata": cleaned},
+            )
         filters = {
             "user_id": f"eq.{user_id}",
             "metadata->>memory_type": "eq.episodic",
+            "created_at": f"gte.{cutoff}",
             "select": "content,metadata,created_at",
             "order": "created_at.desc,id.desc",
             "limit": str(limit),
