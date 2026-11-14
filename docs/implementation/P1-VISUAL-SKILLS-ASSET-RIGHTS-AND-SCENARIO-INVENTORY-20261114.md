@@ -57,7 +57,7 @@ Pinned recursive tree: 2,114 blobs, 62,154,351 bytes, `truncated=false`.
 | Test files under `tests/` or `test/` within skills | 20 |
 | Root/nested license files detected by filename | 2 |
 
-The prior working target of **179 Scenario Skills** does not match the pinned recursive tree's exact `SKILL.md` count of **172**. This is a scope reconciliation issue, not grounds to omit seven skills: the prior 179 count must be mapped to the exact source commit/path list. Current pinned source has 172 skill entrypoints; seven expected entries are not accounted for in this tree inventory and require a source-version/path reconciliation before the Scenario review can be closed.
+The prior working target of **179 Scenario entrypoints** is reconciled by the pinned tree: **172 product skill entrypoints** under `skills/` plus **7 internal repository-maintenance/skill-authoring entrypoints** under `.agents/skills/`. Therefore the 179 aggregate includes 7 internal maintainer skills and must not be mistaken for 179 product-facing Scenario skills. The 7 internal entrypoints are archive-only; the 172 product skills remain in scope for capability review.
 
 The repository tree also contains extensive non-Markdown assets (including Godot, Unity, Unreal, Roblox and DCC scripts/shaders/projects), sample media, PDFs, and nested skill materials. A filename-only license scan found root `LICENSE` and `.agents/skills/skill-creator/LICENSE.txt`; this does not prove that all binary/media/code assets are covered by those notices or that external dependencies embedded in examples have compatible licenses.
 
