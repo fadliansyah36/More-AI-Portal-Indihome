@@ -43,6 +43,11 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
   const [savedProgressCount, setSavedProgressCount] = useState(0);
   const [savedPaths, setSavedPaths] = useState<CustomerLearningPathSummary[]>([]);
   const [selectedPath, setSelectedPath] = useState<CustomerLearningPathDetail | null>(null);
+  const [lessonVersions, setLessonVersions] = useState<Array<{
+    id: string; version: number; content_md: string; objectives: string[]; source_run_id: string | null; created_at: string;
+  }>>([]);
+  const [versionHistoryLessonId, setVersionHistoryLessonId] = useState<string | null>(null);
+  const [versionsLoading, setVersionsLoading] = useState(false);
   const [pathsLoading, setPathsLoading] = useState(true);
   const [progressLoading, setProgressLoading] = useState(true);
   const [topic, setTopic] = useState('');
@@ -70,6 +75,26 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
   const openLearningPath = async (pathId: string) => {
     try { setSelectedPath(await learningApi.path(pathId)); }
     catch (error) { showToast(error instanceof Error ? error.message : 'Detail learning path gagal dimuat.', 'error'); }
+  };
+
+  const openLessonVersions = async (pathId: string, lessonId: string) => {
+    if (versionHistoryLessonId === lessonId) {
+      setVersionHistoryLessonId(null);
+      setLessonVersions([]);
+      return;
+    }
+    setVersionHistoryLessonId(lessonId);
+    setVersionsLoading(true);
+    setLessonVersions([]);
+    try {
+      const result = await learningApi.lessonVersions(pathId, lessonId);
+      setLessonVersions(result.items);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Riwayat versi lesson gagal dimuat.', 'error');
+      setVersionHistoryLessonId(null);
+    } finally {
+      setVersionsLoading(false);
+    }
   };
 
   const startLesson = (path: CustomerLearningPathDetail['path'], moduleTitle: string, lesson: CustomerLearningPathDetail['modules'][number]['lessons'][number]) => {
@@ -175,6 +200,39 @@ export const EdutechView: React.FC<EdutechViewProps> = ({ onStartPrompt }) => {
                         <span className="min-w-0"><span className="block text-[11px] font-semibold text-slate-800">{lesson.lesson_index + 1}. {lesson.title}</span><span className="text-[10px] text-slate-500">{lesson.progress?.status === 'completed' ? 'Selesai' : lesson.progress?.status === 'in_progress' ? 'Sedang dipelajari' : 'Belum dimulai'} · v{lesson.content_version}</span></span>
                         <span className="shrink-0 text-[10px] font-semibold text-red-600">Lanjutkan</span>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => void openLessonVersions(selectedPath.path.id, lesson.id)}
+                        aria-expanded={versionHistoryLessonId === lesson.id}
+                        className="mt-2 text-[10px] font-semibold text-blue-700 hover:text-blue-800"
+                      >
+                        {versionHistoryLessonId === lesson.id ? 'Tutup riwayat versi' : 'Lihat riwayat versi'}
+                      </button>
+                      {versionHistoryLessonId === lesson.id && (
+                        <div className="mt-2 rounded-xl border border-blue-100 bg-blue-50/50 p-2.5">
+                          <p className="text-[10px] font-bold text-slate-700">Riwayat konten lesson</p>
+                          {versionsLoading ? (
+                            <p className="mt-1 text-[10px] text-slate-500">Memuat versi tersimpan…</p>
+                          ) : lessonVersions.length === 0 ? (
+                            <p className="mt-1 text-[10px] text-slate-500">Belum ada versi sebelumnya yang tercatat.</p>
+                          ) : (
+                            <div className="mt-1.5 space-y-2">
+                              {lessonVersions.map((version) => (
+                                <div key={version.id} className="border-t border-blue-100 pt-1.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[10px] font-semibold text-slate-700">Versi {version.version}</span>
+                                    <span className="text-[9px] text-slate-500">{new Date(version.created_at).toLocaleString('id-ID')}</span>
+                                  </div>
+                                  {version.objectives.length > 0 && (
+                                    <p className="mt-1 text-[10px] text-slate-600">{version.objectives.join(' · ')}</p>
+                                  )}
+                                  <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-[10px] leading-relaxed text-slate-600">{version.content_md}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {lesson.quizzes.length > 0 && (
                         <div className="mt-2 border-t border-slate-100 pt-2">
                           {lesson.quizzes.map((quiz) => {
