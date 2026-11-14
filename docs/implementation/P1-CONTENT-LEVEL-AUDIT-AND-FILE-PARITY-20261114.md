@@ -578,3 +578,41 @@ The pinned tree reconciliation remains **219 blobs total**. Seven paths in this 
 A further fetch of the large standalone mobile UI files (`agent-ui.tsx`, `agent-workspace.tsx`, and `chat.tsx`) was used only to identify likely integration surfaces; these files are **not counted as full semantic reviews**. They remain excluded from MoreAI UI adoption, and their detailed content review is still pending.
 
 **No product code, dependency or Supabase changes were made.** No installs, script execution, tests, builds, lint, typechecks, staging, deployment, or database mutation were performed.
+
+
+---
+
+## 14. Sixth continuation increment — OpenFuse server and agent orchestration review
+
+**Date:** 2026-11-14. Source pin: OpenFuse `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`. Ten additional server files were fetched in full and reviewed:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/server/src/browser-console.ts` | `d88f46fba1d607792e7c26cecc69758cb420331d` |
+| `apps/server/src/computer-tools.ts` | `99f8469cd06e8e60c1e90a83bb73cf2448a751cc` |
+| `apps/server/src/demo/entry.ts` | `4f873b66ae174e05e0767b936a3fe997e020001e` |
+| `apps/server/src/demo/jev-fixture.ts` | `c4234fc2326e35b0c102f6d048a894a7697e6cf9` |
+| `apps/server/src/demo/model.ts` | `0f7ee424684f7998940476cfd76c19250e66f4bc` |
+| `apps/server/src/engine/conversation.ts` | `df2b2bdd2b20b226155c888755f429991a308224` |
+| `apps/server/src/engine/model.ts` | `8cffc66beaa2e17a099c244612b4a8115c43ca94` |
+| `apps/server/src/engine/page-diff.ts` | `b516473295ac85bb87c827130c199147aaffdcbf` |
+| `apps/server/src/engine/routes.ts` | `0d616aa9db5eb312a28911bba71f2c19f3f6e0ba` |
+| `apps/server/src/engine/service.ts` | `54684937f82708ae16cadd074fdb505b3c947904` |
+
+**Server and runtime findings:**
+- `computer-tools.ts` defines materially different security contracts: Docker workspace has networking disabled and bounded command execution; E2B desktop explicitly has outbound networking and publicly reachable listening ports without application authentication. Do not merge these into one generic "computer" trust tier. MoreAI must enforce backend authorization, isolated tenant/session, egress policy, approval gates for external side effects, strict port exposure policy and bounded execution for each provider.
+- Browser console is an HTML/JS client that fetches preview and posts interaction commands to its current URL. Its authenticated session and origin boundary must be preserved; do not expose this standalone console as a public MoreAI route without FastAPI authorization, short-lived session binding, CSP and origin controls.
+- Conversation/model engine scopes operations using a server-derived `owner`, bounds some tool inputs, treats mail/page content as untrusted, and routes high-impact email send through prepare/approval. Adapt these patterns to MoreAI's verified Supabase Auth subject and policy checks; never accept owner/tenant identity from model arguments or client payloads.
+- Agent routes expose task, goal, monitor, idea and memory operations. These are useful capability references, but MoreAI must map them into its existing customer dashboard and unified Agent Runtime rather than exposing an independent OpenFuse agent product surface.
+- The engine service owns durable task orchestration, worker lifecycle, monitor activation and task/artifact state. It is a reference for state transitions and resumability, not a reason to create a second runtime or persistence engine. OpenManus remains MoreAI's sole planning/execution authority under the agreed architecture.
+- OpenFuse server DB uses a generic owner/kind/id record API and imports PGlite for embedded mode. This is not the MoreAI canonical persistence layer. Do not adopt PGlite or OpenFuse's standalone DB schema as a second database; translate required durable state into FastAPI repositories and Supabase PostgreSQL with RLS and explicit tenant constraints.
+- File service creates owner-scoped metadata and signed content URLs backed by local data directory. MoreAI must instead use Supabase Storage with private buckets, short-lived signed URLs, tenant-aware authorization, object lifecycle rules and metadata in PostgreSQL. Local disk paths and HMAC content URLs are not a substitute.
+- Rate limiter uses an in-process Map store. It is a useful local algorithm reference but not a distributed production limiter across API instances; MoreAI needs shared/distributed enforcement at its trusted API boundary.
+- Demo entry, fixtures and scripted demo model contain fixed local tokens, local-user identity, sample school-trip content and process spawning for a self-contained demo. These are explicitly demo-only and must be excluded from production and must not become seeded/customer data.
+- The task model tool path explicitly uses bounded schemas and separate approval for prepared email sends. Preserve this human confirmation boundary for high-impact actions, and extend it to calendar writes, external submissions, uploads and purchases with idempotency and audit receipts.
+
+**Integration disposition:** adapt the orchestration state-machine concepts, bounded tool schemas, per-owner service scoping and explicit action-approval pattern. Do not adopt OpenFuse PGlite/local-file persistence, demo identity/tokens, sample fixtures, standalone auth, or a parallel agent runtime. Map capabilities through FastAPI to Supabase; OpenManus remains the single runtime authority; OpenFuse is a capability extension only.
+
+**Review count:** this increment adds 10 fully fetched server paths. The report now records **42 of 219 OpenFuse blobs reviewed in full**, leaving **177 blobs not yet fully reviewed**. This is still an open path-level audit; it is not P1 closure.
+
+No application code or Supabase data/schema was changed. No builds, tests, installs, lint, typechecks, staging or deployment were run.
