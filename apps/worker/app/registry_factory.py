@@ -97,6 +97,8 @@ def build_agent_registry(
         # must have the durable owner-approval gate, regardless of which adapter is enabled.
         approval_gate=client.wait_for_tool_approval,
         tool_timeout_seconds=float(os.getenv("MOREAI_TOOL_TIMEOUT_SECONDS", "120")),
+        image_tool_timeout_seconds=float(os.getenv("MOREAI_IMAGE_TOOL_TIMEOUT_SECONDS", "360")),
+        video_tool_timeout_seconds=float(os.getenv("MOREAI_VIDEO_TOOL_TIMEOUT_SECONDS", "600")),
     )
     flow_factory = FlowFactory()
     # OpenManus PlanningFlow is adapted to the durable MoreAI plan store and
@@ -122,6 +124,8 @@ def build_agent_registry(
         event_publisher=client.append_run_event, sandbox_tools=sandbox_tools,
         approval_gate=client.wait_for_tool_approval,
         tool_timeout_seconds=float(os.getenv("MOREAI_TOOL_TIMEOUT_SECONDS", "120")),
+        image_tool_timeout_seconds=float(os.getenv("MOREAI_IMAGE_TOOL_TIMEOUT_SECONDS", "360")),
+        video_tool_timeout_seconds=float(os.getenv("MOREAI_VIDEO_TOOL_TIMEOUT_SECONDS", "600")),
         system_prompt=TOOLCALL_SYSTEM_PROMPT,
     )
     registry.register("toolcall", toolcall)
