@@ -1336,3 +1336,13 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - No Customer UI, Supabase schema, migration, provider configuration, or persisted data was changed.
 - Implementation report: [Customer EduTech Progress Count Contract Correction](./PHASE-09-CUSTOMER-EDUTECH-PROGRESS-COUNT-20261114.md).
 - No tests, lint, typecheck, build, browser/API probes, worker execution, staging or deployment were run per owner instruction. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-14 — EduTech saved curriculum pagination
+
+- Completed the saved learning-path list contract used by the Customer EduTech screen: FastAPI now uses owner-scoped keyset pagination ordered by `updated_at DESC, id DESC`, emits `X-Next-Cursor`, and returns an exact owner-scoped total count.
+- Extended the typed Customer API client with `learningApi.pathsPage`; EduTech now loads the first 20 paths and appends subsequent pages without duplicating already-loaded path IDs. Existing path detail, lesson continuation and Agent Run handoff behavior remain unchanged.
+- UI scope: one pagination action is added inside the existing saved-curriculum card because the prior first-page-only contract silently hid paths after the initial 20. No route, navigation, layout system, colors, typography, spacing system or global tokens were changed. Before/after screenshots were not captured because browser interaction was not authorized; visual regression remains NOT VERIFIED.
+- Files: `apps/api/app/routers/learning.py`, `lib/api/client.ts`, `components/views/edutech-view.tsx`.
+- No Supabase schema, migration, RLS, stored data, provider, or worker behavior changed. No tests, lint, typecheck, build, browser/API probes, worker execution, staging or deployment were run per owner instruction.
+- Source commit: `9fca38f02cc4fae8cb9bfb6c39b79c9372daec1a`. Phase 09 remains IN PROGRESS; this increment does not establish runtime acceptance. Next: continue Customer action-to-API reconciliation, especially AI Content result/artifact projection and remaining Workflow/Task lifecycle parity. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
