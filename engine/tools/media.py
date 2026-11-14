@@ -117,6 +117,8 @@ class OpenAIImageGenerationAdapter:
             raise ValueError("image_quality_not_supported")
         if background not in {"auto", "opaque", "transparent"}:
             raise ValueError("image_background_not_supported")
+        if background == "transparent" and output_format == "jpeg":
+            raise ValueError("transparent_background_requires_png_or_webp")
 
         image_cost = self._image_cost(size, quality)
         route = self._route(model, image_cost)
