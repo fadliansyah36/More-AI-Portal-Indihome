@@ -544,3 +544,37 @@ The pinned Scenario recursive tree contains 2,114 blobs and is not truncated. Th
 - P1 closure: NOT APPROVED.
 
 No source code/assets were copied into product runtime. No dependency installation, script execution, build, lint, typecheck, tests, staging, database mutation/migration or deployment was performed. This remains static review and documentation only.
+
+
+---
+
+## 13. Fifth continuation increment — OpenFuse computer boundary and client transport review
+
+**Date:** 2026-11-14. OpenFuse source pin remains `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`. Six additional files were fetched in full and reviewed against the pinned blob identities:
+
+| Path | Pinned blob SHA | Review |
+|---|---|---|
+| `.env.example` | `603e35542539cb7da5e36a0dfc605e0bdec84675` | Full static review |
+| `.github/workflows/ci.yml` | `011d280c444e3604f2558c4f0a931fb41144b1d9` | Full static review; workflow commands were not run |
+| `apps/computer/Dockerfile` | `4ef4cf8525201112601b7e597d29b6b21a6c7ae7` | Full static review |
+| `apps/computer/files.py` | `270a5f1f3e3d521d5da67f156cb51fd87793de21` | Full static review |
+| `apps/computer/smoke.test.ts` | `dc9201916123abfa7ee7910ba8274da123e9a262` | Full static review; test not executed |
+| `apps/computer/e2b-desktop-smoke.test.ts` | `0de8cb8d090cb1678ad265e89d0cd7d0ff5433b9` | Full static review; test not executed |
+| `apps/mobile/src/api.ts` | `6e57fadb47cb37c5740b22a30dcb260b0ba8ae80` | Full static review |
+
+**Computer filesystem boundary:** the Docker image runs as UID 1000, keeps the workspace as its volume, and exposes a fixed stdin JSON file API. The Python bridge rejects traversal segments and symlinked path components, opens relative to directory descriptors, rejects non-regular files, applies bounded text/PDF sizes, validates PDF magic bytes, and atomically replaces files. These are useful local sandbox controls, not a substitute for MoreAI tenant-bound file authorization, malware scanning/quarantine, storage policy, or network egress controls.
+
+**Runtime/configuration findings:**
+- The environment template explicitly distinguishes Docker (default) from E2B Desktop and documents that E2B has internet access. MoreAI must treat the E2B network-enabled mode as a separate risk class; do not inherit Docker's network-deny assumptions.
+- The E2B smoke fixture asserts that the desktop URL includes a VNC password query parameter and reuses the URL for the same process. This is test evidence, not proof of a production leak, but the credential-bearing URL must be treated as a secret: redact it from logs/telemetry, avoid analytics/referrer propagation, enforce short lifetime and tenant/session binding, and rotate/revoke on takeover or termination.
+- The sample environment exposes server-only secret categories (OpenFuse access key, token encryption key, OAuth client secret, worker token, E2B key, provider keys). MoreAI must keep all such credentials in server-side secret management; none may enter public client configuration.
+- CI declares installs, lint, typecheck, tests, builds and container checks. These workflow commands were only read as source; none was executed in this audit.
+- The mobile API client accepts a bearer token in its constructor and attaches it to API calls. The inspected file does not establish secure token persistence or rotation; MoreAI must instead use Supabase Auth session semantics and FastAPI authorization, never a client-held OpenFuse shared access key.
+
+**Disposition:** adapt only the fixed-file-bridge hardening concepts and bounded resource patterns where they fit MoreAI's existing sandbox. Exclude OpenFuse environment/auth/session configuration and standalone mobile API transport as product integration. E2B desktop remains deferred until MoreAI has explicit egress policy, secret isolation, approval, quota, audit and credential-bearing URL controls.
+
+The pinned tree reconciliation remains **219 blobs total**. Seven paths in this increment were fetched and reviewed in full; the prior report's 25 reviewed OpenFuse paths therefore advances to **32 reviewed paths**, with **187 paths not yet fully reviewed**. This count is path-level evidence only; it does not close the full OpenFuse review or P1.
+
+A further fetch of the large standalone mobile UI files (`agent-ui.tsx`, `agent-workspace.tsx`, and `chat.tsx`) was used only to identify likely integration surfaces; these files are **not counted as full semantic reviews**. They remain excluded from MoreAI UI adoption, and their detailed content review is still pending.
+
+**No product code, dependency or Supabase changes were made.** No installs, script execution, tests, builds, lint, typechecks, staging, deployment, or database mutation were performed.
