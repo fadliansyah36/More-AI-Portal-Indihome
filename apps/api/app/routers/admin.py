@@ -313,3 +313,42 @@ async def review_skill_package(skill_id: UUID, body: SkillRegistryReviewRequest,
     if not updated:
         raise HTTPException(409, "skill_review_conflict")
     return updated[0]
+
+
+class SkillPermissionReviewRequest(BaseModel):
+    decision: Literal["approved", "rejected", "revoked"]
+    granted_permissions: list[str] = Field(default_factory=list, max_length=32)
+    review_note: str = Field(min_length=3, max_length=2000)
+
+
+@router.patch("/skills/{skill_id}/permissions")
+async def review_skill_permissions(skill_id: UUID, body: SkillPermissionReviewRequest, request: Request, principal=Depends(skill_registry_reviewer)):
+    allowed = {"network.read", "workspace.read", "workspace.write", "browser.navigate", "browser.download", "search.web", "files.read", "files.write", "calendar.read", "calendar.write", "gmail.read", "gmail.send"}
+    if len(set(body.granted_permissions)) != len(body.granted_permissions) or any(key not in allowed for key in body.granted_permissions):
+        raise HTTPException(422, "skill_permission_key_not_allowlisted")
+    repo = repository(request)
+    rows = await repo.select("moreai_skill_installs", {
+        "skill_package_id": f"eq.{skill_id}",
+        "select": "id,owner_user_id,permission_request,permission_status",
+        "limit": "100",
+    })
+    if not rows:
+        raise HTTPException(404, "skill_installation_not_found")
+    results = []
+    for install in rows:
+        requested = install.get("permission_request") if isinstance(install.get("permission_request"), list) else []
+        if body.decision == "approved" and (not set(body.granted_permissions).issubset(set(requested))):
+            raise HTTPException(422, "granted_permissions_must_be_subset_of_requested")
+        approved = body.decision == "approved"
+        updated = await repo.update("moreai_skill_installs", {
+            "id": f"eq.{install['id']}", "owner_user_id": f"eq.{install['owner_user_id']}",
+        }, {
+            "permission_status": body.decision,
+            "granted_permissions": body.granted_permissions if approved else [],
+            "execution_enabled": False,
+            "updated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+        })
+        if updated:
+            results.append(updated[0])
+    return {"items": results, "count": len(results), "execution_enabled": False,
+            "notice": "Permission approval is recorded; runtime activation remains separately gated until the OpenManus skill resolver is integrated and security-reviewed."}
