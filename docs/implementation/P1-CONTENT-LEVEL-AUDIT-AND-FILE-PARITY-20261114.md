@@ -885,3 +885,36 @@ Implement a first-party **Connections & Integrations** capability inside the exi
 - Test worker checks exercise bearer auth and session endpoints. For MoreAI, every route must independently authorize tenant/user/session; worker token is service-to-service authentication, not end-user authorization.
 
 **Count:** ten additional distinct full-file reviews; current tracked full-file review count is **98/219**, with **121 remaining**. This increment is source inspection only; no test, build, install, lint, typecheck, container build/run, staging, deployment, live connector call or Supabase mutation occurred.
+
+
+---
+
+## 23. Fourteenth continuation increment — OpenFuse domain contracts, OpenBot adapter and Google/PDF integrations
+
+**Date:** 2026-11-14. Ten additional distinct files fetched in full at pinned commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/worker/tests/lifecycle.test.ts` | `d027f46642c041abed21c6b24c26ffd3c29258c4` |
+| `apps/worker/tsconfig.json` | `9e11c589b4ea95f7d5516dd7c855b666d407eace` |
+| `packages/backends/src/openbot.ts` | `2250dce4f5f9314b95543a315f620b3eeaba54f0` |
+| `packages/domain/src/agent.ts` | `c2d869bdac39090c70133ede66b7ffffa028ad49` |
+| `packages/domain/src/computer.ts` | `7a9f69eb86701350e107c303b715b7b85ba053a2` |
+| `packages/domain/src/date-time.ts` | `61a24d2f1709b5fc1b73001898d7e10384760a5b` |
+| `packages/domain/src/index.ts` | `20008d2bec7f3b23c12198388e17622f026d74ed` |
+| `packages/domain/src/jev.ts` | `cda8738c20129ac6d542242dc839c8f0d7c3417f` |
+| `packages/integrations/src/google.ts` | `12a0a28f2c08f44be844e137b4aa8b9670a9ee3e` |
+| `packages/integrations/src/pdf.ts` | `f2ca0a82d6607387911d74e5cd899ef555877661` |
+
+**Findings and MoreAI disposition:**
+- OpenBot backend adapter requires an injected authenticated per-person transport, explicitly rejects a shared administrator token/global fetch pattern, validates returned agent/channel identity and documents that proposal policy must run before dispatch. This is a good connector-adapter pattern, but MoreAI's canonical runtime remains OpenManus and OpenBot is not added as another agent runtime.
+- Agent domain types include scheduled/waiting-approval task states, plan steps, events, memory, artifacts, notifications and worker status. These are useful API/UI contract references for MoreAI task and activity surfaces; persistence and authority must be MoreAI FastAPI + Supabase + OpenManus.
+- Computer domain explicitly distinguishes Docker networking disabled from E2B desktop networking enabled. Preserve this trust-tier distinction in MoreAI capability policy and UI disclosure.
+- Date-time helper formats calendar events in named time zones. MoreAI schedule definitions must store IANA timezone, recurrence semantics and UTC instants separately to avoid local-time drift/DST errors.
+- Shared domain package defines mail, calendar, browser, files, proposal action types and review states. Reuse the conceptual typed action schemas, but bind all actor/tenant/resource identifiers server-side and extend approval to action hash, account generation, version/ETag, expiry, idempotency and audit.
+- JEV schemas permit HTTP(S) URLs. This is acceptable for user-visible source links only; never treat it as a server-side fetch allowlist or SSRF control.
+- Google integration is a substantial provider adapter for Gmail and Calendar, including typed API errors, bounded resource IDs, attachment metadata, event parsing and handling of ambiguous external write outcomes. It explicitly warns that a write may have succeeded when the response is lost; MoreAI must represent outcome-unknown and reconcile against provider state before retrying, rather than blindly replaying.
+- The inspected Google integration explicitly declines recurring-event mutation in this adapter; do not claim full recurring series edit semantics without a separate implementation.
+- PDF integration bounds input size (10 MiB), page count (500) and decoded expansion (100 MiB) to defend against decompression/resource exhaustion. MoreAI should retain layered file size, parser CPU/time, page and expanded-byte quotas, malware quarantine and safe ingestion controls.
+
+**Count:** ten more distinct full-file reviews; tracked total is **108/219**, with **111 remaining**. Test source was read only; no test or executable workflow was run. No build/install/lint/typecheck, staging, deployment, live Google API operation or Supabase mutation occurred.
