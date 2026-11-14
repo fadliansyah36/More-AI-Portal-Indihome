@@ -99,6 +99,7 @@ export interface AIAgent {
   active?: boolean;
   capabilityTags?: string[];
   toolKeys?: string[];
+  configurationId?: string;
 }
 
 export interface ConnectedDevice {
