@@ -132,3 +132,74 @@ P1 is **not complete**. This report records immutable pins, root license finding
 Primary product integration remains Phase 09: connect existing customer dashboard behavior to FastAPI/OpenManus/worker/Supabase. Do not create duplicate Chat, Tasks, Workflow, Agent Studio, Create, Research/Analyse, Files, Wallet, API client, run lifecycle, notifications or memory.
 
 **Next:** P1 continuation — close recursive inventories, nested license/dependency review and file-by-file mapping. Then return to the mandatory AGENTS.md Phase 00–11 dependency gates; do not skip or reorder them.
+
+
+## 10. P1 Continuation — recursive inventory completed
+
+Pinned recursive Git trees were retrieved directly from the Git data API for all three external repositories. Each response returned `truncated: false`. Complete file metadata is committed in `docs/implementation/external-source-file-inventory.json`.
+
+| Repository | Commit | Files | Directories | Total bytes |
+|---|---|---:|---:|---:|
+| CopilotKit/OpenFuse | `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc` | 219 | 32 | 4,345,760 |
+| smixs/visual-skills | `61a60d317f0fa0c3dc98902e58a7cb178838ae3f` | 60 | 8 | 676,353 |
+| scenario-labs/skills | `94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9` | 2,114 | 702 | 62,154,351 |
+| **Total** | | **2,393** | **742** | **67,176,464** |
+
+### 10.1 File-level metadata and preliminary classification
+
+The inventory records every blob path, byte size, Git blob SHA-1, pinned source commit, repository, target MoreAI owner, first-pass category, preliminary disposition and review note.
+
+First-pass category counts:
+- Governance / license notices: 5
+- Governance documentation: 38
+- Documentation / skill knowledge: 788
+- Build configuration / scripts: 150
+- Implementation candidates: 685
+- Assets / domain resources: 248
+- Tests / evidence: 437
+- Other / manual review: 42
+
+**Hash semantics:** the manifest records Git blob SHA-1 values supplied by the pinned Git tree. It does not claim raw-file SHA-256. No SHA-256 values were computed.
+
+The classification is intentionally preliminary and path-based. It is not a final per-file legal, security, dependency or production-import approval. Each implementation candidate still needs content review and mapping to the existing canonical MoreAI module; each documentation/asset file needs attribution/provenance and relevance review. Test/evidence files are inventoried but were not executed.
+
+### 10.2 Nested license/notice candidate paths
+
+The recursive scan identified these candidate notice paths. Presence of a root license does not automatically settle licenses of bundled third-party content:
+
+**CopilotKit/openfuse**
+- `LICENSE` (1078 bytes; Git blob `0e1238724a08528992a39ef43c63f899432a282c`)
+
+**smixs/visual-skills**
+- `LICENSE` (18657 bytes; Git blob `da6ab6cc8f333d7e89a99812866df8f24374d47c`)
+- `NOTICE` (1009 bytes; Git blob `ec40c203365e6b3747c2e711e77e8ab327f98e44`)
+
+**scenario-labs/skills**
+- `.agents/skills/skill-creator/LICENSE.txt` (11345 bytes; Git blob `4f881c52d1f72f4cfb720e339e2d35c3058d01a9`)
+- `LICENSE` (1070 bytes; Git blob `05676553d9d10a0effff673b507b4fcfed652c17`)
+
+Each candidate still requires content review; additional embedded content, linked source material and dependency licenses remain subject to review.
+
+### 10.3 Pinned-tree completeness versus content-audit completeness
+
+- Recursive path/size/blob identity inventory: **COMPLETE** for the three pinned trees.
+- Tree truncation: **none** (`truncated: false` for all three).
+- Exact file-level path metadata: **2,393 / 2,393 recorded**.
+- Nested license/NOTICE detection: candidate paths recorded; full legal interpretation and third-party content review remain open.
+- Dependency SBOM and transitive dependency/license resolution: **OPEN**; lockfiles and manifests are inventoried but were not installed or resolved.
+- Per-file technical parity and final copy/adapt/archive/exclude decision: **OPEN**; preliminary classification must not be mistaken for approved disposition.
+- Content-level review: continue by capability family and dependency chain before any import.
+
+### 10.4 Updated P1 status
+
+P1 has advanced from partial root inventory to a complete recursive metadata inventory. P1 is **still IN PROGRESS** because the mandatory source governance gate also requires content-level file mapping, nested license and dependency review, security assessment, and an evidence-backed final disposition for every file. No external source files were copied into production or vendor paths in this increment.
+
+Current restrictions remain in force: no tests/build/lint/typecheck, no browser/API/provider probes, no staging, no package installation, no Supabase mutation or migration apply, and no deployment. No runtime behavior is claimed.
+
+### 10.5 Next dependency-ordered work
+
+1. Review nested license/NOTICE and source-provenance files, including skill-level metadata and linked references.
+2. Inspect dependency manifests/lockfiles and produce a dependency/license SBOM without installing packages.
+3. Build content-based file-to-capability parity for OpenFuse apps/packages, Visual Skills references and Scenario skill families; replace path-only preliminary decisions with evidence.
+4. Reconcile capability owners against MoreAI existing routes, hooks, API routers, worker adapters, migrations/RLS and UI components.
+5. Sign off P1 file dispositions; only then resume mandatory AGENTS.md Phase 00–11 gates, with Phase 09 as the customer dashboard integration lane after its dependencies.
