@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { customerApi, type CustomerToolCatalogItem } from '@/lib/api/client';
+import { customerApi, type CustomerAgentConfiguration, type CustomerToolCatalogItem } from '@/lib/api/client';
 import { AIAgent } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
@@ -32,6 +32,15 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
   const [agentLoadError, setAgentLoadError] = useState<string | null>(null);
   const [toolCatalog, setToolCatalog] = useState<CustomerToolCatalogItem[]>([]);
   const [toolCatalogError, setToolCatalogError] = useState<string | null>(null);
+  const [agentConfigurations, setAgentConfigurations] = useState<CustomerAgentConfiguration[]>([]);
+  const [editingConfigurationId, setEditingConfigurationId] = useState<string | null>(null);
+  const [configurationName, setConfigurationName] = useState('');
+  const [configurationRuntime, setConfigurationRuntime] = useState<'manus' | 'toolcall'>('manus');
+  const [configurationDescription, setConfigurationDescription] = useState('');
+  const [configurationPrompt, setConfigurationPrompt] = useState('');
+  const [configurationToolKeys, setConfigurationToolKeys] = useState<string[]>([]);
+  const [savingConfiguration, setSavingConfiguration] = useState(false);
+  const [configurationError, setConfigurationError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
     customerApi.agents()
@@ -55,8 +64,89 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
     customerApi.tools()
       .then((rows) => { if (active) setToolCatalog(rows); })
       .catch((cause) => { if (active) setToolCatalogError(cause instanceof Error ? cause.message : 'Katalog tool tidak tersedia.'); });
+    customerApi.agentConfigurations()
+      .then((rows) => { if (active) setAgentConfigurations(rows); })
+      .catch((cause) => { if (active) setConfigurationError(cause instanceof Error ? cause.message : 'Konfigurasi Agent tidak dapat dimuat.'); });
     return () => { active = false; };
   }, []);
+
+  const availableConfigurationTools = toolCatalog.filter((tool) =>
+    tool.available_by_default.includes(configurationRuntime) && tool.enabled_by_default,
+  );
+
+  const resetConfigurationForm = () => {
+    setEditingConfigurationId(null);
+    setConfigurationName('');
+    setConfigurationDescription('');
+    setConfigurationPrompt('');
+    setConfigurationToolKeys(availableConfigurationTools.map((tool) => tool.key));
+    setConfigurationError(null);
+  };
+
+  const saveConfiguration = async () => {
+    if (!configurationName.trim()) {
+      setConfigurationError('Nama Agent wajib diisi.');
+      return;
+    }
+    setSavingConfiguration(true);
+    setConfigurationError(null);
+    try {
+      const payload = {
+        runtime_key: configurationRuntime,
+        name: configurationName.trim(),
+        description: configurationDescription.trim(),
+        system_prompt: configurationPrompt.trim(),
+        tool_keys: configurationToolKeys,
+      };
+      const saved = editingConfigurationId
+        ? await customerApi.updateAgentConfiguration(editingConfigurationId, payload)
+        : await customerApi.createAgentConfiguration(payload);
+      setAgentConfigurations((current) => [
+        saved,
+        ...current.filter((item) => item.id !== saved.id),
+      ]);
+      resetConfigurationForm();
+      showToast('Konfigurasi Agent tersimpan di backend.', 'success');
+    } catch (cause) {
+      setConfigurationError(cause instanceof Error ? cause.message : 'Konfigurasi Agent gagal disimpan.');
+    } finally {
+      setSavingConfiguration(false);
+    }
+  };
+
+  const editConfiguration = (configuration: CustomerAgentConfiguration) => {
+    setEditingConfigurationId(configuration.id);
+    setConfigurationRuntime(configuration.runtime_key);
+    setConfigurationName(configuration.name);
+    setConfigurationDescription(configuration.description);
+    setConfigurationPrompt(configuration.system_prompt);
+    setConfigurationToolKeys(configuration.tool_keys);
+    setConfigurationError(null);
+  };
+
+  const removeConfiguration = async (configuration: CustomerAgentConfiguration) => {
+    try {
+      await customerApi.deleteAgentConfiguration(configuration.id);
+      setAgentConfigurations((current) => current.filter((item) => item.id !== configuration.id));
+      if (editingConfigurationId === configuration.id) resetConfigurationForm();
+      showToast('Konfigurasi Agent dihapus.', 'success');
+    } catch (cause) {
+      setConfigurationError(cause instanceof Error ? cause.message : 'Konfigurasi Agent gagal dihapus.');
+    }
+  };
+
+  const useConfiguration = (configuration: CustomerAgentConfiguration) => {
+    const runtimeAgent = agents.find((agent) => agent.id === configuration.runtime_key);
+    if (!runtimeAgent || !onSelectAgentForChat) return;
+    onSelectAgentForChat({
+      ...runtimeAgent,
+      id: configuration.runtime_key,
+      name: configuration.name,
+      description: configuration.description || runtimeAgent.description,
+      configurationId: configuration.id,
+      toolKeys: configuration.tool_keys,
+    });
+  };
 
   const selectedAgent = agents.find((a) => a.id === selectedAgentId) || agents[0] || null;
 
@@ -244,6 +334,72 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
               <span>Gunakan Agent Ini</span>
             </button>
           </div>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Konfigurasi Agent Saya</h3>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">Simpan instruksi dan batas tool untuk Agent pribadi. Backend tetap membatasi tool pada runtime yang benar-benar terdaftar dan aktif.</p>
+            </div>
+            {agentConfigurations.length > 0 && (
+              <div className="space-y-2">
+                {agentConfigurations.map((configuration) => (
+                  <div key={configuration.id} className="rounded-2xl border border-slate-200 p-3 flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-slate-900">{configuration.name}</p>
+                      <p className="mt-0.5 text-[10px] text-slate-500">{configuration.runtime_key} · {configuration.tool_keys.length} tool · v{configuration.version}</p>
+                      {configuration.description && <p className="mt-1 text-[10px] text-slate-600">{configuration.description}</p>}
+                    </div>
+                    <button type="button" onClick={() => useConfiguration(configuration)} className="rounded-lg bg-red-600 px-2.5 py-1.5 text-[10px] font-bold text-white">Gunakan</button>
+                    <button type="button" onClick={() => editConfiguration(configuration)} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-semibold text-slate-700">Edit</button>
+                    <button type="button" onClick={() => void removeConfiguration(configuration)} className="rounded-lg border border-rose-200 px-2.5 py-1.5 text-[10px] font-semibold text-rose-700">Hapus</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label className="space-y-1 text-[10px] font-semibold text-slate-600">
+                Nama Agent
+                <input value={configurationName} onChange={(event) => setConfigurationName(event.target.value)} maxLength={80} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 outline-none focus:border-red-400" placeholder="Contoh: Research Assistant" />
+              </label>
+              <label className="space-y-1 text-[10px] font-semibold text-slate-600">
+                Runtime OpenManus
+                <select value={configurationRuntime} disabled={!!editingConfigurationId} onChange={(event) => {
+                  const runtime = event.target.value as 'manus' | 'toolcall';
+                  setConfigurationRuntime(runtime);
+                  setConfigurationToolKeys(toolCatalog.filter((tool) => tool.available_by_default.includes(runtime) && tool.enabled_by_default).map((tool) => tool.key));
+                }} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900">
+                  <option value="manus">Manus</option>
+                  <option value="toolcall">ToolCall</option>
+                </select>
+              </label>
+            </div>
+            <label className="block space-y-1 text-[10px] font-semibold text-slate-600">
+              Deskripsi
+              <input value={configurationDescription} onChange={(event) => setConfigurationDescription(event.target.value)} maxLength={500} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 outline-none focus:border-red-400" placeholder="Fokus dan spesialisasi Agent" />
+            </label>
+            <label className="block space-y-1 text-[10px] font-semibold text-slate-600">
+              Instruksi Agent
+              <textarea value={configurationPrompt} onChange={(event) => setConfigurationPrompt(event.target.value)} maxLength={12000} rows={4} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 outline-none focus:border-red-400" placeholder="Instruksi kerja tambahan. Kebijakan platform dan keamanan runtime tetap berlaku." />
+            </label>
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Tool yang diizinkan</p>
+              {availableConfigurationTools.length ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {availableConfigurationTools.map((tool) => (
+                    <label key={tool.key} className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 p-2 text-[10px] text-slate-700">
+                      <input type="checkbox" checked={configurationToolKeys.includes(tool.key)} onChange={(event) => setConfigurationToolKeys((current) => event.target.checked ? [...current, tool.key] : current.filter((key) => key !== tool.key))} />
+                      <span><strong>{tool.key}</strong><span className="block text-slate-500">{tool.risk} · {tool.approval_mode}</span></span>
+                    </label>
+                  ))}
+                </div>
+              ) : <p className="text-[10px] text-slate-500">Memuat katalog tool runtime…</p>}
+            </div>
+            {configurationError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-[10px] text-rose-700">{configurationError}</p>}
+            <div className="flex gap-2">
+              <button type="button" onClick={() => void saveConfiguration()} disabled={savingConfiguration || !configurationName.trim()} className="flex-1 rounded-xl bg-red-600 px-3 py-2.5 text-xs font-bold text-white disabled:opacity-50">{savingConfiguration ? 'Menyimpan…' : editingConfigurationId ? 'Simpan Perubahan' : 'Simpan Agent'}</button>
+              {editingConfigurationId && <button type="button" onClick={resetConfigurationForm} className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-700">Batal</button>}
+            </div>
+          </section>
         </div>
       ) : (
         <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-4">
