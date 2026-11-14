@@ -26,7 +26,10 @@ class SupabaseArtifactTool:
     ) -> str:
         if not self.bucket:
             raise RuntimeError("artifact_storage_bucket_not_configured")
-        if not isinstance(filename, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._ -]{0,179}", filename):
+        if (
+            not isinstance(filename, str) or len(filename) > 512
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._ -]{0,179}(?:/[A-Za-z0-9][A-Za-z0-9._ -]{0,179})*", filename)
+        ):
             raise ValueError("artifact_filename_invalid")
         max_bytes = max(1_000_000, min(150_000_000, int(os.getenv("MOREAI_MEDIA_MAX_ARTIFACT_BYTES", "100000000"))))
         if not raw or len(raw) > max_bytes:
