@@ -100,6 +100,13 @@ async def run_worker() -> None:
             # itself has no Docker socket and cannot launch host-side containers.
             await sandbox_tools.check_ready()
         registry = build_agent_registry(rpc, http, sandbox_tools=sandbox_tools)
+        capability_snapshot = registry.capability_snapshot()
+        try:
+            await rpc.publish_capabilities(list(registry.enabled_keys()), capability_snapshot)
+        except Exception:
+            # Capability reporting is observability only; it must not stop an otherwise
+            # correctly gated worker from processing durable runs.
+            logger.exception("worker_capability_initial_publish_failed")
         dispatcher = RegisteredAgentDispatcher(
             registry,
             checkpoint_loader=rpc.list_checkpoints,
@@ -123,6 +130,7 @@ async def run_worker() -> None:
                 3600, min(86400, int(os.getenv("MOREAI_MEMORY_PURGE_INTERVAL_SECONDS", "21600"))),
             )
             next_memory_purge_at = 0.0
+            next_capability_heartbeat_at = 0.0
             monotonic = asyncio.get_running_loop().time
             try:
                 # A transient Supabase/PostgREST failure while claiming the next run
@@ -132,6 +140,16 @@ async def run_worker() -> None:
                 consecutive_poll_failures = 0
                 while True:
                     now = monotonic()
+                    if now >= next_capability_heartbeat_at:
+                        try:
+                            await rpc.publish_capabilities(list(registry.enabled_keys()), capability_snapshot)
+                            next_capability_heartbeat_at = now + 30
+                        except asyncio.CancelledError:
+                            raise
+                        except Exception:
+                            logger.exception("worker_capability_heartbeat_failed")
+                            next_capability_heartbeat_at = now + 10
+
                     if now >= next_memory_purge_at:
                         try:
                             purged_memories = await rpc.rpc("moreai_worker_purge_expired_customer_memories", {})
