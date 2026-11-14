@@ -1280,3 +1280,6 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 
 - Create Studio cards now display the dynamic worker capability status for image, video and file adapters; file handoff is currently text-artifact scope (TXT/Markdown/CSV/JSON), not binary office/PDF generation. Source commit: `b2440997`; report follow-up: [Customer Workflow & Task Progress / Dependency Projection](./PHASE-09-CUSTOMER-WORKFLOW-TASK-PROGRESS-DEPENDENCY-20261114.md).
+
+
+- Added a gated, metered OpenAI Images API adapter (`gpt-image-2`) and private binary artifact storage. It reserves wallet credits and media quota before provider invocation and is registered only when Worker environment has the OpenAI secret, explicit image price map, active media entitlement/quota, wallet currency and credit conversion. No key/provider call was made; capability remains false until configured. Tool Catalog now displays actual live worker registration rather than static default policy. See [Agent Configuration & Create Studio report](./PHASE-09-AGENT-CONFIGURATION-CAPABILITY-REGISTRY-CREATE-STUDIO-20261114.md). Image adapter source commits: `b1c403ab`, `373d7c79`, `021e49a9`, `f8afe5ab`, `9a19ee26`, `3b5f51cc`, `d45b3168`, `1aec9d87`, `2944db69`, `7d2bfa5d`, `f427b2e3`, and `f6428265`.
