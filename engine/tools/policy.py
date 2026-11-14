@@ -17,6 +17,8 @@ class ToolPolicy:
         "browser_use",
         "workspace_restore_version",
         "str_replace_editor",
+        "gmail_send",
+        "calendar_create_event",
     })
     DEFAULT_DENY = HIGH_RISK
 
