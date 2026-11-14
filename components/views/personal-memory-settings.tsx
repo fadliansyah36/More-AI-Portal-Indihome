@@ -35,7 +35,7 @@ export const PersonalMemorySettings: React.FC = () => {
     setSaving(true);
     try {
       const updated = await customerApi.setPersonalMemoryConsent(!state.enabled);
-      setState((current) => current ? { ...current, ...updated } : current);
+      setState((current) => current ? { ...current, ...updated, episodes: updated.enabled ? current.episodes : [] } : current);
       showToast(updated.enabled ? 'Personal Memory diaktifkan dengan persetujuan Anda.' : 'Personal Memory dinonaktifkan. Data tersimpan tidak akan digunakan.', 'success');
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Persetujuan Memory gagal diperbarui.', 'error');
@@ -89,12 +89,24 @@ export const PersonalMemorySettings: React.FC = () => {
     } finally { setSaving(false); }
   };
 
+  const removeEpisode = async (messageId: string) => {
+    if (saving || !window.confirm('Hapus ringkasan pengalaman Agent ini? Riwayat chat aslinya tetap tersimpan.')) return;
+    setSaving(true);
+    try {
+      await customerApi.deleteEpisodicMemory(messageId);
+      setState((current) => current ? { ...current, episodes: current.episodes.filter((item) => item.id !== messageId) } : current);
+      showToast('Ringkasan pengalaman Agent berhasil dihapus.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Penghapusan pengalaman Agent gagal.', 'error');
+    } finally { setSaving(false); }
+  };
+
   const clearAllMemory = async () => {
-    if (saving || !state || !window.confirm('Hapus seluruh Personal Memory secara permanen dan nonaktifkan penggunaannya?')) return;
+    if (saving || !state || !window.confirm('Hapus seluruh Memory pribadi dan pengalaman Agent, lalu nonaktifkan penggunaannya? Riwayat chat tetap tersimpan.')) return;
     setSaving(true);
     try {
       await customerApi.clearPersonalMemory();
-      setState((current) => current ? { ...current, enabled: false, disabled_at: new Date().toISOString(), items: [] } : current);
+      setState((current) => current ? { ...current, enabled: false, disabled_at: new Date().toISOString(), items: [], episodes: [] } : current);
       setEditingId(null);
       showToast('Seluruh Personal Memory berhasil dihapus.', 'success');
     } catch (error) {
@@ -211,8 +223,33 @@ export const PersonalMemorySettings: React.FC = () => {
                   </div>
                 ))}
             </div>
+            <div className="border-t border-slate-100 pt-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-bold text-slate-800">Pengalaman Agent</p>
+                <span className="text-[10px] text-slate-500">{state.episodes.length} ringkasan</span>
+              </div>
+              {state.episodes.length === 0 ? (
+                <p className="text-[11px] text-slate-500 rounded-xl bg-slate-50 p-3">
+                  {state.enabled ? 'Belum ada pengalaman Agent yang tersimpan. Ringkasan tugas baru akan disimpan selama persetujuan aktif.' : 'Aktifkan consent untuk mengizinkan penyimpanan dan penggunaan pengalaman Agent.'}
+                </p>
+              ) : state.episodes.map((episode) => (
+                <div key={episode.id} className="rounded-xl border border-slate-100 p-3 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-semibold text-slate-900">Permintaan sebelumnya</p>
+                    <button type="button" onClick={() => void removeEpisode(episode.id)} disabled={saving}
+                      className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50 disabled:opacity-50" aria-label="Hapus pengalaman Agent">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-slate-600 whitespace-pre-wrap break-words">{episode.prompt}</p>
+                  <p className="text-[10px] font-semibold text-slate-500">Hasil</p>
+                  <p className="text-[11px] leading-relaxed text-slate-600 whitespace-pre-wrap break-words">{episode.outcome}</p>
+                  <p className="text-[10px] text-slate-400">Berakhir {new Date(episode.expires_at).toLocaleDateString('id-ID')}</p>
+                </div>
+              ))}
+            </div>
           <p className="text-[10px] leading-relaxed text-slate-400">
-            Catatan dibuat secara manual. MoreAI tidak otomatis menyimpan isi chat atau file sebagai Personal Memory. Perubahan consent/penghapusan berlaku untuk eksekusi berikutnya; run aktif mungkin telah memuat konteks sebelumnya.
+            Personal Memory berisi catatan yang Anda buat sendiri. Pengalaman Agent hanya menyimpan ringkasan tugas saat consent aktif (retensi default 90 hari, dapat diatur melalui konfigurasi layanan). Menghapus ringkasan tidak menghapus riwayat chat; menonaktifkan consent menghentikan recall berikutnya dan menghapus metadata episodic. Run aktif mungkin telah memuat konteks sebelumnya.
           </p>
         </>
       )}
