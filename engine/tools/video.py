@@ -20,17 +20,8 @@ class RunwayVideoGenerationAdapter:
 
     API_BASE = "https://api.dev.runwayml.com/v1"
     API_VERSION = "2024-11-06"
-    SUPPORTED_MODELS = {
-        "gen4.5", "veo3.1", "veo3.1_fast", "klingO3_4k", "hailuo3",
-        "kling3.0_4k", "happyhorse_1_0", "kling2.5_turbo_pro",
-        "kling3.0_pro", "kling3.0_standard", "klingO3_pro",
-        "klingO3_standard", "seedance2", "seedance2_fast",
-        "seedance2_mini", "gemini_omni_flash", "grok_imagine_1_5",
-        "wan3", "gemini_omni_flash_1.1", "wan3_prime", "h3_max",
-        "seedance2_5", "grok_imagine_1_5_lite", "kling_4",
-        "gemini_omni_flash_1.2", "kling_4_flash", "hailuo3_highspeed",
-        "hailuo3_lite",
-    }
+    SUPPORTED_MODELS = {"gen4.5"}
+
 
     def __init__(self, *, http: httpx.AsyncClient, client: Any, artifacts: Any, accounting: Any, estimator: Any):
         self.http = http
@@ -143,7 +134,7 @@ class RunwayVideoGenerationAdapter:
         if model not in self.SUPPORTED_MODELS:
             raise ValueError("runway_video_model_not_supported")
         duration = arguments.get("duration", 5)
-        if isinstance(duration, bool) or not isinstance(duration, int) or not 2 <= duration <= 10:
+        if isinstance(duration, bool) or not isinstance(duration, int) or duration not in {5, 10}:
             raise ValueError("video_duration_not_supported")
         ratio = arguments.get("ratio", "1280:720")
         if ratio not in {"1280:720", "720:1280"}:
