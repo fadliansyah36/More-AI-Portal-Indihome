@@ -135,7 +135,7 @@ async def browser_action(body: BrowserAction, authorization: str | None = Header
         try:
             context = await browser.new_context(
                 accept_downloads=True, service_workers="block",
-                ignore_https_errors=False,
+                ignore_https_errors=False, storage_state=body.storage_state or None,
             )
             page = await context.new_page()
             request_count = 0
