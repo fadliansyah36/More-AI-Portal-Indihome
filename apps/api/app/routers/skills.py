@@ -202,7 +202,7 @@ def _spdx_expression(value: Any) -> str:
     raw = value.strip()
     if raw in SPDX_COMMON_IDS:
         return raw
-    parts = re.split(r"\\s+(AND|OR)\\s+", raw)
+    parts = re.split(r"\s+(AND|OR)\s+", raw)
     if len(parts) >= 3 and len(parts) % 2 == 1:
         ids = parts[::2]
         operators = parts[1::2]
