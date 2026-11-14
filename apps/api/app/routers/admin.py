@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
@@ -305,7 +306,7 @@ async def review_skill_package(skill_id: UUID, body: SkillRegistryReviewRequest,
             "review": {
                 "reviewer_user_id": principal["id"],
                 "review_note": body.review_note,
-                "reviewed_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+                "reviewed_at": datetime.now(timezone.utc).isoformat(),
             },
         },
         "updated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
@@ -339,7 +340,6 @@ async def review_skill_permissions(skill_id: UUID, body: SkillPermissionReviewRe
         requested = install.get("permission_request") if isinstance(install.get("permission_request"), list) else []
         if body.decision == "approved" and (not set(body.granted_permissions).issubset(set(requested))):
             raise HTTPException(422, "granted_permissions_must_be_subset_of_requested")
-        approved = body.decision == "approved"
         updated = await repo.update("moreai_skill_installs", {
             "id": f"eq.{install['id']}", "owner_user_id": f"eq.{install['owner_user_id']}",
         }, {
