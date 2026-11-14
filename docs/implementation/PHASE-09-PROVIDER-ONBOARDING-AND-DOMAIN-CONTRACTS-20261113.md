@@ -113,3 +113,12 @@ Phase 09 remains **IN PROGRESS**. Source integration for available Customer cont
 4. EduTech: content owner/provider, course/enrollment API, protected media/CDN token contract, license and progress callbacks.
 5. Support: official ticketing/CRM backend and create/list/detail/reply/status/SLA/attachment contracts.
 6. Memory privacy: approved consent/retention/deletion policy and a server-side customer API backed by canonical persistence.
+
+
+## 2026-11-14 correction — Customer Memory and media provider status
+
+- The earlier statement that Customer Memory privacy lifecycle was unavailable is superseded by the Phase 09 implementation on 2026-11-14. Owner-scoped consent, list/create/update/delete/clear APIs, profile settings UI, worker consent filtering and scheduled expiry purge are now present in source, with their Supabase migrations applied. Runtime acceptance remains NOT VERIFIED.
+- OpenAI Image API has supported generation models and a server-side Images API. The MoreAI worker still does not register an image adapter, and no API key or media-specific entitlement/credit reservation/metering policy has been provisioned. It therefore remains unavailable/fail-closed in Customer Create Studio.
+- OpenAI's Sora 2 models and Videos API were removed on 2026-09-24 with no one-to-one replacement. Do not implement an OpenAI Sora adapter as though it were a live API. A supported external video provider may be selected; Runway Dev documents asynchronous task creation and task polling, but selecting that provider, configuring a server-side secret and approving its pricing/credit policy are still product-owner decisions. Official references: [OpenAI Image Generation](https://developers.openai.com/api/docs/guides/image-generation), [OpenAI deprecations](https://developers.openai.com/api/docs/deprecations), [Runway Dev API](https://docs.dev.runwayml.com/api/).
+- The Master PRD file currently committed in this repository is `public/assets/aistudio/MoreAI_Master_PRD_v1.0_ID_2f5fa0c2.md`. A v1.2 Master PRD was not found in the repository or current Project file search during this continuation. Exact v1.2 conformance cannot be claimed until that source is supplied or committed.
+- No tests, runtime calls, provider activation, staging or deployment were performed.
