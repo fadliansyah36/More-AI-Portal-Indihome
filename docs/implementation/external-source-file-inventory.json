@@ -53,17 +53,18 @@
       "adapt": 330
     },
     "review_status_counts": {
-      "pending-content-review": 2142,
+      "pending-content-review": 2135,
       "content-reviewed-sample": 21,
       "content-reviewed-security-boundary": 4,
       "content-reviewed-reference": 39,
       "static-svg-reviewed": 15,
+      "entrypoint-content-reviewed-internal": 7,
       "entrypoint-content-reviewed": 166,
       "entrypoint-content-reviewed-core": 6
     },
     "content_review_complete": false,
     "p1_closed": false,
-    "note": "No row with pending-content-review is approved for import. Exact file decisions are conservative handling decisions; ADAPT does not authorize copying/execution without license, provenance, module-owner and security clearance."
+    "note": "All 2,393 source paths now have a conservative explicit handling decision. Review status is separate: only files with recorded content/static review evidence are reviewed; all remaining files are held and not approved for import."
   },
   "files": [
     {
@@ -4262,9 +4263,9 @@
       "review_note": "Review claims, attribution, provider currency, and MoreAI fit",
       "target_owner": "MoreAI Skill Registry / private Scenario provider-tool adapter / Create",
       "decision": "archive-only",
-      "decision_basis": "Repository maintainer/skill-authoring workflow, not MoreAI customer runtime",
-      "decision_owner": "Existing Skill Registry/Create/provider adapters/Workflow/Files; no second engine",
-      "review_status": "pending-content-review"
+      "decision_basis": "Internal Scenario repository maintenance/skill-authoring instructions; not MoreAI customer-facing runtime knowledge.",
+      "decision_owner": "Source governance archive",
+      "review_status": "entrypoint-content-reviewed-internal"
     },
     {
       "repository": "scenario-labs/skills",
@@ -4292,9 +4293,9 @@
       "review_note": "Review claims, attribution, provider currency, and MoreAI fit",
       "target_owner": "MoreAI Skill Registry / private Scenario provider-tool adapter / Create",
       "decision": "archive-only",
-      "decision_basis": "Repository maintainer/skill-authoring workflow, not MoreAI customer runtime",
-      "decision_owner": "Existing Skill Registry/Create/provider adapters/Workflow/Files; no second engine",
-      "review_status": "pending-content-review"
+      "decision_basis": "Internal Scenario repository maintenance/skill-authoring instructions; not MoreAI customer-facing runtime knowledge.",
+      "decision_owner": "Source governance archive",
+      "review_status": "entrypoint-content-reviewed-internal"
     },
     {
       "repository": "scenario-labs/skills",
@@ -4322,9 +4323,9 @@
       "review_note": "Review claims, attribution, provider currency, and MoreAI fit",
       "target_owner": "MoreAI Skill Registry / private Scenario provider-tool adapter / Create",
       "decision": "archive-only",
-      "decision_basis": "Repository maintainer/skill-authoring workflow, not MoreAI customer runtime",
-      "decision_owner": "Existing Skill Registry/Create/provider adapters/Workflow/Files; no second engine",
-      "review_status": "pending-content-review"
+      "decision_basis": "Internal Scenario repository maintenance/skill-authoring instructions; not MoreAI customer-facing runtime knowledge.",
+      "decision_owner": "Source governance archive",
+      "review_status": "entrypoint-content-reviewed-internal"
     },
     {
       "repository": "scenario-labs/skills",
@@ -4367,9 +4368,9 @@
       "review_note": "Review claims, attribution, provider currency, and MoreAI fit",
       "target_owner": "MoreAI Skill Registry / private Scenario provider-tool adapter / Create",
       "decision": "archive-only",
-      "decision_basis": "Repository maintainer/skill-authoring workflow, not MoreAI customer runtime",
-      "decision_owner": "Existing Skill Registry/Create/provider adapters/Workflow/Files; no second engine",
-      "review_status": "pending-content-review"
+      "decision_basis": "Internal Scenario repository maintenance/skill-authoring instructions; not MoreAI customer-facing runtime knowledge.",
+      "decision_owner": "Source governance archive",
+      "review_status": "entrypoint-content-reviewed-internal"
     },
     {
       "repository": "scenario-labs/skills",
@@ -4622,9 +4623,9 @@
       "review_note": "Review claims, attribution, provider currency, and MoreAI fit",
       "target_owner": "MoreAI Skill Registry / private Scenario provider-tool adapter / Create",
       "decision": "archive-only",
-      "decision_basis": "Repository maintainer/skill-authoring workflow, not MoreAI customer runtime",
-      "decision_owner": "Existing Skill Registry/Create/provider adapters/Workflow/Files; no second engine",
-      "review_status": "pending-content-review"
+      "decision_basis": "Internal Scenario repository maintenance/skill-authoring instructions; not MoreAI customer-facing runtime knowledge.",
+      "decision_owner": "Source governance archive",
+      "review_status": "entrypoint-content-reviewed-internal"
     },
     {
       "repository": "scenario-labs/skills",
@@ -4652,9 +4653,9 @@
       "review_note": "Review claims, attribution, provider currency, and MoreAI fit",
       "target_owner": "MoreAI Skill Registry / private Scenario provider-tool adapter / Create",
       "decision": "archive-only",
-      "decision_basis": "Repository maintainer/skill-authoring workflow, not MoreAI customer runtime",
-      "decision_owner": "Existing Skill Registry/Create/provider adapters/Workflow/Files; no second engine",
-      "review_status": "pending-content-review"
+      "decision_basis": "Internal Scenario repository maintenance/skill-authoring instructions; not MoreAI customer-facing runtime knowledge.",
+      "decision_owner": "Source governance archive",
+      "review_status": "entrypoint-content-reviewed-internal"
     },
     {
       "repository": "scenario-labs/skills",
@@ -4682,9 +4683,9 @@
       "review_note": "Review claims, attribution, provider currency, and MoreAI fit",
       "target_owner": "MoreAI Skill Registry / private Scenario provider-tool adapter / Create",
       "decision": "archive-only",
-      "decision_basis": "Repository maintainer/skill-authoring workflow, not MoreAI customer runtime",
-      "decision_owner": "Existing Skill Registry/Create/provider adapters/Workflow/Files; no second engine",
-      "review_status": "pending-content-review"
+      "decision_basis": "Internal Scenario repository maintenance/skill-authoring instructions; not MoreAI customer-facing runtime knowledge.",
+      "decision_owner": "Source governance archive",
+      "review_status": "entrypoint-content-reviewed-internal"
     },
     {
       "repository": "scenario-labs/skills",
