@@ -88,13 +88,17 @@ async def list_artifacts(
 ):
     """Return owned artifacts with stable keyset pagination and durable Agent Run links."""
     decoded = decode_created_at_id_cursor(cursor)
-    repo = repository(request)
-    rows = await repo.select("artifacts", {
+    filters = {
         "user_id": f"eq.{user['id']}",
         "select": "id,run_id,storage_path,mime_type,size_bytes,checksum_sha256,metadata,created_at",
         "order": "created_at.desc,id.desc",
         "limit": str(limit + 1),
-    })
+    }
+    cursor_filter = created_at_id_filter(decoded)
+    if cursor_filter:
+        filters["or"] = cursor_filter
+    repo = repository(request)
+    rows = await repo.select("artifacts", filters)
     has_more = len(rows) > limit
     rows = rows[:limit]
     if has_more and rows:

@@ -10,6 +10,7 @@ type ArtifactRecord = {
   storage_path: string;
   mime_type: string | null;
   size_bytes: number | null;
+  run_id: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
 };
@@ -132,6 +133,7 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
                 <div className="min-w-0">
                   <h4 className="text-xs font-bold text-slate-900 truncate">{nameOf(file)}</h4>
                   <p className="text-[10px] text-slate-500 mt-0.5">{sizeOf(file)} · {new Date(file.created_at).toLocaleString('id-ID')}</p>
+                  <p className="mt-1 text-[10px] text-slate-500">{file.run_id ? 'Agent Run ' + file.run_id.slice(0, 8) : 'Belum ditautkan ke Agent Run'}</p>
                 </div>
               </div>
               <button type="button" onClick={() => void downloadArtifact(file.id)} disabled={downloadingFile === file.id} className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
