@@ -14,12 +14,12 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { customerApi, type CustomerAgentConfiguration, type CustomerToolCatalogItem } from '@/lib/api/client';
+import { customerApi, customerSkillApi, type CustomerSkillPackage, type CustomerAgentConfiguration, type CustomerToolCatalogItem } from '@/lib/api/client';
 import { AIAgent } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
 interface AgentStudioViewProps {
-  onSelectAgentForChat?: (agent: AIAgent) => void;
+  onSelectAgentForChat?: (agent: AIAgent, skillIds?: string[]) => void;
   onOpenWorkflow?: () => void;
 }
 
@@ -40,6 +40,9 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
   const [configurationPrompt, setConfigurationPrompt] = useState('');
   const [configurationToolKeys, setConfigurationToolKeys] = useState<string[]>([]);
   const [savingConfiguration, setSavingConfiguration] = useState(false);
+  const [availableSkills, setAvailableSkills] = useState<CustomerSkillPackage[]>([]);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
+  const [skillsError, setSkillsError] = useState<string | null>(null);
   const [configurationError, setConfigurationError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
@@ -72,6 +75,9 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
           .map((tool) => tool.key));
       })
       .catch((cause) => { if (active) setToolCatalogError(cause instanceof Error ? cause.message : 'Katalog tool tidak tersedia.'); });
+    customerSkillApi.list()
+      .then((result) => { if (active) setAvailableSkills(result.items.filter((skill) => skill.installation?.status === 'installed' && skill.installation.permission_status === 'approved' && skill.installation.execution_enabled)); })
+      .catch((cause) => { if (active) setSkillsError(cause instanceof Error ? cause.message : 'Skill Registry tidak dapat dimuat.'); });
     customerApi.agentConfigurations()
       .then((rows) => { if (active) setAgentConfigurations(rows); })
       .catch((cause) => { if (active) setConfigurationError(cause instanceof Error ? cause.message : 'Konfigurasi Agent tidak dapat dimuat.'); });
@@ -327,6 +333,21 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
               )}
             </section>
 
+            <section className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2">
+              <div>
+                <h5 className="text-[11px] font-bold text-slate-800">AI Skills untuk Agent Run</h5>
+                <p className="text-[10px] text-slate-500">Pilih skill terpasang dengan permission yang telah disetujui. Pilihan dikirim sebagai snapshot ke OpenManus.</p>
+              </div>
+              {skillsError ? <p role="alert" className="text-[10px] text-amber-700">{skillsError}</p>
+                : availableSkills.length ? <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {availableSkills.map((skill) => <label key={skill.id} className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 p-2 text-[10px] text-slate-700">
+                    <input type="checkbox" checked={selectedSkillIds.includes(skill.id)} onChange={(event) => setSelectedSkillIds((current) => event.target.checked ? [...current, skill.id].slice(0,10) : current.filter((id) => id !== skill.id))} className="mt-0.5 accent-red-600" />
+                    <span><strong>{skill.name}</strong><span className="block text-slate-500">{skill.slug} · v{skill.version}</span></span>
+                  </label>)}
+                </div> : <p className="text-[10px] text-slate-500">Belum ada skill dengan status installed dan permission approved.</p>}
+              <p className="text-[10px] text-slate-500">{selectedSkillIds.length} skill dipilih · maksimum 10</p>
+            </section>
+
             <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
               <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-slate-400 block text-[9px] uppercase font-bold">Versi Runtime</span>
@@ -343,7 +364,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
             <button
               onClick={() => {
                 showToast('Membuka Chat Workspace. Eksekusi mengikuti ketersediaan backend.', 'info');
-                if (onSelectAgentForChat) onSelectAgentForChat(selectedAgent);
+                if (onSelectAgentForChat) onSelectAgentForChat(selectedAgent, selectedSkillIds);
               }}
               disabled={!selectedAgent.runtimeAvailable}
               title={!selectedAgent.runtimeAvailable ? 'Worker runtime belum melaporkan heartbeat aktif' : 'Gunakan Agent ini'}
