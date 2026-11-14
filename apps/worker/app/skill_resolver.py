@@ -95,14 +95,24 @@ class SupabaseSkillResolver:
                 "content_sha256": package["content_sha256"],
                 "permissions": sorted(granted),
             }
-            await self.client.insert("moreai_skill_execution_audit", {
-                "skill_package_id": str(skill_id), "skill_install_id": install["id"],
-                "owner_user_id": user_id, "agent_run_id": run_id,
-                "skill_version": package["version"],
-                "skill_content_sha256": package["content_sha256"],
-                "permission_snapshot": sorted(granted), "event_type": "resolved",
-                "event_detail": {"source_file_count": len(files), "instruction_file_count": len(instruction_files), "verified_total_bytes": total_bytes},
+            prior_resolution = await self.client.select("moreai_skill_execution_audit", {
+                "skill_package_id": f"eq.{skill_id}",
+                "skill_install_id": f"eq.{install['id']}",
+                "owner_user_id": f"eq.{user_id}",
+                "agent_run_id": f"eq.{run_id}",
+                "event_type": "eq.resolved",
+                "select": "id",
+                "limit": "1",
             })
+            if not prior_resolution:
+                await self.client.insert("moreai_skill_execution_audit", {
+                    "skill_package_id": str(skill_id), "skill_install_id": install["id"],
+                    "owner_user_id": user_id, "agent_run_id": run_id,
+                    "skill_version": package["version"],
+                    "skill_content_sha256": package["content_sha256"],
+                    "permission_snapshot": sorted(granted), "event_type": "resolved",
+                    "event_detail": {"source_file_count": len(files), "instruction_file_count": len(instruction_files), "verified_total_bytes": total_bytes},
+                })
             resolved.append({"snapshot": snapshot, "instructions": body, "install_id": install["id"]})
         return resolved
 
