@@ -522,7 +522,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
                   <h4 className="text-xs font-bold text-slate-900">Durable workflow steps ({runSteps.length})</h4>
                   {runSteps.length ? runSteps.map((step) => (
                     <div key={step.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-2.5">
-                      <div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-800">{step.sequence}. {step.step_key}</p><p className="text-[10px] text-slate-500">{step.started_at ? new Date(step.started_at).toLocaleString('id-ID') : 'Belum dimulai'}</p></div>
+                      <div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-800">{step.sequence}. {step.step_key}</p><p className="text-[10px] text-slate-500">{step.started_at ? new Date(step.started_at).toLocaleString('id-ID') : 'Belum dimulai'}</p><p className="text-[10px] text-slate-400">{step.dependencies.length ? 'Bergantung pada langkah ' + step.dependencies.map((dependency) => dependency + 1).join(', ') : 'Tanpa dependensi'}</p></div>
                       <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-700">{step.status}</span>
                     </div>
                   )) : <p className="text-[11px] text-slate-500">Belum ada step yang dipersist oleh worker.</p>}
