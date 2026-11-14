@@ -301,6 +301,11 @@ class DurableOpenManusRuntime:
                 skill_ids=skill_ids, user_id=context.user_id, run_id=context.run_id,
             )
             snapshots = [item["snapshot"] for item in resolved_skills]
+            skill_allowed_tools = set().union(*(
+                self.skill_permission_tools.get(permission, set())
+                for snapshot in snapshots
+                for permission in snapshot["permissions"]
+            )) if snapshots else set()
             await save("openmanus.skills.snapshot", {"skills": snapshots})
             for item in resolved_skills:
                 system["content"] += (
@@ -457,6 +462,17 @@ class DurableOpenManusRuntime:
                 )
             ]
 
+        if skill_allowed_tools is not None:
+            tool_definitions = [
+                definition for definition in tool_definitions
+                if isinstance(definition, dict)
+                and isinstance(definition.get("function"), dict)
+                and (
+                    definition["function"].get("name") in skill_allowed_tools
+                    or definition["function"].get("name") in {"create_chat_completion", "terminate"}
+                )
+            ]
+
         while round_no <= self.max_rounds:
             if cancelled.is_set():
                 raise asyncio.CancelledError()
@@ -587,6 +603,8 @@ class DurableOpenManusRuntime:
                         raise ValueError("provider_tool_arguments_must_be_object")
                     if selected_tools is not None and function.name not in selected_tools and function.name not in {"create_chat_completion", "terminate"}:
                         raise PermissionError("saved_agent_tool_not_allowed")
+                    if skill_allowed_tools is not None and function.name not in skill_allowed_tools and function.name not in {"create_chat_completion", "terminate"}:
+                        raise PermissionError("skill_permission_does_not_allow_tool")
                     digest = hashlib.sha256(json.dumps(arguments, sort_keys=True).encode()).hexdigest()
                     await save(f"openmanus.round.{round_no}.tool.{index}.intent", {
                         "tool_call_id": call.id, "tool": function.name,
