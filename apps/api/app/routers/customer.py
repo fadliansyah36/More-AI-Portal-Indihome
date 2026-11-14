@@ -1163,6 +1163,7 @@ async def update_customer_memory(
         ).isoformat()
     rows = await repository(request).update("moreai_customer_memories", {
         "id": f"eq.{memory_id}", "user_id": f"eq.{principal['id']}",
+        "expires_at": f"gt.{datetime.now(timezone.utc).isoformat()}",
         "select": "id,title,content,source_type,scope,expires_at,created_at,updated_at",
     }, payload)
     if not rows:
@@ -1229,3 +1230,14 @@ async def retry_customer_agent_run(
         "p_idempotency_key": idempotency_key,
         "p_attachment_ids": attachment_ids,
     })
+
+
+@router.delete("/memory", status_code=204)
+async def clear_customer_personal_memory(
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
+):
+    principal = await require_customer_context(request, user)
+    await repository(request).rpc("moreai_customer_clear_personal_memory", {
+        "p_user_id": principal["id"],
+    })
+    return Response(status_code=204)
