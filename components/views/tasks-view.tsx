@@ -89,7 +89,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
     setRunProgress(null);
     setRunDetailError(null);
     setRunDetailLoading(true);
-    const [stepsResult, activityResult, runResult] = await Promise.allSettled([
+    const [stepsResult, activityResult, runResult, progressResult] = await Promise.allSettled([
       customerApi.getRunSteps(run.id),
       customerApi.getRunActivity(run.id, 0, 200),
       customerApi.getRun(run.id),
@@ -118,7 +118,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onOpenWorkspaceFiles, onOp
     let active = true;
     const runId = selectedRun.id;
     const refreshSnapshot = async () => {
-      const [runResult, stepsResult, activityResult] = await Promise.allSettled([
+      const [runResult, stepsResult, activityResult, progressResult] = await Promise.allSettled([
         customerApi.getRun(runId),
         customerApi.getRunSteps(runId),
         customerApi.getRunActivity(runId, 0, 200),
