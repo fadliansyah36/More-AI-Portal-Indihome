@@ -1016,3 +1016,163 @@ async def redeem_partner_access_code(
         if "ACCESS_CODE_NETWORK_MISMATCH" in message or "ACCESS_CODE_SCOPE_MISMATCH" in message:
             raise HTTPException(403, "Access code is not valid for this network")
         raise
+
+
+# Personal Memory is explicitly user-authored and separate from conversation history.
+# It is not silently populated from chats, attachments, or unrelated workspace files.
+CUSTOMER_MEMORY_CONSENT_VERSION = "2026-11-14.v1"
+
+
+class CustomerMemoryConsentUpdate(BaseModel):
+    enabled: bool
+    consent_version: Literal["2026-11-14.v1"] = CUSTOMER_MEMORY_CONSENT_VERSION
+
+
+class CustomerMemoryCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+    content: str = Field(min_length=1, max_length=4000)
+    retention_days: Literal[30, 90, 180, 365] = 90
+
+
+class CustomerMemoryUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=120)
+    content: str | None = Field(default=None, min_length=1, max_length=4000)
+    retention_days: Literal[30, 90, 180, 365] | None = None
+
+
+class CustomerMemoryItemResponse(BaseModel):
+    id: UUID
+    title: str
+    content: str
+    source_type: Literal["user_created"]
+    scope: Literal["personal"]
+    expires_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+
+class CustomerMemoryResponse(BaseModel):
+    enabled: bool
+    consent_version: str | None = None
+    consented_at: datetime | None = None
+    disabled_at: datetime | None = None
+    items: list[CustomerMemoryItemResponse] = Field(default_factory=list)
+
+
+@router.get("/memory", response_model=CustomerMemoryResponse)
+async def customer_personal_memory(
+    request: Request, user: dict[str, Any] = Depends(customer_principal),
+):
+    principal = await require_customer_context(request, user)
+    repo = repository(request)
+    preferences = await repo.select("moreai_customer_memory_preferences", {
+        "user_id": f"eq.{principal['id']}",
+        "select": "enabled,consent_version,consented_at,disabled_at",
+        "limit": "1",
+    })
+    preference = preferences[0] if preferences else {}
+    # Expired records are excluded from the usable/reviewable collection even if
+    # a scheduled database cleanup has not yet physically purged them.
+    items = await repo.select("moreai_customer_memories", {
+        "user_id": f"eq.{principal['id']}",
+        "expires_at": f"gt.{datetime.now(timezone.utc).isoformat()}",
+        "select": "id,title,content,source_type,scope,expires_at,created_at,updated_at",
+        "order": "updated_at.desc,id.desc",
+        "limit": "200",
+    })
+    return {
+        "enabled": bool(preference.get("enabled", False)),
+        "consent_version": preference.get("consent_version"),
+        "consented_at": preference.get("consented_at"),
+        "disabled_at": preference.get("disabled_at"),
+        "items": items,
+    }
+
+
+@router.put("/memory/consent")
+async def update_customer_memory_consent(
+    body: CustomerMemoryConsentUpdate, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    principal = await require_customer_context(request, user)
+    result = await repository(request).rpc("moreai_customer_set_memory_consent", {
+        "p_user_id": principal["id"],
+        "p_enabled": body.enabled,
+        "p_consent_version": body.consent_version,
+    })
+    if isinstance(result, list):
+        result = result[0] if result else None
+    if not isinstance(result, dict):
+        raise HTTPException(502, "Memory consent state was not persisted")
+    return {
+        "enabled": bool(result.get("enabled", False)),
+        "consent_version": result.get("consent_version"),
+        "consented_at": result.get("consented_at"),
+        "disabled_at": result.get("disabled_at"),
+        "updated_at": result.get("updated_at"),
+    }
+
+
+@router.post("/memory", status_code=201, response_model=CustomerMemoryItemResponse)
+async def create_customer_memory(
+    body: CustomerMemoryCreate, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    principal = await require_customer_context(request, user)
+    repo = repository(request)
+    preferences = await repo.select("moreai_customer_memory_preferences", {
+        "user_id": f"eq.{principal['id']}", "select": "enabled,consent_version", "limit": "1",
+    })
+    if not preferences or not preferences[0].get("enabled") or preferences[0].get("consent_version") != CUSTOMER_MEMORY_CONSENT_VERSION:
+        raise HTTPException(403, "Personal Memory requires current explicit consent")
+    now = datetime.now(timezone.utc)
+    return await repo.insert("moreai_customer_memories", {
+        "user_id": principal["id"],
+        "title": body.title.strip(),
+        "content": body.content.strip(),
+        "source_type": "user_created",
+        "scope": "personal",
+        "expires_at": (now + timedelta(days=body.retention_days)).isoformat(),
+    })
+
+
+@router.patch("/memory/{memory_id}", response_model=CustomerMemoryItemResponse)
+async def update_customer_memory(
+    memory_id: UUID, body: CustomerMemoryUpdate, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    principal = await require_customer_context(request, user)
+    changes = body.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(422, "At least one memory field must be supplied")
+    payload: dict[str, Any] = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if "title" in changes:
+        payload["title"] = changes["title"].strip()
+    if "content" in changes:
+        payload["content"] = changes["content"].strip()
+    if "retention_days" in changes:
+        payload["expires_at"] = (
+            datetime.now(timezone.utc) + timedelta(days=changes["retention_days"])
+        ).isoformat()
+    rows = await repository(request).update("moreai_customer_memories", {
+        "id": f"eq.{memory_id}", "user_id": f"eq.{principal['id']}",
+        "select": "id,title,content,source_type,scope,expires_at,created_at,updated_at",
+    }, payload)
+    if not rows:
+        raise HTTPException(404, "Memory not found")
+    return rows[0]
+
+
+@router.delete("/memory/{memory_id}", status_code=204)
+async def delete_customer_memory(
+    memory_id: UUID, request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    principal = await require_customer_context(request, user)
+    rows = await repository(request).delete("moreai_customer_memories", {
+        "id": f"eq.{memory_id}", "user_id": f"eq.{principal['id']}",
+        "select": "id",
+    })
+    if not rows:
+        raise HTTPException(404, "Memory not found")
+    return Response(status_code=204)
