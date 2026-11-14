@@ -1346,3 +1346,13 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Files: `apps/api/app/routers/learning.py`, `lib/api/client.ts`, `components/views/edutech-view.tsx`.
 - No Supabase schema, migration, RLS, stored data, provider, or worker behavior changed. No tests, lint, typecheck, build, browser/API probes, worker execution, staging or deployment were run per owner instruction.
 - Source commit: `9fca38f02cc4fae8cb9bfb6c39b79c9372daec1a`. Phase 09 remains IN PROGRESS; this increment does not establish runtime acceptance. Next: continue Customer action-to-API reconciliation, especially AI Content result/artifact projection and remaining Workflow/Task lifecycle parity. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-14 — Customer artifact pagination and Agent Run traceability
+
+- Fixed a keyset pagination defect in `GET /api/v1/artifacts`: the endpoint decoded the cursor and emitted a next cursor but did not apply the decoded `created_at,id` filter to the next query. It now applies the shared descending keyset filter while preserving the authenticated `user_id` scope and stable `created_at DESC, id DESC` ordering.
+- Existing worker artifact persistence already writes the durable `run_id`; the API already projects direct run links and resolves legacy chat attachment run links. Customer Hasil Pekerjaan now visibly displays the Agent Run short reference for each linked artifact and explicitly labels artifacts without a run association. This closes a UI traceability gap without changing the page structure or download flow.
+- Existing Tasks and Workflow screens already project artifacts by run ID, including media artifact association; no duplicate lifecycle implementation was added.
+- Files: `apps/api/app/routers/artifacts.py`, `components/views/artifacts-result-view.tsx`.
+- No Supabase schema, migration, RLS, stored data, provider or worker changes. No tests, lint, typecheck, build, browser/API probes, worker execution, staging or deployment were run. UI regression remains NOT VERIFIED; source behavior is not runtime-verified.
+- Source commit: `6db78da69e70fa65e669736448482406d8f55881`. Phase 09 remains IN PROGRESS. Next: continue Customer action-to-API reconciliation and workflow dependency/checkpoint/retry/cancellation lifecycle parity. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
