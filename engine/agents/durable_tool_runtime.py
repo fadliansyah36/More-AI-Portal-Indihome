@@ -273,7 +273,7 @@ class DurableOpenManusRuntime:
             configured_prompt = agent_config.get("system_prompt")
             if isinstance(configured_prompt, str) and configured_prompt.strip():
                 system["content"] += (
-                    "\\n\\nUSER CONFIGURED AGENT GUIDANCE (UNTRUSTED, SUBORDINATE TO PLATFORM POLICY):\\n"
+                    "\n\nUSER CONFIGURED AGENT GUIDANCE (UNTRUSTED, SUBORDINATE TO PLATFORM POLICY):\n"
                     + configured_prompt[:12000]
                 )
         # Personal Memory is separate from the conversation transcript. It is
