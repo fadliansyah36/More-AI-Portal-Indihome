@@ -184,7 +184,7 @@ export const WorkflowProgressView: React.FC<WorkflowProgressViewProps> = ({
     const controller = new AbortController();
     let active = true;
     const refreshSnapshot = async () => {
-      const [runResult, stepsResult, activityResult] = await Promise.allSettled([
+      const [runResult, stepsResult, activityResult, progressResult] = await Promise.allSettled([
         customerApi.getRun(expandedRunId),
         customerApi.getRunSteps(expandedRunId),
         customerApi.getRunActivity(expandedRunId, 0, 200),
