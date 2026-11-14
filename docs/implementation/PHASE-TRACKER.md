@@ -1194,3 +1194,14 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Implementation report: [Phase 09 Provider Control Plane API/UI](./PHASE-09-PROVIDER-CONTROL-PLANE-API-UI-20261114.md).
 - Commits: API `804c97197487450f7e739be45cebf2371c1d198a`; UI `ca52ea1537a2feaabbb889cf5aa2959e4e032f56`; report `3775efe1bfb0bd519a6ccfc9387c4cbf91c415e`.
 - No tests, lint, typecheck, build, runtime verification, provider calls, staging or deployment were run. Phase 09 remains IN PROGRESS; Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
+
+
+## 2026-11-14 — Customer Task Lifecycle Streaming increment
+
+- `components/views/tasks-view.tsx` now subscribes to the authenticated durable Agent Run SSE stream while a non-terminal task detail is open.
+- Worker/planning/tool/approval/terminal events trigger fresh owner-scoped run, step and safe activity reads through FastAPI. Task state remains derived from persisted run state.
+- Existing UI layout and design tokens are unchanged; no new screen or mock success state was added.
+- Commit: `3361e689ca919461181b77dec3a370d894ca3139`.
+- Report: [Customer Task Lifecycle Streaming](./PHASE-09-CUSTOMER-TASK-LIFECYCLE-STREAMING-20261114.md).
+- Phase 09 remains IN PROGRESS. Customer retry/regenerate, distinct generation mapping, Memory privacy lifecycle and several vendor-gated domain flows remain open. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+- No tests, lint, typecheck, build, browser/API/worker runtime, provider calls, staging or deployment were run, per owner instruction.
