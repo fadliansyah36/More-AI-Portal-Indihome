@@ -99,6 +99,7 @@ export default function App() {
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
   const [chatInitialAgentKey, setChatInitialAgentKey] = useState<'manus' | 'planning' | 'toolcall'>('manus');
   const [chatInitialAgentConfigurationId, setChatInitialAgentConfigurationId] = useState<string | null>(null);
+  const [chatInitialSkillIds, setChatInitialSkillIds] = useState<string[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [drawerRole, setDrawerRole] = useState<'customer' | 'partner'>('customer');
   const [isBottomNavCollapsed, setIsBottomNavCollapsed] = useState(false);
@@ -225,6 +226,7 @@ export default function App() {
     setChatInitialPrompt(promptText);
     setChatInitialAgentKey(agentKey);
     setChatInitialAgentConfigurationId(agentConfigurationId || null);
+    setChatInitialSkillIds(skillIds);
     handleNavigate('chat');
   };
 
@@ -290,7 +292,7 @@ export default function App() {
 
               {currentTab === 'agents' && (
                 <AgentStudioView
-                  onSelectAgentForChat={(agent) =>
+                  onSelectAgentForChat={(agent, skillIds = []) =>
                     handleStartPrompt(
                       `Saya ingin bekerja dengan ${agent.name}. ${agent.description}`,
                       agent.id === 'planning' ? 'planning' : agent.id === 'toolcall' ? 'toolcall' : 'manus',
