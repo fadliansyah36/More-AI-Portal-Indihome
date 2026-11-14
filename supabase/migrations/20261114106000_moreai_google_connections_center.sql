@@ -97,7 +97,7 @@ begin
   returning * into v_connection;
   insert into public.moreai_connection_audit(connection_id,user_id,provider,event_type,scopes,detail)
   values(v_connection.id,p_user_id,'google','connected',p_scopes,
-    jsonb_build_object('account_id_hash',encode(digest(p_external_account_id,'sha256'),'hex')));
+    jsonb_build_object('identity_verified',true));
   return jsonb_build_object('id',v_connection.id,'provider',v_connection.provider,
     'display_name',v_connection.display_name,'scopes',v_connection.scopes,
     'status',v_connection.status,'access_token_expires_at',v_connection.access_token_expires_at);
