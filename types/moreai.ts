@@ -100,6 +100,10 @@ export interface AIAgent {
   capabilityTags?: string[];
   toolKeys?: string[];
   configurationId?: string;
+  runtimeAvailable?: boolean;
+  activeWorkers?: number;
+  liveToolKeys?: string[];
+  lastSeenAt?: string | null;
 }
 
 export interface ConnectedDevice {
