@@ -819,3 +819,38 @@ Implement a first-party **Connections & Integrations** capability inside the exi
 - JEV adapter is a provider-mediated interaction selector/ranker. It is not a general plugin framework; if used, its output is untrusted suggestion data and must never override MoreAI authorization or action policy.
 
 **Count:** ten more distinct full-file reviews; OpenFuse content review is now **78/219**, with **141 remaining**. No test/build/install/lint/typecheck, staging, deployment, live provider call or Supabase mutation was performed.
+
+
+---
+
+## 21. Twelfth continuation increment — OpenFuse scheduling/action policy, rate limiting and browser worker deployment
+
+**Date:** 2026-11-14. Ten additional distinct files fetched in full at pinned OpenFuse commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`:
+
+| Path | Pinned blob SHA |
+|---|---|
+| `apps/server/src/jev/service.ts` | `c2fbd95a6fa96c3628d4f92354693a43b5b09d73` |
+| `apps/server/src/jev/tools.ts` | `3ec131ea7d79bd8270111322e20493bcc778bd38` |
+| `apps/server/src/log.ts` | `1e9afc296f4eae268462329b3d8e75031b504c01` |
+| `apps/server/src/rate-limit.ts` | `95c1f5ff6a2be4a1b4a1f9ee0fc09b6e5eabae59` |
+| `apps/server/src/search.ts` | `6f70602ed153c22f978471f60fcbefe91a3aa085` |
+| `apps/server/src/worker-entry.ts` | `bb811688373e821095321a6dd146a330d359fe70` |
+| `apps/server/src/workspace.ts` | `29d6bb142619e0d43a75a9b475b3a46c1d817eb7` |
+| `apps/worker/.dockerignore` | `bd9ea75728126519e9ecf7c4d133242cd8c48c73` |
+| `apps/worker/Dockerfile` | `0cc4e227df9a9819bb5c93ddaf63986eca274652` |
+| `apps/worker/README.md` | `f8bedb780b0dcd782884242e54dcea07e1e04e63` |
+
+**Findings and MoreAI disposition:**
+- JEV service stores owner-scoped thread/panel state, reserves turn generations and validates evidence before rendering choices. This is a bounded interaction capability, not a generic external plugin or workflow scheduler.
+- JEV tools explicitly state they only request user preference and perform no external action. Preserve the separation between recommendation/choice and actual action execution in MoreAI.
+- Logging deliberately avoids provider payloads and credential-bearing URLs. MoreAI should adopt redaction by default for OAuth callback URLs, signed Storage URLs, browser/VNC links, connector tokens, prompt payloads and personal data.
+- OpenFuse rate limiting uses an in-process Map and is not a distributed multi-instance limiter. MoreAI needs shared/distributed limits at FastAPI and provider/tenant/user quotas.
+- Search invokes an external MCP search endpoint; query and context are sent to the provider, results are untrusted, and session IDs are owner-scoped. MoreAI needs an explicit data disclosure policy and per-provider consent/configuration; never forward private workspace context by default.
+- Separate task worker currently requires DATABASE_URL because embedded PGlite cannot be shared between processes. This reinforces that PGlite architecture is unsuitable as MoreAI's canonical data plane; use Supabase PostgreSQL and durable queue/lease semantics there.
+- Workspace service contains the Google integration boundary for calendar discovery/events and Gmail operations, with connection identity and owner scoping. MoreAI must reimplement/adapt behind its FastAPI connector adapters and Supabase tenancy rather than expose OpenFuse's Store.
+- Browser worker is a separate Node/Playwright service authenticated only from trusted server using a 32+ character WORKER_TOKEN; docs explicitly say never send it to browser/mobile. It persists browser profiles/cookies and PDFs, allows public HTTP(S) only, validates DNS/private IP destinations, and pins proxy connections to resolved IP. This is a strong reference pattern, but persistent profiles require tenant-scoped encryption, retention/deletion and audit in MoreAI.
+- Docker worker image runs as non-root `pwuser`, stores state in a data directory and uses a separate lockfile. Its deployment README documents per-session/profile/PDF quotas and proxy boundaries. MoreAI must apply resource quotas and independent egress controls.
+
+**Scheduling interpretation:** the server worker's scheduled task status and monitor cadence are durable agent-work scheduling primitives, not a general-purpose calendar automation builder. The MoreAI design must model user schedules, recurrence/timezone, trigger events, connector authorization, run receipts and pause/resume independently of the OpenFuse demo UI while still dispatching execution through the single OpenManus runtime.
+
+**Count:** ten more distinct full-file reviews; OpenFuse content review is now **88/219**, with **131 remaining**. No tests/build/install/lint/typecheck, staging, deployment, live connector calls or Supabase mutations were performed.
