@@ -87,6 +87,22 @@ EduTech is a first-party MoreAI capability. It does not require an external EduT
 
 Catalog presence is not execution permission. Actual Customer availability is determined by healthy worker capability snapshots, agent configuration, authorization, tool policy, approval, sandbox and provider/billing configuration. In the current Customer Agent Studio, registered runtime choices are Manus, Planning and ToolCall. SWE exists in the upstream source and is not represented as an enabled Customer runtime merely because the upstream class exists. Critical/high-risk tools remain gated.
 
+## Product benchmark and learning design notes
+
+The internal learning direction was compared against current public AI-learning patterns, without introducing a dependency on those platforms:
+
+- Khan Academy's Khanmigo learner experience emphasizes Socratic guidance, critical thinking, hints and guided problem solving instead of simply returning homework answers. Its learner scope spans school through college and multiple subject areas. Reference: https://www.khanacademy.org/khanmigo
+- Khan Academy's 2026 learning updates describe interactive diagrams for math/science and targeted practice with teacher control. Reference: https://blog.google/products-and-platforms/products/education/khan-academy-back-to-school/
+- Google's LearnLM prompt guide describes scaffolded explanations, analogies, step-by-step support, comprehension quizzes and formative assessments. Reference: https://services.google.com/fh/files/misc/learnlm_prompt_guide.pdf
+
+Implications for MoreAI EduTech:
+1. Prefer Socratic tutoring, hints and guided reasoning over answer dumping.
+2. Use diagnostic questions, spaced/retrieval practice, formative feedback and adaptive difficulty.
+3. Provide learning paths, lessons, quizzes, projects, rubric-based feedback and next-step recommendations.
+4. Add interactive visual explanations/diagrams for STEM topics in a later UI/runtime increment.
+5. Treat learner privacy, age-appropriate safety, academic integrity, source provenance and transparent AI limitations as first-class controls. School-age users require a dedicated minor/guardian/school consent policy before expanding beyond the current authenticated customer session.
+6. Do not claim accreditation, institutional grades, verified certificates or teacher endorsement unless MoreAI later implements the relevant governance and evidence workflow.
+
 ## Next implementation slice within Phase 09
 
 1. Add first-party EduTech persistence: learning paths, modules, lesson content versions, enrollments, study attempts, quiz items/responses, rubrics and assessment results.
