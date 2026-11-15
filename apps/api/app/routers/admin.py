@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 import os
+import re
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -153,6 +154,7 @@ class LlmProviderMutation(BaseModel):
     enabled: bool = False
     base_url: str | None = Field(default=None, min_length=8, max_length=500)
     secret_env_name: str | None = Field(default=None, min_length=17, max_length=128)
+    credentials_ready: bool = False
 
 
 class LlmModelMutation(BaseModel):
@@ -219,9 +221,11 @@ async def create_or_update_llm_provider(
     provider_id: UUID | None = Query(default=None),
     principal=Depends(model_manager),
 ):
-    # Provider activation requires a separate worker-side readiness attestation.
-    if body.enabled:
-        raise HTTPException(409, "provider_enable_requires_worker_readiness_attestation")
+    # The platform administrator explicitly attests that the secret has already
+    # been installed in the persistent worker host. Worker startup independently
+    # verifies that the referenced environment variable is present before claiming runs.
+    if body.enabled and not body.credentials_ready:
+        raise HTTPException(409, "provider_secret_host_attestation_required")
     if (body.base_url is None) != (body.secret_env_name is None):
         raise HTTPException(422, "provider_base_url_and_secret_env_name_must_be_supplied_together")
     if body.base_url is not None:
@@ -242,7 +246,7 @@ async def create_or_update_llm_provider(
             parsed.scheme != "https" or not hostname or is_ip_literal
             or parsed.username or parsed.password or parsed.query or parsed.fragment
             or hostname.lower() not in supported_hosts.get(body.key, set())
-            or not __import__("re").fullmatch(r"MOREAI_PROVIDER_[A-Z0-9_]{1,100}", body.secret_env_name or "")
+            or not re.fullmatch(r"MOREAI_PROVIDER_[A-Z0-9_]{1,100}", body.secret_env_name or "")
         ):
             raise HTTPException(422, "provider_endpoint_or_secret_reference_invalid")
     repo = repository(request)
@@ -251,8 +255,8 @@ async def create_or_update_llm_provider(
         "p_provider_id": str(provider_id) if provider_id else None,
         "p_key": body.key,
         "p_display_name": body.display_name.strip(),
-        "p_enabled": False,
-        "p_credentials_ready": False,
+        "p_enabled": body.enabled,
+        "p_credentials_ready": body.credentials_ready,
         "p_correlation_id": getattr(request.state, "correlation_id", None),
     })
     if body.base_url is not None and isinstance(result, dict) and result.get("id"):
@@ -274,6 +278,8 @@ async def create_or_update_llm_model(
     model_id: UUID | None = Query(default=None),
     principal=Depends(model_manager),
 ):
+    if body.enabled and body.max_output_tokens is None:
+        raise HTTPException(422, "enabled_model_requires_max_output_tokens")
     return await repository(request).rpc("moreai_admin_mutate_llm_model", {
         "p_actor_user_id": principal["id"],
         "p_model_id": str(model_id) if model_id else None,
