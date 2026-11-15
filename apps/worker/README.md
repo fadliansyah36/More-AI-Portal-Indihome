@@ -69,3 +69,10 @@ Supported MoreAI browser actions are `navigate`, `extract` (visible text read), 
 Downloaded PDF metadata and failure receipts can be inspected, but file bytes are not imported into customer Files until a real malware scanner is integrated. OpenFuse's optional Linux computer/E2B graphical desktop is not activated by this browser adapter; MoreAI's existing isolated bash/Python workspace remains a separate execution boundary. No desktop/VNC or host shell access is exposed to the customer.
 
 This is source integration only. A connected persistent host, real service token, persistent profile volume and live worker heartbeat are still required before operational readiness. Do not claim the browser runtime is active merely because the adapter is present in source.
+
+
+## Computer Workspace execution receipts
+
+Bash and Python execution remain behind the isolated, network-disabled execution supervisor. The worker propagates the OpenManus tool-call ID, claims an owner/run/workspace-bound Computer action receipt through FastAPI, and derives a stable supervisor request ID. Successful results are stored as bounded receipt payloads for 30 days; ambiguous supervisor outcomes are marked `unknown` and are not automatically replayed. Customer Profile Settings exposes the persisted action history without exposing command source or secrets.
+
+Workspace files are persisted through the canonical Supabase Workspace service and rehydrated into a disposable execution container for each command. This is not a persistent Linux desktop/container, VNC session or OpenFuse E2B Computer. The OpenFuse optional Docker/E2B Computer server must not be mounted directly into the multi-tenant MoreAI API: its current shared access-key/single-owner server model and separate Store are not a drop-in tenant boundary. A dedicated MoreAI per-customer isolated supervisor would be required for persistent desktop parity.
