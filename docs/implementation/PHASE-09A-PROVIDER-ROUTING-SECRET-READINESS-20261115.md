@@ -62,7 +62,7 @@ Read-only schema inspection confirms both RPCs exist and the routing function in
 - 49d9ab6b, 2f78c30c — provider schema and selection corrections.
 - bb46f586 — provider endpoint allowlist migration.
 - a1fe4a20, 472d7d8f, 4ad7e1f5 — provider allowlist, explicit activation attestation and persist-config-before-enable ordering.
-- 635333c3, ddd0af1f — supported provider list and activation controls.
+- 635333c3, ddd0af1f, a46c0394 — supported provider list, activation controls and reset of secret attestation when switching provider selection.
 - 48f63161, 7ae14733 — worker configuration/readiness documentation.
 
 ## Current production blockers
