@@ -226,6 +226,8 @@ async def create_or_update_llm_provider(
     # verifies that the referenced environment variable is present before claiming runs.
     if body.enabled and not body.credentials_ready:
         raise HTTPException(409, "provider_secret_host_attestation_required")
+    if body.enabled and body.base_url is None:
+        raise HTTPException(422, "provider_endpoint_configuration_required_before_activation")
     if (body.base_url is None) != (body.secret_env_name is None):
         raise HTTPException(422, "provider_base_url_and_secret_env_name_must_be_supplied_together")
     if body.base_url is not None:
@@ -255,10 +257,11 @@ async def create_or_update_llm_provider(
         "p_provider_id": str(provider_id) if provider_id else None,
         "p_key": body.key,
         "p_display_name": body.display_name.strip(),
-        "p_enabled": body.enabled,
-        "p_credentials_ready": body.credentials_ready,
+        "p_enabled": False,
+        "p_credentials_ready": False,
         "p_correlation_id": getattr(request.state, "correlation_id", None),
     })
+    configured = None
     if body.base_url is not None and isinstance(result, dict) and result.get("id"):
         configured = await repo.rpc("moreai_admin_configure_llm_provider", {
             "p_actor_user_id": principal["id"],
@@ -267,8 +270,18 @@ async def create_or_update_llm_provider(
             "p_secret_env_name": body.secret_env_name,
             "p_correlation_id": getattr(request.state, "correlation_id", None),
         })
-        return {**result, "configuration": configured}
-    return result
+    if body.enabled and isinstance(result, dict) and result.get("id"):
+        # Activate only after the endpoint/secret reference is persisted successfully.
+        result = await repo.rpc("moreai_admin_mutate_llm_provider", {
+            "p_actor_user_id": principal["id"],
+            "p_provider_id": str(result["id"]),
+            "p_key": body.key,
+            "p_display_name": body.display_name.strip(),
+            "p_enabled": True,
+            "p_credentials_ready": True,
+            "p_correlation_id": getattr(request.state, "correlation_id", None),
+        })
+    return {**result, "configuration": configured} if isinstance(result, dict) and configured else result
 
 
 @router.post("/models", status_code=201)
