@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import hashlib
 import json
 from uuid import uuid4
 from urllib.parse import urlsplit
@@ -71,6 +72,7 @@ class IsolatedSandboxToolAdapter:
     async def _execute(
         self, *, source: str, language: str, run_id: str, user_id: str,
         workspace_id: str | None, timeout_seconds: int = 30,
+        tool_call_id: str | None = None,
     ) -> str:
         if not isinstance(run_id, str) or not run_id or not isinstance(user_id, str) or not user_id:
             raise PermissionError("sandbox_run_identity_required")
@@ -87,7 +89,7 @@ class IsolatedSandboxToolAdapter:
             for path, raw in snapshot.items()
         }
         await self.check_ready()
-        request_id = uuid4().hex
+        request_id = hashlib.sha256(f"{run_id}:{tool_call_id}".encode()).hexdigest()[:32] if tool_call_id else uuid4().hex
         try:
             response = await self.http.post(
                 f"{self.service_url}/v1/execute",
@@ -144,20 +146,21 @@ class IsolatedSandboxToolAdapter:
 
     async def python_execute(
         self, arguments: dict[str, Any], *, run_id: str, user_id: str,
-        workspace_id: str | None = None,
+        workspace_id: str | None = None, tool_call_id: str | None = None,
     ) -> str:
         return await self._execute(
             source=arguments["code"], language="python",
             run_id=run_id, user_id=user_id, workspace_id=workspace_id,
             timeout_seconds=int(arguments.get("timeout_seconds", 30)),
+            tool_call_id=tool_call_id,
         )
 
     async def bash(
         self, arguments: dict[str, Any], *, run_id: str, user_id: str,
-        workspace_id: str | None = None,
+        workspace_id: str | None = None, tool_call_id: str | None = None,
     ) -> str:
         return await self._execute(
             source=arguments["command"], language="bash",
             run_id=run_id, user_id=user_id, workspace_id=workspace_id,
-            timeout_seconds=30,
+            timeout_seconds=30, tool_call_id=tool_call_id,
         )
