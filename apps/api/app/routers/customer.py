@@ -1062,6 +1062,7 @@ class CustomerAgentConfigurationCreate(BaseModel):
     description: str = Field(default="", max_length=500)
     system_prompt: str = Field(default="", max_length=12000)
     tool_keys: list[str] = Field(default_factory=list, max_length=30)
+    preferred_model_id: UUID | None = None
 
 
 class CustomerAgentConfigurationUpdate(BaseModel):
@@ -1069,6 +1070,7 @@ class CustomerAgentConfigurationUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=500)
     system_prompt: str | None = Field(default=None, max_length=12000)
     tool_keys: list[str] | None = Field(default=None, max_length=30)
+    preferred_model_id: UUID | None = None
     enabled: bool | None = None
 
 
@@ -1079,6 +1081,7 @@ class CustomerAgentConfigurationResponse(BaseModel):
     description: str
     system_prompt: str
     tool_keys: list[str]
+    preferred_model_id: UUID | None = None
     enabled: bool
     version: int
     created_at: datetime
@@ -1116,6 +1119,24 @@ def _validate_customer_agent_tool_keys(runtime_key: str, tool_keys: list[str]) -
     return normalized
 
 
+async def _validate_customer_preferred_model(repo: Any, model_id: UUID | None) -> str | None:
+    if model_id is None:
+        return None
+    models = await repo.select("llm_models", {
+        "id": f"eq.{model_id}", "enabled": "eq.true",
+        "select": "id,provider_id", "limit": "1",
+    })
+    if not models:
+        raise HTTPException(422, "Selected model is not enabled")
+    providers = await repo.select("llm_providers", {
+        "id": f"eq.{models[0]['provider_id']}", "enabled": "eq.true",
+        "select": "id", "limit": "1",
+    })
+    if not providers:
+        raise HTTPException(422, "Selected model provider is not enabled")
+    return str(model_id)
+
+
 @router.get("/agents/configurations", response_model=list[CustomerAgentConfigurationResponse])
 async def list_customer_agent_configurations(
     request: Request, user: dict[str, Any] = Depends(customer_principal),
@@ -1123,7 +1144,7 @@ async def list_customer_agent_configurations(
     principal = await require_customer_context(request, user)
     return await repository(request).select("moreai_customer_agent_configs", {
         "user_id": f"eq.{principal['id']}",
-        "select": "id,runtime_key,name,description,system_prompt,tool_keys,enabled,version,created_at,updated_at",
+        "select": "id,runtime_key,name,description,system_prompt,tool_keys,preferred_model_id,enabled,version,created_at,updated_at",
         "order": "updated_at.desc,id.desc",
         "limit": "100",
     })
@@ -1142,6 +1163,7 @@ async def create_customer_agent_configuration(
         "description": body.description.strip(),
         "system_prompt": body.system_prompt.strip(),
         "tool_keys": _validate_customer_agent_tool_keys(body.runtime_key, body.tool_keys),
+        "preferred_model_id": await _validate_customer_preferred_model(repository(request), body.preferred_model_id),
         "enabled": True,
         "version": 1,
     })
@@ -1156,7 +1178,7 @@ async def update_customer_agent_configuration(
     repo = repository(request)
     current = await repo.select("moreai_customer_agent_configs", {
         "id": f"eq.{configuration_id}", "user_id": f"eq.{principal['id']}",
-        "select": "id,runtime_key,name,description,system_prompt,tool_keys,enabled,version",
+        "select": "id,runtime_key,name,description,system_prompt,tool_keys,preferred_model_id,enabled,version",
         "limit": "1",
     })
     if not current:
@@ -1164,7 +1186,7 @@ async def update_customer_agent_configuration(
     changes = body.model_dump(exclude_unset=True)
     if not changes:
         raise HTTPException(422, "At least one configuration field must be supplied")
-    if any(value is None for value in changes.values()):
+    if any(value is None for key, value in changes.items() if key != "preferred_model_id"):
         raise HTTPException(422, "Agent configuration updates cannot contain null values")
     if "name" in changes:
         changes["name"] = changes["name"].strip()
@@ -1176,11 +1198,15 @@ async def update_customer_agent_configuration(
         changes["tool_keys"] = _validate_customer_agent_tool_keys(
             str(current[0]["runtime_key"]), changes["tool_keys"],
         )
+    if "preferred_model_id" in changes:
+        changes["preferred_model_id"] = await _validate_customer_preferred_model(
+            repo, changes["preferred_model_id"],
+        )
     changes["version"] = int(current[0].get("version") or 1) + 1
     changes["updated_at"] = datetime.now(timezone.utc).isoformat()
     rows = await repo.update("moreai_customer_agent_configs", {
         "id": f"eq.{configuration_id}", "user_id": f"eq.{principal['id']}",
-        "select": "id,runtime_key,name,description,system_prompt,tool_keys,enabled,version,created_at,updated_at",
+        "select": "id,runtime_key,name,description,system_prompt,tool_keys,preferred_model_id,enabled,version,created_at,updated_at",
     }, changes)
     if not rows:
         raise HTTPException(404, "Agent configuration not found")
