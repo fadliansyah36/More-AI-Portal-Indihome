@@ -477,7 +477,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
               return (
                 <div key={action.id} className="rounded-2xl border border-slate-100 p-3 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-semibold text-slate-800">{({ navigate: 'Navigasi', extract: 'Baca halaman', input: 'Interaksi halaman', close: 'Tutup sesi', downloads: 'Daftar unduhan' } as const)[action.action_type]} · {action.target_host}</p>
+                    <p className="text-xs font-semibold text-slate-800">{({ navigate: 'Navigasi', extract: 'Baca halaman', input: 'Interaksi halaman', screenshot: 'Ambil tangkapan layar', close: 'Tutup sesi', downloads: 'Daftar unduhan' } as const)[action.action_type]} · {action.target_host}</p>
                     <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold ${tones[action.status]}`}>{labels[action.status]}</span>
                   </div>
                   <p className="text-[10px] text-slate-500">Dimulai: {new Date(action.requested_at).toLocaleString('id-ID')}</p>
