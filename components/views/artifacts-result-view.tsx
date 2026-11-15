@@ -39,6 +39,7 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const [screenshotPreviewUrls, setScreenshotPreviewUrls] = useState<Record<string, string>>({});
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [paginationError, setPaginationError] = useState<string | null>(null);
@@ -80,6 +81,30 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
       setLoadingMore(false);
     }
   };
+
+  useEffect(() => {
+    let active = true;
+    const screenshots = files.filter((file) => file.mime_type === 'image/png'
+      && file.metadata?.source === 'openfuse_browser_screenshot'
+      && !screenshotPreviewUrls[file.id]);
+    if (screenshots.length) {
+      Promise.all(screenshots.map(async (file) => {
+        try {
+          const signed = await artifactApi.signedDownload(file.id);
+          return [file.id, signed.url] as const;
+        } catch {
+          return null;
+        }
+      })).then((items) => {
+        if (!active) return;
+        setScreenshotPreviewUrls((current) => ({
+          ...current,
+          ...Object.fromEntries(items.filter((item): item is readonly [string, string] => item !== null)),
+        }));
+      });
+    }
+    return () => { active = false; };
+  }, [files, screenshotPreviewUrls]);
 
   const filtered = useMemo(() => files.filter((file) => filter === 'semua' || categoryFor(file.mime_type, file.storage_path) === filter), [files, filter]);
 
@@ -162,6 +187,10 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs font-bold text-slate-900 truncate">{nameOf(file)}</h4>
+                  {file.metadata?.source === 'openfuse_browser_screenshot' && screenshotPreviewUrls[file.id] && (
+                    <img src={screenshotPreviewUrls[file.id]} alt="Tangkapan layar sesi browser" loading="lazy"
+                      className="mt-2 w-full max-w-[320px] rounded-xl border border-slate-200 object-contain bg-slate-50" />
+                  )}
                   <p className="text-[10px] text-slate-500 mt-0.5">{sizeOf(file)} · {new Date(file.created_at).toLocaleString('id-ID')}</p>
                   <p className="mt-1 text-[10px] text-slate-500">{file.run_id ? 'Agent Run ' + file.run_id.slice(0, 8) : 'Belum ditautkan ke Agent Run'}</p>
                   {file.metadata?.source === 'openfuse_browser_download' && <p className="mt-1 text-[10px] text-slate-600">OpenFuse Browser · Scan: {String(file.metadata.scan_status || 'tidak tersedia')}</p>}
