@@ -1448,3 +1448,13 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - 09C remains PARTIAL, not complete: browser/computer customer lifecycle and remaining unavailable provider workflows are unresolved. Source audit report: `PHASE-09C-CUSTOMER-ACTION-CLOSURE-AUDIT-20261115.md`.
 - No tests/build/lint/typecheck/browser/API/worker/provider/staging/deployment operations performed. Runtime and UI screenshot verification remain NOT VERIFIED.
 - Latest report commit: `f924da35bc759b81824025be42cbd329ee277cda`.
+
+
+## 2026-11-15 — Phase 09C Customer Browser Session UI Increment
+
+- Added typed Customer API methods for owner-scoped Browser Session list and close operations, reusing existing FastAPI endpoints.
+- Profile Settings now presents server-backed active browser sessions with loading, error/retry, empty and close-in-progress/success states. Session metadata is rendered from the API response; the UI does not claim to launch browser/computer actions.
+- Corrected stale Profile Settings FAQ statements about automatic Wi-Fi AI Credit top-ups and guaranteed offline task/history availability. Copy now reflects backend-confirmed wallet/entitlement and feature availability; support remains explicitly unavailable until official contact/ticket integration exists.
+- Files: `lib/api/client.ts`, `components/views/profile-settings-view.tsx`.
+- Commits: `fcec12188ba42b3da6fc20b827bb819a7a1125c0`, `580273d88c7a73773037d816c5f01cfa0a9d4efc`.
+- No tests/build/lint/typecheck/browser/API/worker/provider/staging/deployment operations. Visual regression and runtime session close remain NOT VERIFIED. 09C remains PARTIAL; 09D still requires isolated supervisor and complete approval/action lifecycle.
