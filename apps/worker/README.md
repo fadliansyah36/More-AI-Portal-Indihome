@@ -47,3 +47,25 @@ PYTHONPATH=../.. python -m app.main
 ```
 
 Service-role credentials must remain in the worker's secret store and must never enter the web app, source code, logs or build artifacts.
+
+
+## OpenFuse persistent browser adapter
+
+The optional browser adapter targets the pinned OpenFuse browser-worker HTTP contract (the worker API in `CopilotKit/openfuse`): `GET /health`, authenticated `GET /sessions`, `POST /sessions`, and per-session `navigate`, `read`, `screenshot`, `input`, `close`, and `downloads` endpoints. It does not use a private, invented `/v1/browser/actions` endpoint.
+
+Configure these server-only variables on the persistent worker host:
+- `MOREAI_BROWSER_ENABLED=true`
+- `MOREAI_BROWSER_SERVICE_URL` (for example the private service URL `http://openfuse-browser:8790`)
+- `MOREAI_BROWSER_SERVICE_TOKEN` (same 32+ character `WORKER_TOKEN` configured on OpenFuse's browser worker)
+- `MOREAI_BROWSER_EGRESS_ENFORCED=true` (explicit deployment attestation; OpenFuse worker enforces public HTTP(S) destination checks and its egress proxy)
+- `MOREAI_BROWSER_PRIVATE_NETWORK_HTTP=true` only for the exact private Compose/Render worker host and port
+- `MOREAI_INTERNAL_API_URL` (private FastAPI origin, default `http://api:8000`)
+- `MOREAI_WORKER_INTERNAL_TOKEN` (32+ character worker-to-FastAPI credential)
+
+OpenFuse browser profiles live on its persistent browser-worker data volume. Do not deploy the browser worker without a persistent volume and its restricted private network. The worker validates the actual OpenFuse `/health` and authenticated `/sessions` response before advertising browser capability.
+
+Supported MoreAI browser actions are `navigate`, `extract` (visible text read), `input` (bounded click/text/key/scroll), `screenshot` (stored as a private owner/run-scoped PNG artifact), `close`, and `downloads` metadata. Every action uses the existing durable owner-approval gate and a run/tool-call-bound action receipt. An ambiguous supervisor outcome is recorded as `unknown` and is never automatically replayed. Customer close requests are reconciled by the worker and acknowledged only after the OpenFuse session is closed.
+
+Downloaded PDF metadata and failure receipts can be inspected, but file bytes are not imported into customer Files until a real malware scanner is integrated. OpenFuse's optional Linux computer/E2B graphical desktop is not activated by this browser adapter; MoreAI's existing isolated bash/Python workspace remains a separate execution boundary. No desktop/VNC or host shell access is exposed to the customer.
+
+This is source integration only. A connected persistent host, real service token, persistent profile volume and live worker heartbeat are still required before operational readiness. Do not claim the browser runtime is active merely because the adapter is present in source.
