@@ -28,6 +28,7 @@ class ResolvedModelRoute:
     max_input_tokens: int | None
     max_output_tokens: int | None
     capabilities: tuple[str, ...]
+    model_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -78,7 +79,7 @@ class ModelRouter:
     async def resolve_candidates(
         self, task_type: str, required_capabilities: set[str] | None = None, *,
         user_id: str | None = None, workspace_id: str | None = None,
-        partner_id: str | None = None,
+        partner_id: str | None = None, preferred_model_id: str | None = None,
     ) -> list[ResolvedModelRoute]:
         required = self.normalize_capabilities(required_capabilities or set())
         policies = await self.repository.list_enabled_routes(
@@ -115,6 +116,7 @@ class ModelRouter:
                     max_input_tokens=model.get("max_input_tokens"),
                     max_output_tokens=model.get("max_output_tokens"),
                     capabilities=tuple(sorted(capabilities)),
+                    model_id=str(model.get("id") or model_id),
                 )
                 identity = (route.provider_key, route.model_key)
                 if identity not in seen:
@@ -122,16 +124,22 @@ class ModelRouter:
                     candidates.append(route)
         if not candidates:
             raise NoEligibleModelRoute(f"No enabled model route for task type: {task_type}")
+        if preferred_model_id:
+            preferred = next((item for item in candidates if item.model_id == preferred_model_id), None)
+            if preferred is None:
+                raise NoEligibleModelRoute("Preferred model is not permitted by the active routing policy")
+            candidates = [preferred, *(item for item in candidates if item.model_id != preferred_model_id)]
         return candidates
 
     async def resolve(
         self, task_type: str, required_capabilities: set[str] | None = None, *,
         user_id: str | None = None, workspace_id: str | None = None,
-        partner_id: str | None = None,
+        partner_id: str | None = None, preferred_model_id: str | None = None,
     ) -> ResolvedModelRoute:
         return (await self.resolve_candidates(
             task_type, required_capabilities, user_id=user_id,
             workspace_id=workspace_id, partner_id=partner_id,
+            preferred_model_id=preferred_model_id,
         ))[0]
 
 
@@ -223,11 +231,11 @@ class MeteredGateway:
         self.adapter = adapter
         self.breaker = ProviderCircuitBreaker()
 
-    async def _candidates(self, task_type: str, *, user_id: str, workspace_id: str | None, partner_id: str | None, required_capabilities: set[str] | None = None):
+    async def _candidates(self, task_type: str, *, user_id: str, workspace_id: str | None, partner_id: str | None, required_capabilities: set[str] | None = None, preferred_model_id: str | None = None):
         resolver = getattr(self.router, "resolve_candidates", None)
         if resolver:
-            return await resolver(task_type, required_capabilities, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)
-        return [await self.router.resolve(task_type, required_capabilities, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id)]
+            return await resolver(task_type, required_capabilities, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id, preferred_model_id=preferred_model_id)
+        return [await self.router.resolve(task_type, required_capabilities, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id, preferred_model_id=preferred_model_id)]
 
     async def _reserve_maximum(
         self, candidates: list[ResolvedModelRoute], *, messages: list[dict[str, Any]],
@@ -248,12 +256,13 @@ class MeteredGateway:
         workspace_id: str | None = None, partner_id: str | None = None,
         tools: list[dict[str, Any]] | None = None,
         required_capabilities: set[str] | None = None,
+        preferred_model_id: str | None = None,
     ) -> dict[str, Any]:
         import hashlib
         import json
         import time
 
-        candidates = await self._candidates(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id, required_capabilities=required_capabilities)
+        candidates = await self._candidates(task_type, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id, required_capabilities=required_capabilities, preferred_model_id=preferred_model_id)
         request_hash = hashlib.sha256(json.dumps(
             {"messages": messages, "tools": tools or []}, sort_keys=True, separators=(",", ":"),
         ).encode()).hexdigest()
