@@ -31,7 +31,9 @@ Required server-only environment:
 - `MOREAI_CREDIT_WALLET_CURRENCY` (canonical wallet currency key)
 - Provider secret environment variables named by the DB provider config, each beginning `MOREAI_PROVIDER_`
 
-At least one enabled LLM routing policy must exist. Each selected model must have an enabled provider, HTTPS base URL, secret environment reference, input/output pricing and max output token limit.
+Enabled `chat` and `planning` routing policies must both resolve to an enabled model and provider. The worker startup gate also requires at least one configured provider secret environment variable for each task type. Each selected model must have an HTTPS base URL, secret environment reference, input/output pricing and max output token limit. This check validates metadata and secret presence only; it does not make live provider calls.
+
+The Super Admin provider form stores only the provider HTTPS base URL and a `MOREAI_PROVIDER_*` environment-variable name in the canonical database. The actual API key value must be added to the persistent worker host secret manager using that exact variable name. The provider stays disabled until an authorized readiness/activation process is completed.
 
 Do not enable the worker or set `MOREAI_AGENT_EXECUTION_ENABLED=true` in the API until provider routes, secrets, wallet funding, credit conversion, quota/entitlement resolution and worker health checks have been validated.
 
