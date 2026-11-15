@@ -1505,3 +1505,14 @@ Final source baseline update: latest confirmed `main` HEAD before this documenta
 - Applied migration `moreai_computer_action_receipts`; read-only schema inspection confirms RLS enabled.
 - This is not a persistent Linux desktop/VNC or OpenFuse E2B Computer. Dedicated per-customer isolated persistent host remains blocked.
 - No tests/build/runtime probes/staging/deployment. 09D remains PARTIAL.
+
+
+## 2026-11-15 — Phase 09D Computer Workspace receipts
+
+- Added FastAPI owner-scoped Computer action history and worker-only claim/finish endpoints.
+- Bash/Python worker adapter now persists action receipts before isolated supervisor execution, binds request identity to OpenManus tool-call ID and workspace, blocks duplicate/ambiguous replay, and stores bounded completed result payloads for 30 days.
+- Profile Settings includes Computer Workspace action history states. Existing workspace files persist in Supabase; execution containers remain disposable and network-disabled.
+- Applied `moreai_computer_action_receipts`; read-only schema inspection confirms RLS enabled, no client policies, and service_role-only table grants.
+- This is not persistent Linux desktop/VNC or OpenFuse E2B Computer. Dedicated per-customer persistent computer supervisor remains blocked.
+- Source commits: `972d260f`, `2a9f250b`, `f4214405`, `8dcf6f3b`, `abe7cdce`, `fac2e72d`, `1fbbd436`, `b81b6b5e`, `149a79f9`, `2ebeb5e3`.
+- No tests/build/lint/typecheck/browser/API/worker/provider probes, staging or deployment. 09A/09B operationally BLOCKED; 09C/09D PARTIAL; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
