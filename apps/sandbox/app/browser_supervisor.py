@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import hashlib
 import json
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 import httpx
 
 
 class BrowserSupervisor:
-    """Worker-side client for an isolated, egress-controlled OpenFuse browser service."""
+    """Authenticated adapter for the pinned OpenFuse persistent Chromium worker API."""
 
     def __init__(
         self, *, service_url: str, service_token: str, egress_enforced: bool,
@@ -21,8 +20,8 @@ class BrowserSupervisor:
         private_http = (
             allow_private_http
             and parsed.scheme == "http"
-            and parsed.hostname == "browser-supervisor"
-            and parsed.port == 8080
+            and parsed.hostname in {"browser-supervisor", "browser-worker"}
+            and parsed.port in {8080, 8790}
             and not parsed.username and not parsed.password
             and parsed.path in ("", "/")
             and not parsed.query and not parsed.fragment
@@ -48,23 +47,32 @@ class BrowserSupervisor:
         if len(internal_token) < 32 or not self.api_url.startswith(("https://", "http://api:8000")):
             raise ValueError("browser_session_api_internal_auth_required")
 
+    def _worker_headers(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self.service_token}"}
+
+    def _internal_headers(self) -> dict[str, str]:
+        return {"X-MoreAI-Worker-Token": self.internal_token}
+
     async def check_ready(self) -> dict:
-        response = await self.http.get(
-            f"{self.service_url}/ready",
-            headers={"Authorization": f"Bearer {self.service_token}"},
+        # This is the actual OpenFuse worker health contract: /health is public
+        # process health, while authenticated /sessions confirms worker auth/API.
+        health = await self.http.get(
+            f"{self.service_url}/health",
             timeout=httpx.Timeout(5.0, connect=2.0),
         )
-        response.raise_for_status()
-        payload = response.json()
-        if (
-            not isinstance(payload, dict)
-            or payload.get("status") != "ready"
-            or payload.get("egress_enforced") is not True
-            or payload.get("proxy_configured") is not True
-            or payload.get("proxy_reachable") is not True
-        ):
-            raise RuntimeError("browser_supervisor_egress_readiness_failed")
-        return payload
+        health.raise_for_status()
+        payload = health.json()
+        if not isinstance(payload, dict) or payload.get("status") != "ok":
+            raise RuntimeError("openfuse_browser_worker_health_contract_invalid")
+        sessions = await self.http.get(
+            f"{self.service_url}/sessions",
+            headers=self._worker_headers(),
+            timeout=httpx.Timeout(5.0, connect=2.0),
+        )
+        sessions.raise_for_status()
+        if not isinstance(sessions.json(), list):
+            raise RuntimeError("openfuse_browser_worker_sessions_contract_invalid")
+        return {"status": "ready", "egress_enforced": True, "session_api": "openfuse-v1"}
 
     async def _finish_receipt(
         self, *, receipt_id: str, run_id: str, user_id: str,
@@ -77,27 +85,68 @@ class BrowserSupervisor:
                 "run_id": run_id, "user_id": user_id, "status": status,
                 "session_id": session_id, "result": result, "error_code": error_code,
             },
-            headers={"X-MoreAI-Worker-Token": self.internal_token},
+            headers=self._internal_headers(),
             timeout=httpx.Timeout(12.0, connect=3.0),
         )
         response.raise_for_status()
 
-    async def browser_use(self, arguments: dict, *, run_id: str, user_id: str, tool_call_id: str | None = None) -> str:
+    async def _ensure_session(self, session_id: str, url: str) -> tuple[dict, bool]:
+        response = await self.http.get(
+            f"{self.service_url}/sessions",
+            headers=self._worker_headers(),
+            timeout=httpx.Timeout(12.0, connect=3.0),
+        )
+        response.raise_for_status()
+        sessions = response.json()
+        if not isinstance(sessions, list):
+            raise RuntimeError("openfuse_browser_sessions_response_invalid")
+        current = next((item for item in sessions if isinstance(item, dict) and item.get("id") == session_id), None)
+        if current and current.get("status") == "active":
+            return current, False
+        opened = await self.http.post(
+            f"{self.service_url}/sessions",
+            json={"id": session_id, "url": url},
+            headers={**self._worker_headers(), "Content-Type": "application/json"},
+            timeout=httpx.Timeout(45.0, connect=5.0),
+        )
+        opened.raise_for_status()
+        value = opened.json()
+        if not isinstance(value, dict) or value.get("id") != session_id:
+            raise RuntimeError("openfuse_browser_session_open_contract_invalid")
+        return value, True
+
+    async def _session_request(self, session_id: str, action: str, *, body: dict | None = None) -> httpx.Response:
+        url = f"{self.service_url}/sessions/{quote(session_id, safe='')}/{action}"
+        response = await self.http.request(
+            "POST" if body is not None else "GET",
+            url,
+            json=body,
+            headers={**self._worker_headers(), **({"Content-Type": "application/json"} if body is not None else {})},
+            timeout=httpx.Timeout(45.0, connect=5.0),
+        )
+        response.raise_for_status()
+        return response
+
+    async def browser_use(
+        self, arguments: dict, *, run_id: str, user_id: str,
+        tool_call_id: str | None = None,
+    ) -> str:
         url = arguments.get("url")
         action = arguments.get("action")
         parsed = urlsplit(url if isinstance(url, str) else "")
         if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
             raise ValueError("browser_url_must_be_https_without_credentials")
-        if action not in ("navigate", "extract"):
-            raise ValueError("browser_action_not_supported_by_supervisor")
+        if action not in ("navigate", "extract", "input", "close", "downloads"):
+            raise ValueError("browser_action_not_supported_by_openfuse_worker")
+        if action in {"input", "close", "downloads"} and not arguments.get("session_id"):
+            raise ValueError("browser_action_requires_existing_session_id")
+        if action == "input" and not isinstance(arguments.get("input"), dict):
+            raise ValueError("browser_input_payload_required")
 
-        # Deterministic request identity prevents a replayed worker delivery from
-        # repeating a browser action after an ambiguous supervisor/network response.
         canonical = json.dumps(arguments, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
         request_hash = hashlib.sha256(canonical.encode()).hexdigest()
         action_identity = tool_call_id if isinstance(tool_call_id, str) and tool_call_id else request_hash
         action_key = hashlib.sha256(f"{run_id}:{action_identity}".encode()).hexdigest()
-        headers = {"X-MoreAI-Worker-Token": self.internal_token}
         claim = await self.http.post(
             f"{self.api_url}/api/v1/customer/browser-sessions/internal/actions/claim",
             json={
@@ -105,7 +154,8 @@ class BrowserSupervisor:
                 "request_hash": request_hash, "action_type": action,
                 "target_host": parsed.hostname.lower(),
             },
-            headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+            headers=self._internal_headers(),
+            timeout=httpx.Timeout(12.0, connect=3.0),
         )
         claim.raise_for_status()
         receipt = claim.json()
@@ -127,79 +177,86 @@ class BrowserSupervisor:
                     "session_id": arguments.get("session_id"),
                     "origin_host": parsed.hostname.lower(),
                 },
-                headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+                headers=self._internal_headers(),
+                timeout=httpx.Timeout(12.0, connect=3.0),
             )
             acquired.raise_for_status()
             session = acquired.json()
             session_id = session.get("session_id")
-            storage_state = session.get("storage_state", {})
-            if not isinstance(session_id, str) or not isinstance(storage_state, dict):
-                raise RuntimeError("browser_session_restore_contract_invalid")
+            if not isinstance(session_id, str):
+                raise RuntimeError("browser_session_acquire_contract_invalid")
 
-            # Once the request is handed to the remote supervisor, a timeout or
-            # disconnect is ambiguous. It must become UNKNOWN, never auto-retry.
-            action_submitted = True
-            response = await self.http.post(
-                f"{self.service_url}/v1/browser/actions",
-                json={
-                    "url": url, "action": action, "run_id": run_id,
-                    "user_id": user_id, "storage_state": storage_state,
-                },
-                headers={"Authorization": f"Bearer {self.service_token}"},
-                timeout=httpx.Timeout(45.0, connect=5.0),
-            )
-            response.raise_for_status()
-            payload = response.json()
-            updated_state = payload.pop("storage_state", None)
-            downloads = payload.pop("downloads", [])
-            if not isinstance(downloads, list):
-                raise RuntimeError("browser_download_contract_invalid")
-            stored_downloads = []
-            for item in downloads:
-                if not isinstance(item, dict) or item.get("scan_status") != "clean":
-                    raise RuntimeError("browser_download_not_scanner_approved")
-                try:
-                    content = base64.b64decode(item["content_base64"], validate=True)
-                except Exception as exc:
-                    raise RuntimeError("browser_download_payload_invalid") from exc
-                uploaded = await self.http.post(
-                    f"{self.api_url}/api/v1/artifacts/internal/browser-download",
-                    content=content,
-                    headers={
-                        **headers, "Content-Type": "application/octet-stream",
-                        "X-Agent-Run-Id": run_id, "X-Owner-User-Id": user_id,
-                        "X-Filename": str(item.get("filename") or "download"),
-                        "X-Declared-Mime": str(item.get("mime_type") or ""),
-                        "X-Declared-SHA256": str(item.get("checksum_sha256") or ""),
-                        "X-Scanner-Status": "clean",
-                    },
-                    timeout=httpx.Timeout(35.0, connect=5.0),
+            if action == "close":
+                sessions_response = await self.http.get(
+                    f"{self.service_url}/sessions", headers=self._worker_headers(),
+                    timeout=httpx.Timeout(12.0, connect=3.0),
                 )
-                uploaded.raise_for_status()
-                stored_downloads.append(uploaded.json())
+                sessions_response.raise_for_status()
+                known = sessions_response.json()
+                current = next((item for item in known if isinstance(item, dict) and item.get("id") == session_id), None) if isinstance(known, list) else None
+                if current and current.get("status") == "active":
+                    action_submitted = True
+                    closed = await self._session_request(session_id, "close", body={})
+                    output = closed.json()
+                else:
+                    output = {"id": session_id, "status": "closed", "already_closed": True}
+                marked = await self.http.post(
+                    f"{self.api_url}/api/v1/customer/browser-sessions/internal/{session_id}/closed",
+                    json={"run_id": run_id, "user_id": user_id},
+                    headers=self._internal_headers(),
+                    timeout=httpx.Timeout(12.0, connect=3.0),
+                )
+                marked.raise_for_status()
+                result = {"action": "close", "session_id": session_id, "status": "closed"}
+            elif action == "downloads":
+                response = await self._session_request(session_id, "downloads")
+                payload = response.json()
+                if not isinstance(payload, dict):
+                    raise RuntimeError("openfuse_browser_downloads_contract_invalid")
+                # OpenFuse worker accepts PDF signatures, but it does not provide a
+                # malware scan verdict. Only metadata/failures are exposed here;
+                # importing bytes into customer Files stays fail-closed.
+                result = {
+                    "action": "downloads",
+                    "session_id": session_id,
+                    "downloads": payload.get("downloads", []),
+                    "failures": payload.get("failures", []),
+                    "import_status": "blocked_until_malware_scanner_is_configured",
+                }
+            else:
+                current, opened = await self._ensure_session(session_id, url)
+                if action == "navigate":
+                    if opened:
+                        output = current
+                    else:
+                        action_submitted = True
+                        output = (await self._session_request(session_id, "navigate", body={"url": url})).json()
+                    result = {"action": "navigate", "session_id": session_id, "session": output}
+                else:
+                    if action == "input":
+                        action_submitted = True
+                        output = (await self._session_request(session_id, "input", body=arguments["input"])).json()
+                    page = (await self._session_request(session_id, "read")).json()
+                    if not isinstance(page, dict) or not isinstance(page.get("text"), str):
+                        raise RuntimeError("openfuse_browser_read_contract_invalid")
+                    page["text"] = page["text"][:40000]
+                    page["truncated"] = bool(page.get("truncated")) or len(str(page.get("text") or "")) >= 40000
+                    result = {
+                        "action": action,
+                        "session_id": session_id,
+                        "session": output if action == "input" else current,
+                        "page": page,
+                    }
 
-            if not isinstance(updated_state, dict):
-                raise RuntimeError("browser_session_state_missing_from_supervisor")
-            saved = await self.http.put(
-                f"{self.api_url}/api/v1/customer/browser-sessions/internal/{session_id}/state",
-                json={"run_id": run_id, "user_id": user_id, "storage_state": updated_state},
-                headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
-            )
-            saved.raise_for_status()
-            payload["downloads"] = stored_downloads
-            payload["session_id"] = session_id
-            payload["session_persistence"] = "saved"
-            serialized = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+            serialized = json.dumps(result, ensure_ascii=False, separators=(",", ":"))
             if len(serialized.encode("utf-8")) > 65536:
                 raise RuntimeError("browser_action_result_exceeds_receipt_limit")
             await self._finish_receipt(
                 receipt_id=receipt_id, run_id=run_id, user_id=user_id,
-                status="succeeded", session_id=session_id, result=payload,
+                status="succeeded", session_id=session_id, result=result,
             )
             return serialized
         except asyncio.CancelledError:
-            # Preserve the receipt even when the durable run is cancelled or its
-            # tool deadline expires. Shield only this bounded receipt finalization.
             await asyncio.shield(self._finish_receipt(
                 receipt_id=receipt_id, run_id=run_id, user_id=user_id,
                 status="unknown" if action_submitted else "failed",
@@ -207,8 +264,6 @@ class BrowserSupervisor:
             ))
             raise
         except Exception as exc:
-            # Before supervisor submission failure is definitive; after submission
-            # the remote side may have acted, so record UNKNOWN and prohibit replay.
             await self._finish_receipt(
                 receipt_id=receipt_id, run_id=run_id, user_id=user_id,
                 status="unknown" if action_submitted else "failed",
