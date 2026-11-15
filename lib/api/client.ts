@@ -719,6 +719,18 @@ export type CustomerBrowserSession = {
   expires_at: string;
 };
 
+export type CustomerBrowserActionReceipt = {
+  id: string;
+  run_id: string;
+  session_id: string | null;
+  action_type: 'navigate' | 'extract';
+  target_host: string;
+  status: 'executing' | 'succeeded' | 'failed' | 'unknown';
+  error_code: string | null;
+  requested_at: string;
+  finished_at: string | null;
+};
+
 export type CustomerPersonalMemoryState = {
   enabled: boolean;
   consent_version: string | null;
@@ -738,6 +750,9 @@ export const customerApi = {
     count: number; source: string;
   }>('/api/v1/models/capabilities'),
 
+  browserActionReceipts: (limit = 50) => moreAiCustomerApi<{ items: CustomerBrowserActionReceipt[] }>(
+    '/api/v1/customer/browser-sessions/actions?limit=' + encodeURIComponent(String(limit)),
+  ),
   browserSessions: () => moreAiCustomerApi<{ items: CustomerBrowserSession[] }>('/api/v1/customer/browser-sessions'),
   closeBrowserSession: (sessionId: string) => moreAiCustomerApi<{ session_id: string; status: string }>(
     '/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/close',
