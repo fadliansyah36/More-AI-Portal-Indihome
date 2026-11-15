@@ -30,11 +30,12 @@ Recent 2026-11-15 source increments:
 - Episodic records have configurable UTC expiry (default 90 days, accepted 7–3650 days), consent-version checks, single-record deletion and clear-all/consent-disable propagation. Original chat messages and citations are preserved.
 - Citation provenance is persisted with assistant messages and hydrated by customer conversation detail/keyset pagination from validated owner-scoped Agent Run output or metadata fallback.
 - Skill Resolver resolved/executed audit writes are idempotent; successful normal Agent completion records skill execution.
+- Customer Agent Run list/detail responses also expose the existing `last_checkpoint_key` column to the Tasks durable checkpoint projection.
 - Agent Studio supports a preferred model. FastAPI validates enabled model/provider state; the Model Router honors a preference only within the highest-priority active route policy. Agent Run snapshots preserve the exact model preference and configuration version.
 - Attachment-aware configured chat enqueue, idempotency and owner/attachment checks are preserved in the updated SQL function.
 - Existing Personal Memory settings UI now includes episodic experience summaries, expiry and deletion actions.
-- Vercel Customer Frontend and FastAPI production deployments reached `READY` from commit `2381d4ca28fb44dd211ec412c0d04d7cb746a7f3`.
-- Twelve Supabase migrations for Skills, OpenFuse connections/browser sessions and Agent model preferences were applied and recorded in migration history.
+- Vercel Customer Frontend and FastAPI production deployments reached `READY` from latest source commit `b11e97fc6134e1bdcfdbfa0bb880eec62bd3d505`.
+- Thirteen Supabase migrations for Skills, OpenFuse connections/browser sessions, Agent model preferences and assessment-derived EduTech completion were applied and recorded in migration history. The repository outbox migration filename is reconciled to the equivalent `moreai_durable_run_event_outbox_phase_07a` schema/functions already applied in the database; it was not applied twice.
 
 Detailed evidence:
 - `docs/implementation/PHASE-09-EPISODIC-MEMORY-CITATION-SKILL-LIFECYCLE-20261115.md`
