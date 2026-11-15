@@ -144,3 +144,13 @@ Phase 09 source integration is substantially reconciled, but the following remai
 - The Tasks detail button already displayed only for the three backend-eligible statuses, but its handler guard accepted every terminal status. Tightened the handler guard to exactly the FastAPI allowlist so the UI action and API policy remain aligned even if invoked outside the current button path.
 - Source commit: `79378c9aa6c12f52ce81268335552efbaea39527`.
 - Source-only reconciliation. No tests, lint, typecheck, build, browser/API probes, worker execution, provider calls, staging or deployment were performed.
+
+
+## 2026-11-15 Browser / Computer lifecycle additions
+
+- Browser Sessions list, owner close request, worker close reconciliation and durable action history are source-integrated. UI includes loading/error/empty/pending/succeeded/failed/unknown states.
+- Browser navigate/read/input/screenshot/close/download metadata are available only through the durable Agent tool approval path. Screenshot artifacts are private and owner/run/session checked.
+- Hasil Pekerjaan previews OpenFuse screenshot artifacts. PDF file-byte import stays disabled until malware scanning exists.
+- Computer Workspace action history is available for Bash/Python through the isolated execution supervisor. Results are idempotency-bound to Agent Run/tool-call identity and workspace owner.
+- Computer workspace files persist in Supabase; execution containers are disposable and network-disabled. Persistent Linux/E2B desktop is not accepted.
+- No functional/browser/runtime tests or screenshot QA performed under owner instruction. All UI and runtime acceptance remains NOT VERIFIED until actual worker host is connected and manually reviewed.
