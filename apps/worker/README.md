@@ -35,6 +35,8 @@ Enabled `chat` and `planning` routing policies must both resolve to an enabled m
 
 The Super Admin provider form stores only the provider HTTPS base URL and a `MOREAI_PROVIDER_*` environment-variable name in the canonical database. The actual API key value must be added to the persistent worker host secret manager using that exact variable name. The provider stays disabled until an authorized readiness/activation process is completed.
 
+Current provider adapter coverage is OpenAI-compatible chat completions for OpenAI and Google's OpenAI-compatible endpoint. Anthropic's native Messages protocol is not implemented by this adapter and must not be configured as an Anthropic provider until its dedicated adapter is delivered; the Admin API and endpoint allowlist intentionally exclude it.
+
 Do not enable the worker or set `MOREAI_AGENT_EXECUTION_ENABLED=true` in the API until provider routes, secrets, wallet funding, credit conversion, quota/entitlement resolution and worker health checks have been validated.
 
 ## Run locally
