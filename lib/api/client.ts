@@ -719,6 +719,17 @@ export type CustomerBrowserSession = {
   expires_at: string;
 };
 
+export type CustomerComputerActionReceipt = {
+  id: string;
+  run_id: string;
+  workspace_id: string;
+  action_type: 'bash' | 'python';
+  status: 'executing' | 'succeeded' | 'failed' | 'unknown';
+  error_code: string | null;
+  requested_at: string;
+  finished_at: string | null;
+};
+
 export type CustomerBrowserActionReceipt = {
   id: string;
   run_id: string;
@@ -750,6 +761,9 @@ export const customerApi = {
     count: number; source: string;
   }>('/api/v1/models/capabilities'),
 
+  computerActionReceipts: (limit = 50) => moreAiCustomerApi<{ items: CustomerComputerActionReceipt[] }>(
+    '/api/v1/customer/computer/actions?limit=' + encodeURIComponent(String(limit)),
+  ),
   browserActionReceipts: (limit = 50) => moreAiCustomerApi<{ items: CustomerBrowserActionReceipt[] }>(
     '/api/v1/customer/browser-sessions/actions?limit=' + encodeURIComponent(String(limit)),
   ),
