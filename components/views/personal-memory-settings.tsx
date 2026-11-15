@@ -154,7 +154,6 @@ export const PersonalMemorySettings: React.FC = () => {
             </button>
           </div>
 
-          <>
             {state.enabled && (
               <form onSubmit={(event) => void addMemory(event)} className="space-y-2.5">
                 <p className="text-xs font-bold text-slate-800">Tambah catatan pribadi</p>
