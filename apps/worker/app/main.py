@@ -14,6 +14,7 @@ from app.runtime import WorkerRuntime
 from app.outbox import DurableEventOutboxPublisher
 from app.knowledge_tools import SupabaseKnowledgeTools
 from app.sandbox_tools import IsolatedSandboxToolAdapter
+from app.llm_gateway import provider_readiness_snapshot
 from apps.sandbox.app.browser_supervisor import BrowserSupervisor
 
 
@@ -94,12 +95,11 @@ async def run_worker() -> None:
 
     async with httpx.AsyncClient() as http:
         rpc = WorkerRpcClient(settings, http)
-        # Do not claim work unless at least one route has been explicitly configured.
-        routes = await rpc.select("llm_routing_policies", {
-            "enabled": "eq.true", "select": "id,task_type", "limit": "1",
-        })
-        if not routes:
-            raise RuntimeError("no_enabled_llm_routing_policy")
+        # Both primary runtime paths must resolve to enabled models/providers
+        # and have their secret references injected in this worker process.
+        # This is metadata validation only; no external provider call is made.
+        llm_readiness = await provider_readiness_snapshot(rpc)
+        logger.info("llm_provider_configuration_ready tasks=%s", sorted(llm_readiness["tasks"]))
         quota_policies = await rpc.select("quota_policies", {
             "enabled": "eq.true",
             "metric_key": f"eq.{os.environ['MOREAI_LLM_QUOTA_METRIC_KEY']}",
@@ -134,6 +134,7 @@ async def run_worker() -> None:
             await sandbox_tools.check_ready()
         registry = build_agent_registry(rpc, http, sandbox_tools=sandbox_tools)
         capability_snapshot = registry.capability_snapshot()
+        capability_snapshot["llm_provider_readiness"] = llm_readiness
         dispatcher = RegisteredAgentDispatcher(
             registry,
             checkpoint_loader=rpc.list_checkpoints,
