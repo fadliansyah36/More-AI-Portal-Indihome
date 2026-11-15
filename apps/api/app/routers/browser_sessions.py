@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -55,6 +55,24 @@ def _encrypt(request: Request, state: dict[str, Any]) -> str:
     return _cipher(request).encrypt(raw).decode("ascii")
 
 
+class BrowserActionReceiptClaim(BaseModel):
+    run_id: UUID
+    user_id: UUID
+    action_key: str = Field(pattern=r"^[0-9a-f]{64}$")
+    request_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    action_type: Literal["navigate", "extract"]
+    target_host: str = Field(min_length=1, max_length=253, pattern=r"^[A-Za-z0-9.-]+$")
+
+
+class BrowserActionReceiptFinish(BaseModel):
+    run_id: UUID
+    user_id: UUID
+    status: Literal["succeeded", "failed", "unknown"]
+    session_id: UUID | None = None
+    result: dict[str, Any] | None = None
+    error_code: str | None = Field(default=None, max_length=100)
+
+
 class SessionAcquire(BaseModel):
     run_id: UUID
     user_id: UUID
@@ -66,6 +84,119 @@ class SessionStateUpdate(BaseModel):
     run_id: UUID
     user_id: UUID
     storage_state: dict[str, Any]
+
+
+@router.get("/actions")
+async def list_browser_action_receipts(
+    request: Request,
+    limit: int = 50,
+    session_id: UUID | None = None,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    if not 1 <= limit <= 100:
+        raise HTTPException(422, "browser_action_receipt_limit_invalid")
+    filters: dict[str, str] = {
+        "user_id": f"eq.{user['id']}",
+        "select": "id,run_id,session_id,action_type,target_host,status,error_code,requested_at,finished_at",
+        "order": "requested_at.desc,id.desc",
+        "limit": str(limit),
+    }
+    if session_id:
+        filters["session_id"] = f"eq.{session_id}"
+    rows = await repository(request).select("moreai_browser_action_receipts", filters)
+    return {"items": rows}
+
+
+@router.post("/internal/actions/claim")
+async def claim_browser_action_receipt(
+    body: BrowserActionReceiptClaim,
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    repo = repository(request)
+    runs = await repo.select("agent_runs", {
+        "id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
+        "status": "eq.running", "select": "id", "limit": "1",
+    })
+    if not runs:
+        raise HTTPException(403, "browser_action_run_owner_or_status_mismatch")
+    existing = await repo.select("moreai_browser_action_receipts", {
+        "run_id": f"eq.{body.run_id}", "action_key": f"eq.{body.action_key}",
+        "user_id": f"eq.{body.user_id}",
+        "select": "id,status,result,error_code,session_id", "limit": "1",
+    })
+    if existing:
+        row = existing[0]
+        return {"receipt_id": row["id"], "status": row["status"], "can_execute": False,
+                "result": row.get("result"), "error_code": row.get("error_code")}
+    try:
+        row = await repo.insert("moreai_browser_action_receipts", {
+            "run_id": str(body.run_id), "user_id": str(body.user_id),
+            "action_key": body.action_key, "request_hash": body.request_hash,
+            "action_type": body.action_type, "target_host": body.target_host,
+            "status": "executing",
+        })
+        return {"receipt_id": row["id"], "status": "executing", "can_execute": True,
+                "result": None, "error_code": None}
+    except HTTPException:
+        # A concurrent worker may have claimed the same deterministic action key.
+        # Reload canonical state; never execute when the receipt already exists.
+        existing = await repo.select("moreai_browser_action_receipts", {
+            "run_id": f"eq.{body.run_id}", "action_key": f"eq.{body.action_key}",
+            "user_id": f"eq.{body.user_id}",
+            "select": "id,status,result,error_code,session_id", "limit": "1",
+        })
+        if not existing:
+            raise
+        row = existing[0]
+        return {"receipt_id": row["id"], "status": row["status"], "can_execute": False,
+                "result": row.get("result"), "error_code": row.get("error_code")}
+
+
+@router.post("/internal/actions/{receipt_id}/finish")
+async def finish_browser_action_receipt(
+    receipt_id: UUID,
+    body: BrowserActionReceiptFinish,
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    repo = repository(request)
+    runs = await repo.select("agent_runs", {
+        "id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
+        "status": "in.(running,completed,failed,timed_out,cancelled)",
+        "select": "id", "limit": "1",
+    })
+    if not runs:
+        raise HTTPException(403, "browser_action_run_owner_or_status_mismatch")
+    result = body.result or {}
+    if len(json.dumps(result, separators=(",", ":"), ensure_ascii=True).encode()) > 65536:
+        raise HTTPException(413, "browser_action_receipt_result_too_large")
+    update: dict[str, Any] = {
+        "status": body.status,
+        "result": result if body.status == "succeeded" else None,
+        "error_code": body.error_code,
+        "finished_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if body.session_id:
+        update["session_id"] = str(body.session_id)
+    rows = await repo.update("moreai_browser_action_receipts", {
+        "id": f"eq.{receipt_id}", "run_id": f"eq.{body.run_id}",
+        "user_id": f"eq.{body.user_id}", "status": "eq.executing",
+    }, update)
+    if rows:
+        return {"receipt_id": str(receipt_id), "status": body.status}
+    current = await repo.select("moreai_browser_action_receipts", {
+        "id": f"eq.{receipt_id}", "run_id": f"eq.{body.run_id}",
+        "user_id": f"eq.{body.user_id}",
+        "select": "id,status", "limit": "1",
+    })
+    if not current:
+        raise HTTPException(404, "browser_action_receipt_not_found")
+    if current[0]["status"] == body.status:
+        return {"receipt_id": str(receipt_id), "status": body.status, "replayed": True}
+    raise HTTPException(409, "browser_action_receipt_already_finalized")
 
 
 @router.get("")
