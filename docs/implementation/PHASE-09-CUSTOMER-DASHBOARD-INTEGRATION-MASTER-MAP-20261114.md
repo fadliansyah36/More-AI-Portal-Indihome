@@ -92,3 +92,12 @@ The current tool catalog is not a skill registry. Before exposing Scenario/Visua
 ## Current cycle outcome
 
 This map consolidates source findings from the current `main` tree and existing Phase 04/09 reports. It does not change application behavior, does not claim any new feature is implemented, and does not waive AGENTS.md gates. The next code increment should select one complete vertical slice and carry it through API contract, worker/domain behavior, persistence contract, typed client and existing UI before moving to the next slice.
+
+
+## Browser / Computer source integration update — 2026-11-15
+
+Browser: pinned OpenFuse persistent Chromium worker API is connected at source level through the worker adapter; FastAPI/Supabase own session identity, durable action receipts, approvals, screenshot artifact ownership and customer close lifecycle. Customer Profile Settings and Hasil Pekerjaan expose session/action status and private screenshot previews.
+
+Computer: existing MoreAI isolated Bash/Python workspace now has durable owner/run/workspace-bound action receipts and stable OpenManus tool-call request identity. Workspace state remains in canonical Supabase; each execution remains disposable and network-disabled. This is not a persistent desktop/VNC container.
+
+Not integrated: OpenFuse optional Linux/E2B graphical Computer due its single-owner/shared access-key Store architecture and missing MoreAI per-customer persistent isolated host; PDF download import pending malware scanner. Operational Browser and worker readiness are NOT VERIFIED because the persistent host/token/profile volume is not connected.
