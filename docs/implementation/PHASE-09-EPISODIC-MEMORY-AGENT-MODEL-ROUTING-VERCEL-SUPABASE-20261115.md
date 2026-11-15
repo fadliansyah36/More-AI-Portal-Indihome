@@ -3,7 +3,7 @@
 Date: 2026-11-15  
 Repository: `fadliansyah36/More-AI-Portal-Indihome`  
 Branch: `main`  
-Source commit delivered to Vercel: `2381d4ca28fb44dd211ec412c0d04d7cb746a7f3`  
+Latest source commit delivered to Vercel: `b11e97fc6134e1bdcfdbfa0bb880eec62bd3d505`  
 Supabase project: `uunfgimtokhucegqbpce`
 
 ## Owner constraints
@@ -34,6 +34,7 @@ Supabase project: `uunfgimtokhucegqbpce`
 - Citation identity remains bound to source chunk and document UUIDs with exact `[source:<chunk UUID>]` marker validation.
 - Final assistant messages persist bounded citations in message metadata.
 - Customer conversation detail and keyset message pagination now hydrate validated citations from owner-scoped Agent Run output, with persisted message metadata as fallback.
+- Customer Agent Run list/detail responses now expose the existing `last_checkpoint_key` column so Tasks can display the actual durable checkpoint projection.
 - Existing Chat citation rendering remains canonical; no duplicate citation UI was introduced.
 
 ### Procedural Memory / Skill Resolver
@@ -67,7 +68,7 @@ Supabase project: `uunfgimtokhucegqbpce`
 
 ## Supabase migrations applied
 
-All 12 migrations below returned `success: true` and are present in Supabase migration history:
+All 13 migrations below returned `success: true` and are present in Supabase migration history:
 
 1. `moreai_skill_intelligence_registry`
 2. `moreai_skill_permission_grants`
@@ -81,21 +82,22 @@ All 12 migrations below returned `success: true` and are present in Supabase mig
 10. `moreai_openfuse_persistent_browser_sessions`
 11. `moreai_agent_model_preferences`
 12. `moreai_agent_model_preferences_attachment_compat`
+13. `moreai_edutech_assessment_derived_progress`
 
 The model-preference compatibility migration preserves the existing attachment validation, ownership checks, active-conversation requirement, idempotency contract, and attachment linkage while snapshotting the preferred model.
 
-No new database or second memory/vector store was created. Existing Supabase PostgreSQL, Auth, Storage, Realtime, RLS and pgvector architecture remains canonical.
+The repository contains 60 migration files. The only filename not present verbatim in the applied history is `moreai_durable_run_event_outbox`; the connected database already has its equivalent applied as `moreai_durable_run_event_outbox_phase_07a`. Read-only schema inspection confirmed the counter table, outbox columns and append/claim/ack/retry/checkpoint/finish functions are present, so the duplicate migration was not applied again. The EduTech assessment-derived progress migration was applied after comparing its existing worker contract; worker code already restricts progress writes to `in_progress` and derives completion from server-graded assessments. No new database or second memory/vector store was created. Existing Supabase PostgreSQL, Auth, Storage, Realtime, RLS and pgvector architecture remains canonical.
 
 ## Vercel production delivery
 
-Both connected Vercel projects reached `READY` on production target from source commit `2381d4ca28fb44dd211ec412c0d04d7cb746a7f3`.
+Both connected Vercel projects reached `READY` on production target from latest source commit `b11e97fc6134e1bdcfdbfa0bb880eec62bd3d505`. The prior source commit `2381d4ca28fb44dd211ec412c0d04d7cb746a7f3` was also deployed successfully before the final API checkpoint projection and EduTech migration source correction.
 
 - Customer Frontend project: `more-ai-portal-indihome`
   - Production aliases: `https://www.moreai.web.id`, `https://moreai.web.id`, `https://more-ai-portal-indihome.vercel.app`
-  - Deployment ID: `dpl_AoZNYZsiG8kNbFXX9r8jwxkys1dD`
+  - Latest deployment ID: `dpl_745gyx7D4AwiniJKby1CSv37GVAP`
 - FastAPI project: `more-ai-api`
   - Production alias: `https://more-ai-api.vercel.app`
-  - Deployment ID: `dpl_331XHmu4yhV2AcwTSg4giPindWat`
+  - Latest deployment ID: `dpl_Ec2WgPi3jNZZzh23RSEXNLXJJG2S`
 
 Frontend Next.js build compiled successfully, passed TypeScript validation and generated all 19 static pages. API deployment reached Vercel `READY`. No runtime health check or functional request was sent.
 
