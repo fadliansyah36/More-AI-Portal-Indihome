@@ -497,14 +497,19 @@ async def list_pinned_skill_catalog(
         if response.status_code != 200:
             raise HTTPException(502, "pinned_skill_catalog_source_unavailable")
         payload = response.json()
-        tree = payload.get("tree") if isinstance(payload, dict) else None
+        if not isinstance(payload, dict):
+            raise HTTPException(502, "pinned_skill_catalog_payload_invalid")
+        tree = payload.get("tree")
         if not isinstance(tree, list) or payload.get("truncated") is True:
             raise HTTPException(502, "pinned_skill_catalog_tree_incomplete")
         license_info = PINNED_SKILL_LICENSES[(source_owner, source_repo)]
         for node in tree:
             path = node.get("path") if isinstance(node, dict) else None
             blob_sha = node.get("sha") if isinstance(node, dict) else None
-            if not isinstance(path, str) or not path.lower().endswith("/skill.md"):
+            if (
+                not isinstance(path, str) or not path.lower().endswith("/skill.md")
+                or node.get("type") != "blob" or node.get("mode") == "120000"
+            ):
                 continue
             if source_repo == "visual-skills" and path not in {"image/SKILL.md", "video/SKILL.md"}:
                 continue
