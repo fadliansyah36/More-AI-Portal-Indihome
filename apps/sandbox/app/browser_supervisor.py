@@ -81,7 +81,7 @@ class BrowserSupervisor:
         )
         response.raise_for_status()
 
-    async def browser_use(self, arguments: dict, *, run_id: str, user_id: str) -> str:
+    async def browser_use(self, arguments: dict, *, run_id: str, user_id: str, tool_call_id: str | None = None) -> str:
         url = arguments.get("url")
         action = arguments.get("action")
         parsed = urlsplit(url if isinstance(url, str) else "")
@@ -94,7 +94,7 @@ class BrowserSupervisor:
         # repeating a browser action after an ambiguous supervisor/network response.
         canonical = json.dumps(arguments, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
         request_hash = hashlib.sha256(canonical.encode()).hexdigest()
-        action_key = hashlib.sha256(f"{run_id}:{request_hash}".encode()).hexdigest()
+        action_identity = tool_call_id if isinstance(tool_call_id, str) and tool_call_id else request_hash\n        action_key = hashlib.sha256(f"{run_id}:{action_identity}".encode()).hexdigest()
         headers = {"X-MoreAI-Worker-Token": self.internal_token}
         claim = await self.http.post(
             f"{self.api_url}/api/v1/customer/browser-sessions/internal/actions/claim",
