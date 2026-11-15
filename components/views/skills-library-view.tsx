@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ShieldCheck, PackagePlus, RefreshCw, LockKeyhole, AlertCircle, Plus, X } from 'lucide-react';
-import { customerSkillApi, type CustomerSkillPackage } from '@/lib/api/client';
+import { ShieldCheck, PackagePlus, RefreshCw, LockKeyhole, AlertCircle, Plus, X, Search } from 'lucide-react';
+import { customerSkillApi, type CustomerSkillPackage, type PinnedSkillCatalogItem } from '@/lib/api/client';
 
 const permissionOptions = ['network.read','workspace.read','workspace.write','browser.navigate','browser.download','search.web','files.read','files.write','calendar.read','calendar.write','gmail.read','gmail.send'];
 
@@ -21,6 +21,10 @@ export function SkillsLibraryView() {
   const [busy, setBusy] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [catalogItems, setCatalogItems] = useState<PinnedSkillCatalogItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
 
   const refresh = async () => {
     setLoading(true); setError(null);
@@ -29,6 +33,37 @@ export function SkillsLibraryView() {
     finally { setLoading(false); }
   };
   useEffect(() => { void refresh(); }, []);
+
+  const loadCatalog = async () => {
+    setCatalogLoading(true); setError(null);
+    try { setCatalogItems((await customerSkillApi.catalog()).items); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Katalog pinned skills tidak tersedia.'); }
+    finally { setCatalogLoading(false); }
+  };
+
+  const toggleCatalog = async () => {
+    const next = !showCatalog;
+    setShowCatalog(next);
+    if (next && catalogItems.length === 0) await loadCatalog();
+  };
+
+  const importPinned = async (item: PinnedSkillCatalogItem) => {
+    setBusy(item.source_path); setError(null);
+    try {
+      await customerSkillApi.importPinned({
+        source_repository: item.source_repository,
+        source_commit: item.source_commit,
+        source_path: item.source_path,
+      });
+      setCatalogItems(current => current.map(value =>
+        value.source_path === item.source_path && value.source_repository === item.source_repository
+          ? { ...value, imported: true } : value,
+      ));
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Import pinned skill gagal.');
+    } finally { setBusy(null); }
+  };
 
   const validate = async (id: string) => {
     setBusy(id); setError(null);
@@ -70,6 +105,7 @@ export function SkillsLibraryView() {
         <p className="mt-1 text-xs text-slate-500">Registry terpusat untuk provenance, versi, lisensi, validasi, dan izin eksekusi Agent OpenManus.</p></div>
       <div className="flex gap-2">
         <button onClick={() => void refresh()} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><RefreshCw className="h-3.5 w-3.5"/>Muat ulang</button>
+        <button onClick={() => void toggleCatalog()} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><Search className="h-3.5 w-3.5"/>Jelajahi pinned</button>
         <button onClick={() => setShowImport(value => !value)} className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"><Plus className="h-3.5 w-3.5"/>Registrasi</button>
       </div>
     </div>
@@ -77,6 +113,43 @@ export function SkillsLibraryView() {
       Import hanya menyimpan metadata dan provenance, bukan mengunduh atau menjalankan kode. Eksekusi tetap nonaktif sampai validasi isi, pemeriksaan lisensi, publikasi, dan persetujuan permission selesai.
     </div>
     {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"><AlertCircle className="mr-1 inline h-4 w-4"/>{error}</div>}
+    {showCatalog && <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div><h2 className="text-sm font-bold text-slate-900">Pinned Visual & Scenario Skills</h2><p className="text-[10px] text-slate-500">Sumber commit tetap: 2 Visual Skills dan 172 Scenario product skills.</p></div>
+        <span className="text-[10px] font-semibold text-slate-500">{catalogItems.filter(item => item.imported).length}/{catalogItems.length} terdaftar</span>
+      </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400"/>
+        <input value={catalogSearch} onChange={event => setCatalogSearch(event.target.value)} placeholder="Cari skill, kategori, atau repository…" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-800 outline-none focus:border-red-500"/>
+      </div>
+      <p className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-[10px] leading-relaxed text-amber-900">
+        Import hanya mengambil entrypoint SKILL.md dan menghitung hash sumber. Status lisensi tetap unverified, publikasi private, permission kosong, dan eksekusi nonaktif sampai recursive ingestion, SBOM, pemeriksaan hak aset/NOTICE, review manusia, dan approval selesai.
+      </p>
+      {catalogLoading ? <div className="p-6 text-center text-xs text-slate-500">Memuat pinned source inventory…</div> : (
+        <div className="max-h-[440px] space-y-2 overflow-y-auto pr-1">
+          {catalogItems.filter(item => {
+            const q = catalogSearch.trim().toLowerCase();
+            return !q || [item.name,item.slug,item.source_repository,item.source_path].some(value => value.toLowerCase().includes(q));
+          }).map(item => (
+            <div key={item.source_repository + ':' + item.source_path} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 p-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-slate-900">{item.name}</p>
+                <p className="mt-0.5 break-all text-[10px] text-slate-500">{item.source_repository} · {item.source_path}</p>
+                <p className="mt-0.5 text-[10px] text-amber-700">{item.license_id} · review belum selesai · {item.source_commit.slice(0,12)}</p>
+              </div>
+              <button type="button" disabled={item.imported || busy === item.source_path} onClick={() => void importPinned(item)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
+                {item.imported ? 'Sudah terdaftar' : busy === item.source_path ? 'Mengimpor…' : 'Import private'}
+              </button>
+            </div>
+          ))}
+          {catalogItems.length > 0 && catalogItems.filter(item => {
+            const q = catalogSearch.trim().toLowerCase();
+            return !q || [item.name,item.slug,item.source_repository,item.source_path].some(value => value.toLowerCase().includes(q));
+          }).length === 0 && <p className="p-4 text-center text-xs text-slate-500">Tidak ada skill yang cocok.</p>}
+        </div>
+      )}
+    </section>}
     {showImport && <form onSubmit={importSkill} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between"><h2 className="text-sm font-bold text-slate-900">Registrasi provenance skill</h2><button type="button" onClick={() => setShowImport(false)} className="rounded-lg p-1 text-slate-500"><X className="h-4 w-4"/></button></div>
       <p className="text-[11px] text-slate-500">Masukkan referensi commit dan hash yang sudah diperoleh dari proses source review. Jangan mengisi hash perkiraan.</p>
