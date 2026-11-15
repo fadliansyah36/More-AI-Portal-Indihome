@@ -103,7 +103,7 @@ async def _browser_session_close_reconciliation_loop(
                     await browser.close_session(session_id)
                     completed = await http.post(
                         f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/{session_id}/close-complete",
-                        json={"run_id": "00000000-0000-4000-8000-000000000000", "user_id": user_id},
+                        json={"user_id": user_id},
                         headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
                     )
                     completed.raise_for_status()
