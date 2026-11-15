@@ -177,6 +177,8 @@ async def run_worker() -> None:
                 service_token=os.getenv("MOREAI_SANDBOX_SERVICE_TOKEN", ""),
                 allow_private_http=os.getenv("MOREAI_SANDBOX_PRIVATE_NETWORK_HTTP", "false").lower() == "true",
                 http=http,
+                api_url=os.getenv("MOREAI_INTERNAL_API_URL", os.getenv("MOREAI_API_URL", "http://api:8000")),
+                internal_token=os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", ""),
             )
             # Readiness is checked before the worker can claim runs. The worker
             # itself has no Docker socket and cannot launch host-side containers.
