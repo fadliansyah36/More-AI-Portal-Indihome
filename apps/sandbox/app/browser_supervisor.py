@@ -253,7 +253,7 @@ class BrowserSupervisor:
                     action_submitted = True
                     screenshot = await self._session_request(session_id, "screenshot")
                     image_bytes = screenshot.content
-                    if not image_bytes.startswith(b"\\x89PNG\\r\\n\\x1a\\n") or len(image_bytes) > 2_000_000:
+                    if not image_bytes.startswith(b"\x89PNG\r\n\x1a\n") or len(image_bytes) > 2_000_000:
                         raise RuntimeError("openfuse_browser_screenshot_signature_or_size_invalid")
                     uploaded = await self.http.post(
                         f"{self.api_url}/api/v1/artifacts/internal/browser-screenshot",
