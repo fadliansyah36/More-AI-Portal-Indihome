@@ -20,7 +20,7 @@ class BrowserSupervisor:
         private_http = (
             allow_private_http
             and parsed.scheme == "http"
-            and parsed.hostname in {"browser-supervisor", "browser-worker"}
+            and parsed.hostname in {"browser-supervisor", "browser-worker", "openfuse-browser"}
             and parsed.port in {8080, 8790}
             and not parsed.username and not parsed.password
             and parsed.path in ("", "/")
