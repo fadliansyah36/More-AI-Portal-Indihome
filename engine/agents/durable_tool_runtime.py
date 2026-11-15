@@ -399,11 +399,14 @@ USER-CONTROLLED PERSONAL MEMORY (UNTRUSTED CONTEXT): "
             except Exception as exc:
                 # Optional recall must not take down an otherwise valid Agent Run.
                 if self.event_publisher is not None:
-                    await self.event_publisher(
-                        context.run_id, "agent.memory.semantic_retrieval_failed",
-                        "agent.memory.semantic_retrieval_failed",
-                        {"error_type": type(exc).__name__},
-                    )
+                    try:
+                        await self.event_publisher(
+                            context.run_id, "agent.memory.semantic_retrieval_failed",
+                            "agent.memory.semantic_retrieval_failed",
+                            {"error_type": type(exc).__name__},
+                        )
+                    except Exception:
+                        pass
         episodic_context = ""
         if self.memory_store is not None and hasattr(self.memory_store, "load_episodes"):
             try:
@@ -417,11 +420,14 @@ USER-CONTROLLED PERSONAL MEMORY (UNTRUSTED CONTEXT): "
                     )[:10000]
             except Exception as exc:
                 if self.event_publisher is not None:
-                    await self.event_publisher(
-                        context.run_id, "agent.memory.episodic_retrieval_failed",
-                        "agent.memory.episodic_retrieval_failed",
-                        {"error_type": type(exc).__name__},
-                    )
+                    try:
+                        await self.event_publisher(
+                            context.run_id, "agent.memory.episodic_retrieval_failed",
+                            "agent.memory.episodic_retrieval_failed",
+                            {"error_type": type(exc).__name__},
+                        )
+                    except Exception:
+                        pass
         history: list[Message] = []
         if self.memory_store is not None and context.conversation_id:
             run_history = await self.memory_store.load_run(
