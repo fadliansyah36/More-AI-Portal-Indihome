@@ -450,7 +450,11 @@ export type CustomerAgentRun = {
   id: string;
   conversation_id: string | null;
   status: string;
+  attempt?: number | null;
+  max_attempts?: number | null;
   created_at?: string;
+  started_at?: string | null;
+  finished_at?: string | null;
   input?: Record<string, unknown>;
   output?: Record<string, unknown>;
   error?: Record<string, unknown>;
