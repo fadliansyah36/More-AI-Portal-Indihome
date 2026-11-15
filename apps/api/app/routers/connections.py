@@ -232,8 +232,12 @@ async def google_oauth_callback(request: Request, code: str | None = None, state
             "select": "credential_ciphertext", "limit": "1",
         })
         previous_refresh = None
-        if prior and isinstance(prior[0].get("credential_ciphertext"), str) and prior[0]["credential_ciphertext"].startswith("v1."):
-            previous_refresh = _decrypt(prior[0]["credential_ciphertext"], "connection:google:" + user_id).get("refresh_token")
+        if prior and isinstance(prior[0].get("credential_ciphertext"), str):
+            # Existing ciphertext carries its own key version. Preserve the refresh
+            # token across key rotations instead of assuming every record uses v1.
+            previous_refresh = _decrypt(
+                prior[0]["credential_ciphertext"], "connection:google:" + user_id,
+            ).get("refresh_token")
         credential = {
             "access_token": access_token, "refresh_token": token_data.get("refresh_token") or previous_refresh,
             "token_type": token_data.get("token_type", "Bearer"), "scope": granted_scopes,
@@ -311,7 +315,7 @@ async def _google_access_token(request: Request, connection: dict[str, Any]) -> 
     await repository(request).insert("moreai_connection_audit", {
         "connection_id": connection["id"], "user_id": user_id, "provider": "google",
         "event_type": "refreshed", "scopes": connection.get("scopes") or [],
-        "detail": {"credential_key_version": 1},
+        "detail": {"credential_key_version": _active_key_version()},
     })
     return credential["access_token"]
 
