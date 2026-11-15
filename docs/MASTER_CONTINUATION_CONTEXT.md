@@ -165,3 +165,10 @@ Latest source commit before this context update: `dc546ba37f260575b7167a50f946b9
 MoreAI's existing network-disabled disposable Bash/Python workspace now has durable owner/run/workspace-bound action receipts. OpenManus tool-call IDs flow through the registry; the worker claims a Supabase-backed receipt before calling the isolated supervisor, derives a stable request ID, persists bounded results for 30 days, and blocks replay on ambiguous outcomes. Customer Profile Settings exposes the action history. Workspace files remain in canonical Supabase and are rehydrated for each disposable execution.
 
 This does not provide a persistent Linux desktop/container or VNC. The pinned OpenFuse Computer server's shared access-key/single-owner Store model is not a safe direct multi-tenant drop-in. Full Computer desktop parity requires a dedicated MoreAI per-customer isolated supervisor. Migration `moreai_computer_action_receipts` is applied; RLS enabled. No tests/runtime probes/staging/deployment.
+
+
+## Computer Workspace source completion — 2026-11-15
+
+MoreAI Computer Workspace now has FastAPI/Supabase durable receipts for Bash/Python execution. The worker binds receipts to owner, Agent Run, canonical workspace and OpenManus tool-call identity, sends deterministic request IDs to the existing isolated execution supervisor, blocks ambiguous replay, persists bounded completed results for 30 days and purges only result payloads. Profile Settings exposes safe action history. Workspace files remain canonical Supabase; execution remains disposable and network-disabled.
+
+This is not a persistent Linux desktop/VNC or OpenFuse E2B Computer. The pinned OpenFuse computer server's single-owner/shared-key/Store model is not directly exposed to MoreAI tenants. A dedicated per-customer persistent computer supervisor is still required for full desktop parity. Migration `moreai_computer_action_receipts` is applied and RLS is enabled with service_role-only grants.
