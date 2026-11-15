@@ -1413,3 +1413,14 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Read-only production inspection found no worker heartbeat rows, no provider/model registry rows, and API environment `MOREAI_AGENT_EXECUTION_ENABLED=false`. Agent execution therefore remains disabled; no provider secrets or fake registry rows were created.
 - No functional tests, API/browser smoke tests, worker/provider calls or staging were performed. Vercel build/deployment and Supabase migration-history records were inspected only. UI visual regression remains NOT VERIFIED.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED. Next dependency: persistent worker deployment, secure provider configuration, then complete Customer Dashboard API closure and OpenFuse browser/computer parity.
+
+
+## 2026-11-15 — Phase 09 worker readiness continuation
+
+- Added separate worker liveness/readiness semantics, a readiness-based Docker healthcheck, and persistent-container deployment guidance.
+- Moved worker capability heartbeat into an independent task so long Agent Runs do not stop worker capability publication. Worker readiness now fails closed when heartbeat publication fails and pauses new run claims until recovery.
+- Fixed Google OAuth refresh-token preservation across credential encryption key rotation and removed duplicate FastAPI browser-session router registration.
+- Report: `docs/implementation/PHASE-09-CONTINUATION-WORKER-READINESS-CUSTOMER-API-20261115.md`.
+- Phase 09 remains **IN PROGRESS**. No persistent worker host, provider/model rows, provider credentials, or worker secret injection are configured. Agent execution remains disabled.
+- A further provider-routing mismatch remains: runtime task types are `chat` and `planning`, but the current Admin API and database mutation RPC accept only `general`. Correct this with a forward-only migration before provider onboarding.
+- No tests, build, deployment, staging, worker execution, or provider calls were performed. Phase 10/11 remain unaccepted.
