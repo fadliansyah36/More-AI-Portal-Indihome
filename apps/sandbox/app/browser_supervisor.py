@@ -250,6 +250,9 @@ class BrowserSupervisor:
                         output = (await self._session_request(session_id, "navigate", body={"url": url})).json()
                     result = {"action": "navigate", "session_id": session_id, "session": output}
                 elif action == "screenshot":
+                    if current.get("url") != url:
+                        action_submitted = True
+                        current = (await self._session_request(session_id, "navigate", body={"url": url})).json()
                     action_submitted = True
                     screenshot = await self._session_request(session_id, "screenshot")
                     image_bytes = screenshot.content
