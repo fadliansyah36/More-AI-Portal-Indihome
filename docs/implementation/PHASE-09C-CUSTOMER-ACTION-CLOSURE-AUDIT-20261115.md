@@ -68,3 +68,12 @@ Source commits:
 - `580273d88c7a73773037d816c5f01cfa0a9d4efc` — Profile Settings session controls and FAQ correction.
 
 This is a source implementation only. No tests, builds, lint, typecheck, browser/API/worker calls, staging, deployment or screenshot capture were run. Browser-session close behavior and visual regression remain NOT VERIFIED. 09C remains PARTIAL pending full source-to-screen traceability and OpenFuse Browser/Computer workflow parity.
+
+
+## OpenFuse Browser/Computer follow-up (2026-11-15)
+
+The earlier browser session UI follow-up is now backed by the pinned OpenFuse browser-worker protocol. MoreAI's adapter now calls the actual `/sessions` and per-session endpoints. Durable action receipts, tool-call idempotency, screenshot artifacts, customer close-request reconciliation, action history and skill-level action permissions were added. The previous `/v1/browser/actions` assumption was removed.
+
+Applied migrations: `moreai_browser_action_receipts`, `moreai_browser_action_receipt_action_types`, `moreai_browser_session_close_requests`, `moreai_browser_action_receipt_screenshot`.
+
+Browser PDF download import remains blocked pending a real malware scanner. OpenFuse Linux/E2B desktop parity remains unavailable because no isolated computer provider/host is connected. No tests/builds/runtime probes/staging/deployment were performed. Operational browser worker readiness is NOT VERIFIED; 09A/09B and full 09D Computer parity remain blocked.
