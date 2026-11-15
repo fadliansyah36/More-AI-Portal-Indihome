@@ -147,7 +147,7 @@ async def finish_computer_action_receipt(
         "user_id": f"eq.{body.user_id}", "status": "eq.executing",
     }, {
         "status": body.status,
-        "result": result if body.status == "succeeded" else None,
+        "result": result if body.status in {"succeeded", "failed"} else None,
         "error_code": body.error_code,
         "finished_at": datetime.now(timezone.utc).isoformat(),
     })
