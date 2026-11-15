@@ -155,3 +155,6 @@ Supabase migrations applied:
 Read-only schema inspection confirmed `moreai_browser_action_receipts` and `moreai_browser_sessions` have RLS enabled, the receipt table has no client policies, and the result-retention RPC exists. No tests/build/lint/typecheck/browser/API/worker/provider probes, staging or deployment were performed.
 
 Phase 09A and 09B remain operationally BLOCKED by absent real provider secrets and persistent container host. 09C and 09D remain PARTIAL. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+Latest source commit before this context update: `dc546ba37f260575b7167a50f946b9c83f86206c` (customer Browser Session close request client aligned to bodyless FastAPI POST). Continue directly on `main`. No tests/staging/runtime probes/deployment. Browser action source integration remains distinct from operational host readiness and Linux/E2B Computer parity.
