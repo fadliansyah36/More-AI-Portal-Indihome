@@ -99,7 +99,7 @@ class PolicyEnforcedToolRegistry:
                 })
         return definitions
 
-    async def execute(self, name: str, arguments: dict[str, Any], *, run_id: str, user_id: str, workspace_id: str | None = None) -> str:
+    async def execute(self, name: str, arguments: dict[str, Any], *, run_id: str, user_id: str, workspace_id: str | None = None, tool_call_id: str | None = None) -> str:
         normalized = name.strip().lower() if isinstance(name, str) else ""
         tool = self.catalog.get(normalized)
         if tool is None:
@@ -116,9 +116,14 @@ class PolicyEnforcedToolRegistry:
                 raise PermissionError("tool_approval_gate_not_configured")
             if not await self.approval_gate(run_id, user_id, normalized, arguments):
                 raise PermissionError("tool_approval_denied_expired_or_already_consumed")
+        handler_context: dict[str, Any] = {}
+        if normalized in {"str_replace_editor", "workspace_restore_version", "workspace_read_file", "knowledge_ingest", "knowledge_search", "run", "bash", "python_execute"}:
+            handler_context["workspace_id"] = workspace_id
+        if normalized == "browser_use" and tool_call_id:
+            handler_context["tool_call_id"] = tool_call_id
         try:
             output = await asyncio.wait_for(
-                handler(arguments, run_id=run_id, user_id=user_id, **({"workspace_id": workspace_id} if normalized in {"str_replace_editor", "workspace_restore_version", "workspace_read_file", "knowledge_ingest", "knowledge_search", "run", "bash", "python_execute"} else {})),
+                handler(arguments, run_id=run_id, user_id=user_id, **handler_context),
                 timeout=tool.timeout_seconds,
             )
         except TimeoutError as exc:
