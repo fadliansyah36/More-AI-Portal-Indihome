@@ -1307,8 +1307,22 @@ export type CustomerSkillPackage = {
   } | null;
 };
 
+export type PinnedSkillCatalogItem = {
+  slug: string; name: string; description: string;
+  source_repository: string; source_ref: string; source_commit: string;
+  source_path: string; source_blob_sha: string; version: string;
+  license_id: string; license_url: string; imported: boolean;
+};
+
 export const customerSkillApi = {
   list: () => moreAiCustomerApi<{ items: CustomerSkillPackage[]; count: number }>('/api/v1/customer/skills'),
+  catalog: () => moreAiCustomerApi<{ items: PinnedSkillCatalogItem[]; count: number; source_status: string }>(
+    '/api/v1/customer/skills/catalog',
+  ),
+  importPinned: (payload: Pick<PinnedSkillCatalogItem, 'source_repository' | 'source_commit' | 'source_path'>) =>
+    moreAiCustomerApi<CustomerSkillPackage>('/api/v1/customer/skills/catalog/import', {
+      method: 'POST', body: JSON.stringify(payload),
+    }),
   import: (payload: {
     slug: string; name: string; description?: string; source_repository: string;
     source_ref: string; source_commit: string; source_path: string; source_blob_sha: string;
