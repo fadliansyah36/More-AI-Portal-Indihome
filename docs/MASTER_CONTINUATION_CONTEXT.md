@@ -132,3 +132,6 @@ Pinned OpenFuse source was re-read. The actual browser worker API is `GET /healt
 The optional OpenFuse Linux/E2B desktop is not integrated. MoreAI's isolated Bash/Python execution remains a separate boundary. Operational readiness still requires the real persistent browser/worker host, token and profile volume; 09A/09B also remain blocked by provider secret and container host access.
 
 Report: `docs/implementation/PHASE-09D-OPENFUSE-BROWSER-ADAPTER-20261115.md`. No tests, builds, runtime probes, staging or deployment were performed. Phase 09C/09D remain PARTIAL; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+Browser action receipt payloads now expire after 30 days. The worker invokes the service-role-only cleanup RPC as part of its periodic retention maintenance; receipt identity/status remains to preserve idempotency and prevent old replay. Migration `moreai_browser_action_receipt_result_retention` is applied. No tests or runtime probes were run.
