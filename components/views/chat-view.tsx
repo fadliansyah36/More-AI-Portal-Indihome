@@ -518,7 +518,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onBack, initialPrompt = '', 
       } else {
         setMessages((previous) => previous.map((message) =>
           message.id === assistantId
-            ? { ...message, text: streamedText || 'Run masih diproses. Periksa statusnya pada riwayat tugas.', source: `Agent Runtime · ${terminalStatus}`, runStatus: terminalStatus }
+            ? { ...message, text: streamedText || 'Run masih diproses. Periksa statusnya pada riwayat tugas.', source: `Agent Runtime · ${terminalStatus || 'running'}`, runStatus: terminalStatus || undefined }
             : message,
         ));
       }
