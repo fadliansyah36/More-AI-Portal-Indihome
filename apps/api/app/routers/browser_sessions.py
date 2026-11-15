@@ -85,6 +85,10 @@ class SessionWorkerClose(BaseModel):
     user_id: UUID
 
 
+class SessionWorkerOwner(BaseModel):
+    user_id: UUID
+
+
 class SessionStateUpdate(BaseModel):
     run_id: UUID
     user_id: UUID
@@ -142,7 +146,7 @@ async def list_browser_session_close_requests(
 @router.post("/internal/{session_id}/close-complete")
 async def complete_browser_session_close(
     session_id: UUID,
-    body: SessionWorkerClose,
+    body: SessionWorkerOwner,
     request: Request,
     x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
 ):
