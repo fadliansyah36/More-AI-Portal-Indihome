@@ -48,6 +48,7 @@ class ToolCatalogItemResponse(BaseModel):
 
 
 class ModelCapabilityItemResponse(BaseModel):
+    model_id: UUID
     provider_key: str
     provider_name: str
     model_key: str
@@ -173,6 +174,7 @@ async def list_model_capabilities(request: Request, user: dict[str, Any] = Depen
         if not provider:
             continue
         items.append({
+            "model_id": model.get("id"),
             "provider_key": provider.get("key"),
             "provider_name": provider.get("display_name"),
             "model_key": model.get("key"),
