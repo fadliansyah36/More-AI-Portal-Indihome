@@ -754,7 +754,7 @@ export const customerApi = {
     '/api/v1/customer/browser-sessions/actions?limit=' + encodeURIComponent(String(limit)),
   ),
   browserSessions: () => moreAiCustomerApi<{ items: CustomerBrowserSession[] }>('/api/v1/customer/browser-sessions'),
-  closeBrowserSession: (sessionId: string) => moreAiCustomerApi<{ session_id: string; status: string }>(
+  closeBrowserSession: (sessionId: string) => moreAiCustomerApi<{ session_id: string; status: 'close_requested' | 'closed' }>(
     '/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/close',
     { method: 'POST', body: JSON.stringify({}) },
   ),
