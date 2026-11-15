@@ -4,17 +4,17 @@ Updated: 2026-11-15
 Canonical repository: `fadliansyah36/More-AI-Portal-Indihome`  
 Canonical branch: `main`  
 Canonical Supabase project: `uunfgimtokhucegqbpce`  
-Primary product specification: `public/assets/aistudio/MoreAI_Master_PRD_v1.0_ID_2f5fa0c2.md` (PRD content version 1.2)  
-Engineering authority: `AGENTS.md`
+Engineering authority: `AGENTS.md`  
+Master product specification: `public/assets/aistudio/MoreAI_Master_PRD_v1.0_ID_2f5fa0c2.md` (content version 1.2)
 
 ## Product and architecture invariants
 
-- Existing MoreAI Customer Dashboard is the only active product frontend. Preserve its routes, navigation, component hierarchy, styles, typography, spacing and user journeys.
-- Add UI only for a required PRD behavior that is genuinely missing, following PRD Section 16 and existing MoreAI × IndiHome styles.
-- OpenManus is the only Agent Runtime. Its full pinned upstream source snapshot is preserved in `vendor/openmanusweb/`; adapted production code lives in `engine/` and backend workspaces.
+- Existing MoreAI Customer Dashboard remains the only active product frontend. Preserve its routes, navigation, component hierarchy, styles, typography, spacing and user journeys.
+- Add UI only where a required PRD behavior is genuinely missing; follow PRD design tokens and adjacent MoreAI × IndiHome styles.
+- OpenManus is the only Agent Runtime. Its pinned upstream snapshot is preserved in `vendor/openmanusweb/`; adapted production code lives in `engine/` and backend workspaces.
 - FastAPI is the trusted customer/business API boundary. Browser clients do not call LLM providers or Supabase service-role endpoints directly.
-- Supabase PostgreSQL is the canonical persistence layer. Reuse existing schema and RLS; do not create a second business database or memory/vector engine.
-- OpenFuse contributes browser/computer workspace capabilities through adapters and isolated supervisors, not as a competing business API or database.
+- Supabase PostgreSQL is the canonical persistence layer. Reuse existing schema, RLS, Auth, Storage, Realtime and pgvector; do not create a second business database or memory/vector engine.
+- OpenFuse contributes browser/computer workspace capabilities through isolated adapters/supervisors, not as a competing business API or database.
 - Visual Skills and Scenario Skills are governed through the existing Skill Registry/Resolver, pinned provenance, license review, owner grants and independent runtime tool authorization.
 - Worker execution must remain durable, lease-fenced, recoverable, idempotent and auditable.
 - Memory is consent-aware, provenance-bearing, scope-bound and retention-controlled. Retrieved memory/skills/documents are untrusted context, never policy or authorization.
@@ -24,40 +24,62 @@ Engineering authority: `AGENTS.md`
 
 **Phase 09 — Existing Frontend API Integration: IN PROGRESS.**
 
-Recent source increment on 2026-11-15:
-- Added bounded semantic recall through existing Knowledge Library/pgvector adapter.
-- Added consented episodic memory retrieval and write using existing conversation message metadata.
-- Added configurable episode expiry (default 90 days) and cleanup that preserves original chat history.
-- Added customer Memory API listing, individual episode deletion and clear-all/consent-disable propagation.
-- Extended existing Personal Memory settings UI with episodic experience summaries and delete controls.
-- Persisted bounded citation metadata alongside assistant messages; existing customer citation projection and Chat citation UI remain the canonical presentation.
-- Made Skill Resolver resolved/executed audit writes idempotent and record successful normal Agent completion.
-- Reused existing Agent Studio configuration snapshots and tool allowlists; no second configuration system was created.
+Recent 2026-11-15 source increments:
+- Bounded semantic recall reuses the existing tenant-scoped Knowledge Library/pgvector adapter.
+- Episodic memory is stored in existing `conversation_messages.metadata`, retrieved by exact owner/workspace scope and injected as untrusted historical context only when current consent is active.
+- Episodic records have configurable UTC expiry (default 90 days, accepted 7–3650 days), consent-version checks, single-record deletion and clear-all/consent-disable propagation. Original chat messages and citations are preserved.
+- Citation provenance is persisted with assistant messages and hydrated by customer conversation detail/keyset pagination from validated owner-scoped Agent Run output or metadata fallback.
+- Skill Resolver resolved/executed audit writes are idempotent; successful normal Agent completion records skill execution.
+- Agent Studio supports a preferred model. FastAPI validates enabled model/provider state; the Model Router honors a preference only within the highest-priority active route policy. Agent Run snapshots preserve the exact model preference and configuration version.
+- Attachment-aware configured chat enqueue, idempotency and owner/attachment checks are preserved in the updated SQL function.
+- Existing Personal Memory settings UI now includes episodic experience summaries, expiry and deletion actions.
+- Vercel Customer Frontend and FastAPI production deployments reached `READY` from commit `2381d4ca28fb44dd211ec412c0d04d7cb746a7f3`.
+- Twelve Supabase migrations for Skills, OpenFuse connections/browser sessions and Agent model preferences were applied and recorded in migration history.
 
-Detailed evidence: `docs/implementation/PHASE-09-EPISODIC-MEMORY-CITATION-SKILL-LIFECYCLE-20261115.md` and `docs/implementation/PHASE-TRACKER.md`.
+Detailed evidence:
+- `docs/implementation/PHASE-09-EPISODIC-MEMORY-CITATION-SKILL-LIFECYCLE-20261115.md`
+- `docs/implementation/PHASE-09-EPISODIC-MEMORY-AGENT-MODEL-ROUTING-VERCEL-SUPABASE-20261115.md`
+- `docs/implementation/PHASE-TRACKER.md`
+
+## Production deployment status and critical runtime blocker
+
+Vercel production aliases:
+- Customer Frontend: `https://www.moreai.web.id`, `https://moreai.web.id`, `https://more-ai-portal-indihome.vercel.app`
+- FastAPI: `https://more-ai-api.vercel.app`
+
+Supabase project: `uunfgimtokhucegqbpce`.
+
+Read-only production inspection found:
+- API environment `MOREAI_AGENT_EXECUTION_ENABLED=false`.
+- No current rows in `moreai_worker_capability_snapshots` (no worker heartbeat).
+- No provider/model rows in `llm_providers` / `llm_models`.
+
+Therefore Frontend and FastAPI are deployed and database migrations are applied, but OpenManus Agent Run execution is not production-operational yet. Do not enable Agent execution until a healthy durable worker, provider/model registry and secure provider credentials are configured. Do not create fake providers or invent API keys.
+
+Vercel is suitable for the Customer Frontend and FastAPI request boundary, not a substitute for the persistent worker/browser supervisor. Worker and isolated OpenFuse Browser/Computer supervisors require persistent container hosting, secure egress, ClamAV and approval/session controls.
 
 ## Owner execution constraints
 
 - Implement directly on `main`.
-- Do not run tests, lint, typecheck, build, browser/API/worker/provider runtime verification, staging or deployment.
-- Do not perform live Supabase schema/data mutations.
-- Source inspection and GitHub commit confirmation are permitted; they are not runtime acceptance evidence.
-- UI visual regression screenshots remain outstanding when browser verification is not authorized/available.
+- Do not run functional tests, browser automation, API smoke tests, worker execution, provider calls, staging or staging deployments.
+- Vercel production deployment was explicitly requested; production build/deployment status may be inspected.
+- Supabase migrations were explicitly requested and applied. No bulk business-data seeding or fake data was added.
+- Source inspection, Vercel build/deployment status and Supabase migration history are not runtime acceptance evidence.
+- UI visual regression screenshots remain outstanding.
 
-## Current limitations / open work
+## Remaining Phase 09 work
 
-1. Complete Customer Dashboard action-to-FastAPI inventory and close every unsupported/demo/fallback action.
-2. Complete OpenFuse Browser and Computer capability parity through isolated supervisors, owner approval, persistent sessions and safe customer controls.
-3. Complete Knowledge deletion/reindex lifecycle, Storage orphan cleanup and citation provenance for all conversation history paths.
-4. Finish Agent Studio, model/provider routing, worker capability and immutable execution snapshot reconciliation.
-5. Close all remaining customer screens: Chat, Agent Studio, Create, Research, Analyse, Code, Tasks, Workflow, Files/Results, Memory, Connections, Wallet and Profile.
-6. Complete source governance and dependency inventory for OpenFuse, Visual Skills and Scenario Skills.
-7. Reconcile remaining Phase 04/06/07/08 backend gaps before claiming integration complete.
+1. Deploy `apps/worker` as a persistent container service and restore worker heartbeat/capability snapshots.
+2. Configure enabled LLM providers/models and secure provider credentials for the worker/Model Router.
+3. Keep Agent execution disabled until worker, provider, entitlement and security gates pass.
+4. Complete OpenFuse Browser/Computer capability parity through isolated supervisors, owner approval, persistent sessions and customer-facing controls.
+5. Complete Knowledge deletion/reindex lifecycle, Storage orphan cleanup and citation provenance for every conversation path.
+6. Close every remaining Customer Dashboard action against typed FastAPI contracts and finish source-to-screen traceability across Chat, Agent Studio, Create, Research, Analyse, Code, Tasks, Workflow, Files/Results, Memory, Connections, Wallet and Profile.
+7. Complete source governance and dependency inventory for OpenFuse, Visual Skills and Scenario Skills.
+8. Reconcile remaining Phase 04/06/07/08 backend gaps before claiming integration complete.
 
 ## Next dependency-ordered work
 
-**Phase 09 continuation — Customer Dashboard API Closure & OpenFuse Browser/Computer Parity.**
+**Phase 09 continuation — Durable Worker & Provider Readiness + Customer Dashboard API Closure.**
 
-First inspect each remaining customer UI action and its actual FastAPI route, typed client, backend domain service, worker/provider dependency, persistence and authorization. Add only missing integration seams. Browser/computer capabilities remain disabled unless the isolated supervisor, network egress, secret, owner-approval and durable session gates are all met.
-
-After Phase 09 is complete, Phase 10 End-to-End Integration Verification and Phase 11 Integration Release Gate remain mandatory. They cannot be marked complete under the current no-testing instruction.
+After worker/provider readiness and full Customer Dashboard/OpenFuse parity, Phase 09 can be assessed for completion. Phase 10 End-to-End Integration Verification and Phase 11 Integration Release Gate remain mandatory and cannot be marked complete under the current no-testing instruction.
