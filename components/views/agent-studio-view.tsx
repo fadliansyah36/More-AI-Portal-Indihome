@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { customerApi, customerSkillApi, type CustomerSkillPackage, type CustomerAgentConfiguration, type CustomerToolCatalogItem } from '@/lib/api/client';
+import { customerApi, customerSkillApi, type CustomerSkillPackage, type CustomerAgentConfiguration, type CustomerToolCatalogItem, type CustomerModelCapability } from '@/lib/api/client';
 import { AIAgent } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
 
@@ -32,6 +32,8 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
   const [agentLoadError, setAgentLoadError] = useState<string | null>(null);
   const [toolCatalog, setToolCatalog] = useState<CustomerToolCatalogItem[]>([]);
   const [toolCatalogError, setToolCatalogError] = useState<string | null>(null);
+  const [modelCapabilities, setModelCapabilities] = useState<CustomerModelCapability[]>([]);
+  const [modelCapabilitiesError, setModelCapabilitiesError] = useState<string | null>(null);
   const [agentConfigurations, setAgentConfigurations] = useState<CustomerAgentConfiguration[]>([]);
   const [editingConfigurationId, setEditingConfigurationId] = useState<string | null>(null);
   const [configurationName, setConfigurationName] = useState('');
@@ -39,6 +41,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
   const [configurationDescription, setConfigurationDescription] = useState('');
   const [configurationPrompt, setConfigurationPrompt] = useState('');
   const [configurationToolKeys, setConfigurationToolKeys] = useState<string[]>([]);
+  const [preferredModelId, setPreferredModelId] = useState('');
   const [savingConfiguration, setSavingConfiguration] = useState(false);
   const [availableSkills, setAvailableSkills] = useState<CustomerSkillPackage[]>([]);
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
@@ -75,6 +78,11 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
           .map((tool) => tool.key));
       })
       .catch((cause) => { if (active) setToolCatalogError(cause instanceof Error ? cause.message : 'Katalog tool tidak tersedia.'); });
+    customerApi.modelCapabilities()
+      .then((result) => {
+        if (active) setModelCapabilities(result.items.filter((item) => item.capabilities.includes('tool_calling')));
+      })
+      .catch((cause) => { if (active) setModelCapabilitiesError(cause instanceof Error ? cause.message : 'Katalog model tidak tersedia.'); });
     customerSkillApi.list()
       .then((result) => { if (active) setAvailableSkills(result.items.filter((skill) => skill.installation?.status === 'installed' && skill.installation.permission_status === 'approved' && skill.installation.execution_enabled)); })
       .catch((cause) => { if (active) setSkillsError(cause instanceof Error ? cause.message : 'Skill Registry tidak dapat dimuat.'); });
@@ -99,6 +107,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
     setConfigurationDescription('');
     setConfigurationPrompt('');
     setConfigurationToolKeys(availableConfigurationTools.map((tool) => tool.key));
+    setPreferredModelId('');
     setConfigurationError(null);
   };
 
@@ -116,6 +125,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
         description: configurationDescription.trim(),
         system_prompt: configurationPrompt.trim(),
         tool_keys: configurationToolKeys.filter((key) => availableConfigurationTools.some((tool) => tool.key === key)),
+        preferred_model_id: preferredModelId || null,
       };
       const saved = editingConfigurationId
         ? await customerApi.updateAgentConfiguration(editingConfigurationId, payload)
@@ -140,6 +150,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
     setConfigurationDescription(configuration.description);
     setConfigurationPrompt(configuration.system_prompt);
     setConfigurationToolKeys(configuration.tool_keys);
+    setPreferredModelId(configuration.preferred_model_id || '');
     setConfigurationError(null);
   };
 
@@ -386,7 +397,7 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
                   <div key={configuration.id} className="rounded-2xl border border-slate-200 p-3 flex items-start gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-slate-900">{configuration.name}</p>
-                      <p className="mt-0.5 text-[10px] text-slate-500">{configuration.runtime_key} · {configuration.tool_keys.length} tool · v{configuration.version}</p>
+                      <p className="mt-0.5 text-[10px] text-slate-500">{configuration.runtime_key} · {configuration.tool_keys.length} tool · {modelCapabilities.find((model) => model.model_id === configuration.preferred_model_id)?.model_name || (configuration.preferred_model_id ? 'Model pilihan tidak aktif' : 'Auto Model Router')} · v{configuration.version}</p>
                       {configuration.description && <p className="mt-1 text-[10px] text-slate-600">{configuration.description}</p>}
                     </div>
                     <button type="button" disabled={!agents.some((agent) => agent.id === configuration.runtime_key && agent.runtimeAvailable)} onClick={() => useConfiguration(configuration)} title={!agents.some((agent) => agent.id === configuration.runtime_key && agent.runtimeAvailable) ? 'Worker runtime belum online' : 'Gunakan konfigurasi ini'} className="rounded-lg bg-red-600 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Gunakan</button>
@@ -420,6 +431,22 @@ export const AgentStudioView: React.FC<AgentStudioViewProps> = ({ onSelectAgentF
             <label className="block space-y-1 text-[10px] font-semibold text-slate-600">
               Instruksi Agent
               <textarea value={configurationPrompt} onChange={(event) => setConfigurationPrompt(event.target.value)} maxLength={12000} rows={4} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 outline-none focus:border-red-400" placeholder="Instruksi kerja tambahan. Kebijakan platform dan keamanan runtime tetap berlaku." />
+            </label>
+            <label className="block space-y-1 text-[10px] font-semibold text-slate-600">
+              Model Routing Preference
+              <select value={preferredModelId} onChange={(event) => setPreferredModelId(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900">
+                <option value="">Otomatis — ikuti kebijakan Model Router</option>
+                {modelCapabilities.map((model) => (
+                  <option key={model.model_id} value={model.model_id}>
+                    {model.provider_name} · {model.model_name}
+                  </option>
+                ))}
+              </select>
+              <span className="block text-[9px] font-normal leading-relaxed text-slate-500">
+                Model pilihan hanya digunakan jika termasuk primary/fallback pada routing policy aktif. Jika tidak diizinkan, backend menolak eksekusi; tidak ada bypass kebijakan provider, kredit, atau capability.
+              </span>
+              {modelCapabilitiesError && <span className="block text-[9px] font-normal text-amber-700">{modelCapabilitiesError} · Gunakan Auto Model Router.</span>}
+              {!modelCapabilitiesError && modelCapabilities.length === 0 && <span className="block text-[9px] font-normal text-slate-500">Belum ada model aktif dengan capability tool calling; Auto Model Router tetap mengikuti konfigurasi platform.</span>}
             </label>
             <div className="space-y-2">
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Tool yang diizinkan</p>
