@@ -59,8 +59,12 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
   const closeBrowserSession = async (sessionId: string) => {
     if (closingSessionId) return;
     setClosingSessionId(sessionId); setSessionError(null);
-    try { await browserSessionApi.close(sessionId); setSessions((current) => current.filter((session) => session.id !== sessionId)); }
-    catch (cause) { setSessionError(cause instanceof Error ? cause.message : 'Sesi browser tidak dapat ditutup.'); }
+    try {
+      const result = await browserSessionApi.close(sessionId);
+      setSessions((current) => current.map((session) => session.id === sessionId
+        ? { ...session, status: result.status }
+        : session));
+    } catch (cause) { setSessionError(cause instanceof Error ? cause.message : 'Sesi browser tidak dapat ditutup.'); }
     finally { setClosingSessionId(null); }
   };
 
@@ -143,16 +147,27 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
       </div>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2"><div><h2 className="text-sm font-bold text-slate-900">Browser Sessions</h2><p className="text-[11px] text-slate-500 mt-0.5">Sesi OpenFuse tersimpan untuk akun Anda</p></div><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">{sessions.length} aktif</span></div>
+        <div className="flex items-center justify-between gap-2">
+          <div><h2 className="text-sm font-bold text-slate-900">Browser Sessions</h2><p className="text-[11px] text-slate-500 mt-0.5">Sesi OpenFuse persisten milik akun Anda</p></div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">{sessions.filter((session) => session.status === 'active').length} aktif</span>
+            <button type="button" disabled={sessionsLoading} onClick={() => {
+              setSessionsLoading(true); setSessionError(null);
+              browserSessionApi.list().then((result) => setSessions(result.items))
+                .catch((cause) => setSessionError(cause instanceof Error ? cause.message : 'Sesi browser tidak dapat dimuat.'))
+                .finally(() => setSessionsLoading(false));
+            }} className="text-[10px] font-bold text-red-600 disabled:opacity-50">Muat ulang</button>
+          </div>
+        </div>
         {sessionsLoading ? <div className="py-3 text-xs text-slate-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Memuat sesi browser…</div>
           : sessionError ? <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{sessionError}</div>
           : sessions.length === 0 ? <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">Tidak ada sesi browser aktif.</p>
           : sessions.map((session) => <div key={session.id} className="rounded-2xl border border-slate-100 p-3 space-y-2">
-            <div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-bold text-slate-900">{session.origin_host}</span><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">Aktif</span></div>
+            <div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-bold text-slate-900">{session.origin_host}</span><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${session.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{session.status === 'active' ? 'Aktif' : 'Menunggu penutupan'}</span></div>
             <p className="text-[10px] text-slate-500">Terakhir digunakan: {new Date(session.last_used_at).toLocaleString('id-ID')}</p>
             <p className="text-[10px] text-slate-500">Berakhir: {new Date(session.expires_at).toLocaleString('id-ID')}</p>
             <p className="text-[10px] text-slate-500">Agent Run: {(session.last_run_id || session.run_id).slice(0, 12)}</p>
-            <button type="button" disabled={closingSessionId === session.id} onClick={() => void closeBrowserSession(session.id)} className="rounded-xl border border-rose-200 px-3 py-2 text-[10px] font-semibold text-rose-700 disabled:opacity-50">{closingSessionId === session.id ? 'Menutup…' : 'Tutup sesi'}</button>
+            <button type="button" disabled={closingSessionId === session.id || session.status === 'close_requested'} onClick={() => void closeBrowserSession(session.id)} className="rounded-xl border border-rose-200 px-3 py-2 text-[10px] font-semibold text-rose-700 disabled:opacity-50">{closingSessionId === session.id ? 'Mengirim…' : session.status === 'close_requested' ? 'Menunggu worker…' : 'Tutup sesi'}</button>
           </div>)}
       </section>
 
