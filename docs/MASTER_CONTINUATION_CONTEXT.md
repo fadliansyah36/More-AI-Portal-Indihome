@@ -135,3 +135,23 @@ Report: `docs/implementation/PHASE-09D-OPENFUSE-BROWSER-ADAPTER-20261115.md`. No
 
 
 Browser action receipt payloads now expire after 30 days. The worker invokes the service-role-only cleanup RPC as part of its periodic retention maintenance; receipt identity/status remains to preserve idempotency and prevent old replay. Migration `moreai_browser_action_receipt_result_retention` is applied. No tests or runtime probes were run.
+
+
+## Latest main continuation state — 2026-11-15
+
+Latest confirmed repository HEAD: `f06f7e127d957bef9c5c4d685012a5e848dc50db`.
+
+The OpenFuse Browser adapter has been corrected to the actual pinned worker protocol (`CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`), replacing the earlier unsupported `/v1/browser/actions` assumption. MoreAI supports owner/run-bound persistent browser sessions; navigate, visible-text extract, bounded input, screenshot-to-private-artifact, close and downloads metadata; durable action receipts keyed by OpenManus tool-call ID; unknown-on-ambiguous outcomes; action-level Skill permission enforcement; worker reconciliation for customer close requests; 30-day result payload retention; and customer UI history/session/screenshot preview.
+
+The optional OpenFuse Linux/E2B graphical Computer is not integrated. Existing MoreAI isolated Bash/Python workspace remains a separate disposable execution adapter. Browser download bytes are not imported until a real malware scanner exists. The OpenFuse browser-worker host, worker token and persistent profile volume are not connected in this context.
+
+Supabase migrations applied:
+- `moreai_browser_action_receipts`
+- `moreai_browser_action_receipt_action_types`
+- `moreai_browser_session_close_requests`
+- `moreai_browser_action_receipt_screenshot`
+- `moreai_browser_action_receipt_result_retention`
+
+Read-only schema inspection confirmed `moreai_browser_action_receipts` and `moreai_browser_sessions` have RLS enabled, the receipt table has no client policies, and the result-retention RPC exists. No tests/build/lint/typecheck/browser/API/worker/provider probes, staging or deployment were performed.
+
+Phase 09A and 09B remain operationally BLOCKED by absent real provider secrets and persistent container host. 09C and 09D remain PARTIAL. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
