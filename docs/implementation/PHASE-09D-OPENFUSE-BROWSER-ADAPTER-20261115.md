@@ -73,3 +73,12 @@ Per owner instruction: no tests, builds, lint, typecheck, browser automation, AP
 
 ## Next phase
 Continue 09A/09B operational setup when a persistent host and secret manager are connected. Then complete the remaining 09D Computer parity only against an explicitly selected isolated computer provider; do not claim desktop or PDF import readiness without actual host/scanner integration. 09C and 09D remain PARTIAL; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## Result payload retention follow-up
+
+- Browser action receipt results (which may include bounded visible-page text) now have a 30-day result retention window.
+- Added service-role-only `moreai_worker_purge_expired_browser_action_receipt_results()`; the persistent worker invokes it alongside the existing memory-retention maintenance loop.
+- Expired result payloads are cleared while the receipt identity/status remains, so an old tool-call replay is still blocked rather than re-executed.
+- Migration `moreai_browser_action_receipt_result_retention` was applied to the canonical Supabase project.
+- No tests or runtime probes were performed.
