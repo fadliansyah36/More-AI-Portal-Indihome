@@ -1480,3 +1480,14 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Added service-role-only purge RPC and wired it into the worker's existing periodic retention maintenance loop.
 - Applied migration: `moreai_browser_action_receipt_result_retention`.
 - No tests/runtime probes performed. Browser operational readiness remains NOT VERIFIED.
+
+
+## Current continuation baseline — 2026-11-15
+
+- Latest confirmed `main` HEAD: `f06f7e127d957bef9c5c4d685012a5e848dc50db`.
+- Phase 09A source contract is implemented; operational provider/model/route readiness remains blocked by empty real provider registry and absent worker-host provider secrets.
+- Phase 09B source readiness/heartbeat/recovery and persistent browser close reconciliation loops exist; operational deployment remains blocked because no persistent container host is connected.
+- Phase 09C is PARTIAL: broad customer FastAPI coverage and Browser session/action UI exist; provider-dependent payment, captive OTP/gateway and support remain fail-closed.
+- Phase 09D Browser source integration now follows the exact pinned OpenFuse worker protocol and includes input/screenshot/close/download metadata, durable action receipts, customer close reconciliation and private screenshot artifacts. Linux/E2B desktop parity and malware-scanned file import remain blocked.
+- Canonical Supabase migrations for Browser receipts, close requests, screenshot action and 30-day result retention have been applied. Read-only schema inspection confirms RLS enabled on `moreai_browser_action_receipts`, no client policies, and service-role-only grants.
+- No tests/build/lint/typecheck/browser/API/worker/provider probes, staging or deployment performed. Runtime and visual acceptance remain NOT VERIFIED. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
