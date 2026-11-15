@@ -1424,3 +1424,16 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Phase 09 remains **IN PROGRESS**. No persistent worker host, provider/model rows, provider credentials, or worker secret injection are configured. Agent execution remains disabled.
 - A further provider-routing mismatch remains: runtime task types are `chat` and `planning`, but the current Admin API and database mutation RPC accept only `general`. Correct this with a forward-only migration before provider onboarding.
 - No tests, build, deployment, staging, worker execution, or provider calls were performed. Phase 10/11 remain unaccepted.
+
+
+## 2026-11-15 — Phase 09A Provider Routing & Secret Readiness
+
+- Supersedes the previous note that the chat/planning routing mismatch remained: FastAPI and the Supabase mutation RPC now accept general, chat, and planning.
+- Added an audited provider configuration RPC that stores only HTTPS base URL and worker secret environment-variable reference. The API never accepts or returns provider secret values.
+- Provider configuration is restricted to implemented OpenAI-compatible OpenAI and Google endpoints. Anthropic remains unavailable until a native protocol adapter is implemented.
+- Super Admin now has provider, model pricing/token, and routing forms. Provider/model/route activation remains gated by explicit readiness/secret attestations and worker checks.
+- Worker startup requires both chat and planning routes and the referenced secret variables; this validates configuration only and performs no provider calls.
+- Supabase migrations applied: moreai_provider_configuration_and_route_types (20261115092653) and moreai_provider_endpoint_allowlist (20261115092950).
+- Report: docs/implementation/PHASE-09A-PROVIDER-ROUTING-SECRET-READINESS-20261115.md.
+- Read-only inventory still shows zero provider/model/routing/worker heartbeat rows. No persistent worker host integration is connected, so 09A operational readiness and 09B deployment remain blocked. Agent execution remains disabled.
+- Super Admin UI screenshot regression, tests, builds, provider calls and runtime verification were not performed. Phase 09 remains IN PROGRESS; 09C remains in progress; 09D is deferred until 09A–09C are complete.
