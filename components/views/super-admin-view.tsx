@@ -291,16 +291,19 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
   const [providerName, setProviderName] = useState('OpenAI Compatible');
   const [baseUrl, setBaseUrl] = useState('');
   const [secretEnvName, setSecretEnvName] = useState('MOREAI_PROVIDER_OPENAI_API_KEY');
+  const [credentialsReady, setCredentialsReady] = useState(false);
   const [modelProviderId, setModelProviderId] = useState('');
   const [modelKey, setModelKey] = useState('');
   const [modelName, setModelName] = useState('');
   const [inputCost, setInputCost] = useState('');
   const [outputCost, setOutputCost] = useState('');
+  const [modelEnabled, setModelEnabled] = useState(false);
   const [maxInputTokens, setMaxInputTokens] = useState('');
   const [maxOutputTokens, setMaxOutputTokens] = useState('');
   const [routeTask, setRouteTask] = useState<'chat' | 'planning' | 'general'>('chat');
   const [routeModelId, setRouteModelId] = useState('');
   const [routePriority, setRoutePriority] = useState('100');
+  const [routeEnabled, setRouteEnabled] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -333,11 +336,12 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
       await adminMutation('/api/v1/admin/providers' + suffix, 'POST', {
         key: selectedProvider?.key || providerKey,
         display_name: providerName,
-        enabled: false,
+        enabled: credentialsReady,
+        credentials_ready: credentialsReady,
         base_url: baseUrl,
         secret_env_name: secretEnvName,
       });
-      setNotice('Metadata provider dan referensi secret tersimpan. Provider tetap nonaktif sampai worker readiness diverifikasi.');
+      setNotice(credentialsReady ? 'Provider diaktifkan berdasarkan konfirmasi pemasangan secret host. Worker tetap harus melewati pemeriksaan readiness sebelum menerima Agent Run.' : 'Metadata provider dan referensi secret tersimpan. Provider tetap nonaktif.');
       await onRefresh();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Konfigurasi provider gagal disimpan.');
@@ -352,9 +356,9 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
         input_cost_per_million: Number(inputCost), output_cost_per_million: Number(outputCost),
         max_input_tokens: maxInputTokens ? Number(maxInputTokens) : null,
         max_output_tokens: maxOutputTokens ? Number(maxOutputTokens) : null,
-        capabilities: ['text'], enabled: false,
+        capabilities: ['text'], enabled: modelEnabled,
       });
-      setNotice('Model tersimpan dalam status nonaktif. Harga dan kemampuan harus disesuaikan dengan kontrak provider sebelum aktivasi.');
+      setNotice(modelEnabled ? 'Model diaktifkan. Worker tetap memvalidasi provider secret dan route sebelum menerima pekerjaan.' : 'Model tersimpan dalam status nonaktif. Harga dan kemampuan harus disesuaikan dengan kontrak provider sebelum aktivasi.');
       await onRefresh();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Konfigurasi model gagal disimpan.');
@@ -366,9 +370,9 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
     try {
       await adminMutation('/api/v1/admin/routing-policies', 'POST', {
         task_type: routeTask, model_id: routeModelId, fallback_model_id: null,
-        priority: Number(routePriority), enabled: false,
+        priority: Number(routePriority), enabled: routeEnabled,
       });
-      setNotice('Routing policy ' + routeTask + ' tersimpan dalam status nonaktif.');
+      setNotice('Routing policy ' + routeTask + (routeEnabled ? ' diaktifkan.' : ' tersimpan nonaktif.'));
       await onRefresh();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Routing policy gagal disimpan.');
@@ -408,9 +412,13 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
         <label className={labelClass}>Worker secret environment name
           <input className={fieldClass} value={secretEnvName} onChange={event => setSecretEnvName(event.target.value)} pattern="MOREAI_PROVIDER_[A-Z0-9_]+" minLength={17} maxLength={128} required />
         </label>
+        <label className="md:col-span-2 flex items-start gap-2 text-xs text-slate-600">
+          <input type="checkbox" className="mt-0.5 accent-[#E31E24]" checked={credentialsReady} onChange={event => setCredentialsReady(event.target.checked)} />
+          I confirm the actual API key has already been installed in the persistent worker host secret manager under the exact environment name above.
+        </label>
         <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3">
-          <p className="max-w-2xl text-xs text-slate-500">Jangan masukkan API key di sini. Buat secret dengan nama di atas pada host worker. Aktivasi memerlukan pemeriksaan readiness terpisah.</p>
-          <button className={buttonClass} disabled={busy !== null}>{busy === 'provider' ? 'Saving…' : 'Save provider configuration'}</button>
+          <p className="max-w-2xl text-xs text-slate-500">Jangan masukkan API key di sini. Jika kotak konfirmasi tidak dicentang, provider tetap nonaktif. Worker akan memeriksa ulang keberadaan secret saat startup.</p>
+          <button className={buttonClass} disabled={busy !== null}>{busy === 'provider' ? 'Saving…' : credentialsReady ? 'Save & enable provider' : 'Save disabled provider'}</button>
         </div>
       </form>
     </section>
@@ -429,8 +437,9 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
         <label className={labelClass}>Input cost / 1M tokens<input className={fieldClass} type="number" min="0" step="0.000001" value={inputCost} onChange={event => setInputCost(event.target.value)} required /></label>
         <label className={labelClass}>Output cost / 1M tokens<input className={fieldClass} type="number" min="0" step="0.000001" value={outputCost} onChange={event => setOutputCost(event.target.value)} required /></label>
         <label className={labelClass}>Max input tokens<input className={fieldClass} type="number" min="1" value={maxInputTokens} onChange={event => setMaxInputTokens(event.target.value)} /></label>
-        <label className={labelClass}>Max output tokens<input className={fieldClass} type="number" min="1" value={maxOutputTokens} onChange={event => setMaxOutputTokens(event.target.value)} /></label>
-        <div className="md:col-span-2 flex justify-end"><button className={buttonClass} disabled={busy !== null || catalog.providers.length === 0}>{busy === 'model' ? 'Saving…' : 'Register disabled model'}</button></div>
+        <label className={labelClass}>Max output tokens<input className={fieldClass} type="number" min="1" value={maxOutputTokens} onChange={event => setMaxOutputTokens(event.target.value)} required={modelEnabled} /></label>
+        <label className="md:col-span-2 flex items-start gap-2 text-xs text-slate-600"><input type="checkbox" className="mt-0.5 accent-[#E31E24]" checked={modelEnabled} onChange={event => setModelEnabled(event.target.checked)} />Enable model only when its provider is enabled and its pricing/token limits are verified.</label>
+        <div className="md:col-span-2 flex justify-end"><button className={buttonClass} disabled={busy !== null || catalog.providers.length === 0}>{busy === 'model' ? 'Saving…' : modelEnabled ? 'Register enabled model' : 'Register disabled model'}</button></div>
       </form>
     </section>
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -440,7 +449,8 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
         <label className={labelClass}>Task type<select className={fieldClass} value={routeTask} onChange={event => setRouteTask(event.target.value as typeof routeTask)}><option value="chat">chat</option><option value="planning">planning</option><option value="general">general</option></select></label>
         <label className={labelClass}>Model<select className={fieldClass} value={routeModelId} onChange={event => setRouteModelId(event.target.value)} required><option value="">Select model</option>{catalog.models.map(model => <option key={model.id} value={model.id}>{model.display_name} · {model.enabled ? 'enabled' : 'disabled'}</option>)}</select></label>
         <label className={labelClass}>Priority<input className={fieldClass} type="number" min="0" max="10000" value={routePriority} onChange={event => setRoutePriority(event.target.value)} required /></label>
-        <div className="md:col-span-3 flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">Route disimpan nonaktif sampai provider, model, secret, wallet, quota, dan worker siap.</p><button className={buttonClass} disabled={busy !== null || catalog.models.length === 0}>{busy === 'route' ? 'Saving…' : 'Create disabled route'}</button></div>
+        <label className="md:col-span-3 flex items-start gap-2 text-xs text-slate-600"><input type="checkbox" className="mt-0.5 accent-[#E31E24]" checked={routeEnabled} onChange={event => setRouteEnabled(event.target.checked)} />Enable route only after its model and provider have been enabled and the worker secret is installed.</label>
+        <div className="md:col-span-3 flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">Worker startup requires enabled chat and planning routes plus valid secret references, wallet, quota, and billing settings.</p><button className={buttonClass} disabled={busy !== null || catalog.models.length === 0}>{busy === 'route' ? 'Saving…' : routeEnabled ? 'Create enabled route' : 'Create disabled route'}</button></div>
       </form>
     </section>
     {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</p>}
