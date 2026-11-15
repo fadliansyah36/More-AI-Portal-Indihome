@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from app.client import WorkerRpcClient
@@ -53,6 +54,35 @@ class SupabaseRouteRepository:
             "select": "id,key,display_name,config", "limit": "1",
         })
         return rows[0] if rows else None
+
+
+async def provider_readiness_snapshot(client: WorkerRpcClient) -> dict[str, Any]:
+    """Validate configured chat/planning routes and worker-side secret references.
+
+    This is a configuration gate only: it does not call external providers.
+    """
+    repository = SupabaseRouteRepository(client)
+    router = ModelRouter(repository)
+    required_tasks = ("chat", "planning")
+    task_status: dict[str, Any] = {}
+    for task_type in required_tasks:
+        candidates = await router.resolve_candidates(
+            task_type, user_id=None, workspace_id=None, partner_id=None,
+        )
+        configured = [
+            route for route in candidates
+            if isinstance(route.secret_env_name, str)
+            and bool(os.getenv(route.secret_env_name))
+        ]
+        if not configured:
+            raise RuntimeError("llm_provider_secret_missing_for_task:" + task_type)
+        task_status[task_type] = {
+            "ready": True,
+            "provider": configured[0].provider_key,
+            "model": configured[0].model_key,
+            "configured_candidates": len(configured),
+        }
+    return {"status": "configuration_ready", "tasks": task_status, "provider_calls_performed": False}
 
 
 def create_metered_gateway(client: WorkerRpcClient, http_client: Any) -> MeteredGateway:
