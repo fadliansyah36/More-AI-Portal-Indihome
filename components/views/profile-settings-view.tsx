@@ -390,7 +390,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
             <p className="text-[11px] text-slate-500 mt-0.5">Kelola sesi Chromium persisten yang terikat pada akun Anda.</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">{browserSessions.filter((session) => session.status === 'active').length} aktif</span>
+            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">{browserSessions.filter((session) => session.status === 'active').length} tersimpan</span>
             <button type="button" disabled={browserSessionsLoading} onClick={() => {
               setBrowserSessionsLoading(true);
               setBrowserSessionsError(null);
@@ -414,7 +414,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
             }} className="text-xs font-bold text-red-700">Coba muat ulang</button>
           </div>
         ) : browserSessions.length === 0 ? (
-          <p className="text-xs text-slate-500 py-2">Belum ada sesi browser aktif.</p>
+          <p className="text-xs text-slate-500 py-2">Belum ada sesi browser tersimpan.</p>
         ) : (
           <div className="space-y-2">
             {browserSessions.map((session) => (
