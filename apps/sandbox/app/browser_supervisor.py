@@ -236,14 +236,20 @@ class BrowserSupervisor:
                         output = (await self._session_request(session_id, "navigate", body={"url": url})).json()
                     result = {"action": "navigate", "session_id": session_id, "session": output}
                 else:
+                    # Read/input actions are bound to the URL supplied with the
+                    # approved tool call; do not operate on a different stale page.
+                    if current.get("url") != url:
+                        action_submitted = True
+                        current = (await self._session_request(session_id, "navigate", body={"url": url})).json()
                     if action == "input":
                         action_submitted = True
                         output = (await self._session_request(session_id, "input", body=arguments["input"])).json()
                     page = (await self._session_request(session_id, "read")).json()
                     if not isinstance(page, dict) or not isinstance(page.get("text"), str):
                         raise RuntimeError("openfuse_browser_read_contract_invalid")
+                    original_length = len(page["text"])
                     page["text"] = page["text"][:40000]
-                    page["truncated"] = bool(page.get("truncated")) or len(str(page.get("text") or "")) >= 40000
+                    page["truncated"] = bool(page.get("truncated")) or original_length > 40000
                     result = {
                         "action": action,
                         "session_id": session_id,
