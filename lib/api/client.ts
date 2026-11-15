@@ -708,6 +708,17 @@ export type CustomerEpisodicMemoryItem = {
   expires_at: string;
 };
 
+export type CustomerBrowserSession = {
+  id: string;
+  run_id: string;
+  last_run_id: string | null;
+  origin_host: string;
+  status: 'active';
+  created_at: string;
+  last_used_at: string;
+  expires_at: string;
+};
+
 export type CustomerPersonalMemoryState = {
   enabled: boolean;
   consent_version: string | null;
@@ -726,6 +737,12 @@ export const customerApi = {
     }>;
     count: number; source: string;
   }>('/api/v1/models/capabilities'),
+
+  browserSessions: () => moreAiCustomerApi<{ items: CustomerBrowserSession[] }>('/api/v1/customer/browser-sessions'),
+  closeBrowserSession: (sessionId: string) => moreAiCustomerApi<{ session_id: string; status: string }>(
+    '/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/close',
+    { method: 'POST', body: JSON.stringify({}) },
+  ),
 
   personalMemory: () => moreAiCustomerApi<CustomerPersonalMemoryState>('/api/v1/customer/memory'),
   setPersonalMemoryConsent: (enabled: boolean) => moreAiCustomerApi<{
