@@ -82,3 +82,6 @@ Continue 09A/09B operational setup when a persistent host and secret manager are
 - Expired result payloads are cleared while the receipt identity/status remains, so an old tool-call replay is still blocked rather than re-executed.
 - Migration `moreai_browser_action_receipt_result_retention` was applied to the canonical Supabase project.
 - No tests or runtime probes were performed.
+
+
+Final source follow-up: customer Browser Session close requests now use the bodyless FastAPI POST contract. Latest source commit before this report update: `dc546ba37f260575b7167a50f946b9c83f86206c`. Browser worker runtime and Computer desktop parity remain NOT VERIFIED/BLOCKED until persistent host and provider configuration are available.
