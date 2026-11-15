@@ -10,7 +10,7 @@ Implemented runtime adapters:
 - LLM request idempotency, credit reservation, provider usage recording and settlement RPCs.
 - Provider stream deltas are persisted as per-run checkpoints and exposed by FastAPI SSE.
 
-The worker registers only `manus` and `planning`. SWE, Bash, Python execution, browser automation, process execution and workspace editing remain blocked until their required isolated sandboxes are deployed and reviewed.
+The registry includes the durable `manus`, `planning` and `toolcall` runtimes. The SWE runtime and Bash/Python tools remain behind the isolated execution-supervisor and release gates. The OpenFuse Browser tool is registered only when its private persistent browser worker, worker token, egress attestation and authenticated FastAPI boundary are configured and ready. Workspace editing remains owner-scoped through the canonical Supabase workspace service.
 
 ## Health and deployment contract
 
