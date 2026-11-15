@@ -119,7 +119,7 @@ class PolicyEnforcedToolRegistry:
         handler_context: dict[str, Any] = {}
         if normalized in {"str_replace_editor", "workspace_restore_version", "workspace_read_file", "knowledge_ingest", "knowledge_search", "run", "bash", "python_execute"}:
             handler_context["workspace_id"] = workspace_id
-        if normalized == "browser_use" and tool_call_id:
+        if normalized in {"browser_use", "bash", "python_execute"} and tool_call_id:
             handler_context["tool_call_id"] = tool_call_id
         try:
             output = await asyncio.wait_for(
