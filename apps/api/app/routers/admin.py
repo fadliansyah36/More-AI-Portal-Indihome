@@ -148,7 +148,7 @@ async def admin_audit(
 
 
 class LlmProviderMutation(BaseModel):
-    key: Literal["google", "openai", "anthropic"]
+    key: Literal["google", "openai"]
     display_name: str = Field(min_length=2, max_length=120)
     enabled: bool = False
     base_url: str | None = Field(default=None, min_length=8, max_length=500)
@@ -234,10 +234,14 @@ async def create_or_update_llm_provider(
             is_ip_literal = True
         except ValueError:
             is_ip_literal = False
+        supported_hosts = {
+            "openai": {"api.openai.com"},
+            "google": {"generativelanguage.googleapis.com"},
+        }
         if (
             parsed.scheme != "https" or not hostname or is_ip_literal
             or parsed.username or parsed.password or parsed.query or parsed.fragment
-            or "." not in hostname or hostname.lower() in {"localhost", "localhost.localdomain"}
+            or hostname.lower() not in supported_hosts.get(body.key, set())
             or not __import__("re").fullmatch(r"MOREAI_PROVIDER_[A-Z0-9_]{1,100}", body.secret_env_name or "")
         ):
             raise HTTPException(422, "provider_endpoint_or_secret_reference_invalid")
