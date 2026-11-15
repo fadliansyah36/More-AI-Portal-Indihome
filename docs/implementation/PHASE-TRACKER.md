@@ -1494,3 +1494,14 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 
 
 Final source baseline update: latest confirmed `main` HEAD before this documentation commit is `dc546ba37f260575b7167a50f946b9c83f86206c`. The customer close request client now sends a bodyless POST matching the FastAPI contract. Browser Computer desktop remains blocked; browser worker operational readiness is NOT VERIFIED.
+
+
+## 2026-11-15 — Computer Workspace Action Lifecycle
+
+- Added owner/run/workspace-bound Computer action receipts for Bash/Python with idempotent OpenManus tool-call identity, request-hash conflict detection, unknown-on-ambiguous outcomes, cancellation handling and 30-day result retention.
+- FastAPI customer action history and internal claim/finish routes added; router registered.
+- IsolatedSandboxToolAdapter now claims/finishes receipts and uses a deterministic request ID. It continues to execute in disposable network-disabled containers and persists workspace files via canonical Supabase.
+- Profile Settings now shows Computer Workspace action history and all lifecycle states.
+- Applied migration `moreai_computer_action_receipts`; read-only schema inspection confirms RLS enabled.
+- This is not a persistent Linux desktop/VNC or OpenFuse E2B Computer. Dedicated per-customer isolated persistent host remains blocked.
+- No tests/build/runtime probes/staging/deployment. 09D remains PARTIAL.
