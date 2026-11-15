@@ -379,7 +379,7 @@ async def mark_browser_session_closed(
     repo = repository(request)
     runs = await repo.select("agent_runs", {
         "id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
-        "status": "in.(running,completed,failed,timed_out,cancelled)",
+        "status": "in.(running,succeeded,failed,cancelled,expired)",
         "select": "id", "limit": "1",
     })
     if not runs:
