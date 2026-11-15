@@ -337,7 +337,7 @@ class DurableOpenManusRuntime:
             )) if snapshots else set()
             skill_allowed_browser_actions = set()
             if "browser.navigate" in granted_permissions:
-                skill_allowed_browser_actions.update({"navigate", "extract"})
+                skill_allowed_browser_actions.update({"navigate", "extract", "screenshot"})
             if "browser.download" in granted_permissions:
                 skill_allowed_browser_actions.add("downloads")
             await save("openmanus.skills.snapshot", {"skills": snapshots})
