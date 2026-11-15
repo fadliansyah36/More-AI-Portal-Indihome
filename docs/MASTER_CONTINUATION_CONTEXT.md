@@ -158,3 +158,10 @@ Phase 09A and 09B remain operationally BLOCKED by absent real provider secrets a
 
 
 Latest source commit before this context update: `dc546ba37f260575b7167a50f946b9c83f86206c` (customer Browser Session close request client aligned to bodyless FastAPI POST). Continue directly on `main`. No tests/staging/runtime probes/deployment. Browser action source integration remains distinct from operational host readiness and Linux/E2B Computer parity.
+
+
+## Computer Workspace action lifecycle
+
+MoreAI's existing network-disabled disposable Bash/Python workspace now has durable owner/run/workspace-bound action receipts. OpenManus tool-call IDs flow through the registry; the worker claims a Supabase-backed receipt before calling the isolated supervisor, derives a stable request ID, persists bounded results for 30 days, and blocks replay on ambiguous outcomes. Customer Profile Settings exposes the action history. Workspace files remain in canonical Supabase and are rehydrated for each disposable execution.
+
+This does not provide a persistent Linux desktop/container or VNC. The pinned OpenFuse Computer server's shared access-key/single-owner Store model is not a safe direct multi-tenant drop-in. Full Computer desktop parity requires a dedicated MoreAI per-customer isolated supervisor. Migration `moreai_computer_action_receipts` is applied; RLS enabled. No tests/runtime probes/staging/deployment.
