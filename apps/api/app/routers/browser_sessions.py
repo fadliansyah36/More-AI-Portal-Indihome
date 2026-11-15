@@ -60,7 +60,7 @@ class BrowserActionReceiptClaim(BaseModel):
     user_id: UUID
     action_key: str = Field(pattern=r"^[0-9a-f]{64}$")
     request_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    action_type: Literal["navigate", "extract"]
+    action_type: Literal["navigate", "extract", "input", "close", "downloads"]
     target_host: str = Field(min_length=1, max_length=253, pattern=r"^[A-Za-z0-9.-]+$")
 
 
@@ -78,6 +78,11 @@ class SessionAcquire(BaseModel):
     user_id: UUID
     session_id: UUID | None = None
     origin_host: str = Field(min_length=1, max_length=253, pattern=r"^[A-Za-z0-9.-]+$")
+
+
+class SessionWorkerClose(BaseModel):
+    run_id: UUID
+    user_id: UUID
 
 
 class SessionStateUpdate(BaseModel):
@@ -256,8 +261,8 @@ async def acquire_browser_session(body: SessionAcquire, request: Request,
                 "session_id": str(body.session_id), "user_id": str(body.user_id), "event_type": "expired", "metadata": {"reason": "ttl"},
             })
             raise HTTPException(410, "browser_session_expired")
-        if row["origin_host"] != body.origin_host:
-            raise HTTPException(409, "browser_session_origin_mismatch")
+        # OpenFuse's isolated worker applies public-destination/DNS checks per request.
+        # Keep the latest host as session metadata; cross-host navigation is allowed.
         session_id = str(body.session_id)
         state = _decrypt(request, row.get("encrypted_state"))
         event = "restored"
@@ -272,13 +277,51 @@ async def acquire_browser_session(body: SessionAcquire, request: Request,
         state = {}
         event = "created"
     await repo.update("moreai_browser_sessions", {"id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}", "status": "eq.active"}, {
-        "last_used_at": now.isoformat(), "last_run_id": str(body.run_id),
+        "origin_host": body.origin_host, "last_used_at": now.isoformat(), "last_run_id": str(body.run_id),
     })
     await repo.insert("moreai_browser_session_events", {
         "session_id": session_id, "user_id": str(body.user_id), "event_type": event,
         "metadata": {"run_id": str(body.run_id), "origin_host": body.origin_host},
     })
     return {"session_id": session_id, "storage_state": state, "expires_at": expiry.isoformat()}
+
+
+@router.post("/internal/{session_id}/closed")
+async def mark_browser_session_closed(
+    session_id: UUID,
+    body: SessionWorkerClose,
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    repo = repository(request)
+    runs = await repo.select("agent_runs", {
+        "id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
+        "status": "in.(running,completed,failed,timed_out,cancelled)",
+        "select": "id", "limit": "1",
+    })
+    if not runs:
+        raise HTTPException(403, "browser_session_run_owner_or_status_mismatch")
+    rows = await repo.update("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
+        "status": "in.(active,close_requested)",
+    }, {
+        "status": "closed", "encrypted_state": None,
+        "closed_at": datetime.now(timezone.utc).isoformat(),
+    })
+    if rows:
+        await repo.insert("moreai_browser_session_events", {
+            "session_id": str(session_id), "user_id": str(body.user_id),
+            "event_type": "closed", "metadata": {"source": "worker", "run_id": str(body.run_id)},
+        })
+        return {"session_id": str(session_id), "status": "closed"}
+    current = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
+        "select": "id,status", "limit": "1",
+    })
+    if current and current[0].get("status") == "closed":
+        return {"session_id": str(session_id), "status": "closed", "replayed": True}
+    raise HTTPException(404, "browser_session_not_active")
 
 
 @router.put("/internal/{session_id}/state")
