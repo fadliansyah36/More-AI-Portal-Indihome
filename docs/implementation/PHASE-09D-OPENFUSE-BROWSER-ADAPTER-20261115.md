@@ -92,3 +92,15 @@ Final source follow-up: customer Browser Session close requests now use the body
 The pinned OpenFuse computer service was also inspected. Its server currently documents a single-owner deployment with shared access-key authentication and its own Store abstraction; it is not a drop-in multi-tenant customer API. The optional E2B Desktop provider also enables outbound internet, passwordless sudo and publicly reachable VM ports protected by a bearer VNC URL. Directly exposing that server/provider to MoreAI customers would violate the current tenant-isolation, canonical Supabase and fail-closed egress requirements.
 
 Accordingly, the OpenFuse Linux/E2B Computer service is not enabled or directly mounted into the MoreAI tenant boundary. MoreAI's existing isolated Bash/Python execution remains network-disabled and persists workspace files through the canonical Supabase Workspace service, but it is not a persistent Linux desktop or VNC experience. Full Computer parity requires a MoreAI-owned, per-customer isolated supervisor whose ownership, lifecycle, receipts and files are mediated by FastAPI/Supabase; it must not introduce OpenFuse's separate database or shared-owner model.
+
+
+## Computer Workspace source integration follow-up
+
+- Added `moreai_computer_action_receipts` in canonical Supabase with owner/run/workspace binding, action-key uniqueness, request-hash conflict detection, status lifecycle and 30-day result retention.
+- FastAPI now exposes customer-owned action history and worker-only claim/finish endpoints. Claims verify the Agent Run's canonical `workspace_id` and owner.
+- OpenManus tool-call IDs now flow through the tool registry into the isolated Bash/Python adapter. The adapter derives a deterministic supervisor request ID, persists a receipt before execution, and blocks ambiguous/duplicate replay.
+- Cancellation attempts to cancel the isolated supervisor request and finalize the receipt as unknown. Result payloads are bounded and purged after 30 days while receipt identity/status remains.
+- Profile Settings now shows Computer Workspace action history with loading/error/empty/executing/succeeded/failed/unknown states.
+- Workspace files remain persisted through Supabase and are rehydrated into disposable network-disabled execution containers. This is safe Computer Workspace execution, not a persistent Linux desktop, Docker container or VNC session.
+- Applied migration: `moreai_computer_action_receipts`. Read-only schema inspection confirms RLS is enabled.
+- No tests/build/runtime probes performed. Computer desktop parity remains blocked until a dedicated MoreAI per-customer isolated supervisor is available.
