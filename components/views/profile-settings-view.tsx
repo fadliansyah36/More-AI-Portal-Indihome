@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
-import { profileApi, customerApi, notificationApi } from '@/lib/api/client';
+import { profileApi, customerApi, notificationApi, type CustomerBrowserSession } from '@/lib/api/client';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { PersonalMemorySettings } from '@/components/views/personal-memory-settings';
 
@@ -47,6 +47,10 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
   const [editProfile, setEditProfile] = useState(false);
   const [draftProfileName, setDraftProfileName] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [browserSessions, setBrowserSessions] = useState<CustomerBrowserSession[]>([]);
+  const [browserSessionsLoading, setBrowserSessionsLoading] = useState(true);
+  const [browserSessionsError, setBrowserSessionsError] = useState<string | null>(null);
+  const [closingBrowserSessionId, setClosingBrowserSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -110,6 +114,29 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
     }).catch(() => { if (active) setCreditBalance(null); });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    customerApi.browserSessions()
+      .then((result) => { if (active) { setBrowserSessions(result.items); setBrowserSessionsError(null); } })
+      .catch((error) => { if (active) setBrowserSessionsError(error instanceof Error ? error.message : 'Sesi browser tidak dapat dimuat.'); })
+      .finally(() => { if (active) setBrowserSessionsLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const closeBrowserSession = async (sessionId: string) => {
+    setClosingBrowserSessionId(sessionId);
+    setBrowserSessionsError(null);
+    try {
+      await customerApi.closeBrowserSession(sessionId);
+      setBrowserSessions((current) => current.filter((session) => session.id !== sessionId));
+      showToast('Sesi browser berhasil ditutup.', 'success');
+    } catch (error) {
+      setBrowserSessionsError(error instanceof Error ? error.message : 'Sesi browser gagal ditutup.');
+    } finally {
+      setClosingBrowserSessionId(null);
+    }
+  };
 
   const openProfileEditor = () => {
     setDraftProfileName(profileName === 'Nama belum diatur' ? '' : profileName);
@@ -337,6 +364,50 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
 
       <PersonalMemorySettings />
 
+      <section className="rounded-3xl bg-white border border-slate-100 shadow-xs p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Sesi Browser</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">Kelola sesi browser yang tersimpan untuk akun Anda.</p>
+          </div>
+          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">{browserSessions.length} aktif</span>
+        </div>
+        {browserSessionsLoading ? (
+          <p className="text-xs text-slate-500 py-2">Memuat sesi browser…</p>
+        ) : browserSessionsError ? (
+          <div className="rounded-xl border border-rose-100 bg-rose-50 p-3 space-y-2">
+            <p className="text-xs text-rose-700">{browserSessionsError}</p>
+            <button type="button" onClick={() => {
+              setBrowserSessionsLoading(true);
+              setBrowserSessionsError(null);
+              customerApi.browserSessions().then((result) => setBrowserSessions(result.items))
+                .catch((error) => setBrowserSessionsError(error instanceof Error ? error.message : 'Sesi browser tidak dapat dimuat.'))
+                .finally(() => setBrowserSessionsLoading(false));
+            }} className="text-xs font-bold text-red-700">Coba muat ulang</button>
+          </div>
+        ) : browserSessions.length === 0 ? (
+          <p className="text-xs text-slate-500 py-2">Belum ada sesi browser aktif.</p>
+        ) : (
+          <div className="space-y-2">
+            {browserSessions.map((session) => (
+              <div key={session.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-800 truncate">{session.origin_host}</p>
+                  <p className="text-[10px] text-slate-500 mt-1">Terakhir digunakan: {new Date(session.last_used_at).toLocaleString('id-ID')}</p>
+                  <p className="text-[10px] text-slate-500">Berakhir: {new Date(session.expires_at).toLocaleString('id-ID')}</p>
+                </div>
+                <button type="button" onClick={() => void closeBrowserSession(session.id)}
+                  disabled={closingBrowserSessionId !== null}
+                  className="shrink-0 rounded-xl border border-red-200 bg-white px-3 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                  {closingBrowserSessionId === session.id ? 'Menutup…' : 'Tutup sesi'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-[10px] text-slate-400">Penutupan sesi menghapus state tersimpan pada server. Kontrol ini tidak menjalankan atau membuka browser.</p>
+      </section>
+
       {editProfile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
           <form onSubmit={(event) => void saveProfile(event)} className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-slate-100 text-slate-800 space-y-3">
@@ -372,12 +443,12 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
               </button>
             </div>
             <div className="space-y-2 text-xs text-slate-600">
-              <p className="font-bold text-slate-900">1. Bagaimana cara mendapatkan AI Credit Free?</p>
-              <p>Cukup hubungkan perangkat Anda ke jaringan Wi-Fi Global Partner ISP yang terdaftar. Saldo kuota akan otomatis terisi setiap bulan.</p>
-              <p className="font-bold text-slate-900 pt-1">2. Apakah aplikasi ini bisa digunakan saat offline?</p>
-              <p>Ya, MoreAI berbasis PWA yang mendukung caching offline untuk riwayat tugas dan catatan yang telah dibuka.</p>
-              <p className="font-bold text-slate-900 pt-1">3. Siapa yang dapat mendaftar sebagai Partner?</p>
-              <p>Pemilik kedai kopi, restoran, coworking space, dan institusi publik yang ingin menyediakan akses internet &amp; AI terpadu bagi pengunjung.</p>
+              <p className="font-bold text-slate-900">1. Bagaimana cara mendapatkan AI Credit?</p>
+              <p>Ketersediaan dan jumlah AI Credit mengikuti saldo wallet serta entitlement yang dikonfirmasi oleh backend. Informasi paket atau benefit yang belum tersedia tidak dianggap aktif.</p>
+              <p className="font-bold text-slate-900 pt-1">2. Apakah semua fitur MoreAI selalu tersedia?</p>
+              <p>Tidak. Ketersediaan fitur bergantung pada konfigurasi layanan, hak akses, kuota, provider dan kesiapan worker. Fitur yang belum dikonfigurasi akan tetap dinonaktifkan.</p>
+              <p className="font-bold text-slate-900 pt-1">3. Bagaimana menghubungi dukungan?</p>
+              <p>Kanal dukungan resmi akan ditampilkan setelah kontak atau sistem tiket resmi MoreAI dikonfigurasi. Jangan mengirimkan kata sandi atau API key melalui kanal yang tidak terverifikasi.</p>
             </div>
             <button
               onClick={() => setShowFaqModal(false)}
