@@ -788,7 +788,8 @@ END UNTRUSTED FILE CONTENT"
                     try:
                         observation = await _run_tool_until_cancelled(
                             self.tools.execute(
-                                function.name, arguments, run_id=context.run_id, user_id=context.user_id, workspace_id=context.workspace_id,
+                                function.name, arguments, run_id=context.run_id, user_id=context.user_id,
+                                workspace_id=context.workspace_id, tool_call_id=call.id,
                             ),
                             cancelled,
                             timeout_seconds=effective_timeout_seconds,
