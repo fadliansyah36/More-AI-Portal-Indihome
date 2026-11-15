@@ -65,7 +65,6 @@ import { ToolsCatalogView } from '@/components/views/tools-catalog-view';
 import { DevicesConnectedView } from '@/components/views/devices-connected-view';
 import { NotificationsView } from '@/components/views/notifications-view';
 import { HelpFaqView } from '@/components/views/help-faq-view';
-import { EdutechLessonView } from '@/components/views/edutech-lesson-view';
 import { PartnerPromoView } from '@/components/views/partner-promo-view';
 import { PartnerAccessBannerView } from '@/components/views/partner-access-banner-view';
 import { WorkflowProgressView } from '@/components/views/workflow-progress-view';
@@ -402,10 +401,7 @@ export default function App() {
               )}
 
               {currentTab === 'edutech_lesson' && (
-                <EdutechLessonView
-                  onBack={() => handleNavigate('edutech')}
-                  onNavigateTab={handleNavigate}
-                />
+                <EdutechView onStartPrompt={handleStartPrompt} />
               )}
 
               {currentTab === 'partner_promo' && (
