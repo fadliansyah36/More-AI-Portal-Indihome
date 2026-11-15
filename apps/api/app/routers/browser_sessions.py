@@ -147,7 +147,7 @@ async def list_browser_session_close_requests(
         if run_id:
             active_run = await repo.select("agent_runs", {
                 "id": f"eq.{run_id}", "user_id": f"eq.{row['user_id']}",
-                "status": "eq.running", "select": "id", "limit": "1",
+                "status": "in.(queued,running,waiting_approval)", "select": "id", "limit": "1",
             })
             if active_run:
                 continue
@@ -248,7 +248,7 @@ async def finish_browser_action_receipt(
     repo = repository(request)
     runs = await repo.select("agent_runs", {
         "id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
-        "status": "in.(running,completed,failed,timed_out,cancelled)",
+        "status": "in.(running,succeeded,failed,cancelled,expired)",
         "select": "id", "limit": "1",
     })
     if not runs:
