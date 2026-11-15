@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import json
@@ -196,6 +197,15 @@ class BrowserSupervisor:
                 status="succeeded", session_id=session_id, result=payload,
             )
             return serialized
+        except asyncio.CancelledError:
+            # Preserve the receipt even when the durable run is cancelled or its
+            # tool deadline expires. Shield only this bounded receipt finalization.
+            await asyncio.shield(self._finish_receipt(
+                receipt_id=receipt_id, run_id=run_id, user_id=user_id,
+                status="unknown" if action_submitted else "failed",
+                session_id=session_id, error_code="execution_cancelled",
+            ))
+            raise
         except Exception as exc:
             # Before supervisor submission failure is definitive; after submission
             # the remote side may have acted, so record UNKNOWN and prohibit replay.
