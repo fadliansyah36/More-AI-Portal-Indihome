@@ -361,6 +361,41 @@ def _customer_safe_run_output(output: Any) -> dict[str, Any] | None:
     return {"text": text_value, "citations": safe_citations}
 
 
+def _safe_customer_citations(raw_citations: Any) -> list[dict[str, Any]]:
+    safe: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    if not isinstance(raw_citations, list):
+        return safe
+    for item in raw_citations[:100]:
+        if not isinstance(item, dict):
+            continue
+        try:
+            chunk_id = str(UUID(str(item.get("id"))))
+            document_id = str(UUID(str(item.get("document_id"))))
+        except (ValueError, TypeError, AttributeError):
+            continue
+        title, marker = item.get("title"), item.get("marker")
+        if not isinstance(title, str) or not title.strip() or len(title) > 300:
+            continue
+        if marker != f"[source:{chunk_id}]" or chunk_id in seen:
+            continue
+        citation: dict[str, Any] = {
+            "id": chunk_id, "document_id": document_id,
+            "title": title[:300], "marker": marker,
+        }
+        similarity = item.get("similarity")
+        if isinstance(similarity, (int, float)) and not isinstance(similarity, bool):
+            citation["similarity"] = max(0.0, min(1.0, float(similarity)))
+        for field in ("source_page", "char_start", "char_end"):
+            value = item.get(field)
+            if isinstance(value, int) and not isinstance(value, bool):
+                if (field == "source_page" and value > 0) or (field != "source_page" and value >= 0):
+                    citation[field] = value
+        safe.append(citation)
+        seen.add(chunk_id)
+    return safe
+
+
 async def _customer_conversation_message_citations(
     repo: Any, user_id: str, messages: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -368,59 +403,29 @@ async def _customer_conversation_message_citations(
         str(message["run_id"]) for message in messages
         if message.get("role") == "assistant" and message.get("run_id")
     })
-    if not run_ids:
-        return [{**message, "citations": []} for message in messages]
-
-    runs = await repo.select("agent_runs", {
-        "id": f"in.({','.join(run_ids)})",
-        "user_id": f"eq.{user_id}",
-        "select": "id,output",
-        "limit": str(len(run_ids)),
-    })
     citations_by_run: dict[str, list[dict[str, Any]]] = {}
-    for run in runs:
-        output = run.get("output") if isinstance(run.get("output"), dict) else {}
-        raw_citations = output.get("citations") if isinstance(output.get("citations"), list) else []
-        safe: list[dict[str, Any]] = []
-        seen: set[str] = set()
-        for item in raw_citations[:100]:
-            if not isinstance(item, dict):
-                continue
-            try:
-                chunk_id = str(UUID(str(item.get("id"))))
-                document_id = str(UUID(str(item.get("document_id"))))
-            except (ValueError, TypeError, AttributeError):
-                continue
-            title = item.get("title")
-            marker = item.get("marker")
-            if not isinstance(title, str) or not title.strip() or len(title) > 300:
-                continue
-            if marker != f"[source:{chunk_id}]" or chunk_id in seen:
-                continue
-            citation: dict[str, Any] = {
-                "id": chunk_id, "document_id": document_id,
-                "title": title[:300], "marker": marker,
-            }
-            similarity = item.get("similarity")
-            if isinstance(similarity, (int, float)) and not isinstance(similarity, bool):
-                citation["similarity"] = max(0.0, min(1.0, float(similarity)))
-            for field in ("source_page", "char_start", "char_end"):
-                value = item.get(field)
-                if isinstance(value, int) and not isinstance(value, bool):
-                    if (field == "source_page" and value > 0) or (field != "source_page" and value >= 0):
-                        citation[field] = value
-            safe.append(citation)
-            seen.add(chunk_id)
-        citations_by_run[str(run.get("id"))] = safe
+    if run_ids:
+        runs = await repo.select("agent_runs", {
+            "id": f"in.({','.join(run_ids)})",
+            "user_id": f"eq.{user_id}",
+            "select": "id,output",
+            "limit": str(len(run_ids)),
+        })
+        for run in runs:
+            output = run.get("output") if isinstance(run.get("output"), dict) else {}
+            citations_by_run[str(run.get("id"))] = _safe_customer_citations(output.get("citations"))
 
-    return [
-        {
-            **message,
-            "citations": citations_by_run.get(str(message.get("run_id")), [])
-            if message.get("role") == "assistant" else [],
-        }
-        for message in messages
-    ]
+    hydrated: list[dict[str, Any]] = []
+    for message in messages:
+        if message.get("role") != "assistant":
+            hydrated.append({**message, "citations": []})
+            continue
+        citations = citations_by_run.get(str(message.get("run_id")), [])
+        if not citations:
+            metadata = message.get("metadata") if isinstance(message.get("metadata"), dict) else {}
+            citations = _safe_customer_citations(metadata.get("citations"))
+        hydrated.append({**message, "citations": citations})
+    return hydrated
 
 
 def _customer_conversation_message_attachments(
@@ -475,7 +480,7 @@ async def customer_conversation(
     conversation = await repo.owned_record("conversations", conversation_id, principal["id"])
     messages = await repo.select("conversation_messages", {
         "conversation_id": f"eq.{conversation_id}", "user_id": f"eq.{principal['id']}",
-        "select": "id,role,content,model_key,run_id,created_at",
+        "select": "id,role,content,model_key,run_id,metadata,created_at",
         "order": "created_at.desc,id.desc", "limit": "51",
     })
     has_more = len(messages) > 50
