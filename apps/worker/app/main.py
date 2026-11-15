@@ -248,6 +248,15 @@ async def run_worker() -> None:
                         except Exception:
                             logger.exception("personal_memory_retention_purge_failed")
                             next_memory_purge_at = now + 300
+                        try:
+                            purged_browser_results = await rpc.rpc(
+                                "moreai_worker_purge_expired_browser_action_receipt_results", {},
+                            )
+                            logger.info("browser_action_receipt_result_retention_completed cleared=%s", purged_browser_results)
+                        except asyncio.CancelledError:
+                            raise
+                        except Exception:
+                            logger.exception("browser_action_receipt_result_retention_failed")
 
                     if not readiness["ready"]:
                         await asyncio.sleep(5)
