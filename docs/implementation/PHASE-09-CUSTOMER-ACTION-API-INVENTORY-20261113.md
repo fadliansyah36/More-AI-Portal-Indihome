@@ -277,3 +277,16 @@ Knowledge Search returns an explicit validated `citation_marker` for each chunk.
 - Files: `apps/api/app/routers/artifacts.py`, `components/views/artifacts-result-view.tsx`.
 - No Supabase schema, migration, RLS, stored data, provider or worker changes. No tests, lint, typecheck, build, browser/API probes, worker execution, staging or deployment were run. UI regression remains NOT VERIFIED; source behavior is not runtime-verified.
 - Source commit: `6db78da69e70fa65e669736448482406d8f55881`. Phase 09 remains IN PROGRESS. Next: continue Customer action-to-API reconciliation and workflow dependency/checkpoint/retry/cancellation lifecycle parity. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## Browser & Computer action receipts — 2026-11-15
+
+New owner-scoped FastAPI contracts:
+- `GET /api/v1/customer/browser-sessions` and `POST /api/v1/customer/browser-sessions/{session_id}/close` (durable close request).
+- `GET /api/v1/customer/browser-sessions/actions` (safe receipt projection; no page content or raw URL).
+- Worker-only Browser receipt claim/finish, close-request list/ack, and internal session lifecycle endpoints.
+- `POST /api/v1/artifacts/internal/browser-screenshot` (worker-authenticated PNG, 2 MB maximum, run/session owner checks, private Storage).
+- `GET /api/v1/customer/computer/actions` (safe Bash/Python receipt projection).
+- Worker-only Computer action claim/finish, bound to Agent Run owner and canonical workspace ID.
+
+Browser actions target the pinned OpenFuse worker protocol and require owner approval. Computer Bash/Python runs remain on the existing network-disabled disposable execution supervisor with Supabase-persisted workspace files. Both receipt result payloads expire after 30 days while receipt identity/status remains. Linux/E2B desktop and PDF download-byte import remain unavailable.
