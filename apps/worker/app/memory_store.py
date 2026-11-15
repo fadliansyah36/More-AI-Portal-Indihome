@@ -97,13 +97,6 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
         """Load only consented episodic records in the exact owner/workspace scope."""
         if not 1 <= limit <= 12:
             raise ValueError("episodic_memory_limit_out_of_range")
-        preferences = await self.client.select("moreai_customer_memory_preferences", {
-            "user_id": f"eq.{user_id}", "enabled": "eq.true",
-            "consent_version": "eq.2026-11-14.v1",
-            "select": "user_id,enabled,consent_version", "limit": "1",
-        })
-        if not preferences:
-            return []
         now = datetime.now(timezone.utc)
         expiry_cutoff = now.isoformat()
         # Expire episodic metadata without deleting the underlying chat transcript
@@ -125,6 +118,14 @@ class SupabaseConversationMemoryStore(ConversationMemoryStore):
                 {"id": f"eq.{row['id']}", "user_id": f"eq.{user_id}"},
                 {"metadata": cleaned},
             )
+        # Cleanup runs even when consent is disabled; expiry is independent of recall.
+        preferences = await self.client.select("moreai_customer_memory_preferences", {
+            "user_id": f"eq.{user_id}", "enabled": "eq.true",
+            "consent_version": "eq.2026-11-14.v1",
+            "select": "user_id,enabled,consent_version", "limit": "1",
+        })
+        if not preferences:
+            return []
         filters = {
             "user_id": f"eq.{user_id}",
             "metadata->>memory_type": "eq.episodic",
