@@ -224,6 +224,9 @@ class BrowserSupervisor:
                     "import_status": "blocked_until_malware_scanner_is_configured",
                 }
             else:
+                # Opening/reopening a persistent Chromium profile can itself navigate
+                # and is therefore an externally visible action with ambiguous outcomes.
+                action_submitted = True
                 current, opened = await self._ensure_session(session_id, url)
                 if action == "navigate":
                     if opened:
