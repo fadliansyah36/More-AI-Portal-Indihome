@@ -150,7 +150,7 @@ class BrowserSupervisor:
         parsed = urlsplit(url if isinstance(url, str) else "")
         if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
             raise ValueError("browser_url_must_be_https_without_credentials")
-        if action not in ("navigate", "extract", "input", "close", "downloads"):
+        if action not in ("navigate", "extract", "input", "screenshot", "close", "downloads"):
             raise ValueError("browser_action_not_supported_by_openfuse_worker")
         if action in {"input", "close", "downloads"} and not arguments.get("session_id"):
             raise ValueError("browser_action_requires_existing_session_id")
@@ -249,6 +249,31 @@ class BrowserSupervisor:
                         action_submitted = True
                         output = (await self._session_request(session_id, "navigate", body={"url": url})).json()
                     result = {"action": "navigate", "session_id": session_id, "session": output}
+                elif action == "screenshot":
+                    action_submitted = True
+                    screenshot = await self._session_request(session_id, "screenshot")
+                    image_bytes = screenshot.content
+                    if not image_bytes.startswith(b"\\x89PNG\\r\\n\\x1a\\n") or len(image_bytes) > 2_000_000:
+                        raise RuntimeError("openfuse_browser_screenshot_signature_or_size_invalid")
+                    uploaded = await self.http.post(
+                        f"{self.api_url}/api/v1/artifacts/internal/browser-screenshot",
+                        content=image_bytes,
+                        headers={
+                            **self._internal_headers(),
+                            "Content-Type": "image/png",
+                            "X-Agent-Run-Id": run_id,
+                            "X-Owner-User-Id": user_id,
+                            "X-Browser-Session-Id": session_id,
+                        },
+                        timeout=httpx.Timeout(35.0, connect=5.0),
+                    )
+                    uploaded.raise_for_status()
+                    artifact = uploaded.json()
+                    result = {
+                        "action": "screenshot", "session_id": session_id,
+                        "artifact_id": artifact.get("artifact_id"),
+                        "mime_type": "image/png", "size_bytes": len(image_bytes),
+                    }
                 else:
                     # Read/input actions are bound to the URL supplied with the
                     # approved tool call; do not operate on a different stale page.
