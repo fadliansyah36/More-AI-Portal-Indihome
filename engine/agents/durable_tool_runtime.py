@@ -353,6 +353,12 @@ class DurableOpenManusRuntime:
         # Saved Agent configuration is an owner-scoped snapshot. Its instructions
         # remain a user-role preference message, never part of the trusted system prompt.
         agent_config = payload.get("agent_config")
+        preferred_model_id = (
+            agent_config.get("preferred_model_id")
+            if isinstance(agent_config, dict)
+            and isinstance(agent_config.get("preferred_model_id"), str)
+            else None
+        )
         # Personal Memory is separate from the conversation transcript. It is
         # injected only when the owner has an active, versioned consent record.
         # The records are explicitly user-authored and always treated as untrusted context.
@@ -597,6 +603,7 @@ END UNTRUSTED FILE CONTENT"
                     request_key=request_key, messages=messages, task_type="chat",
                     workspace_id=context.workspace_id, tools=tool_definitions,
                     required_capabilities={"tool_calling"} if tool_definitions else None,
+                    preferred_model_id=preferred_model_id,
                 )
                 text = response_state.get("text") or ""
                 calls = response_state.get("tool_calls") or []
