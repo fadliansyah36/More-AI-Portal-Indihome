@@ -140,9 +140,16 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
     setClosingBrowserSessionId(sessionId);
     setBrowserSessionsError(null);
     try {
-      await customerApi.closeBrowserSession(sessionId);
-      setBrowserSessions((current) => current.filter((session) => session.id !== sessionId));
-      showToast('Sesi browser berhasil ditutup.', 'success');
+      const result = await customerApi.closeBrowserSession(sessionId);
+      setBrowserSessions((current) => current.map((session) => session.id === sessionId
+        ? { ...session, status: result.status }
+        : session));
+      showToast(
+        result.status === 'closed'
+          ? 'Sesi browser sudah ditutup.'
+          : 'Permintaan penutupan diterima. Worker akan menutup browser dan memperbarui status sesi.',
+        'info',
+      );
     } catch (error) {
       setBrowserSessionsError(error instanceof Error ? error.message : 'Sesi browser gagal ditutup.');
     } finally {
@@ -380,9 +387,9 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900">Sesi Browser</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">Kelola sesi browser yang tersimpan untuk akun Anda.</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">Kelola sesi Chromium persisten yang terikat pada akun Anda.</p>
           </div>
-          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">{browserSessions.length} aktif</span>
+          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">{browserSessions.filter((session) => session.status === 'active').length} aktif</span>
         </div>
         {browserSessionsLoading ? (
           <p className="text-xs text-slate-500 py-2">Memuat sesi browser…</p>
@@ -409,15 +416,15 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
                   <p className="text-[10px] text-slate-500">Berakhir: {new Date(session.expires_at).toLocaleString('id-ID')}</p>
                 </div>
                 <button type="button" onClick={() => void closeBrowserSession(session.id)}
-                  disabled={closingBrowserSessionId !== null}
+                  disabled={closingBrowserSessionId !== null || session.status === 'close_requested'}
                   className="shrink-0 rounded-xl border border-red-200 bg-white px-3 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
-                  {closingBrowserSessionId === session.id ? 'Menutup…' : 'Tutup sesi'}
+                  {closingBrowserSessionId === session.id ? 'Mengirim…' : session.status === 'close_requested' ? 'Menunggu worker…' : 'Tutup sesi'}
                 </button>
               </div>
             ))}
           </div>
         )}
-        <p className="text-[10px] text-slate-400">Penutupan sesi menghapus state tersimpan pada server. Kontrol ini tidak menjalankan atau membuka browser.</p>
+        <p className="text-[10px] text-slate-400">Permintaan penutupan diproses worker persisten. Sesi baru berstatus tertutup setelah worker menghentikan konteks Chromium; profil tersimpan tetap berada di worker sesuai kebijakan OpenFuse.</p>
       </section>
 
       <section className="rounded-3xl bg-white border border-slate-100 shadow-xs p-4 space-y-3">
