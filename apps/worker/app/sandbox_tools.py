@@ -140,7 +140,7 @@ class IsolatedSandboxToolAdapter:
         if not isinstance(receipt_id, str):
             raise RuntimeError("computer_action_receipt_claim_invalid")
         if receipt.get("can_execute") is not True:
-            if receipt.get("status") == "succeeded" and isinstance(receipt.get("result"), dict):
+            if receipt.get("status") in {"succeeded", "failed"} and isinstance(receipt.get("result"), dict):
                 return json.dumps(receipt["result"], ensure_ascii=False, separators=(",", ":"))
             raise RuntimeError("computer_action_replay_blocked_by_receipt_" + str(receipt.get("status") or "unknown"))
 
@@ -202,7 +202,7 @@ class IsolatedSandboxToolAdapter:
                 raise RuntimeError("computer_action_result_exceeds_receipt_limit")
             await self._finish_receipt(
                 receipt_id=receipt_id, run_id=run_id, user_id=user_id,
-                status="succeeded", result=result,
+                status="succeeded" if success else "failed", result=result,
             )
             return serialized
         except asyncio.CancelledError:
