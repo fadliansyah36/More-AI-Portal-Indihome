@@ -112,6 +112,64 @@ async def list_browser_action_receipts(
     return {"items": rows}
 
 
+@router.get("/internal/close-requests")
+async def list_browser_session_close_requests(
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    repo = repository(request)
+    rows = await repo.select("moreai_browser_sessions", {
+        "status": "eq.close_requested",
+        "select": "id,user_id,last_run_id,origin_host",
+        "order": "last_used_at.asc",
+        "limit": "50",
+    })
+    ready = []
+    for row in rows:
+        run_id = row.get("last_run_id")
+        if run_id:
+            active_run = await repo.select("agent_runs", {
+                "id": f"eq.{run_id}", "user_id": f"eq.{row['user_id']}",
+                "status": "eq.running", "select": "id", "limit": "1",
+            })
+            if active_run:
+                continue
+        ready.append({"session_id": row["id"], "user_id": row["user_id"]})
+    return {"items": ready}
+
+
+@router.post("/internal/{session_id}/close-complete")
+async def complete_browser_session_close(
+    session_id: UUID,
+    body: SessionWorkerClose,
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    repo = repository(request)
+    rows = await repo.update("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
+        "status": "eq.close_requested",
+    }, {
+        "status": "closed", "encrypted_state": None,
+        "closed_at": datetime.now(timezone.utc).isoformat(),
+    })
+    if rows:
+        await repo.insert("moreai_browser_session_events", {
+            "session_id": str(session_id), "user_id": str(body.user_id),
+            "event_type": "closed", "metadata": {"source": "worker_reconciler"},
+        })
+        return {"session_id": str(session_id), "status": "closed"}
+    current = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
+        "select": "id,status", "limit": "1",
+    })
+    if current and current[0].get("status") == "closed":
+        return {"session_id": str(session_id), "status": "closed", "replayed": True}
+    raise HTTPException(404, "browser_session_close_request_not_found")
+
+
 @router.post("/internal/actions/claim")
 async def claim_browser_action_receipt(
     body: BrowserActionReceiptClaim,
@@ -211,7 +269,7 @@ async def finish_browser_action_receipt(
 @router.get("")
 async def list_browser_sessions(request: Request, user: dict[str, Any] = Depends(customer_principal)):
     rows = await repository(request).select("moreai_browser_sessions", {
-        "user_id": f"eq.{user['id']}", "status": "eq.active",
+        "user_id": f"eq.{user['id']}", "status": "in.(active,close_requested)",
         "select": "id,run_id,last_run_id,origin_host,status,created_at,last_used_at,expires_at",
         "order": "last_used_at.desc", "limit": "50",
     })
@@ -220,15 +278,23 @@ async def list_browser_sessions(request: Request, user: dict[str, Any] = Depends
 
 @router.post("/{session_id}/close")
 async def close_browser_session(session_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
-    rows = await repository(request).update("moreai_browser_sessions", {
+    repo = repository(request)
+    rows = await repo.update("moreai_browser_sessions", {
         "id": f"eq.{session_id}", "user_id": f"eq.{user['id']}", "status": "eq.active",
-    }, {"status": "closed", "encrypted_state": None, "closed_at": datetime.now(timezone.utc).isoformat()})
-    if not rows:
-        raise HTTPException(404, "browser_session_not_found")
-    await repository(request).insert("moreai_browser_session_events", {
-        "session_id": str(session_id), "user_id": user["id"], "event_type": "closed", "metadata": {"source": "customer"},
+    }, {"status": "close_requested"})
+    if rows:
+        await repo.insert("moreai_browser_session_events", {
+            "session_id": str(session_id), "user_id": user["id"],
+            "event_type": "close_requested", "metadata": {"source": "customer"},
+        })
+        return {"session_id": str(session_id), "status": "close_requested"}
+    current = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,status", "limit": "1",
     })
-    return {"session_id": str(session_id), "status": "closed"}
+    if current and current[0].get("status") in {"close_requested", "closed"}:
+        return {"session_id": str(session_id), "status": current[0]["status"], "replayed": True}
+    raise HTTPException(404, "browser_session_not_found")
 
 
 @router.post("/internal/acquire")
