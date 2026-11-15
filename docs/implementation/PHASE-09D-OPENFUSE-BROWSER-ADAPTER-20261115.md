@@ -104,3 +104,17 @@ Accordingly, the OpenFuse Linux/E2B Computer service is not enabled or directly 
 - Workspace files remain persisted through Supabase and are rehydrated into disposable network-disabled execution containers. This is safe Computer Workspace execution, not a persistent Linux desktop, Docker container or VNC session.
 - Applied migration: `moreai_computer_action_receipts`. Read-only schema inspection confirms RLS is enabled.
 - No tests/build/runtime probes performed. Computer desktop parity remains blocked until a dedicated MoreAI per-customer isolated supervisor is available.
+
+
+## Source commits — Computer Workspace
+
+- `972d260f` — FastAPI Computer action receipt routes.
+- `2a9f250b` — API router registration.
+- `f4214405` — worker adapter durable Computer receipt lifecycle.
+- `8dcf6f3b` — internal API and worker token wiring.
+- `abe7cdce` — periodic Computer receipt result cleanup.
+- `fac2e72d` — typed customer Computer action history API.
+- `1fbbd436` — customer Computer Workspace history UI.
+- `b81b6b5e` — worker deployment/security documentation.
+- `149a79f9`, `2ebeb5e3` — preserve completed command failure results for safe replay.
+- `d8ae3dc8` — Supabase Computer action receipt migration.
