@@ -455,6 +455,7 @@ export type CustomerAgentRun = {
   created_at?: string;
   started_at?: string | null;
   finished_at?: string | null;
+  last_checkpoint_key?: string | null;
   input?: Record<string, unknown>;
   output?: Record<string, unknown>;
   error?: Record<string, unknown>;
