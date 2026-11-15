@@ -1,6 +1,6 @@
 # MoreAI Worker Boundary
 
-The worker uses a durable Supabase run lifecycle and a fail-closed agent registry.
+The worker uses a durable Supabase run lifecycle and a fail-closed agent registry. It must run as an always-on container service; it is not an HTTP request worker and must not be deployed as a short-lived serverless function.
 
 Implemented runtime adapters:
 - Supabase RPC: claim, heartbeat, checkpoint, finish and cancel.
@@ -11,6 +11,14 @@ Implemented runtime adapters:
 - Provider stream deltas are persisted as per-run checkpoints and exposed by FastAPI SSE.
 
 The worker registers only `manus` and `planning`. SWE, Bash, Python execution, browser automation, process execution and workspace editing remain blocked until their required isolated sandboxes are deployed and reviewed.
+
+## Health and deployment contract
+
+- `GET /health` is the process liveness endpoint and returns `200` while the HTTP health listener is alive.
+- `GET /ready` returns `503` until startup configuration gates have passed and the durable event-outbox publisher has started; it returns `200` only after that point. Readiness is not proof that a live provider request or end-to-end Agent Run has succeeded.
+- Container platforms should use `/ready` as the readiness/health check on port `8081`, keep the service running continuously (no scale-to-zero), and restart it when the process exits or the readiness check remains unhealthy.
+- The worker requires a persistent container host with secret injection and outbound HTTPS to the canonical Supabase project and approved provider endpoints. Vercel Functions are not the worker runtime.
+- Do not expose the worker health port as a public business API. Restrict it to the container platform's health-check network where supported.
 
 ## Runtime configuration
 
