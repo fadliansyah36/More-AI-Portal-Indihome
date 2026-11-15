@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
-import { profileApi, customerApi, notificationApi, type CustomerBrowserSession, type CustomerBrowserActionReceipt } from '@/lib/api/client';
+import { profileApi, customerApi, notificationApi, type CustomerBrowserSession, type CustomerBrowserActionReceipt, type CustomerComputerActionReceipt } from '@/lib/api/client';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { PersonalMemorySettings } from '@/components/views/personal-memory-settings';
 
@@ -54,6 +54,9 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
   const [browserActions, setBrowserActions] = useState<CustomerBrowserActionReceipt[]>([]);
   const [browserActionsLoading, setBrowserActionsLoading] = useState(true);
   const [browserActionsError, setBrowserActionsError] = useState<string | null>(null);
+  const [computerActions, setComputerActions] = useState<CustomerComputerActionReceipt[]>([]);
+  const [computerActionsLoading, setComputerActionsLoading] = useState(true);
+  const [computerActionsError, setComputerActionsError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -133,6 +136,15 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
       .then((result) => { if (active) { setBrowserActions(result.items); setBrowserActionsError(null); } })
       .catch((error) => { if (active) setBrowserActionsError(error instanceof Error ? error.message : 'Riwayat aksi browser tidak dapat dimuat.'); })
       .finally(() => { if (active) setBrowserActionsLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    customerApi.computerActionReceipts(50)
+      .then((result) => { if (active) { setComputerActions(result.items); setComputerActionsError(null); } })
+      .catch((error) => { if (active) setComputerActionsError(error instanceof Error ? error.message : 'Riwayat Computer Workspace tidak dapat dimuat.'); })
+      .finally(() => { if (active) setComputerActionsLoading(false); });
     return () => { active = false; };
   }, []);
 
@@ -488,6 +500,70 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
             })}
           </div>
         )}
+      </section>
+
+      <section className="rounded-3xl bg-white border border-slate-100 shadow-xs p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Riwayat Computer Workspace</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">Riwayat eksekusi Bash/Python melalui isolated supervisor.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">{computerActions.length} aksi</span>
+            <button type="button" disabled={computerActionsLoading} onClick={() => {
+              setComputerActionsLoading(true);
+              setComputerActionsError(null);
+              customerApi.computerActionReceipts(50).then((result) => setComputerActions(result.items))
+                .catch((error) => setComputerActionsError(error instanceof Error ? error.message : 'Riwayat Computer Workspace tidak dapat dimuat.'))
+                .finally(() => setComputerActionsLoading(false));
+            }} className="text-[10px] font-bold text-red-600 disabled:opacity-50">Muat ulang</button>
+          </div>
+        </div>
+        {computerActionsLoading ? (
+          <p className="text-xs text-slate-500 py-2">Memuat riwayat Computer Workspace…</p>
+        ) : computerActionsError ? (
+          <div className="rounded-xl border border-rose-100 bg-rose-50 p-3 space-y-2">
+            <p className="text-xs text-rose-700">{computerActionsError}</p>
+            <button type="button" onClick={() => {
+              setComputerActionsLoading(true);
+              setComputerActionsError(null);
+              customerApi.computerActionReceipts(50).then((result) => setComputerActions(result.items))
+                .catch((error) => setComputerActionsError(error instanceof Error ? error.message : 'Riwayat Computer Workspace tidak dapat dimuat.'))
+                .finally(() => setComputerActionsLoading(false));
+            }} className="text-xs font-bold text-red-700">Coba muat ulang</button>
+          </div>
+        ) : computerActions.length === 0 ? (
+          <p className="text-xs text-slate-500 py-2">Belum ada aksi Computer Workspace.</p>
+        ) : (
+          <div className="space-y-2">
+            {computerActions.map((action) => {
+              const labels: Record<CustomerComputerActionReceipt['status'], string> = {
+                executing: 'Sedang diproses',
+                succeeded: 'Selesai',
+                failed: 'Gagal',
+                unknown: 'Hasil belum dapat dipastikan',
+              };
+              const tones: Record<CustomerComputerActionReceipt['status'], string> = {
+                executing: 'bg-blue-50 text-blue-700',
+                succeeded: 'bg-emerald-50 text-emerald-700',
+                failed: 'bg-rose-50 text-rose-700',
+                unknown: 'bg-amber-50 text-amber-700',
+              };
+              return (
+                <div key={action.id} className="rounded-2xl border border-slate-100 p-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-slate-800">{action.action_type === 'bash' ? 'Terminal Bash' : 'Python'} · Workspace</p>
+                    <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold ${tones[action.status]}`}>{labels[action.status]}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Dimulai: {new Date(action.requested_at).toLocaleString('id-ID')}</p>
+                  {action.finished_at && <p className="text-[10px] text-slate-500">Selesai: {new Date(action.finished_at).toLocaleString('id-ID')}</p>}
+                  {action.status === 'unknown' && <p className="text-[10px] text-amber-700">Eksekusi tidak diulang otomatis karena hasil supervisor belum terkonfirmasi.</p>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className="text-[10px] text-slate-400">File workspace disimpan melalui Supabase. Proses Bash/Python berjalan di container eksekusi terisolasi yang bersifat disposable, bukan desktop Linux persisten.</p>
       </section>
 
       {editProfile && (
