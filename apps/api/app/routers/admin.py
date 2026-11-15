@@ -152,7 +152,7 @@ class LlmProviderMutation(BaseModel):
     display_name: str = Field(min_length=2, max_length=120)
     enabled: bool = False
     base_url: str | None = Field(default=None, min_length=8, max_length=500)
-    secret_env_name: str | None = Field(default=None, min_length=18, max_length=128)
+    secret_env_name: str | None = Field(default=None, min_length=17, max_length=128)
 
 
 class LlmModelMutation(BaseModel):
