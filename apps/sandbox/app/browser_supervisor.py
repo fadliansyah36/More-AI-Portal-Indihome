@@ -127,6 +127,20 @@ class BrowserSupervisor:
         response.raise_for_status()
         return response
 
+    async def close_session(self, session_id: str) -> None:
+        sessions = await self.http.get(
+            f"{self.service_url}/sessions",
+            headers=self._worker_headers(),
+            timeout=httpx.Timeout(12.0, connect=3.0),
+        )
+        sessions.raise_for_status()
+        payload = sessions.json()
+        if not isinstance(payload, list):
+            raise RuntimeError("openfuse_browser_sessions_response_invalid")
+        current = next((item for item in payload if isinstance(item, dict) and item.get("id") == session_id), None)
+        if current and current.get("status") == "active":
+            await self._session_request(session_id, "close", body={})
+
     async def browser_use(
         self, arguments: dict, *, run_id: str, user_id: str,
         tool_call_id: str | None = None,
