@@ -94,7 +94,8 @@ class BrowserSupervisor:
         # repeating a browser action after an ambiguous supervisor/network response.
         canonical = json.dumps(arguments, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
         request_hash = hashlib.sha256(canonical.encode()).hexdigest()
-        action_identity = tool_call_id if isinstance(tool_call_id, str) and tool_call_id else request_hash\n        action_key = hashlib.sha256(f"{run_id}:{action_identity}".encode()).hexdigest()
+        action_identity = tool_call_id if isinstance(tool_call_id, str) and tool_call_id else request_hash
+        action_key = hashlib.sha256(f"{run_id}:{action_identity}".encode()).hexdigest()
         headers = {"X-MoreAI-Worker-Token": self.internal_token}
         claim = await self.http.post(
             f"{self.api_url}/api/v1/customer/browser-sessions/internal/actions/claim",
