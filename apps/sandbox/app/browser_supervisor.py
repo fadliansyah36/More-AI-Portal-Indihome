@@ -156,6 +156,8 @@ class BrowserSupervisor:
             raise ValueError("browser_action_requires_existing_session_id")
         if action == "input" and not isinstance(arguments.get("input"), dict):
             raise ValueError("browser_input_payload_required")
+        # Fail before claiming a receipt if the isolated OpenFuse service is down.
+        await self.check_ready()
 
         canonical = json.dumps(arguments, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
         request_hash = hashlib.sha256(canonical.encode()).hexdigest()
