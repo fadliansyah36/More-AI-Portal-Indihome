@@ -144,6 +144,71 @@ async def persist_browser_download(
         "mime_type": declared_mime, "size_bytes": len(content), "checksum_sha256": digest, "scan_status": "clean"}
 
 
+@router.post("/internal/browser-screenshot", status_code=201)
+async def persist_browser_screenshot(
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+    run_id: UUID = Header(alias="X-Agent-Run-Id"),
+    owner_user_id: UUID = Header(alias="X-Owner-User-Id"),
+    session_id: UUID = Header(alias="X-Browser-Session-Id"),
+):
+    expected = os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", "")
+    if len(expected) < 32 or not x_moreai_worker_token or not hmac.compare_digest(expected, x_moreai_worker_token):
+        raise HTTPException(401, "worker_internal_authentication_failed")
+    content = await request.body()
+    if not content or len(content) > 2_000_000:
+        raise HTTPException(413, "browser_screenshot_size_limit")
+    if not content.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise HTTPException(415, "browser_screenshot_png_signature_invalid")
+    repo = repository(request)
+    runs = await repo.select("agent_runs", {
+        "id": f"eq.{run_id}", "user_id": f"eq.{owner_user_id}",
+        "status": "in.(running,completed)", "select": "id", "limit": "1",
+    })
+    if not runs:
+        raise HTTPException(403, "browser_screenshot_run_owner_mismatch")
+    sessions = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{owner_user_id}",
+        "status": "eq.active", "select": "id", "limit": "1",
+    })
+    if not sessions:
+        raise HTTPException(403, "browser_screenshot_session_owner_mismatch")
+    headers = _storage_headers(request)
+    await _require_private_bucket(request, headers)
+    artifact_id = str(uuid4())
+    filename = f"browser-screenshot-{session_id}.png"
+    storage_path = f"{owner_user_id}/{artifact_id}/{filename}"
+    object_url = _storage_url(request, "object/{bucket}/" + quote(storage_path, safe="/"))
+    digest = hashlib.sha256(content).hexdigest()
+    stored = await request.app.state.http.post(
+        object_url, content=content,
+        headers={**headers, "Content-Type": "image/png", "x-upsert": "false"},
+        timeout=35.0,
+    )
+    if stored.status_code >= 400:
+        raise HTTPException(502, "browser_screenshot_storage_upload_failed")
+    try:
+        row = await repo.insert("artifacts", {
+            "id": artifact_id, "user_id": str(owner_user_id), "run_id": str(run_id),
+            "storage_path": storage_path, "mime_type": "image/png",
+            "size_bytes": len(content), "checksum_sha256": digest,
+            "metadata": {
+                "source": "openfuse_browser_screenshot",
+                "session_id": str(session_id),
+                "trusted_origin": "isolated_browser_worker",
+                "content_validation": "png_signature",
+            },
+        })
+    except Exception:
+        await request.app.state.http.delete(object_url, headers=headers, timeout=15.0)
+        raise
+    return {
+        "artifact_id": row["id"], "run_id": str(run_id),
+        "session_id": str(session_id), "mime_type": "image/png",
+        "size_bytes": len(content), "checksum_sha256": digest,
+    }
+
+
 @router.get("", response_model=list[CustomerArtifactResponse])
 async def list_artifacts(
     request: Request,
