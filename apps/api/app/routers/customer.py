@@ -131,6 +131,7 @@ class CustomerAgentRunResponse(BaseModel):
     error: dict[str, Any] | None = None
     attempt: int | None = None
     max_attempts: int | None = None
+    last_checkpoint_key: str | None = None
     created_at: datetime
     started_at: datetime | None = None
     finished_at: datetime | None = None
@@ -581,7 +582,7 @@ async def customer_agent_runs(
     principal = await require_customer_context(request, user)
     filters = {
         "user_id": f"eq.{principal['id']}",
-        "select": "id,conversation_id,status,input,output,error,attempt,max_attempts,created_at,started_at,finished_at",
+        "select": "id,conversation_id,status,input,output,error,attempt,max_attempts,last_checkpoint_key,created_at,started_at,finished_at",
         "order": "created_at.desc,id.desc", "limit": str(limit + 1),
     }
     cursor_filter = created_at_id_filter(decoded)
