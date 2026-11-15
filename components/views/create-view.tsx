@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Wand2,
 } from 'lucide-react';
-import { customerApi } from '@/lib/api/client';
+import { platformCatalogApi } from '@/lib/api/client';
 
 interface CreateViewProps {
   onNavigateToChat?: (prompt: string, agentKey?: 'manus' | 'planning' | 'toolcall') => void;
@@ -31,7 +31,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
 
   useEffect(() => {
     let active = true;
-    customerApi.mediaCapabilities()
+    platformCatalogApi.mediaCapabilities()
       .then((result) => { if (active) setMediaCapabilities(result); })
       .catch(() => { if (active) setMediaCapabilities(null); })
       .finally(() => { if (active) setMediaCapabilitiesLoading(false); });
