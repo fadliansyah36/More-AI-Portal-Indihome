@@ -114,3 +114,12 @@ The customer action/API inventory and acceptance matrix were re-read against the
 Audit report: `docs/implementation/PHASE-09C-CUSTOMER-ACTION-CLOSURE-AUDIT-20261115.md`.
 
 **09C remains PARTIAL**, because customer-facing Browser/Computer lifecycle and approval/download controls are not yet complete, and unavailable vendor workflows cannot be closed without real provider contracts. 09A operational provider readiness and 09B persistent worker deployment remain blocked by absent provider registry/secrets and persistent host access. No tests, builds, browser/API/worker probes, provider calls, staging or deployment were run. Phase 10 remains NOT ACCEPTED; Phase 11 remains BLOCKED.
+
+
+## 2026-11-15 — Customer Browser Session UI
+
+The Customer API client now exposes typed list/close methods for the existing owner-scoped Browser Session endpoints. Profile Settings includes an active-session list and owner close action with loading, error/retry, empty and close states. This is session management only—not browser launch or computer-use parity. The same screen's outdated FAQ statements about automatic credit top-ups and offline availability were corrected to match backend-governed capabilities and current fail-closed support status.
+
+Commits: `fcec12188ba42b3da6fc20b827bb819a7a1125c0`, `580273d88c7a73773037d816c5f01cfa0a9d4efc`.
+
+No tests, builds, browser/API/worker/provider probes, staging or deployment were performed. Phase 09C remains PARTIAL; Phase 09D still requires a deployed isolated supervisor, action receipts/approval lifecycle and full Browser/Computer tool parity.
