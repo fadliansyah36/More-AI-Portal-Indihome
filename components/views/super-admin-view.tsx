@@ -11,7 +11,11 @@ type Overview = {
   count_note: string;
 };
 type Row = Record<string, string | number | boolean | null>;
-type ProviderCatalog = { providers: Array<{id:string;key:string;display_name:string;enabled:boolean}>; models: Array<{id:string;provider_id:string;key:string;display_name:string;enabled:boolean;input_cost_per_million:number;output_cost_per_million:number;capabilities:string[]}>; routing_policies: Array<{id:string;task_type:string;model_id:string;fallback_model_id:string|null;priority:number;enabled:boolean}> };
+type ProviderCatalog = {
+  providers: Array<{id:string;key:string;display_name:string;enabled:boolean;base_url:string|null;secret_env_name:string|null;configured:boolean}>;
+  models: Array<{id:string;provider_id:string;key:string;display_name:string;enabled:boolean;input_cost_per_million:number;output_cost_per_million:number;max_input_tokens:number|null;max_output_tokens:number|null;capabilities:string[]}>;
+  routing_policies: Array<{id:string;task_type:string;model_id:string;fallback_model_id:string|null;priority:number;enabled:boolean}>;
+};
 
 const API = (process.env.NEXT_PUBLIC_MOREAI_API_URL || '').replace(/\/$/, '');
 
@@ -30,7 +34,7 @@ async function adminRequest<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function adminMutation<T>(path: string, method: 'PATCH', body: Record<string, unknown>): Promise<T> {
+async function adminMutation<T>(path: string, method: 'POST' | 'PATCH', body: Record<string, unknown>): Promise<T> {
   if (!API) throw new Error('NEXT_PUBLIC_MOREAI_API_URL belum dikonfigurasi.');
   const { data, error } = await createSupabaseBrowserClient().auth.getSession();
   if (error || !data.session?.access_token) throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
@@ -40,7 +44,7 @@ async function adminMutation<T>(path: string, method: 'PATCH', body: Record<stri
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    throw new Error(payload?.detail || 'Perubahan Skill Registry ditolak (' + response.status + ').');
+    throw new Error(payload?.detail || 'Perubahan Super Admin ditolak (' + response.status + ').');
   }
   return response.json() as Promise<T>;
 }
@@ -233,7 +237,7 @@ export default function SuperAdminPage() {
         {!loading && activeTab === 'partners' && <DataTable title="Organisasi Mitra" rows={partners} columns={['display_name', 'legal_name', 'status', 'created_at']} />}
         {!loading && activeTab === 'runs' && <DataTable title="Agent Runs" rows={runs} columns={['id', 'status', 'attempt', 'created_at']} />}
         {!loading && activeTab === 'audit' && <DataTable title="Audit Log" rows={audit} columns={['action', 'resource_type', 'outcome', 'created_at']} />}
-        {!loading && activeTab === 'providers' && providerCatalog && <ProviderManagement catalog={providerCatalog} />}
+        {!loading && activeTab === 'providers' && providerCatalog && <ProviderManagement catalog={providerCatalog} onRefresh={load} />}
         {!loading && activeTab === 'skills' && <section className="space-y-4">
           <div className="flex items-center justify-between gap-3"><div><h2 className="font-bold">AI Skills Trust & Permission Review</h2><p className="mt-1 text-xs text-slate-500">Review provenance, validation, license, publication dan permission sebelum skill dapat digunakan OpenManus.</p></div><button onClick={() => void loadSkillReviews()} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold">Muat ulang</button></div>
           {skillReviewError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{skillReviewError}</p>}
@@ -281,10 +285,31 @@ function DataTable({ title, rows, columns }: { title: string; rows: Row[]; colum
 }
 
 
-function ProviderManagement({ catalog }: { catalog: ProviderCatalog }) {
+function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; onRefresh: () => Promise<void> }) {
+  const [providerId, setProviderId] = useState('');
+  const [providerKey, setProviderKey] = useState<'google' | 'openai' | 'anthropic'>('openai');
+  const [providerName, setProviderName] = useState('OpenAI Compatible');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [secretEnvName, setSecretEnvName] = useState('MOREAI_PROVIDER_OPENAI_API_KEY');
+  const [modelProviderId, setModelProviderId] = useState('');
+  const [modelKey, setModelKey] = useState('');
+  const [modelName, setModelName] = useState('');
+  const [inputCost, setInputCost] = useState('');
+  const [outputCost, setOutputCost] = useState('');
+  const [maxInputTokens, setMaxInputTokens] = useState('');
+  const [maxOutputTokens, setMaxOutputTokens] = useState('');
+  const [routeTask, setRouteTask] = useState<'chat' | 'planning' | 'general'>('chat');
+  const [routeModelId, setRouteModelId] = useState('');
+  const [routePriority, setRoutePriority] = useState('100');
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
   const providerRows: Row[] = catalog.providers.map(provider => ({
     id: provider.id, provider: provider.display_name, key: provider.key,
-    status: provider.enabled ? 'Enabled · credential gate enforced' : 'Disabled',
+    endpoint: provider.base_url || 'Not configured',
+    secret_reference: provider.secret_env_name || 'Not configured',
+    status: provider.enabled ? 'Enabled' : 'Disabled · readiness gate',
     models: catalog.models.filter(model => model.provider_id === provider.id).length,
   }));
   const modelRows: Row[] = catalog.models.map(model => ({
@@ -299,13 +324,126 @@ function ProviderManagement({ catalog }: { catalog: ProviderCatalog }) {
     fallback_model_id: route.fallback_model_id, priority: route.priority,
     status: route.enabled ? 'Enabled' : 'Disabled',
   }));
+  const selectedProvider = catalog.providers.find(provider => provider.id === providerId);
+
+  async function submitProvider(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setBusy('provider'); setNotice(null); setFormError(null);
+    try {
+      const suffix = providerId ? '?provider_id=' + encodeURIComponent(providerId) : '';
+      await adminMutation('/api/v1/admin/providers' + suffix, 'POST', {
+        key: selectedProvider?.key || providerKey,
+        display_name: providerName,
+        enabled: false,
+        base_url: baseUrl,
+        secret_env_name: secretEnvName,
+      });
+      setNotice('Metadata provider dan referensi secret tersimpan. Provider tetap nonaktif sampai worker readiness diverifikasi.');
+      await onRefresh();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Konfigurasi provider gagal disimpan.');
+    } finally { setBusy(null); }
+  }
+
+  async function submitModel(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setBusy('model'); setNotice(null); setFormError(null);
+    try {
+      await adminMutation('/api/v1/admin/models', 'POST', {
+        provider_id: modelProviderId, key: modelKey.trim(), display_name: modelName.trim(),
+        input_cost_per_million: Number(inputCost), output_cost_per_million: Number(outputCost),
+        max_input_tokens: maxInputTokens ? Number(maxInputTokens) : null,
+        max_output_tokens: maxOutputTokens ? Number(maxOutputTokens) : null,
+        capabilities: ['text'], enabled: false,
+      });
+      setNotice('Model tersimpan dalam status nonaktif. Harga dan kemampuan harus disesuaikan dengan kontrak provider sebelum aktivasi.');
+      await onRefresh();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Konfigurasi model gagal disimpan.');
+    } finally { setBusy(null); }
+  }
+
+  async function submitRoute(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setBusy('route'); setNotice(null); setFormError(null);
+    try {
+      await adminMutation('/api/v1/admin/routing-policies', 'POST', {
+        task_type: routeTask, model_id: routeModelId, fallback_model_id: null,
+        priority: Number(routePriority), enabled: false,
+      });
+      setNotice('Routing policy ' + routeTask + ' tersimpan dalam status nonaktif.');
+      await onRefresh();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Routing policy gagal disimpan.');
+    } finally { setBusy(null); }
+  }
+
+  const fieldClass = 'mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100';
+  const buttonClass = 'inline-flex min-h-10 items-center justify-center rounded-xl bg-[#E31E24] px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50';
+  const labelClass = 'block text-xs font-semibold text-slate-600';
+
   return <div className="space-y-5">
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 className="font-bold">LLM Provider Registry</h2>
-      <p className="mt-1 text-xs text-slate-500">Metadata only. Secret values and provider config are never returned. Activation requires verified server-side credentials and provider readiness.</p>
-      <div className="mt-4"><DataTable title="Provider" rows={providerRows} columns={['provider', 'key', 'status', 'models']} /></div>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div><h2 className="font-bold text-slate-900">LLM Provider Registry</h2><p className="mt-1 text-xs text-slate-500">Konfigurasi endpoint dan nama environment secret. Nilai API key tidak pernah dikirim atau disimpan di database.</p></div>
+        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Activation locked</span>
+      </div>
+      <div className="mt-4"><DataTable title="Provider" rows={providerRows} columns={['provider', 'key', 'endpoint', 'secret_reference', 'status', 'models']} /></div>
+      <form onSubmit={submitProvider} className="mt-5 grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 md:grid-cols-2">
+        <div className="md:col-span-2"><h3 className="text-sm font-semibold text-slate-900">Configure provider endpoint</h3><p className="mt-1 text-xs text-slate-500">Gunakan HTTPS endpoint publik milik provider. Masukkan nama variabel environment yang akan dibuat di secret manager host worker.</p></div>
+        <label className={labelClass}>Provider
+          <select className={fieldClass} value={providerId} onChange={event => setProviderId(event.target.value)}>
+            <option value="">Create new provider</option>
+            {catalog.providers.map(provider => <option key={provider.id} value={provider.id}>{provider.display_name} ({provider.key})</option>)}
+          </select>
+        </label>
+        {!providerId && <label className={labelClass}>Provider key
+          <select className={fieldClass} value={providerKey} onChange={event => { setProviderKey(event.target.value as typeof providerKey); setProviderName(event.target.value === 'openai' ? 'OpenAI Compatible' : event.target.value === 'anthropic' ? 'Anthropic' : 'Google'); setSecretEnvName('MOREAI_PROVIDER_' + event.target.value.toUpperCase() + '_API_KEY'); }}>
+            <option value="openai">openai</option><option value="anthropic">anthropic</option><option value="google">google</option>
+          </select>
+        </label>}
+        <label className={labelClass}>Display name
+          <input className={fieldClass} value={providerName} onChange={event => setProviderName(event.target.value)} minLength={2} maxLength={120} required />
+        </label>
+        <label className={labelClass}>HTTPS base URL
+          <input className={fieldClass} type="url" value={baseUrl} onChange={event => setBaseUrl(event.target.value)} placeholder="https://api.openai.com/v1" required />
+        </label>
+        <label className={labelClass}>Worker secret environment name
+          <input className={fieldClass} value={secretEnvName} onChange={event => setSecretEnvName(event.target.value)} pattern="MOREAI_PROVIDER_[A-Z0-9_]+" minLength={17} maxLength={128} required />
+        </label>
+        <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3">
+          <p className="max-w-2xl text-xs text-slate-500">Jangan masukkan API key di sini. Buat secret dengan nama di atas pada host worker. Aktivasi memerlukan pemeriksaan readiness terpisah.</p>
+          <button className={buttonClass} disabled={busy !== null}>{busy === 'provider' ? 'Saving…' : 'Save provider configuration'}</button>
+        </div>
+      </form>
     </section>
-    <DataTable title="Model Catalog & Pricing" rows={modelRows} columns={['model', 'key', 'status', 'input_cost_per_million', 'output_cost_per_million', 'capabilities']} />
-    <DataTable title="Platform Routing Policies" rows={routeRows} columns={['task', 'model_id', 'fallback_model_id', 'priority', 'status']} />
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <h2 className="font-bold text-slate-900">Model Catalog & Pricing</h2>
+      <div className="mt-3"><DataTable title="Models" rows={modelRows} columns={['model', 'key', 'status', 'input_cost_per_million', 'output_cost_per_million', 'capabilities']} /></div>
+      <form onSubmit={submitModel} className="mt-4 grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 md:grid-cols-2">
+        <div className="md:col-span-2"><h3 className="text-sm font-semibold text-slate-900">Register model</h3><p className="mt-1 text-xs text-slate-500">Masukkan harga resmi provider per satu juta token. Model dibuat nonaktif sampai dikonfigurasi dan ditinjau.</p></div>
+        <label className={labelClass}>Provider
+          <select className={fieldClass} value={modelProviderId} onChange={event => setModelProviderId(event.target.value)} required>
+            <option value="">Select provider</option>{catalog.providers.map(provider => <option key={provider.id} value={provider.id}>{provider.display_name}</option>)}
+          </select>
+        </label>
+        <label className={labelClass}>Model key<input className={fieldClass} value={modelKey} onChange={event => setModelKey(event.target.value)} required maxLength={160} /></label>
+        <label className={labelClass}>Display name<input className={fieldClass} value={modelName} onChange={event => setModelName(event.target.value)} required maxLength={160} /></label>
+        <label className={labelClass}>Input cost / 1M tokens<input className={fieldClass} type="number" min="0" step="0.000001" value={inputCost} onChange={event => setInputCost(event.target.value)} required /></label>
+        <label className={labelClass}>Output cost / 1M tokens<input className={fieldClass} type="number" min="0" step="0.000001" value={outputCost} onChange={event => setOutputCost(event.target.value)} required /></label>
+        <label className={labelClass}>Max input tokens<input className={fieldClass} type="number" min="1" value={maxInputTokens} onChange={event => setMaxInputTokens(event.target.value)} /></label>
+        <label className={labelClass}>Max output tokens<input className={fieldClass} type="number" min="1" value={maxOutputTokens} onChange={event => setMaxOutputTokens(event.target.value)} /></label>
+        <div className="md:col-span-2 flex justify-end"><button className={buttonClass} disabled={busy !== null || catalog.providers.length === 0}>{busy === 'model' ? 'Saving…' : 'Register disabled model'}</button></div>
+      </form>
+    </section>
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <h2 className="font-bold text-slate-900">Platform Routing Policies</h2>
+      <div className="mt-3"><DataTable title="Routes" rows={routeRows} columns={['task', 'model_id', 'fallback_model_id', 'priority', 'status']} /></div>
+      <form onSubmit={submitRoute} className="mt-4 grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 md:grid-cols-3">
+        <label className={labelClass}>Task type<select className={fieldClass} value={routeTask} onChange={event => setRouteTask(event.target.value as typeof routeTask)}><option value="chat">chat</option><option value="planning">planning</option><option value="general">general</option></select></label>
+        <label className={labelClass}>Model<select className={fieldClass} value={routeModelId} onChange={event => setRouteModelId(event.target.value)} required><option value="">Select model</option>{catalog.models.map(model => <option key={model.id} value={model.id}>{model.display_name} · {model.enabled ? 'enabled' : 'disabled'}</option>)}</select></label>
+        <label className={labelClass}>Priority<input className={fieldClass} type="number" min="0" max="10000" value={routePriority} onChange={event => setRoutePriority(event.target.value)} required /></label>
+        <div className="md:col-span-3 flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">Route disimpan nonaktif sampai provider, model, secret, wallet, quota, dan worker siap.</p><button className={buttonClass} disabled={busy !== null || catalog.models.length === 0}>{busy === 'route' ? 'Saving…' : 'Create disabled route'}</button></div>
+      </form>
+    </section>
+    {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</p>}
+    {formError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{formError}</p>}
   </div>;
 }
