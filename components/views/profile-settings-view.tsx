@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
-import { profileApi, customerApi, notificationApi, type CustomerBrowserSession } from '@/lib/api/client';
+import { profileApi, customerApi, notificationApi, type CustomerBrowserSession, type CustomerBrowserActionReceipt } from '@/lib/api/client';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { PersonalMemorySettings } from '@/components/views/personal-memory-settings';
 
@@ -51,6 +51,9 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
   const [browserSessionsLoading, setBrowserSessionsLoading] = useState(true);
   const [browserSessionsError, setBrowserSessionsError] = useState<string | null>(null);
   const [closingBrowserSessionId, setClosingBrowserSessionId] = useState<string | null>(null);
+  const [browserActions, setBrowserActions] = useState<CustomerBrowserActionReceipt[]>([]);
+  const [browserActionsLoading, setBrowserActionsLoading] = useState(true);
+  const [browserActionsError, setBrowserActionsError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -121,6 +124,15 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
       .then((result) => { if (active) { setBrowserSessions(result.items); setBrowserSessionsError(null); } })
       .catch((error) => { if (active) setBrowserSessionsError(error instanceof Error ? error.message : 'Sesi browser tidak dapat dimuat.'); })
       .finally(() => { if (active) setBrowserSessionsLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    customerApi.browserActionReceipts(50)
+      .then((result) => { if (active) { setBrowserActions(result.items); setBrowserActionsError(null); } })
+      .catch((error) => { if (active) setBrowserActionsError(error instanceof Error ? error.message : 'Riwayat aksi browser tidak dapat dimuat.'); })
+      .finally(() => { if (active) setBrowserActionsLoading(false); });
     return () => { active = false; };
   }, []);
 
@@ -406,6 +418,60 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
           </div>
         )}
         <p className="text-[10px] text-slate-400">Penutupan sesi menghapus state tersimpan pada server. Kontrol ini tidak menjalankan atau membuka browser.</p>
+      </section>
+
+      <section className="rounded-3xl bg-white border border-slate-100 shadow-xs p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Riwayat Aksi Browser</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">Status aksi yang tercatat secara persisten pada backend.</p>
+          </div>
+          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">{browserActions.length} aksi</span>
+        </div>
+        {browserActionsLoading ? (
+          <p className="text-xs text-slate-500 py-2">Memuat riwayat aksi…</p>
+        ) : browserActionsError ? (
+          <div className="rounded-xl border border-rose-100 bg-rose-50 p-3 space-y-2">
+            <p className="text-xs text-rose-700">{browserActionsError}</p>
+            <button type="button" onClick={() => {
+              setBrowserActionsLoading(true);
+              setBrowserActionsError(null);
+              customerApi.browserActionReceipts(50).then((result) => setBrowserActions(result.items))
+                .catch((error) => setBrowserActionsError(error instanceof Error ? error.message : 'Riwayat aksi browser tidak dapat dimuat.'))
+                .finally(() => setBrowserActionsLoading(false));
+            }} className="text-xs font-bold text-red-700">Coba muat ulang</button>
+          </div>
+        ) : browserActions.length === 0 ? (
+          <p className="text-xs text-slate-500 py-2">Belum ada aksi Browser yang tercatat.</p>
+        ) : (
+          <div className="space-y-2">
+            {browserActions.map((action) => {
+              const labels: Record<CustomerBrowserActionReceipt['status'], string> = {
+                executing: 'Sedang diproses',
+                succeeded: 'Berhasil',
+                failed: 'Tidak dijalankan',
+                unknown: 'Hasil belum dapat dipastikan',
+              };
+              const tones: Record<CustomerBrowserActionReceipt['status'], string> = {
+                executing: 'bg-blue-50 text-blue-700',
+                succeeded: 'bg-emerald-50 text-emerald-700',
+                failed: 'bg-rose-50 text-rose-700',
+                unknown: 'bg-amber-50 text-amber-700',
+              };
+              return (
+                <div key={action.id} className="rounded-2xl border border-slate-100 p-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-slate-800">{action.action_type === 'navigate' ? 'Navigasi' : 'Ekstraksi'} · {action.target_host}</p>
+                    <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold ${tones[action.status]}`}>{labels[action.status]}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Dimulai: {new Date(action.requested_at).toLocaleString('id-ID')}</p>
+                  {action.finished_at && <p className="text-[10px] text-slate-500">Selesai: {new Date(action.finished_at).toLocaleString('id-ID')}</p>}
+                  {action.status === 'unknown' && <p className="text-[10px] text-amber-700">Aksi tidak akan diulang otomatis karena hasil pada supervisor belum terkonfirmasi.</p>}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {editProfile && (
