@@ -448,6 +448,177 @@ def _safe_skill_path(value: str) -> str:
     return str(path)
 
 
+PINNED_SKILL_LICENSES = {
+    ("smixs", "visual-skills"): {
+        "license_id": "CC-BY-4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_evidence": "Pinned repository root LICENSE and NOTICE are present. Individual asset, creator and trademark rights remain unverified; human review is required.",
+    },
+    ("scenario-labs", "skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/scenario-labs/skills/blob/94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE is present. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+}
+
+
+class PinnedSkillCatalogImportRequest(BaseModel):
+    source_repository: str = Field(min_length=3, max_length=255)
+    source_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    source_path: str = Field(min_length=1, max_length=512)
+
+
+@router.get("/catalog")
+async def list_pinned_skill_catalog(
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    http = request.app.state.http
+    repo = repository(request)
+    imported = await repo.select("moreai_skill_packages", {
+        "owner_user_id": f"eq.{user['id']}",
+        "select": "source_repository,source_commit,source_path",
+        "limit": "500",
+    })
+    imported_keys = {
+        (str(item.get("source_repository")), str(item.get("source_commit")), str(item.get("source_path")))
+        for item in imported
+    }
+    items: list[dict[str, Any]] = []
+    for (source_owner, source_repo), commits in PINNED_SKILL_SOURCES.items():
+        commit = sorted(commits)[0]
+        url = f"https://api.github.com/repos/{source_owner}/{source_repo}/git/trees/{commit}?recursive=1"
+        response = await http.get(
+            url,
+            headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
+            timeout=20.0,
+            follow_redirects=False,
+        )
+        if response.status_code != 200:
+            raise HTTPException(502, "pinned_skill_catalog_source_unavailable")
+        payload = response.json()
+        tree = payload.get("tree") if isinstance(payload, dict) else None
+        if not isinstance(tree, list) or payload.get("truncated") is True:
+            raise HTTPException(502, "pinned_skill_catalog_tree_incomplete")
+        license_info = PINNED_SKILL_LICENSES[(source_owner, source_repo)]
+        for node in tree:
+            path = node.get("path") if isinstance(node, dict) else None
+            blob_sha = node.get("sha") if isinstance(node, dict) else None
+            if not isinstance(path, str) or not path.lower().endswith("/skill.md"):
+                continue
+            if source_repo == "visual-skills" and path not in {"image/SKILL.md", "video/SKILL.md"}:
+                continue
+            if source_repo == "skills" and not path.startswith("skills/"):
+                continue
+            if not isinstance(blob_sha, str) or not SHA40.fullmatch(blob_sha):
+                continue
+            parent = str(PurePosixPath(path).parent)
+            catalog_slug = re.sub(r"[^a-z0-9._-]+", "-", f"{source_repo}-{parent}".lower().replace("/", "-")).strip("-")[:120]
+            leaf = PurePosixPath(path).parent.name
+            items.append({
+                "slug": catalog_slug,
+                "name": leaf.replace("-", " ").replace("_", " ").title(),
+                "description": "Pinned upstream skill entrypoint; source review and publication approval are required.",
+                "source_repository": f"{source_owner}/{source_repo}",
+                "source_ref": f"pinned:{commit[:12]}",
+                "source_commit": commit,
+                "source_path": path,
+                "source_blob_sha": blob_sha,
+                "version": f"pinned-{commit[:12]}",
+                "license_id": license_info["license_id"],
+                "license_url": license_info["license_url"],
+                "imported": (f"{source_owner}/{source_repo}", commit, path) in imported_keys,
+            })
+    items.sort(key=lambda item: (item["source_repository"], item["source_path"]))
+    return {"items": items, "count": len(items), "source_status": "pinned_tree_inventory_only"}
+
+
+@router.post("/catalog/import", status_code=201)
+async def import_pinned_skill_from_catalog(
+    body: PinnedSkillCatalogImportRequest,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    parts = body.source_repository.split("/")
+    if len(parts) != 2 or body.source_commit not in PINNED_SKILL_SOURCES.get((parts[0], parts[1]), set()):
+        raise HTTPException(403, "skill_source_repository_or_commit_not_pinned")
+    source_path = _safe_skill_path(body.source_path)
+    if parts[1] == "visual-skills" and source_path not in {"image/SKILL.md", "video/SKILL.md"}:
+        raise HTTPException(403, "visual_skill_entrypoint_not_allowlisted")
+    if parts[1] == "skills" and not (source_path.startswith("skills/") and source_path.endswith("/SKILL.md")):
+        raise HTTPException(403, "scenario_skill_entrypoint_not_allowlisted")
+
+    repo = repository(request)
+    existing = await repo.select("moreai_skill_packages", {
+        "owner_user_id": f"eq.{user['id']}",
+        "source_repository": f"eq.{body.source_repository}",
+        "source_commit": f"eq.{body.source_commit}",
+        "source_path": f"eq.{source_path}",
+        "select": "id",
+        "limit": "1",
+    })
+    if existing:
+        raise HTTPException(409, "skill_source_already_imported")
+
+    url = (
+        f"https://api.github.com/repos/{parts[0]}/{parts[1]}/contents/"
+        f"{quote(source_path, safe='/')}?ref={body.source_commit}"
+    )
+    response = await request.app.state.http.get(
+        url,
+        headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
+        timeout=15.0,
+        follow_redirects=False,
+    )
+    if response.status_code != 200:
+        raise HTTPException(502, "pinned_skill_entrypoint_fetch_failed")
+    item = response.json()
+    if not isinstance(item, dict) or item.get("type") != "file" or item.get("encoding") != "base64":
+        raise HTTPException(502, "pinned_skill_entrypoint_payload_invalid")
+    try:
+        raw = base64.b64decode("".join(str(item.get("content") or "").split()), validate=True)
+        text_content = raw.decode("utf-8", errors="strict")
+    except Exception as exc:
+        raise HTTPException(502, "pinned_skill_entrypoint_content_invalid") from exc
+    git_blob_sha = hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+    if item.get("sha") != git_blob_sha:
+        raise HTTPException(409, "pinned_skill_entrypoint_blob_hash_mismatch")
+
+    frontmatter = re.match(r"^---\s*\n(.*?)\n---\s*(?:\n|$)", text_content, re.DOTALL)
+    metadata_text = frontmatter.group(1) if frontmatter else ""
+    name_match = re.search(r"(?m)^name:\s*[\"']?([^\"'\n]+)", metadata_text)
+    description_match = re.search(r"(?m)^description:\s*[\"']?([^\"'\n]+)", metadata_text)
+    parent = str(PurePosixPath(source_path).parent)
+    slug = re.sub(r"[^a-z0-9._-]+", "-", f"{parts[1]}-{parent}".lower().replace("/", "-")).strip("-")[:120]
+    license_info = PINNED_SKILL_LICENSES[(parts[0], parts[1])]
+    name = name_match.group(1).strip() if name_match else PurePosixPath(source_path).parent.name.replace("-", " ").title()
+    description = description_match.group(1).strip() if description_match else "Pinned upstream skill; human source and license review required."
+    row = {
+        "owner_user_id": user["id"], "slug": slug, "name": name[:160],
+        "description": description[:2000], "source_repository": body.source_repository,
+        "source_ref": f"pinned:{body.source_commit[:12]}", "source_commit": body.source_commit,
+        "source_path": source_path, "source_blob_sha": git_blob_sha,
+        "content_sha256": hashlib.sha256(raw).hexdigest(),
+        "version": f"pinned-{body.source_commit[:12]}",
+        "license_id": license_info["license_id"], "license_url": license_info["license_url"],
+        "license_evidence": license_info["license_evidence"],
+        "manifest": {
+            "name": name, "version": f"pinned-{body.source_commit[:12]}",
+            "source_catalog": "pinned_visual_scenario_skills",
+            "source_entrypoint": source_path, "source_review_required": True,
+        },
+        "requested_permissions": [], "license_status": "unverified",
+        "validation_status": "pending",
+        "validation_report": {"findings": [
+            "Only the pinned SKILL.md entrypoint was fetched; recursive references, scripts, assets and dependency manifests are not yet ingested.",
+            "Repository-level license metadata is not an approval. Nested license, attribution, asset and trademark rights require human review.",
+            "No permissions were requested or granted; publication and execution remain disabled.",
+        ]},
+        "publication_status": "private",
+    }
+    return await repo.insert("moreai_skill_packages", row)
+
+
 @router.post("/{skill_id}/ingest")
 async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
