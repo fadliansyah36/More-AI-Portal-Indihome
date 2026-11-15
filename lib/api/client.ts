@@ -333,6 +333,7 @@ export type CustomerToolCatalogItem = {
 };
 
 export type CustomerModelCapability = {
+  model_id: string;
   provider_key: string;
   provider_name: string;
   model_key: string;
@@ -685,6 +686,7 @@ export type CustomerAgentConfiguration = {
   description: string;
   system_prompt: string;
   tool_keys: string[];
+  preferred_model_id: string | null;
   enabled: boolean;
   version: number;
   created_at: string;
@@ -724,7 +726,7 @@ export const customerApi = {
   tools: () => moreAiCustomerApi<CustomerToolCatalogItem[]>('/api/v1/tools'),
   modelCapabilities: () => moreAiCustomerApi<{
     items: Array<{
-      provider_key: string; provider_name: string; model_key: string; model_name: string;
+      model_id: string; provider_key: string; provider_name: string; model_key: string; model_name: string;
       capabilities: string[]; max_input_tokens: number | null; max_output_tokens: number | null;
     }>;
     count: number; source: string;
@@ -755,11 +757,11 @@ export const customerApi = {
   ).then(() => undefined),
 
   agentConfigurations: () => moreAiCustomerApi<CustomerAgentConfiguration[]>('/api/v1/customer/agents/configurations'),
-  createAgentConfiguration: (payload: Pick<CustomerAgentConfiguration, 'runtime_key' | 'name' | 'description' | 'system_prompt' | 'tool_keys'>) =>
+  createAgentConfiguration: (payload: Pick<CustomerAgentConfiguration, 'runtime_key' | 'name' | 'description' | 'system_prompt' | 'tool_keys' | 'preferred_model_id'>) =>
     moreAiCustomerApi<CustomerAgentConfiguration>('/api/v1/customer/agents/configurations', {
       method: 'POST', body: JSON.stringify(payload),
     }),
-  updateAgentConfiguration: (id: string, payload: Partial<Pick<CustomerAgentConfiguration, 'name' | 'description' | 'system_prompt' | 'tool_keys' | 'enabled'>>) =>
+  updateAgentConfiguration: (id: string, payload: Partial<Pick<CustomerAgentConfiguration, 'name' | 'description' | 'system_prompt' | 'tool_keys' | 'preferred_model_id' | 'enabled'>>) =>
     moreAiCustomerApi<CustomerAgentConfiguration>('/api/v1/customer/agents/configurations/' + encodeURIComponent(id), {
       method: 'PATCH', body: JSON.stringify(payload),
     }),
