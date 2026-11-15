@@ -61,7 +61,6 @@ app.include_router(knowledge.router)
 app.include_router(skills.router)
 app.include_router(connections.router)
 app.include_router(browser_sessions.router)
-app.include_router(browser_sessions.router)
 
 
 class ProfileRecordResponse(BaseModel):
