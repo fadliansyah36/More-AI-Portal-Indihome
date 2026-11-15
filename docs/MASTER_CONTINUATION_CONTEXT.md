@@ -123,3 +123,12 @@ The Customer API client now exposes typed list/close methods for the existing ow
 Commits: `fcec12188ba42b3da6fc20b827bb819a7a1125c0`, `580273d88c7a73773037d816c5f01cfa0a9d4efc`.
 
 No tests, builds, browser/API/worker/provider probes, staging or deployment were performed. Phase 09C remains PARTIAL; Phase 09D still requires a deployed isolated supervisor, action receipts/approval lifecycle and full Browser/Computer tool parity.
+
+
+## 2026-11-15 — OpenFuse Browser Protocol & Customer Session Lifecycle
+
+Pinned OpenFuse source was re-read. The actual browser worker API is `GET /health`, authenticated `GET /sessions`, `POST /sessions`, and session-specific navigate/read/screenshot/input/close/downloads endpoints. MoreAI's BrowserSupervisor now targets this contract rather than an invented action route. Durable action receipts bind to Agent Run and tool-call identity; ambiguous remote outcomes are not replayed. Screenshot artifacts are private and owner/run/session checked. Customer close requests are reconciled by the worker before status becomes closed. Download metadata is exposed but file bytes remain blocked pending a real malware scanner.
+
+The optional OpenFuse Linux/E2B desktop is not integrated. MoreAI's isolated Bash/Python execution remains a separate boundary. Operational readiness still requires the real persistent browser/worker host, token and profile volume; 09A/09B also remain blocked by provider secret and container host access.
+
+Report: `docs/implementation/PHASE-09D-OPENFUSE-BROWSER-ADAPTER-20261115.md`. No tests, builds, runtime probes, staging or deployment were performed. Phase 09C/09D remain PARTIAL; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
