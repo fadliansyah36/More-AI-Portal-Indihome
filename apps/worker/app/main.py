@@ -73,6 +73,54 @@ async def _capability_heartbeat_loop(
             await asyncio.sleep(min(interval, 10))
 
 
+async def _browser_session_close_reconciliation_loop(
+    browser: BrowserSupervisor,
+    http: httpx.AsyncClient,
+    api_url: str,
+    internal_token: str,
+    stop: asyncio.Event,
+) -> None:
+    """Close customer-requested OpenFuse sessions and acknowledge durable completion."""
+    headers = {"X-MoreAI-Worker-Token": internal_token}
+    while not stop.is_set():
+        try:
+            response = await http.get(
+                f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/close-requests",
+                headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+            )
+            response.raise_for_status()
+            payload = response.json()
+            items = payload.get("items") if isinstance(payload, dict) else None
+            if not isinstance(items, list):
+                raise RuntimeError("browser_session_close_requests_contract_invalid")
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                session_id, user_id = item.get("session_id"), item.get("user_id")
+                if not isinstance(session_id, str) or not isinstance(user_id, str):
+                    continue
+                try:
+                    await browser.close_session(session_id)
+                    completed = await http.post(
+                        f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/{session_id}/close-complete",
+                        json={"run_id": "00000000-0000-4000-8000-000000000000", "user_id": user_id},
+                        headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+                    )
+                    completed.raise_for_status()
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    logger.exception("browser_session_close_reconciliation_failed session_id=%s", session_id)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("browser_session_close_requests_poll_failed")
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=15.0)
+        except TimeoutError:
+            pass
+
+
 async def run_worker() -> None:
     if os.getenv("MOREAI_AGENT_RUNTIME_ENABLED", "false").lower() != "true":
         raise RuntimeError("worker_runtime_disabled_until_release_gate")
@@ -108,6 +156,7 @@ async def run_worker() -> None:
         })
         if not quota_policies:
             raise RuntimeError("no_enabled_llm_quota_policy")
+        browser_client: BrowserSupervisor | None = None
         if os.getenv("MOREAI_BROWSER_ENABLED", "false").lower() == "true":
             browser_client = BrowserSupervisor(
                 service_url=os.getenv("MOREAI_BROWSER_SERVICE_URL", ""),
@@ -150,6 +199,19 @@ async def run_worker() -> None:
         )
         async with health_server:
             stop_outbox = asyncio.Event()
+            stop_browser_reconciliation = asyncio.Event()
+            browser_reconciliation_task = (
+                asyncio.create_task(
+                    _browser_session_close_reconciliation_loop(
+                        browser_client, http,
+                        os.getenv("MOREAI_INTERNAL_API_URL", os.getenv("MOREAI_API_URL", "http://api:8000")),
+                        os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", ""),
+                        stop_browser_reconciliation,
+                    ),
+                    name="moreai-browser-session-close-reconciliation",
+                )
+                if browser_client is not None else None
+            )
             publisher = DurableEventOutboxPublisher(
                 rpc, poll_seconds=float(os.getenv("WORKER_OUTBOX_POLL_SECONDS", "1")),
             )
@@ -284,9 +346,16 @@ async def run_worker() -> None:
             finally:
                 readiness["ready"] = False
                 stop_outbox.set()
+                stop_browser_reconciliation.set()
                 capability_task.cancel()
                 outbox_task.cancel()
-                await asyncio.gather(capability_task, outbox_task, return_exceptions=True)
+                if browser_reconciliation_task is not None:
+                    browser_reconciliation_task.cancel()
+                await asyncio.gather(
+                    capability_task, outbox_task,
+                    *([browser_reconciliation_task] if browser_reconciliation_task is not None else []),
+                    return_exceptions=True,
+                )
 
 
 if __name__ == "__main__":
