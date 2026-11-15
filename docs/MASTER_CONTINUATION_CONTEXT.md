@@ -91,3 +91,17 @@ After worker/provider readiness and full Customer Dashboard/OpenFuse parity, Pha
 Latest source-only continuation commits are recorded in `docs/implementation/PHASE-09-CONTINUATION-WORKER-READINESS-CUSTOMER-API-20261115.md`. Worker readiness now depends on a successful independent capability heartbeat; Docker probes `/ready`; long-running runs no longer block capability heartbeats. Google OAuth credential rotation and duplicate FastAPI browser-session route registration were corrected.
 
 Phase 09 is still IN PROGRESS. The worker is not deployed to a persistent host; no provider/model rows or worker provider secrets are configured; Agent execution remains disabled. A routing contract mismatch remains (`chat`/`planning` runtime calls vs `general`-only Admin API/DB mutation RPC) and requires a forward-only Supabase migration. Vercel API deployment is still behind current main because the previous daily deployment quota was exhausted. No tests, staging, builds, runtime execution, provider calls, or deployment were performed in this increment.
+
+
+## 2026-11-15 — Phase 09A Provider Routing & Secret Readiness
+
+Phase 09A source contract work has now been implemented on main:
+- FastAPI and the Supabase route mutation RPC support general, chat and planning task types.
+- Added an audited provider configuration RPC storing only a public HTTPS base URL and worker secret environment-variable reference.
+- Added Super Admin provider/model/pricing/routing forms using the existing UI style. Provider activation requires an explicit secret-installed attestation; actual API key values never enter the browser or database.
+- Worker startup now requires enabled chat and planning routes and at least one referenced secret environment variable for each task. This is configuration validation only; it makes no provider calls.
+- Current adapter support is OpenAI-compatible OpenAI and Google endpoints only. Anthropic native protocol is not implemented and is not offered for configuration.
+- Supabase migrations applied: moreai_provider_configuration_and_route_types (20261115092653), moreai_provider_endpoint_allowlist (20261115092950).
+- Report: docs/implementation/PHASE-09A-PROVIDER-ROUTING-SECRET-READINESS-20261115.md.
+
+Operational status remains blocked: read-only inventory still shows no provider/model/routing rows and no worker heartbeat. No persistent worker host connection or host secret manager is available in this execution context. Agent execution remains disabled. Vercel API deployment is behind main because deployment quota was previously exhausted. No builds, tests, browser/API/worker probes, provider calls or staging were run. Phase 09A source contract is implemented but operational readiness is blocked; 09B host deployment is blocked; 09C remains in progress; 09D is deferred until 09A–09C close.
