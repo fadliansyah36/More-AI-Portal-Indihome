@@ -1491,3 +1491,6 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Phase 09D Browser source integration now follows the exact pinned OpenFuse worker protocol and includes input/screenshot/close/download metadata, durable action receipts, customer close reconciliation and private screenshot artifacts. Linux/E2B desktop parity and malware-scanned file import remain blocked.
 - Canonical Supabase migrations for Browser receipts, close requests, screenshot action and 30-day result retention have been applied. Read-only schema inspection confirms RLS enabled on `moreai_browser_action_receipts`, no client policies, and service-role-only grants.
 - No tests/build/lint/typecheck/browser/API/worker/provider probes, staging or deployment performed. Runtime and visual acceptance remain NOT VERIFIED. Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+Final source baseline update: latest confirmed `main` HEAD before this documentation commit is `dc546ba37f260575b7167a50f946b9c83f86206c`. The customer close request client now sends a bodyless POST matching the FastAPI contract. Browser Computer desktop remains blocked; browser worker operational readiness is NOT VERIFIED.
