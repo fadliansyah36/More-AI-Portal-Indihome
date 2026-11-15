@@ -1472,3 +1472,11 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Source commits include `ddce3a26`, `9a13d364`, `3ca0a9e2`, `cb69d18e`, `e9e97f67`, `74ca0637`, `518d4302`, `fd514ad7`, `5f21e54e`, `36ea2b62`, `d7bfd0c8`, `0ca9bd02`.
 - Report: `PHASE-09D-OPENFUSE-BROWSER-ADAPTER-20261115.md`.
 - No tests/build/lint/typecheck/browser/API/worker/provider probes, staging or deployment performed. Browser worker host/token/volume/heartbeat are not configured; operational 09D remains NOT VERIFIED. 09A/09B remain blocked, 09C/09D PARTIAL, Phase 10 NOT ACCEPTED and Phase 11 BLOCKED.
+
+
+## 2026-11-15 — Browser Action Receipt Result Retention
+
+- Added 30-day expiry for persisted Browser action result payloads; durable receipt identity/status remains after result cleanup to prevent duplicate remote execution.
+- Added service-role-only purge RPC and wired it into the worker's existing periodic retention maintenance loop.
+- Applied migration: `moreai_browser_action_receipt_result_retention`.
+- No tests/runtime probes performed. Browser operational readiness remains NOT VERIFIED.
