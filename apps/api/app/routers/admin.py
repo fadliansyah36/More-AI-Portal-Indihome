@@ -151,6 +151,8 @@ class LlmProviderMutation(BaseModel):
     key: Literal["google", "openai", "anthropic"]
     display_name: str = Field(min_length=2, max_length=120)
     enabled: bool = False
+    base_url: str | None = Field(default=None, min_length=8, max_length=500)
+    secret_env_name: str | None = Field(default=None, min_length=18, max_length=128)
 
 
 class LlmModelMutation(BaseModel):
@@ -166,7 +168,7 @@ class LlmModelMutation(BaseModel):
 
 
 class LlmRouteMutation(BaseModel):
-    task_type: Literal["general"] = "general"
+    task_type: Literal["general", "chat", "planning"] = "general"
     model_id: UUID
     fallback_model_id: UUID | None = None
     priority: int = Field(default=100, ge=0, le=10000)
@@ -186,9 +188,18 @@ async def admin_llm_providers(request: Request, principal=Depends(model_reader))
     """Return provider metadata only; provider config and credentials are never serialized."""
     repo = repository(request)
     providers = await repo.select("llm_providers", {
-        "select": "id,key,display_name,enabled,created_at,updated_at",
+        "select": "id,key,display_name,enabled,config,created_at,updated_at",
         "order": "key.asc", "limit": "100",
     })
+    # Whitelist only non-secret routing metadata; never serialize arbitrary config.
+    providers = [{
+        "id": row["id"], "key": row["key"], "display_name": row["display_name"],
+        "enabled": row["enabled"],
+        "base_url": (row.get("config") or {}).get("base_url"),
+        "secret_env_name": (row.get("config") or {}).get("secret_env_name"),
+        "configured": bool((row.get("config") or {}).get("base_url") and (row.get("config") or {}).get("secret_env_name")),
+        "created_at": row.get("created_at"), "updated_at": row.get("updated_at"),
+    } for row in providers]
     models = await repo.select("llm_models", {
         "select": "id,provider_id,key,display_name,input_cost_per_million,output_cost_per_million,max_input_tokens,max_output_tokens,capabilities,enabled,created_at,updated_at",
         "order": "provider_id.asc,key.asc", "limit": "500",
@@ -208,16 +219,48 @@ async def create_or_update_llm_provider(
     provider_id: UUID | None = Query(default=None),
     principal=Depends(model_manager),
 ):
-    # Credential readiness is deliberately false: registry edits cannot activate a provider.
-    return await repository(request).rpc("moreai_admin_mutate_llm_provider", {
+    # Provider activation requires a separate worker-side readiness attestation.
+    if body.enabled:
+        raise HTTPException(409, "provider_enable_requires_worker_readiness_attestation")
+    if (body.base_url is None) != (body.secret_env_name is None):
+        raise HTTPException(422, "provider_base_url_and_secret_env_name_must_be_supplied_together")
+    if body.base_url is not None:
+        import ipaddress
+        from urllib.parse import urlsplit
+        parsed = urlsplit(body.base_url)
+        hostname = parsed.hostname or ""
+        try:
+            ipaddress.ip_address(hostname)
+            is_ip_literal = True
+        except ValueError:
+            is_ip_literal = False
+        if (
+            parsed.scheme != "https" or not hostname or is_ip_literal
+            or parsed.username or parsed.password or parsed.query or parsed.fragment
+            or "." not in hostname or hostname.lower() in {"localhost", "localhost.localdomain"}
+            or not __import__("re").fullmatch(r"MOREAI_PROVIDER_[A-Z0-9_]{1,100}", body.secret_env_name or "")
+        ):
+            raise HTTPException(422, "provider_endpoint_or_secret_reference_invalid")
+    repo = repository(request)
+    result = await repo.rpc("moreai_admin_mutate_llm_provider", {
         "p_actor_user_id": principal["id"],
         "p_provider_id": str(provider_id) if provider_id else None,
         "p_key": body.key,
         "p_display_name": body.display_name.strip(),
-        "p_enabled": body.enabled,
+        "p_enabled": False,
         "p_credentials_ready": False,
         "p_correlation_id": getattr(request.state, "correlation_id", None),
     })
+    if body.base_url is not None and isinstance(result, dict) and result.get("id"):
+        configured = await repo.rpc("moreai_admin_configure_llm_provider", {
+            "p_actor_user_id": principal["id"],
+            "p_provider_id": str(result["id"]),
+            "p_base_url": body.base_url.strip().rstrip("/"),
+            "p_secret_env_name": body.secret_env_name,
+            "p_correlation_id": getattr(request.state, "correlation_id", None),
+        })
+        return {**result, "configuration": configured}
+    return result
 
 
 @router.post("/models", status_code=201)
