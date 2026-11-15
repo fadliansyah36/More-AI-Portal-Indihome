@@ -113,6 +113,18 @@ async def list_browser_action_receipts(
     if session_id:
         filters["session_id"] = f"eq.{session_id}"
     rows = await repository(request).select("moreai_browser_action_receipts", filters)
+    stale_before = datetime.now(timezone.utc) - timedelta(minutes=5)
+    for row in rows:
+        if row.get("status") == "executing":
+            try:
+                requested_at = datetime.fromisoformat(str(row.get("requested_at", "")).replace("Z", "+00:00"))
+            except ValueError:
+                requested_at = stale_before - timedelta(seconds=1)
+            if requested_at <= stale_before:
+                # Projection only: preserve the durable executing row and block replay,
+                # but do not tell the customer that an old worker lease is still active.
+                row["status"] = "unknown"
+                row["error_code"] = "worker_receipt_stale"
     return {"items": rows}
 
 
