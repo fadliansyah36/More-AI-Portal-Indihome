@@ -756,7 +756,7 @@ export const customerApi = {
   browserSessions: () => moreAiCustomerApi<{ items: CustomerBrowserSession[] }>('/api/v1/customer/browser-sessions'),
   closeBrowserSession: (sessionId: string) => moreAiCustomerApi<{ session_id: string; status: 'close_requested' | 'closed' }>(
     '/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/close',
-    { method: 'POST', body: JSON.stringify({}) },
+    { method: 'POST' },
   ),
 
   personalMemory: () => moreAiCustomerApi<CustomerPersonalMemoryState>('/api/v1/customer/memory'),
