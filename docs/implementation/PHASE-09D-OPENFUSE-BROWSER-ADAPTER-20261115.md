@@ -85,3 +85,10 @@ Continue 09A/09B operational setup when a persistent host and secret manager are
 
 
 Final source follow-up: customer Browser Session close requests now use the bodyless FastAPI POST contract. Latest source commit before this report update: `dc546ba37f260575b7167a50f946b9c83f86206c`. Browser worker runtime and Computer desktop parity remain NOT VERIFIED/BLOCKED until persistent host and provider configuration are available.
+
+
+## Computer provider compatibility/security assessment
+
+The pinned OpenFuse computer service was also inspected. Its server currently documents a single-owner deployment with shared access-key authentication and its own Store abstraction; it is not a drop-in multi-tenant customer API. The optional E2B Desktop provider also enables outbound internet, passwordless sudo and publicly reachable VM ports protected by a bearer VNC URL. Directly exposing that server/provider to MoreAI customers would violate the current tenant-isolation, canonical Supabase and fail-closed egress requirements.
+
+Accordingly, the OpenFuse Linux/E2B Computer service is not enabled or directly mounted into the MoreAI tenant boundary. MoreAI's existing isolated Bash/Python execution remains network-disabled and persists workspace files through the canonical Supabase Workspace service, but it is not a persistent Linux desktop or VNC experience. Full Computer parity requires a MoreAI-owned, per-customer isolated supervisor whose ownership, lifecycle, receipts and files are mediated by FastAPI/Supabase; it must not introduce OpenFuse's separate database or shared-owner model.
