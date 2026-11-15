@@ -723,7 +723,7 @@ export type CustomerBrowserActionReceipt = {
   id: string;
   run_id: string;
   session_id: string | null;
-  action_type: 'navigate' | 'extract' | 'input' | 'close' | 'downloads';
+  action_type: 'navigate' | 'extract' | 'input' | 'screenshot' | 'close' | 'downloads';
   target_host: string;
   status: 'executing' | 'succeeded' | 'failed' | 'unknown';
   error_code: string | null;
