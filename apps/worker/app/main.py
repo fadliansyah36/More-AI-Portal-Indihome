@@ -51,6 +51,27 @@ async def _health_handler(
 logger = logging.getLogger(__name__)
 
 
+async def _capability_heartbeat_loop(
+    rpc: WorkerRpcClient,
+    runtime_keys: list[str],
+    capability_snapshot: dict[str, object],
+    readiness: dict[str, bool],
+) -> None:
+    interval = max(10, min(120, int(os.getenv("WORKER_CAPABILITY_HEARTBEAT_SECONDS", "30"))))
+    while True:
+        try:
+            await rpc.publish_capabilities(runtime_keys, capability_snapshot)
+            readiness["ready"] = True
+            await asyncio.sleep(interval)
+        except asyncio.CancelledError:
+            readiness["ready"] = False
+            raise
+        except Exception:
+            readiness["ready"] = False
+            logger.exception("worker_capability_heartbeat_failed")
+            await asyncio.sleep(min(interval, 10))
+
+
 async def run_worker() -> None:
     if os.getenv("MOREAI_AGENT_RUNTIME_ENABLED", "false").lower() != "true":
         raise RuntimeError("worker_runtime_disabled_until_release_gate")
@@ -113,12 +134,6 @@ async def run_worker() -> None:
             await sandbox_tools.check_ready()
         registry = build_agent_registry(rpc, http, sandbox_tools=sandbox_tools)
         capability_snapshot = registry.capability_snapshot()
-        try:
-            await rpc.publish_capabilities(list(registry.enabled_keys()), capability_snapshot)
-        except Exception:
-            # Capability reporting is observability only; it must not stop an otherwise
-            # correctly gated worker from processing durable runs.
-            logger.exception("worker_capability_initial_publish_failed")
         dispatcher = RegisteredAgentDispatcher(
             registry,
             checkpoint_loader=rpc.list_checkpoints,
@@ -138,15 +153,19 @@ async def run_worker() -> None:
                 rpc, poll_seconds=float(os.getenv("WORKER_OUTBOX_POLL_SECONDS", "1")),
             )
             outbox_task = asyncio.create_task(publisher.run(stop_outbox), name="moreai-event-outbox")
-            # Readiness is only advertised after all startup gates passed and the
-            # durable event publisher has been started. Liveness remains separate.
-            readiness["ready"] = True
+            # Capability publication is a required readiness gate and runs
+            # independently so long Agent Runs do not stale the worker heartbeat.
+            capability_task = asyncio.create_task(
+                _capability_heartbeat_loop(
+                    rpc, list(registry.enabled_keys()), capability_snapshot, readiness,
+                ),
+                name="moreai-capability-heartbeat",
+            )
             poll_seconds = max(1, min(30, int(os.getenv("WORKER_POLL_SECONDS", "3"))))
             memory_purge_interval_seconds = max(
                 3600, min(86400, int(os.getenv("MOREAI_MEMORY_PURGE_INTERVAL_SECONDS", "21600"))),
             )
             next_memory_purge_at = 0.0
-            next_capability_heartbeat_at = 0.0
             monotonic = asyncio.get_running_loop().time
             try:
                 # A transient Supabase/PostgREST failure while claiming the next run
@@ -156,16 +175,6 @@ async def run_worker() -> None:
                 consecutive_poll_failures = 0
                 while True:
                     now = monotonic()
-                    if now >= next_capability_heartbeat_at:
-                        try:
-                            await rpc.publish_capabilities(list(registry.enabled_keys()), capability_snapshot)
-                            next_capability_heartbeat_at = now + 30
-                        except asyncio.CancelledError:
-                            raise
-                        except Exception:
-                            logger.exception("worker_capability_heartbeat_failed")
-                            next_capability_heartbeat_at = now + 10
-
                     if now >= next_memory_purge_at:
                         try:
                             purged_memories = await rpc.rpc("moreai_worker_purge_expired_customer_memories", {})
@@ -176,6 +185,10 @@ async def run_worker() -> None:
                         except Exception:
                             logger.exception("personal_memory_retention_purge_failed")
                             next_memory_purge_at = now + 300
+
+                    if not readiness["ready"]:
+                        await asyncio.sleep(5)
+                        continue
 
                     try:
                         processed = await runtime.run_once()
@@ -270,11 +283,9 @@ async def run_worker() -> None:
             finally:
                 readiness["ready"] = False
                 stop_outbox.set()
+                capability_task.cancel()
                 outbox_task.cancel()
-                try:
-                    await outbox_task
-                except asyncio.CancelledError:
-                    pass
+                await asyncio.gather(capability_task, outbox_task, return_exceptions=True)
 
 
 if __name__ == "__main__":
