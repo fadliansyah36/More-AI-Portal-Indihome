@@ -87,7 +87,9 @@ class ModelRouter:
         )
         candidates: list[ResolvedModelRoute] = []
         seen: set[tuple[str, str]] = set()
+        highest_priority_model_ids: set[str] = set()
         for policy in policies:
+            policy_candidates: list[ResolvedModelRoute] = []
             for model_id in (policy.get("model_id"), policy.get("fallback_model_id")):
                 if not model_id:
                     continue
@@ -122,12 +124,15 @@ class ModelRouter:
                 if identity not in seen:
                     seen.add(identity)
                     candidates.append(route)
+                    policy_candidates.append(route)
+            if policy_candidates and not highest_priority_model_ids:
+                highest_priority_model_ids = {item.model_id for item in policy_candidates}
         if not candidates:
             raise NoEligibleModelRoute(f"No enabled model route for task type: {task_type}")
         if preferred_model_id:
             preferred = next((item for item in candidates if item.model_id == preferred_model_id), None)
-            if preferred is None:
-                raise NoEligibleModelRoute("Preferred model is not permitted by the active routing policy")
+            if preferred is None or preferred_model_id not in highest_priority_model_ids:
+                raise NoEligibleModelRoute("Preferred model is not permitted by the highest-priority active routing policy")
             candidates = [preferred, *(item for item in candidates if item.model_id != preferred_model_id)]
         return candidates
 
