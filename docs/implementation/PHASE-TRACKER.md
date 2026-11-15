@@ -1398,3 +1398,18 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Report: `PHASE-09-EPISODIC-MEMORY-CITATION-SKILL-LIFECYCLE-20261115.md`.
 - Source-only commits include `95da575a`, `5f830145`, `e8155f7c`, `1afc45f4`, `4d9063c1`, `56f95a7e`, `2abaddd5`, `04811efc`, `b7830095`, `4779d1d4`, `9aba25b7`, `c666d09d`, `8d1f4a4e`, `af00baea`, `dc25e4f9`.
 - No tests, lint, typecheck, build, browser/API/worker/provider operations, staging, deployment or live Supabase mutation were performed. UI visual regression remains NOT VERIFIED. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-15 — Agent Model Routing, Supabase Migration & Vercel Production Delivery
+
+- Added `preferred_model_id` to owner Agent configurations and immutable Agent Run input snapshots.
+- Agent Studio now exposes Auto Model Router and a model preference selector sourced from the authenticated model capability API.
+- FastAPI validates enabled model/provider state. Model Router only honors preferences within the highest-priority active route policy; it cannot bypass platform routing priority, provider eligibility, capabilities or credit reservation.
+- Updated the attachment-aware configured chat enqueue RPC to preserve owner/attachment checks, idempotency, immutable configuration snapshots and preferred model identity. Applied compatibility migration to Supabase.
+- Applied 12 pending Supabase migrations covering Skill Registry, permission grants, source/audit lifecycle, skill-aware enqueue/ingestion/review, Google connections, action receipts, Calendar mutations, persistent OpenFuse browser sessions and Agent model preferences.
+- Vercel Customer Frontend and FastAPI projects both reached production `READY` on commit `2381d4ca28fb44dd211ec412c0d04d7cb746a7f3`.
+- Production aliases: `https://www.moreai.web.id`, `https://moreai.web.id`, `https://more-ai-api.vercel.app`.
+- Deployment report: `PHASE-09-EPISODIC-MEMORY-AGENT-MODEL-ROUTING-VERCEL-SUPABASE-20261115.md`.
+- Read-only production inspection found no worker heartbeat rows, no provider/model registry rows, and API environment `MOREAI_AGENT_EXECUTION_ENABLED=false`. Agent execution therefore remains disabled; no provider secrets or fake registry rows were created.
+- No functional tests, API/browser smoke tests, worker/provider calls or staging were performed. Vercel build/deployment and Supabase migration-history records were inspected only. UI visual regression remains NOT VERIFIED.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED. Next dependency: persistent worker deployment, secure provider configuration, then complete Customer Dashboard API closure and OpenFuse browser/computer parity.
