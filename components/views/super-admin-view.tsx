@@ -287,7 +287,7 @@ function DataTable({ title, rows, columns }: { title: string; rows: Row[]; colum
 
 function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; onRefresh: () => Promise<void> }) {
   const [providerId, setProviderId] = useState('');
-  const [providerKey, setProviderKey] = useState<'google' | 'openai' | 'anthropic'>('openai');
+  const [providerKey, setProviderKey] = useState<'google' | 'openai'>('openai');
   const [providerName, setProviderName] = useState('OpenAI Compatible');
   const [baseUrl, setBaseUrl] = useState('');
   const [secretEnvName, setSecretEnvName] = useState('MOREAI_PROVIDER_OPENAI_API_KEY');
@@ -395,8 +395,8 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
           </select>
         </label>
         {!providerId && <label className={labelClass}>Provider key
-          <select className={fieldClass} value={providerKey} onChange={event => { setProviderKey(event.target.value as typeof providerKey); setProviderName(event.target.value === 'openai' ? 'OpenAI Compatible' : event.target.value === 'anthropic' ? 'Anthropic' : 'Google'); setSecretEnvName('MOREAI_PROVIDER_' + event.target.value.toUpperCase() + '_API_KEY'); }}>
-            <option value="openai">openai</option><option value="anthropic">anthropic</option><option value="google">google</option>
+          <select className={fieldClass} value={providerKey} onChange={event => { setProviderKey(event.target.value as typeof providerKey); setProviderName(event.target.value === 'openai' ? 'OpenAI Compatible' : 'Google'); setSecretEnvName('MOREAI_PROVIDER_' + event.target.value.toUpperCase() + '_API_KEY'); }}>
+            <option value="openai">openai</option><option value="google">google</option>
           </select>
         </label>}
         <label className={labelClass}>Display name
