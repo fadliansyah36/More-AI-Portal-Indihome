@@ -17,7 +17,10 @@ from app.sandbox_tools import IsolatedSandboxToolAdapter
 from apps.sandbox.app.browser_supervisor import BrowserSupervisor
 
 
-async def _health_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+async def _health_handler(
+    reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
+    readiness: dict[str, bool],
+) -> None:
     try:
         request_line = await asyncio.wait_for(reader.readline(), timeout=2.0)
         parts = request_line.decode('ascii', 'ignore').split(' ')
@@ -26,9 +29,16 @@ async def _health_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWr
             line = await asyncio.wait_for(reader.readline(), timeout=2.0)
             if line in (b'\r\n', b'\n', b''):
                 break
-        ok = path in {'/health', '/ready'}
-        body = json.dumps({'status': 'ok' if ok else 'not_found', 'service': 'moreai-worker'}).encode()
-        status = '200 OK' if ok else '404 Not Found'
+        if path == '/health':
+            status_code, status_text, state = 200, 'OK', 'alive'
+        elif path == '/ready' and readiness.get('ready') is True:
+            status_code, status_text, state = 200, 'OK', 'ready'
+        elif path == '/ready':
+            status_code, status_text, state = 503, 'Service Unavailable', 'not_ready'
+        else:
+            status_code, status_text, state = 404, 'Not Found', 'not_found'
+        body = json.dumps({'status': state, 'service': 'moreai-worker'}).encode()
+        status = f'{status_code} {status_text}'
         headers = (f'HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n').encode()
         writer.write(headers + body)
         await writer.drain()
@@ -116,8 +126,9 @@ async def run_worker() -> None:
         )
         runtime = WorkerRuntime(rpc, dispatcher)
         knowledge_ingestion = SupabaseKnowledgeTools(rpc, http)
+        readiness = {"ready": False}
         health_server = await asyncio.start_server(
-            _health_handler,
+            lambda reader, writer: _health_handler(reader, writer, readiness),
             host=os.getenv("WORKER_HEALTH_HOST", "0.0.0.0"),
             port=int(os.getenv("WORKER_HEALTH_PORT", "8081")),
         )
@@ -127,6 +138,9 @@ async def run_worker() -> None:
                 rpc, poll_seconds=float(os.getenv("WORKER_OUTBOX_POLL_SECONDS", "1")),
             )
             outbox_task = asyncio.create_task(publisher.run(stop_outbox), name="moreai-event-outbox")
+            # Readiness is only advertised after all startup gates passed and the
+            # durable event publisher has been started. Liveness remains separate.
+            readiness["ready"] = True
             poll_seconds = max(1, min(30, int(os.getenv("WORKER_POLL_SECONDS", "3"))))
             memory_purge_interval_seconds = max(
                 3600, min(86400, int(os.getenv("MOREAI_MEMORY_PURGE_INTERVAL_SECONDS", "21600"))),
@@ -254,6 +268,7 @@ async def run_worker() -> None:
                     consecutive_poll_failures = 0
                     await asyncio.sleep(poll_seconds)
             finally:
+                readiness["ready"] = False
                 stop_outbox.set()
                 outbox_task.cancel()
                 try:
