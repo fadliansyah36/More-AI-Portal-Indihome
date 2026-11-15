@@ -312,6 +312,7 @@ class DurableOpenManusRuntime:
             ),
         }
         skill_allowed_tools: set[str] | None = None
+        skill_allowed_browser_actions: set[str] | None = None
         resolved_skills: list[dict[str, Any]] = []
         skill_contexts: list[str] = []
         # Optional skills are resolved per run from immutable, approved registry records.
@@ -331,6 +332,14 @@ class DurableOpenManusRuntime:
                 for snapshot in snapshots
                 for permission in snapshot["permissions"]
             )) if snapshots else set()
+            granted_permissions = set().union(*(
+                set(snapshot["permissions"]) for snapshot in snapshots
+            )) if snapshots else set()
+            skill_allowed_browser_actions = set()
+            if "browser.navigate" in granted_permissions:
+                skill_allowed_browser_actions.update({"navigate", "extract"})
+            if "browser.download" in granted_permissions:
+                skill_allowed_browser_actions.add("downloads")
             await save("openmanus.skills.snapshot", {"skills": snapshots})
             for item in resolved_skills:
                 skill_contexts.append(
@@ -762,6 +771,10 @@ END UNTRUSTED FILE CONTENT"
                         raise PermissionError("saved_agent_tool_not_allowed")
                     if skill_allowed_tools is not None and function.name not in skill_allowed_tools and function.name not in {"create_chat_completion", "terminate"}:
                         raise PermissionError("skill_permission_does_not_allow_tool")
+                    if function.name == "browser_use" and skill_allowed_browser_actions is not None:
+                        browser_action = arguments.get("action")
+                        if browser_action not in skill_allowed_browser_actions:
+                            raise PermissionError("skill_permission_does_not_allow_browser_action")
                     digest = hashlib.sha256(json.dumps(arguments, sort_keys=True).encode()).hexdigest()
                     await save(f"openmanus.round.{round_no}.tool.{index}.intent", {
                         "tool_call_id": call.id, "tool": function.name,
