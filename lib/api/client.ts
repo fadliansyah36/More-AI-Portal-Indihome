@@ -325,6 +325,9 @@ export type CustomerToolCatalogItem = {
   approval_mode: string;
   execution_environment: string;
   timeout_seconds: number;
+  resource_limits: Record<string, unknown>;
+  idempotency: string;
+  audit_category: string;
   enabled_by_default: boolean;
   available_by_default: string[];
   registered: boolean;
@@ -653,20 +656,7 @@ export type CustomerUsageAnalytics = {
   period: { since: string; until: string };
 };
 
-export type CustomerToolCatalogItem = {
-  key: string;
-  version: string;
-  description: string;
-  capability_tags: string[];
-  permission_scope: string;
-  risk: string;
-  approval_mode: string;
-  execution_environment: string;
-  timeout_seconds: number;
-  idempotency: string;
-  available_by_default: string[];
-  enabled_by_default: boolean;
-};
+
 
 export type CustomerAgentCatalogItem = {
   id: string;
