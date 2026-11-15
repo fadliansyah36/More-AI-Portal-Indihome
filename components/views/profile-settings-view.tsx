@@ -389,7 +389,16 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
             <h3 className="text-sm font-bold text-slate-900">Sesi Browser</h3>
             <p className="text-[11px] text-slate-500 mt-0.5">Kelola sesi Chromium persisten yang terikat pada akun Anda.</p>
           </div>
-          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">{browserSessions.filter((session) => session.status === 'active').length} aktif</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">{browserSessions.filter((session) => session.status === 'active').length} aktif</span>
+            <button type="button" disabled={browserSessionsLoading} onClick={() => {
+              setBrowserSessionsLoading(true);
+              setBrowserSessionsError(null);
+              customerApi.browserSessions().then((result) => setBrowserSessions(result.items))
+                .catch((error) => setBrowserSessionsError(error instanceof Error ? error.message : 'Sesi browser tidak dapat dimuat.'))
+                .finally(() => setBrowserSessionsLoading(false));
+            }} className="text-[10px] font-bold text-red-600 disabled:opacity-50">Muat ulang</button>
+          </div>
         </div>
         {browserSessionsLoading ? (
           <p className="text-xs text-slate-500 py-2">Memuat sesi browser…</p>
