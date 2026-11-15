@@ -124,10 +124,12 @@ async def claim_browser_action_receipt(
     existing = await repo.select("moreai_browser_action_receipts", {
         "run_id": f"eq.{body.run_id}", "action_key": f"eq.{body.action_key}",
         "user_id": f"eq.{body.user_id}",
-        "select": "id,status,result,error_code,session_id", "limit": "1",
+        "select": "id,status,result,error_code,session_id,request_hash", "limit": "1",
     })
     if existing:
         row = existing[0]
+        if row.get("request_hash") != body.request_hash:
+            raise HTTPException(409, "browser_action_idempotency_key_conflict")
         return {"receipt_id": row["id"], "status": row["status"], "can_execute": False,
                 "result": row.get("result"), "error_code": row.get("error_code")}
     try:
@@ -150,6 +152,8 @@ async def claim_browser_action_receipt(
         if not existing:
             raise
         row = existing[0]
+        if row.get("request_hash") != body.request_hash:
+            raise HTTPException(409, "browser_action_idempotency_key_conflict")
         return {"receipt_id": row["id"], "status": row["status"], "can_execute": False,
                 "result": row.get("result"), "error_code": row.get("error_code")}
 
