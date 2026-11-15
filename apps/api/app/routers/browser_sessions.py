@@ -60,7 +60,7 @@ class BrowserActionReceiptClaim(BaseModel):
     user_id: UUID
     action_key: str = Field(pattern=r"^[0-9a-f]{64}$")
     request_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    action_type: Literal["navigate", "extract", "input", "close", "downloads"]
+    action_type: Literal["navigate", "extract", "input", "screenshot", "close", "downloads"]
     target_host: str = Field(min_length=1, max_length=253, pattern=r"^[A-Za-z0-9.-]+$")
 
 
