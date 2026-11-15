@@ -1458,3 +1458,17 @@ No tests, lint, typecheck, build, browser verification, live API/worker executio
 - Files: `lib/api/client.ts`, `components/views/profile-settings-view.tsx`.
 - Commits: `fcec12188ba42b3da6fc20b827bb819a7a1125c0`, `580273d88c7a73773037d816c5f01cfa0a9d4efc`.
 - No tests/build/lint/typecheck/browser/API/worker/provider/staging/deployment operations. Visual regression and runtime session close remain NOT VERIFIED. 09C remains PARTIAL; 09D still requires isolated supervisor and complete approval/action lifecycle.
+
+
+## 2026-11-15 — Phase 09D OpenFuse Browser Adapter & Customer Lifecycle
+
+- Corrected the earlier unsupported `/v1/browser/actions` assumption and implemented the actual pinned `CopilotKit/openfuse@7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc` browser-worker API: `/health`, `/sessions`, per-session navigate/read/input/screenshot/close/downloads.
+- Added durable action receipts keyed by Agent Run + OpenManus tool-call ID, request-hash conflict detection, conservative unknown outcomes, no automatic replay, cancellation finalization and stale receipt projection.
+- Added action-level Skill permission checks and retained durable owner approval for all Browser actions.
+- Added private screenshot artifact persistence (PNG signature, 2 MB cap, run/session ownership) and inline screenshot preview in Hasil Pekerjaan.
+- Customer close is now a durable `close_requested` state; worker reconciliation closes the real OpenFuse session and acknowledges completion. Profile Settings and Hasil Pekerjaan show pending/active state and refresh controls.
+- PDF download metadata is available; file-byte import remains blocked until a real malware scanner exists. OpenFuse Linux/E2B graphical Computer parity is not integrated; MoreAI's isolated Bash/Python workspace remains separate.
+- Applied Supabase migrations: `moreai_browser_action_receipts`, `moreai_browser_action_receipt_action_types`, `moreai_browser_session_close_requests`, `moreai_browser_action_receipt_screenshot`.
+- Source commits include `ddce3a26`, `9a13d364`, `3ca0a9e2`, `cb69d18e`, `e9e97f67`, `74ca0637`, `518d4302`, `fd514ad7`, `5f21e54e`, `36ea2b62`, `d7bfd0c8`, `0ca9bd02`.
+- Report: `PHASE-09D-OPENFUSE-BROWSER-ADAPTER-20261115.md`.
+- No tests/build/lint/typecheck/browser/API/worker/provider probes, staging or deployment performed. Browser worker host/token/volume/heartbeat are not configured; operational 09D remains NOT VERIFIED. 09A/09B remain blocked, 09C/09D PARTIAL, Phase 10 NOT ACCEPTED and Phase 11 BLOCKED.
