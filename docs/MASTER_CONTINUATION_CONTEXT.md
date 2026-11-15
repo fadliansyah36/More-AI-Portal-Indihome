@@ -84,3 +84,10 @@ Vercel is suitable for the Customer Frontend and FastAPI request boundary, not a
 **Phase 09 continuation — Durable Worker & Provider Readiness + Customer Dashboard API Closure.**
 
 After worker/provider readiness and full Customer Dashboard/OpenFuse parity, Phase 09 can be assessed for completion. Phase 10 End-to-End Integration Verification and Phase 11 Integration Release Gate remain mandatory and cannot be marked complete under the current no-testing instruction.
+
+
+## 2026-11-15 Phase 09 continuation update
+
+Latest source-only continuation commits are recorded in `docs/implementation/PHASE-09-CONTINUATION-WORKER-READINESS-CUSTOMER-API-20261115.md`. Worker readiness now depends on a successful independent capability heartbeat; Docker probes `/ready`; long-running runs no longer block capability heartbeats. Google OAuth credential rotation and duplicate FastAPI browser-session route registration were corrected.
+
+Phase 09 is still IN PROGRESS. The worker is not deployed to a persistent host; no provider/model rows or worker provider secrets are configured; Agent execution remains disabled. A routing contract mismatch remains (`chat`/`planning` runtime calls vs `general`-only Admin API/DB mutation RPC) and requires a forward-only Supabase migration. Vercel API deployment is still behind current main because the previous daily deployment quota was exhausted. No tests, staging, builds, runtime execution, provider calls, or deployment were performed in this increment.
