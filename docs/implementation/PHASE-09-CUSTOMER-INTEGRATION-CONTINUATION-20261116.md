@@ -214,3 +214,10 @@ Important remaining integration:
 - `b7cdb52b5f9dc5689300d0b1d5cc295b85b5844d`: typed `workspaceApi.versions` now accepts bounded page size and cursor and reads the backend's `X-Next-Cursor` keyset header.
 - `0758c9d8c64e5d05651ea4ef185ca548452d1f15`: Files UI now loads the first 50 immutable file versions and exposes “Muat versi sebelumnya” while a cursor remains. Appended versions are deduplicated by file/version identity; existing download and version rendering remain unchanged.
 - These changes close an existing pagination gap in Workspace version history and reduce unnecessary EduTech progress payload. Source-only; no tests/lint/typecheck/build/runtime, staging, deployment, or Supabase mutation.
+
+
+## Notification preferences UI integration — 2026-11-16
+
+- `890c1d63c307661c806f0950788267661fbc6e8b`: Customer Notifications now exposes an existing FastAPI-backed preferences panel from its header. It loads `GET /api/v1/notifications/preferences`, updates `in_app_enabled` and `email_enabled` through `PUT /api/v1/notifications/preferences`, shows saving/error state, and rolls back optimistic UI state when the API rejects an update.
+- No new preference schema or direct browser-to-Supabase access was added. Existing `notificationApi` typed client and server-owned preferences table are reused. Category settings remain untouched because the current product UI does not define a canonical category taxonomy.
+- Source-only commit; no tests, lint, typecheck, build, runtime, staging, deployment, or Supabase mutation.
