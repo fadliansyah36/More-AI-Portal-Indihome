@@ -109,7 +109,7 @@ export function useBrowserSessionPreview(sessionId: string | null) {
       setPreview((current) => ({
         ...current, status: queued.status, requestId: queued.request_id, error: null,
       }));
-      await pollRequest(queued.request_id, generation);
+      // The requestId/status state transition starts the single reconnect poll effect.
     } catch (error) {
       if (!mounted.current || generation !== pollGeneration.current) return;
       setPreview((current) => ({
