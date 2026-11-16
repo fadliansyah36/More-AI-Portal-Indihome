@@ -1243,9 +1243,11 @@ export const workspaceApi = {
   }>(
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/runs?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
   ),
-  versions: (workspaceId: string, fileId: string) => moreAiCustomerApi<{
-    items: CustomerWorkspaceFileVersion[]; count: number; current_version: number;
-  }>('/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId) + '/versions'),
+  versions: (workspaceId: string, fileId: string, limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspaceFileVersion>(
+    '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/files/' + encodeURIComponent(fileId)
+      + '/versions?limit=' + Math.max(1, Math.min(100, limit))
+      + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
+  ),
   membersPage: (workspaceId: string, limit = 50, cursor?: string) => moreAiCustomerApiPage<CustomerWorkspaceMember>(
     '/api/v1/customer/workspaces/' + encodeURIComponent(workspaceId) + '/members?limit=' + Math.max(1, Math.min(100, limit)) + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
   ),
