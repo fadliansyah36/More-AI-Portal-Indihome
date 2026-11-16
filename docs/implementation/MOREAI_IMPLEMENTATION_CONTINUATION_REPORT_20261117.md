@@ -112,3 +112,11 @@ Additional commits: `1e1c203f55d844afdd4d063730d166ccfb857fa7` (selected entrypo
 - Updated `MOREAI_P1_LICENSE_RECONCILIATION_20261117.md` with exact paths, Git blob SHAs, scope and limitations. This closes the filename/content pass for discovered license-like files only; it does not close per-asset rights, embedded source notices, external downloads, package licenses or P1.
 - No skill payload files were copied/adapted; no packages, scripts or tests were run.
 - Evidence commit: `a8b967fcc9ce56dd1501e287edc80db6e82f190e`.
+
+## 8. SBOM correction and exact pnpm coordinate parity
+
+- Static inspection found a CycloneDX generation defect: 37 scoped `peerDependencies` range declarations (25 OpenFuse + 12 Scenario) had been emitted as malformed package components without resolved versions. These are peer constraints, not package coordinates; they were removed from `components` and retained as an explicit metadata property.
+- Corrected SBOM: **1,995 components**, of which **1,989 remain `NOASSERTION`** and 6 have declared license fields from the OpenFuse worker npm package-lock.
+- Exact lockfile package coordinate parity now matches for the two pinned pnpm package sections: OpenFuse **1,452/1,452**, Scenario Skills **466/466**, zero missing and zero extra coordinates in either set.
+- Updated `MOREAI_P1_SBOM_AND_INTEGRITY_CONTINUATION_20261117.md` with corrected counts and scope. This does not reconcile snapshot dependency edges, peer dependency resolution, other lock/manifests, exact-version registry licenses, vulnerabilities or remaining NOASSERTION. P1 remains open.
+- Evidence commits: SBOM correction `fec0c32dd1531eb0bc26785eeac25965d0611e7d`; reconciliation note `2548ce1370878df6833a16aec4031618e4c68ecc`.
