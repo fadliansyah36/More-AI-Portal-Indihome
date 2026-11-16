@@ -110,3 +110,19 @@ The pinned README identifies two product skills (`image` and `video`) and descri
 P1 Source Governance remains **IN PROGRESS**. This addendum is evidence, not closure. P2 ADR remains **DRAFT / NOT ACCEPTED**. Mandatory Phase 04, 06, 07, 08 and 09 remain in progress; Phase 09 must be completed before Phase 10. Because the user prohibits real testing and staging, Phase 10 and Phase 11 cannot be marked accepted or passed on this work.
 
 **Next action:** finish the complete file-level payload/reference/license/dependency/hash evidence, then close P1 and accept P2 before continuing the mandatory integration phases.
+
+## Selected skill entrypoint scope confirmation — 2026-11-17
+
+A selected-entrypoint register was generated from the pinned recursive source manifests: `MOREAI_P1_SELECTED_SKILL_ENTRYPOINTS_20261117.csv`.
+
+| Source | Product skill entrypoints |
+|---|---:|
+| Visual Skills | 2 |
+| Scenario Skills | 172 |
+| Motion Skills | 55 eligible |
+| Motion Skills blocked pack | 1 (`generative-illustration-skills`) |
+| Total eligible entrypoints | **229** |
+
+The 55 Motion entries exclude the unlicensed generative-illustration pack. The register records exact source repository, commit, path, Git blob SHA and expected byte size. This is an entrypoint inventory, not a content-level audit of every referenced file. Complete recursive references/scripts/assets review and raw SHA-256 of every selected payload file remain open.
+
+The pinned dependency graph and first-pass npm registry license metadata are documented in `MOREAI_P1_NORMALIZED_PNPM_GRAPH_AND_REGISTRY_LICENSES_20261117.md`. These findings do not authorize importing any skill or activating remote providers.
