@@ -58,6 +58,7 @@ def _encrypt(request: Request, state: dict[str, Any]) -> str:
 class BrowserActionReceiptClaim(BaseModel):
     run_id: UUID
     user_id: UUID
+    worker_id: str = Field(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
     action_key: str = Field(pattern=r"^[0-9a-f]{64}$")
     request_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
     action_type: Literal["navigate", "extract", "input", "screenshot", "close", "downloads"]
@@ -67,6 +68,7 @@ class BrowserActionReceiptClaim(BaseModel):
 class BrowserActionReceiptFinish(BaseModel):
     run_id: UUID
     user_id: UUID
+    worker_id: str = Field(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
     status: Literal["succeeded", "failed", "unknown"]
     session_id: UUID | None = None
     result: dict[str, Any] | None = None
@@ -275,10 +277,12 @@ async def claim_browser_action_receipt(
     repo = repository(request)
     runs = await repo.select("agent_runs", {
         "id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
-        "status": "eq.running", "select": "id", "limit": "1",
+        "status": "eq.running", "lease_owner": f"eq.{body.worker_id}",
+        "lease_expires_at": "gt." + datetime.now(timezone.utc).isoformat(),
+        "select": "id,lease_owner,lease_expires_at", "limit": "1",
     })
     if not runs:
-        raise HTTPException(403, "browser_action_run_owner_or_status_mismatch")
+        raise HTTPException(409, "browser_action_worker_lease_not_held")
     existing = await repo.select("moreai_browser_action_receipts", {
         "run_id": f"eq.{body.run_id}", "action_key": f"eq.{body.action_key}",
         "user_id": f"eq.{body.user_id}",
@@ -327,11 +331,12 @@ async def finish_browser_action_receipt(
     repo = repository(request)
     runs = await repo.select("agent_runs", {
         "id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
-        "status": "in.(running,succeeded,failed,cancelled,expired)",
-        "select": "id", "limit": "1",
+        "status": "eq.running", "lease_owner": f"eq.{body.worker_id}",
+        "lease_expires_at": "gt." + datetime.now(timezone.utc).isoformat(),
+        "select": "id,lease_owner,lease_expires_at", "limit": "1",
     })
     if not runs:
-        raise HTTPException(403, "browser_action_run_owner_or_status_mismatch")
+        raise HTTPException(409, "browser_action_worker_lease_not_held")
     result = body.result or {}
     if len(json.dumps(result, separators=(",", ":"), ensure_ascii=True).encode()) > 65536:
         raise HTTPException(413, "browser_action_receipt_result_too_large")
