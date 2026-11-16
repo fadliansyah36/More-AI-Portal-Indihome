@@ -125,6 +125,9 @@ async def execute(
             language=body.language,
             workspace_files=snapshot,
             limits=SandboxLimits(timeout_seconds=body.timeout_seconds),
+            tenant_id=body.user_id,
+            run_id=body.run_id,
+            request_id=body.request_id,
         )
         return {
             "request_id": body.request_id,
