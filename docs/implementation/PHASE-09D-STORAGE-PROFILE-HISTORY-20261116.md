@@ -182,3 +182,44 @@ Only `components/views/research-view.tsx` and `components/views/super-admin-view
 - OpenFuse deployment patch and persistent `WORKER_DATA_DIR` volume remain unapplied/unconfigured.
 - The live Supabase schema is behind the latest repository migrations for browser retention. The new retention path must not be considered operational until those migrations and OpenFuse deployment are completed.
 - pnpm/Yarn/Go/Ruby parsers and dependency-edge extraction are source-only, not validated. Registry metadata/license coverage remains incomplete for Go/Ruby and non-registry sources. Full transitive closure and integrity are not proven.
+
+
+## Follow-up source reconciliation — 2026-11-16
+
+### Customer Memory route de-duplication
+
+- Source inspection found two FastAPI handlers registered for the same `DELETE /api/v1/customer/memory` route in `apps/api/app/routers/customer.py`.
+- The later handler invoked `moreai_customer_clear_personal_memory` but did not run the owner-scoped episodic metadata cleanup used by the earlier handler. Since FastAPI route registration order can cause the first matching handler to be selected, the duplicate created ambiguous behavior and risked leaving episodic summaries behind.
+- Removed the later duplicate handler. The remaining handler explicitly disables consent, purges owner-scoped episodic metadata and deletes user-authored memory; errors return 503 rather than claiming success.
+- The existing database RPC remains available for other callers; no schema changes were made. The endpoint's multi-step cleanup is not a single cross-table transaction, so partial cleanup remains a recoverable failure path rather than atomic completion.
+
+### Python dependency graph expansion
+
+- `apps/api/app/routers/skills.py` now extracts dependency edges from Poetry and uv lockfile package records when the lockfile encodes dependency declarations as a map or structured list.
+- Edge records retain ecosystem, source package, target package, dependency kind and requested specifier. Non-registry source packages continue to be flagged for provenance review instead of being silently treated as registry packages.
+- Existing npm/Cargo/Composer edge extraction remains. The graph is evidence, not a guarantee of complete dependency closure; optional groups, platform markers, extras, workspace aliases, package-source identities and lockfile dialect variants still require broader coverage.
+- No parser execution, test, lint, typecheck or build was run.
+
+### UI scope
+
+No additional UI files changed in this increment. The Memory component already uses the typed FastAPI customer memory methods for consent, create, edit, delete and clear actions. The API duplicate-route correction improves the clear action's server-side lifecycle without changing the visible design.
+
+### Live Supabase reconciliation remains unchanged
+
+- Canonical live project: `uunfgimtokhucegqbpce`.
+- Live migration history last observed: `20261115101318`.
+- Pending repository migration files observed: `20261116100000_moreai_browser_session_close_event_constraint.sql`, `20261116150000_moreai_skill_publication_evidence_gate.sql`, `20261116153000_moreai_browser_profile_retention.sql`, `20261116160000_moreai_browser_profile_retention_rpcs.sql`.
+- The browser profile retention columns and new event vocabulary are absent from the inspected live table metadata. No migration was applied.
+- Browser session, browser event and browser receipt tables have RLS enabled. The inspected `pg_policies` result returned no explicit policies for these three tables, which means no ordinary authenticated/anon policy path was observed; verify service-role-only grants and all table/function privileges before any change to policy.
+- Chat, Agent Run, artifact, knowledge, skill and workspace-file tables show explicit deny-client policies. Memory tables show owner-scoped policies. The browser must still use FastAPI for all application data, consistent with AGENTS.md.
+- No storage policy changes were made; no storage bucket policy inventory was retrieved in this increment. Storage authorization mapping remains open.
+
+### Exact source commits in this continuation
+
+- `6549a809d7bde82151c1af9b942ba3f9968a8ce3` — remove duplicate Memory clear endpoint.
+- `64affc7b82cae1eb8922f75bee627b539dee8adf` — Poetry/uv dependency graph edges.
+- This report is updated in the final documentation commit for this increment.
+
+### Acceptance status
+
+Phase 09D remains IN PROGRESS. This increment improves source correctness and evidence but does not close all customer action mappings, dependency ecosystem coverage, live Supabase migration reconciliation, OpenFuse deployment, or AGENTS.md Phase 09 acceptance. Phase 10 and Phase 11 remain blocked by the owner instruction prohibiting real tests and by unavailable deployment prerequisites.
