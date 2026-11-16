@@ -1646,3 +1646,14 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - FastAPI skill source calls support a server-only GitHub read token and rate-limit retry response. The token is not yet provisioned. Motion/Visual/Scenario package imports remain NOT STARTED based on the empty canonical tables.
 - Detailed report: [Phase 09 Skill Registry continuation](./PHASE-09-SKILL-REGISTRY-CONTINUATION-20261116.md).
 - No tests/build/lint/typecheck/API/browser/worker/provider execution, staging or deployment was performed. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 Vercel deployment reconciliation and frontend source correction
+
+- Read-only Vercel inspection confirms two linked projects for the canonical repository: FastAPI project `more-ai-api` and Next.js project `more-ai-portal-indihome`. The last observed API production deployment was READY at `ed8a8b2305a6d5b3cb4be771361feb93c186b8ac`; the last observed frontend production deployment was ERROR at the same commit.
+- The Vercel frontend build log identified the exact compile failure: root `tsconfig.json` includes the OpenFuse Docker worker override at `apps/sandbox/openfuse-overrides/index.ts`, whose `./server.ts` module is supplied only in the pinned OpenFuse container build, not in the frontend source tree. Commit `446f4796` excludes only `apps/sandbox/openfuse-overrides/**/*.ts` from the Next.js TypeScript project; the files remain in place for Docker image assembly.
+- This is a source correction based on an existing production build log. No local build/test or post-correction deployment was run; the fix is not claimed verified.
+- The Vercel API environment name inventory does not contain `MOREAI_GITHUB_TOKEN`; the secret value was not supplied and cannot be derived from the GitHub connector. `MOREAI_AGENT_EXECUTION_ENABLED` remains false. The frontend's configured `NEXT_PUBLIC_MOREAI_API_URL` points to `https://more-ai-api.vercel.app`.
+- Read-only canonical Supabase state still reports Skill packages 0, Skill source files 0, providers 0, models 0, fresh worker heartbeats 0, active browser sessions 0 and unexpired browser capacity leases 0.
+- Detailed evidence and blockers: [Vercel integration reconciliation](./PHASE-09-VERCEL-INTEGRATION-RECONCILIATION-20261116.md).
+- No test/build/lint/typecheck, browser/API/worker/provider runtime, migration write, staging, manual Vercel deployment or promotion was performed. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
