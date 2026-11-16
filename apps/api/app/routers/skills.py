@@ -416,12 +416,12 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                         continue
                     # Gemfile.lock encodes resolved gem dependencies as nested
                     # rows below each four-space package declaration.
-                    package_match = re.match(r"^    ([A-Za-z0-9_.-]+) \\(([^)]+)\\)(?: .*)?$", line)
+                    package_match = re.match(r"^    ([A-Za-z0-9_.-]+) \(([^)]+)\)(?: .*)?$", line)
                     if package_match:
                         current_gem = package_match.group(1)
                         add_dependency("rubygems", current_gem, package_match.group(2), path, status="lockfile_pinned")
                         continue
-                    edge_match = re.match(r"^      ([A-Za-z0-9_.-]+)(?: \\(([^)]+)\\))?", line)
+                    edge_match = re.match(r"^      ([A-Za-z0-9_.-]+)(?: \(([^)]+)\))?", line)
                     if current_gem and edge_match:
                         requested = edge_match.group(2) or ""
                         dependency_edges.append({
@@ -441,7 +441,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 in_require = False
                 for line in text.splitlines():
                     stripped = line.strip()
-                    if re.match(r"^(replace|exclude|retract|toolchain|godebug)\\b", stripped):
+                    if re.match(r"^(replace|exclude|retract|toolchain|godebug)\b", stripped):
                         dependencies.append({
                             "manifest": path, "ecosystem": "go",
                             "status": "go_mod_directive_requires_module_graph_resolution",
