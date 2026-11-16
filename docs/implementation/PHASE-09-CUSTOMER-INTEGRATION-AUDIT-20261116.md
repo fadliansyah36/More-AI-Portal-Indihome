@@ -126,3 +126,48 @@ Commits:
 - `f4bff561f85ede135d21055b03fb6117222f4f8f` — correct marker separator parsing.
 
 No test, parser execution, build, lint, type-check, staging, browser/runtime verification, migration application, or deployment was performed. This source change is unverified by execution. No UI files or live Supabase objects were changed.
+
+
+## Continuation — dependency protocol fail-closed and dashboard control review (2026-11-16)
+
+### Dependency graph source changes
+
+Additional changes in `apps/api/app/routers/skills.py`:
+
+- npm lockfile v1 now emits explicit workspace-root → direct dependency edges from sibling `package.json` declarations, binding only to the top-level `node_modules/<name>` package instance actually present in the v1 nested lock tree. Missing direct targets remain unresolved.
+- pnpm and Yarn dependency edges now explicitly refuse to bind non-registry protocols to a same-name registry package. Workspace/link/file/portal/patch/git/GitHub/npm alias protocol forms are marked unresolved until a protocol-aware workspace/alias resolver exists. This prevents false graph closure from name-only matching.
+- pnpm peer-context and importer descriptor joins are still not a complete semantic resolver. Yarn Berry descriptor/protocol/portal/patch/workspace and alias resolution remains incomplete. These cases must keep the graph incomplete.
+- Go module graph/workspace/replace/exclude/build-tag/selected-version resolution remains unsupported. Pipfile lock parent-child graph remains unsupported. Python marker/extras/group metadata is now preserved, but environment-specific lock resolution remains open.
+- No unsupported protocol is silently treated as an ordinary registry dependency. The publication gate must remain fail-closed.
+
+Commits:
+- `df3747e96725f01b64c53de7b7ae5bef4c4f00ee` — fail closed on pnpm/Yarn workspace and Berry protocols.
+- `fb60d7a6115e1d7949a8471882e1bf03a26f5462` — add npm v1 direct workspace-root edges.
+
+### Dashboard control and authorization source audit
+
+Read-only source review of customer controls confirmed these existing paths:
+
+- Chat: durable conversation/session restoration, event cursor replay, SSE stream, retry as a new run, cancellation request to the durable worker, workspace selection and pagination.
+- Tasks: run detail stream with AbortController cleanup, cancellation, retry as a new run, run/artifact pagination and signed artifact download.
+- Research: run/artifact pagination and signed artifact download; handoff remains through Chat durable Agent Run.
+- Files: artifact and workspace file listing, workspace membership access, file version history, signed downloads, upload, delete/restore lifecycle.
+- Personal Memory: consent toggle, CRUD, episodic memory deletion and clear-all operation. Clear-all remains multi-step/non-atomic; API reports failure on partial cleanup and supports retry.
+- Skills Library: import/ingest/validate/install/permission request/revoke. Execution remains server-gated and disabled until the server-side publication and permission conditions are met.
+- FastAPI customer routes use authenticated customer principal and owner-scoped record lookups. Workspace routes resolve owner or active membership and role permissions. Internal worker routes use the worker token and canonical run/session ownership checks.
+
+This is a source-level review, not proof of runtime isolation. Remaining unverified areas include cross-tenant denial under real identities, event reconnect under network interruption, cancellation race handling, retry idempotency under duplicate delivery, signed URL expiration/origin behavior against live Storage, partial Memory clear recovery, all UI error/loading/empty/forbidden states and worker/API availability.
+
+### Artifact signed-download origin hardening
+
+Updated `apps/api/app/routers/artifacts.py`:
+- The signed-download response now rejects absolute Storage URLs outside the configured Supabase HTTPS origin.
+- Rejects credentials, protocol-relative paths, backslashes and paths outside the Storage signed-object endpoint.
+- Rebuilds the canonical signed URL from the configured Supabase origin while preserving the Storage query token.
+- This aligns the artifact download boundary with the stricter origin validation already present in the workspace file download path.
+
+Commit: `3b587997d35967ee23c1d0c0abf45d6357bd5ae9`.
+
+### Verification and deployment boundary
+
+No tests, parser execution, build, lint, type-check, staging, browser/runtime calls, migration application, OpenFuse deployment or Vercel deployment were performed. The code changes above are committed source changes only and remain execution-unverified. No frontend UI files were changed, no Supabase object was modified, and the six Phase 09D migrations remain pending. OpenFuse patch remains unapplied to the active service; persistent private volume configuration remains outstanding.
