@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import hashlib
 import os
 import re
 import signal
@@ -161,6 +162,9 @@ class DockerSandbox:
         self, source: str, *, language: Literal["python", "bash"],
         workspace_files: dict[str, bytes] | None = None,
         limits: SandboxLimits = SandboxLimits(),
+        tenant_id: str | None = None,
+        run_id: str | None = None,
+        request_id: str | None = None,
     ) -> SandboxResult:
         self._validate()
         if not source or len(source.encode("utf-8")) > 8_000_000:
@@ -187,8 +191,21 @@ class DockerSandbox:
         cidfile = cid_handle.name
         cid_handle.close()
         Path(cidfile).unlink(missing_ok=True)
+        # Labels contain only one-way identity digests, never raw customer IDs.
+        identity_labels = []
+        for label, value in (
+            ("moreai.customer.sha256", tenant_id),
+            ("moreai.run.sha256", run_id),
+            ("moreai.request.sha256", request_id),
+        ):
+            if value is not None:
+                if not isinstance(value, str) or not value or len(value) > 256:
+                    raise ValueError("sandbox_execution_identity_invalid")
+                digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
+                identity_labels.extend(["--label", f"{label}={digest}"])
         command = [
             self.docker_binary, "run", "--rm", "-i", "--cidfile", cidfile,
+            *identity_labels,
             "--network=none", "--read-only", "--cap-drop=ALL",
             "--security-opt=no-new-privileges:true", "--security-opt=seccomp=default",
             "--pids-limit", str(limits.pids_limit), "--memory", f"{limits.memory_mb}m",
