@@ -5,7 +5,6 @@ import hashlib
 import json
 import os
 import re
-import socket
 import struct
 from urllib.parse import quote, urlsplit
 
@@ -44,6 +43,9 @@ class BrowserSupervisor:
         if not egress_enforced:
             raise RuntimeError("browser_network_egress_enforcement_required")
         self.service_url = service_url.rstrip("/")
+        self.worker_id = (os.getenv("MOREAI_BROWSER_WORKER_ID") or parsed.hostname or "browser-supervisor")[:128]
+        if not re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", self.worker_id):
+            raise ValueError("browser_supervisor_worker_id_invalid")
         self.service_token = service_token
         self.http = http
         self.api_url = api_url.rstrip("/")
@@ -281,7 +283,7 @@ class BrowserSupervisor:
                     "session_id": arguments.get("session_id"),
                     "origin_host": parsed.hostname.lower(),
                     "action": action,
-                    "worker_id": socket.gethostname()[:128] or "browser-worker",
+                    "worker_id": self.worker_id,
                 },
                 headers=self._internal_headers(),
                 timeout=httpx.Timeout(12.0, connect=3.0),
