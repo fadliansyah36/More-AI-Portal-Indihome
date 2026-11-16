@@ -1617,3 +1617,11 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - This one-view UI change is limited to the requested missing operation; no global CSS/token/layout changes. Before/after screenshots were not captured because no authenticated Customer browser session was available and real UI testing was prohibited; visual acceptance remains outstanding.
 - Full report: [Phase 09 Skill Registry continuation](./PHASE-09-SKILL-REGISTRY-CONTINUATION-20261116.md).
 - No tests/build/lint/typecheck/runtime/browser/provider/staging/deployment were run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 Scenario source-ingestion bound reconciliation
+
+- Pinned Scenario tree at `94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9` was inspected without executing source. Its `skills/**/SKILL.md` catalog has 172 entrypoints. Four skill folders contain 42–56 files; the largest is 56 files / approximately 698 KB expanded, and the largest individual file is approximately 197 KB. No Scenario skill folder exceeds 64 files, 5 MiB total or 512 KiB per file. The 56 Motion folders top out at 11 files; Visual's 2 folders top out at 24.
+- Commit `f69f90e0` raises the per-skill file cap from 40 to 64 in both recursive ingestion and validation, and aligns the validation query row limit. Per-file (512 KiB) and per-package (5 MiB) limits remain unchanged. This is a measured adjustment to the pinned source tree, not an unbounded expansion.
+- Current supporting report: [Phase 09 Skill Registry continuation](./PHASE-09-SKILL-REGISTRY-CONTINUATION-20261116.md).
+- No ingestion was executed and no packages were written. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
