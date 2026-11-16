@@ -1706,3 +1706,14 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Latest Supabase read-only counts remain 0 skill package/source rows, 0 provider/model rows, 0 fresh worker heartbeat, 0 active browser sessions and 0 active browser leases. The two new ingestion migrations are applied and recorded in supabase-migration-ledger-20261116.json.
 - Do not start the 230-skill batch on the current API deployment. First complete secure token injection and the approved API source deployment, then use a genuine Customer session.
 - No manual deploy/promotion, tests, lint, typecheck, build, browser/API/worker/provider runtime or staging was initiated. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+## 2026-11-16 Worker Skill snapshot completeness and 64-file parity
+
+- Source commit on main: 7de3ace815ec296e263a375b650999e4d583b5da, file apps/worker/app/skill_resolver.py.
+- Worker source retrieval now reads up to 64 source-file records, matching the FastAPI and canonical Supabase ingestion limits.
+- Before a Skill can be added to an Agent Run, the resolver requires the complete SPDX file inventory saved by validation. It checks exact path-set/count equality, unique relative paths, SHA-256 records for every file, the stored per-file content hash, Git blob SHA-1, and root pinned-entrypoint provenance.
+- Existing owner, validated status, approved licence, published status, installation, explicit permission approval, and execution-enabled gates remain required. Skill instruction text remains untrusted context and cannot grant tools.
+- Report: [Worker Skill snapshot completeness](./PHASE-09-WORKER-SKILL-SNAPSHOT-COMPLETENESS-20261116.md).
+- Source-only: no frontend/UI, Supabase schema/data, migrations, provider settings or runtime credentials changed. No tests, lint, typecheck, build, worker/provider execution, staging or deployment were run.
+- The persistent worker has not been provisioned, so this source resolver is not confirmed running. The latest observed API Vercel deployment still predates the idempotent Skill ingestion recovery source commit. No 230-entry Skill batch is started until the approved API deployment and GitHub encrypted token are in place.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
