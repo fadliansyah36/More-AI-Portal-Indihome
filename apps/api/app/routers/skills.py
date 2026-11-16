@@ -270,13 +270,17 @@ async def _resolve_exact_dependency_licenses(http: Any, dependencies: list[dict[
     }
 
 
-def _spdx_skill_sbom(skill: dict[str, Any], packages: list[dict[str, Any]]) -> dict[str, Any]:
+def _spdx_skill_sbom(
+    skill: dict[str, Any], packages: list[dict[str, Any]], files: list[dict[str, Any]],
+) -> dict[str, Any]:
     spdx_packages = []
+    relationships = []
     for index, item in enumerate(packages, start=1):
         name = str(item.get("name") or "unknown")
         version = str(item.get("exact_version") or item.get("requested") or "UNKNOWN")
+        package_id = f"SPDXRef-Dependency-{index}"
         spdx_packages.append({
-            "name": name, "SPDXID": f"SPDXRef-Dependency-{index}",
+            "name": name, "SPDXID": package_id,
             "versionInfo": version,
             "downloadLocation": "NOASSERTION",
             "filesAnalyzed": False,
@@ -286,13 +290,32 @@ def _spdx_skill_sbom(skill: dict[str, Any], packages: list[dict[str, Any]]) -> d
             "externalRefs": [],
             "comment": f"{item.get('ecosystem')} · {item.get('registry_metadata_status')} · {item.get('source_manifest')}",
         })
+        relationships.append({"spdxElementId":"SPDXRef-DOCUMENT","relationshipType":"DESCRIBES","relatedSpdxElement":package_id})
+    spdx_files = []
+    for index, item in enumerate(files, start=1):
+        path = str(item.get("relative_path") or "")
+        digest = str(item.get("content_sha256") or "")
+        if not path or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            continue
+        file_id = f"SPDXRef-File-{index}"
+        spdx_files.append({
+            "fileName": "./" + path,
+            "SPDXID": file_id,
+            "checksums": [{"algorithm":"SHA256","checksumValue":digest}],
+            "licenseConcluded": "NOASSERTION",
+            "licenseInfoInFiles": ["NOASSERTION"],
+            "licenseComments": "File-level license and asset rights require explicit review.",
+            "copyrightText": "NOASSERTION",
+            "fileTypes": ["SOURCE"] if str(item.get("media_type") or "").startswith(("text/","application/json","application/javascript")) else ["BINARY"],
+        })
+        relationships.append({"spdxElementId":"SPDXRef-DOCUMENT","relationshipType":"DESCRIBES","relatedSpdxElement":file_id})
     return {
         "spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0",
         "SPDXID": "SPDXRef-DOCUMENT", "name": f"MoreAI Skill {skill.get('slug','unknown')} SBOM",
         "documentNamespace": f"https://moreai.invalid/sbom/skills/{skill.get('id','unknown')}/{skill.get('content_sha256','unknown')}",
         "creationInfo": {"creators":["Tool: MoreAI-Skill-Registry"],"created":datetime.now(timezone.utc).isoformat()},
-        "packages": spdx_packages,
-        "relationships": [{"spdxElementId":"SPDXRef-DOCUMENT","relationshipType":"DESCRIBES","relatedSpdxElement":package["SPDXID"]} for package in spdx_packages],
+        "packages": spdx_packages, "files": spdx_files, "relationships": relationships,
+        "comment": "Inventory is bounded to ingested pinned source files and discovered dependency manifests; it is not a complete build attestation or legal opinion.",
     }
 
 
@@ -314,7 +337,7 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
     })
     source_inventory = _source_review_inventory(files)
     registry_inventory = await _resolve_exact_dependency_licenses(request.app.state.http, source_inventory["dependencies"])
-    sbom = _spdx_skill_sbom(skill, registry_inventory["packages"])
+    sbom = _spdx_skill_sbom(skill, registry_inventory["packages"], files)
     source_inventory["registry_resolution"] = {
         "exact_version_count": registry_inventory["exact_version_count"],
         "registry_metadata_resolved_count": registry_inventory["registry_metadata_resolved_count"],
@@ -339,6 +362,14 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
             break
     if not skill.get("license_evidence") or not source_inventory["license_files"]:
         findings.append("Repository LICENSE/NOTICE evidence is incomplete; legal approval is required.")
+    if registry_inventory["unresolved_count"]:
+        findings.append("One or more exact dependency versions lack authoritative registry metadata; SPDX licenseDeclared remains NOASSERTION.")
+    if any(item.get("license_declared") == "NOASSERTION" for item in registry_inventory["packages"]):
+        findings.append("One or more dependency license declarations are unknown or not a recognized SPDX expression.")
+    if any(item.get("registry_metadata_status") == "range_or_unpinned" for item in registry_inventory["packages"]):
+        findings.append("One or more dependencies are not pinned to an exact version; a reproducible dependency lock is required.")
+    if any(item.get("binary_content_base64") for item in files):
+        findings.append("Binary assets are inventoried by SHA-256, but provenance, redistribution rights and asset-specific licenses require reviewer evidence.")
 
     if not skill.get("source_path") or ".." in str(skill["source_path"]).split("/"):
         findings.append("Unsafe source path.")
