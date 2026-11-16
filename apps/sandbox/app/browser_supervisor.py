@@ -76,12 +76,36 @@ class BrowserSupervisor:
         sessions.raise_for_status()
         if not isinstance(sessions.json(), list):
             raise RuntimeError("openfuse_browser_worker_sessions_contract_invalid")
+        try:
+            await self._clamav_ping()
+            scanner_status = "ready"
+        except Exception:
+            scanner_status = "unavailable_fail_closed"
         return {
             "status": "ready",
             "egress_enforced": True,
             "session_api": "openfuse-v1",
-            "download_scanner": "clamav_required_at_import",
+            "download_scanner": scanner_status,
         }
+
+    async def _clamav_ping(self) -> None:
+        host = os.getenv("MOREAI_CLAMAV_HOST", "")
+        try:
+            port = int(os.getenv("MOREAI_CLAMAV_PORT", "3310"))
+        except ValueError as exc:
+            raise RuntimeError("browser_download_scanner_configuration_invalid") from exc
+        if not host or not 1 <= port <= 65535:
+            raise RuntimeError("browser_download_scanner_not_configured")
+        reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=5.0)
+        try:
+            writer.write(b"zPING\\0")
+            await writer.drain()
+            verdict = await asyncio.wait_for(reader.read(128), timeout=5.0)
+            if verdict.rstrip(b"\\0\\r\\n") != b"PONG":
+                raise RuntimeError("browser_download_scanner_not_ready")
+        finally:
+            writer.close()
+            await writer.wait_closed()
 
     async def _clamav_scan(self, content: bytes) -> None:
         host = os.getenv("MOREAI_CLAMAV_HOST", "")
