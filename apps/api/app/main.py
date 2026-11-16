@@ -34,7 +34,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-_cors_origins = [origin.strip().rstrip('/') for origin in os.getenv('MOREAI_CORS_ALLOWED_ORIGINS', '').split(',') if origin.strip()]
+# The production customer dashboard is hosted at this canonical origin. Keep it
+# allowed even when an incomplete deployment environment only lists localhost;
+# deployment-specific origins may still be added through MOREAI_CORS_ALLOWED_ORIGINS.
+_configured_cors_origins = [
+    origin.strip().rstrip('/')
+    for origin in os.getenv('MOREAI_CORS_ALLOWED_ORIGINS', '').split(',')
+    if origin.strip()
+]
+_cors_origins = list(dict.fromkeys([
+    'https://moreai.web.id',
+    *_configured_cors_origins,
+]))
 if _cors_origins:
     app.add_middleware(
         CORSMiddleware,
