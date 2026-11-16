@@ -30,15 +30,29 @@ MoreAI therefore uses the canonical MoreAI session UUID as the OpenFuse profile 
 - `apps/sandbox/app/browser_supervisor.py`
   - Added authenticated OpenFuse profile listing and a delete-profile adapter.
 - `apps/worker/app/main.py`
-  - Added independent orphan-profile reconciliation. It first retrieves the complete canonical profile ownership list from FastAPI, then compares it with the authenticated OpenFuse profile inventory. It attempts deletion only for profiles absent from the canonical ownership list. A failed ownership query aborts deletion. Cleanup errors do not block ordinary session-close processing.
+  - Added independent orphan-profile reconciliation with a complete ownership snapshot; partial snapshots abort deletion.
+  - Added 30-day retention cleanup. The worker deletes only profiles returned by the FastAPI retention endpoint and acknowledges deletion only after the OpenFuse endpoint confirms success.
+- `apps/sandbox/openfuse-patches/0001-openfuse-delete-profile.patch`
+  - Added a unified source patch for the pinned OpenFuse worker's authenticated `DELETE /sessions/{id}/delete-profile` route and safe profile deletion implementation.
 - `apps/sandbox/openfuse-patches/0001-durable-profile-delete-and-storage-contract.md`
-  - Added the exact patch contract required to extend the pinned OpenFuse worker with safe profile deletion.
+  - Documents the persistent profile volume and deletion safety contract.
+- `supabase/migrations/20261116153000_moreai_browser_profile_retention.sql`
+  - Adds 30-day profile retention deadlines, deletion acknowledgement timestamps, retention notification timestamps and lifecycle event vocabulary.
+- `apps/api/app/routers/skills.py`
+  - Tightened dependency evidence: direct package manifests no longer count as exact pins; npm, Poetry, uv, Pipfile, Cargo and Composer lockfiles are inventoried; unsupported lockfile formats and unresolved direct declarations fail validation closed.
+  - Validation requires registry metadata resolution and SPDX license assertions before a package can become validated.
+- `supabase/migrations/20261116150000_moreai_skill_publication_evidence_gate.sql`
+  - Hardens the publication RPC: reviewer approval requires empty validation findings, source license evidence, a complete dependency inventory, and resolved registry metadata.
+- `apps/api/app/routers/admin.py`
+  - Exposes validation findings, SPDX SBOM, dependency resolution and source evidence to the Super Admin reviewer.
 
-## Orphan cleanup compatibility gate
+## Orphan cleanup and retention compatibility gate
 
-The pinned upstream OpenFuse worker currently exposes list/create/close/navigate/read/input/screenshot/download routes, but no profile deletion endpoint. The MoreAI adapter now targets a dedicated `DELETE /sessions/{id}/delete-profile` extension, and the exact upstream patch is documented. Until that extension is applied to the deployed OpenFuse worker, the endpoint returns an error and the worker logs cleanup as unavailable; no profile is falsely marked deleted. This is intentional fail-closed behavior.
+The pinned upstream OpenFuse worker currently exposes list/create/close/navigate/read/input/screenshot/download routes, but no profile deletion endpoint. A unified patch is now committed at `apps/sandbox/openfuse-patches/0001-openfuse-delete-profile.patch`. It adds an authenticated deletion route and refuses deletion while a Chromium context is active.
 
-The cleanup operation refuses active profiles in the required upstream patch. The worker must be rebuilt/deployed with the patch before orphan cleanup can become operational.
+MoreAI's supervisor adapter and worker reconciliation now target that route. Until the patch is applied to the deployed OpenFuse worker, the endpoint returns an error and cleanup remains unavailable; no profile is falsely marked deleted.
+
+Closed profiles receive a 30-day retention deadline. FastAPI records a single `profile_retention_eligible` event when the deadline is first reached. The worker then requests deletion from OpenFuse and FastAPI records `profile_deleted` only after a successful deletion acknowledgement. The API ownership inventory excludes acknowledged deleted profiles. Orphan cleanup uses exact count plus pagination and refuses deletion if the inventory is partial or exceeds the 10,000-row safety bound.
 
 ## Persistent volume requirement
 
@@ -57,10 +71,10 @@ All data is served through FastAPI and filtered by authenticated customer identi
 ## Remaining limits
 
 - OpenFuse profile-delete extension is source-documented but not yet applied to the separately deployed OpenFuse service.
-- Durable volume mount, backup/restore, encryption-at-rest and retention policies require infrastructure configuration.
+- Durable volume mount, backup/restore and encryption-at-rest still require infrastructure configuration. The 30-day retention policy is now implemented in source and migration, but it cannot execute until the OpenFuse deletion patch is applied and deployed.
 - OpenFuse's upstream cookie persistence is best-effort on close; persistent Chromium profile storage is the primary state mechanism. A process crash can interrupt cookie snapshot writing.
 - Malware scanning and browser download import remain blocked.
-- Skills transitive dependency resolution, license compatibility and reviewer evidence remain incomplete.
+- Skills dependency lockfile inventory and publication evidence gates are stronger, but parser coverage remains intentionally incomplete for pnpm/yarn, Go module graph, Ruby and other unsupported ecosystems; those sources remain blocked from validation. License compatibility, malware scanning and legal rights clearance still require human review.
 
 ## Verification policy
 
@@ -68,7 +82,7 @@ No tests, lint, type checks, builds, browser/API/worker/Docker runtime calls, pr
 
 ## Next implementation
 
-1. Apply the profile-delete patch to the pinned OpenFuse deployment and mount its `WORKER_DATA_DIR` persistently.
-2. Add an explicit profile deletion acknowledgement/event receipt to the MoreAI session event stream.
-3. Complete skill lockfile parsers, nested license mapping and reviewer evidence.
+1. Apply the committed profile-delete patch to the pinned OpenFuse deployment and mount its `WORKER_DATA_DIR` persistently; deployment credentials and runtime verification remain unavailable under the current instruction.
+2. Complete remaining skill lockfile parsers and package provenance mapping, including unsupported ecosystems.
+3. Add reviewer UI presentation for the expanded SBOM/dependency evidence where required; the existing reviewer screen already displays validation report and SPDX data.
 4. Continue customer dashboard route-to-screen closure across Chat, Research, Create, Analyse, Tasks, Files, Memory and Skills.
