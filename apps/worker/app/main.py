@@ -525,13 +525,17 @@ async def run_worker() -> None:
                 readiness["ready"] = False
                 stop_outbox.set()
                 stop_browser_reconciliation.set()
+                stop_browser_takeover.set()
                 capability_task.cancel()
                 outbox_task.cancel()
                 if browser_reconciliation_task is not None:
                     browser_reconciliation_task.cancel()
+                if browser_takeover_task is not None:
+                    browser_takeover_task.cancel()
                 await asyncio.gather(
                     capability_task, outbox_task,
                     *([browser_reconciliation_task] if browser_reconciliation_task is not None else []),
+                    *([browser_takeover_task] if browser_takeover_task is not None else []),
                     return_exceptions=True,
                 )
 
