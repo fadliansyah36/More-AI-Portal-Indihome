@@ -565,3 +565,11 @@ Four migration definitions whose names already exist in live history under diffe
 ### Important limitation
 
 This strict graph gate intentionally keeps publication closed for lockfile cases that cannot yet be resolved to exact package instances. The remaining work is not merely display: npm package-lock target path joins, pnpm importer/peer context edge binding, Yarn Berry workspace/protocol handling, Python environment marker/extras/group resolution, Go module graph and workspace/replacement support, Cargo source-aware target joins, and Ruby source/platform variants remain to be closed. No parser tests or executions were run under the current instruction.
+
+
+### npm package-instance resolution increment
+
+- npm package-lock v2/v3 now builds a path-indexed package-instance inventory and resolves dependency edges using nearest ancestor `node_modules` lookup. Each resolved edge retains both the source package path and target package path/version. An edge whose target cannot be located is explicitly unresolved.
+- This closes an important ambiguity where package name alone could refer to multiple nested versions. npm lockfile v1 still needs equivalent recursive path-based target joins; it remains a remaining graph item.
+- The customer Skills evidence panel now reports graph readiness and unresolved edge count. The publication gate rejects incomplete graphs before approval/publication.
+
