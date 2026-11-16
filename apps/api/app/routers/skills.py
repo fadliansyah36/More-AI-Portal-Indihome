@@ -208,7 +208,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                         if edge.get("source_manifest") != path or edge.get("to_locator"):
                             continue
                         parent_path = str(edge.get("from_locator") or "")
-                        parent_dir = PurePosixPath(parent_path).parent
+                        parent_dir = PurePosixPath(parent_path)
                         ancestors = [parent_dir, *parent_dir.parents]
                         resolved_path = None
                         for ancestor in ancestors:
@@ -253,7 +253,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 # Resolve each edge using Node's nearest ancestor node_modules rule.
                 for edge in npm_v1_edges:
                     parent = str(edge.get("from_locator") or "")
-                    parent_dir = PurePosixPath(parent).parent
+                    parent_dir = PurePosixPath(parent)
                     resolved = None
                     for ancestor in [parent_dir, *parent_dir.parents]:
                         candidate = str(ancestor / "node_modules" / str(edge.get("to")))
