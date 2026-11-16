@@ -195,6 +195,74 @@ async def list_owned_browser_profile_ids(
     return {"items": [str(row["id"]) for row in rows if row.get("id")], "complete": True, "total": total}
 
 
+@router.get("/internal/profile-cleanup-requests")
+async def list_browser_profile_cleanup_requests(
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    """Return closed profiles whose explicit retention deadline has elapsed."""
+    _worker_auth(request, x_moreai_worker_token)
+    repo = repository(request)
+    now = datetime.now(timezone.utc)
+    rows = await repo.select("moreai_browser_sessions", {
+        "status": "in.(closed,expired)",
+        "profile_retention_after": f"lte.{now.isoformat()}",
+        "profile_deleted_at": "is.null",
+        "select": "id,user_id,profile_retention_after,profile_retention_notified_at",
+        "order": "profile_retention_after.asc,id.asc",
+        "limit": "100",
+    })
+    items = []
+    for row in rows:
+        if row.get("profile_retention_notified_at") is None:
+            changed = await repo.update("moreai_browser_sessions", {
+                "id": f"eq.{row['id']}", "user_id": f"eq.{row['user_id']}",
+                "profile_deleted_at": "is.null", "profile_retention_notified_at": "is.null",
+            }, {"profile_retention_notified_at": now.isoformat()})
+            if changed:
+                await repo.insert("moreai_browser_session_events", {
+                    "session_id": str(row["id"]), "user_id": str(row["user_id"]),
+                    "event_type": "profile_retention_eligible",
+                    "metadata": {"retention_after": row.get("profile_retention_after"), "retention_days": 30},
+                })
+        items.append({
+            "session_id": str(row["id"]), "user_id": str(row["user_id"]),
+            "retention_after": row.get("profile_retention_after"),
+        })
+    return {"items": items, "retention_days": 30}
+
+
+@router.post("/internal/{session_id}/profile-deleted")
+async def acknowledge_browser_profile_deleted(
+    session_id: UUID,
+    body: SessionWorkerOwner,
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    repo = repository(request)
+    now = datetime.now(timezone.utc)
+    rows = await repo.update("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
+        "status": "in.(closed,expired)", "profile_deleted_at": "is.null",
+        "profile_retention_after": f"lte.{now.isoformat()}",
+    }, {"profile_deleted_at": now.isoformat()})
+    if rows:
+        await repo.insert("moreai_browser_session_events", {
+            "session_id": str(session_id), "user_id": str(body.user_id),
+            "event_type": "profile_deleted",
+            "metadata": {"source": "worker", "retention_policy_days": 30},
+        })
+        return {"session_id": str(session_id), "status": "profile_deleted"}
+    current = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
+        "select": "id,status,profile_deleted_at", "limit": "1",
+    })
+    if current and current[0].get("profile_deleted_at"):
+        return {"session_id": str(session_id), "status": "profile_deleted", "replayed": True}
+    raise HTTPException(409, "browser_profile_retention_gate_not_satisfied")
+
+
 @router.get("/internal/close-requests")
 async def list_browser_session_close_requests(
     request: Request,
@@ -237,6 +305,7 @@ async def complete_browser_session_close(
     }, {
         "status": "closed", "encrypted_state": None,
         "closed_at": datetime.now(timezone.utc).isoformat(),
+        "profile_retention_after": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
     })
     if rows:
         await repo.insert("moreai_browser_session_events", {
@@ -360,7 +429,7 @@ async def list_browser_session_history(
     repo = repository(request)
     sessions = await repo.select("moreai_browser_sessions", {
         "user_id": f"eq.{user['id']}",
-        "select": "id,run_id,last_run_id,origin_host,status,created_at,last_used_at,expires_at,closed_at",
+        "select": "id,run_id,last_run_id,origin_host,status,created_at,last_used_at,expires_at,closed_at,profile_retention_after,profile_deleted_at",
         "order": "last_used_at.desc,id.desc",
         "limit": str(limit),
     })
@@ -491,6 +560,7 @@ async def mark_browser_session_closed(
     }, {
         "status": "closed", "encrypted_state": None,
         "closed_at": datetime.now(timezone.utc).isoformat(),
+        "profile_retention_after": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
     })
     if rows:
         await repo.insert("moreai_browser_session_events", {
