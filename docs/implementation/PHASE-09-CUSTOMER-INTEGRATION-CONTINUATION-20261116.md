@@ -125,3 +125,13 @@ Important remaining gap:
 - The dashboard-to-worker takeover command transport and customer input/preview interface are still not wired. Thus Human Takeover remains **backend lifecycle foundation**, not end-to-end.
 - The migrations are committed but not applied to Supabase. No tests, build, lint, type-check, screenshots, runtime, Docker, staging, deployment or Supabase mutation were performed.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## Implementation update — customer logout now invokes takeover revocation
+
+- Commit: `9918b1c2a8c32e3f98efa096c4870349f0add94f`
+- Updated `app/page.tsx` to provide the existing Profile Settings `onLogout` callback.
+- Logout now attempts the authenticated FastAPI customer revoke-all endpoint before calling Supabase Auth `signOut()`, then routes the user to the existing login screen.
+- If the revoke API is unavailable, the customer is still signed out; grants remain bounded by their short TTL. The failure is logged and is not represented as a successful revoke.
+- This closes the missing callback path identified in the prior inspection. It does not complete Human Takeover: dashboard grant issuance/input, preview streaming, reconnect and private worker command delivery remain outstanding.
+- UI structure and styling were not changed; only the existing callback wiring was added. No screenshot was produced, no tests/build/lint/typecheck/runtime were run, and no migration was applied.
