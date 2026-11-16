@@ -469,9 +469,9 @@ async def list_browser_session_history(
 @router.get("")
 async def list_browser_sessions(request: Request, user: dict[str, Any] = Depends(customer_principal)):
     rows = await repository(request).select("moreai_browser_sessions", {
-        "user_id": f"eq.{user['id']}", "status": "in.(active,close_requested)",
+        "user_id": f"eq.{user['id']}",
         "select": "id,run_id,last_run_id,origin_host,status,created_at,last_used_at,expires_at",
-        "order": "last_used_at.desc", "limit": "50",
+        "order": "last_used_at.desc,id.desc", "limit": "50",
     })
     return {"items": rows}
 
