@@ -223,27 +223,51 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                             edge["to_version"] = npm_instances[resolved_path]["version"]
                         else:
                             edge["resolution_status"] = "npm_nearest_node_modules_target_unresolved"
-                # npm lockfile v1 stores transitive entries recursively under dependencies.
-                def visit_v1(entries: Any) -> None:
+                # npm lockfile v1 nests package instances recursively. Preserve
+                # their physical node_modules paths so duplicate versions do not
+                # collapse into name-only graph nodes.
+                npm_v1_nodes: dict[str, dict[str, str]] = {}
+                npm_v1_edges: list[dict[str, Any]] = []
+                def visit_v1(entries: Any, parent_locator: str = "") -> None:
                     if not isinstance(entries, dict):
                         return
                     for package_name, details in entries.items():
-                        if not isinstance(details, dict):
+                        if not isinstance(package_name, str) or not isinstance(details, dict):
                             continue
+                        locator = (parent_locator + "/node_modules/" + package_name).lstrip("/")
                         version = details.get("version")
                         if isinstance(version, str):
                             locked.add(package_name)
+                            npm_v1_nodes[locator] = {"name": package_name, "version": version}
                             add_dependency("npm", package_name, version, path, status="lockfile_pinned", integrity=details.get("integrity"))
                             declared_edges = details.get("requires")
                             if isinstance(declared_edges, dict):
-                                dependency_edges.extend({
+                                npm_v1_edges.extend({
                                     "ecosystem": "npm", "from": package_name,
-                                    "from_version": version, "to": dep,
-                                    "requested": str(requested_spec), "kind": "requires",
-                                    "source_manifest": path,
+                                    "from_locator": locator, "from_version": version,
+                                    "to": dep, "requested": str(requested_spec),
+                                    "kind": "requires", "source_manifest": path,
                                 } for dep, requested_spec in declared_edges.items() if isinstance(dep, str))
-                        visit_v1(details.get("dependencies"))
+                        visit_v1(details.get("dependencies"), locator)
                 visit_v1(parsed.get("dependencies"))
+                # Resolve each edge using Node's nearest ancestor node_modules rule.
+                for edge in npm_v1_edges:
+                    parent = str(edge.get("from_locator") or "")
+                    parent_dir = PurePosixPath(parent).parent
+                    resolved = None
+                    for ancestor in [parent_dir, *parent_dir.parents]:
+                        candidate = str(ancestor / "node_modules" / str(edge.get("to")))
+                        if candidate == "node_modules":
+                            candidate = "node_modules/" + str(edge.get("to"))
+                        if candidate in npm_v1_nodes:
+                            resolved = candidate
+                            break
+                    if resolved:
+                        edge["to_locator"] = resolved
+                        edge["to_version"] = npm_v1_nodes[resolved]["version"]
+                    else:
+                        edge["resolution_status"] = "npm_v1_nearest_node_modules_target_unresolved"
+                    dependency_edges.append(edge)
                 npm_locked[path] = locked
         elif name == "requirements.txt":
             dependency_files.append(path)
