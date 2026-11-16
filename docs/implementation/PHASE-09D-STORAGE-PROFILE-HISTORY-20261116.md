@@ -540,3 +540,28 @@ The active `supabase/migrations` directory now contains exactly five unapplied P
 5. Artifacts Storage server-only policy.
 
 Four migration definitions whose names already exist in live history under different versions were moved to `docs/implementation/sql-reconciliation-reference/` so they cannot be replayed by the normal migration runner while exact SQL equivalence is reviewed. This includes notifications/private artifacts, outbox lease fencing, Edutech assessment derived progress and Edutech path summary. The source SQL bodies are preserved unchanged. Their live version mappings are based on migration names and current metadata, not proof of historical SQL-body identity; retain them as unresolved until a trusted historical definition or complete postcondition comparison is available.
+
+
+## Continuation — strict transitive graph gate and customer evidence UI (2026-11-16)
+
+### Dependency parser / provenance
+
+- pnpm v6/v9 locator handling was extended to preserve peer-context locator identity and merge package/snapshot integrity evidence without allowing a snapshot record to erase the package integrity hash.
+- Yarn descriptors now map to resolved package instances when the package/version identity is unique; ambiguous multi-version targets are explicitly marked unresolved.
+- Composer lock dependency edges now carry parent source/dist provenance and bind a target package instance only when exactly one locked instance exists.
+- Python Poetry/uv dependency edges now carry parent version and source metadata, plus marker/extra evidence where the lock dialect exposes it.
+- Corrected escaped whitespace regexes in Python requirements parsing.
+- Cargo edges now include source-aware exact target locator evidence when lockfile records provide it; Ruby exact dependency constraints are represented as exact target locators. Non-exact Ruby constraints remain unresolved.
+- Graph completeness is now explicit in source inventory: dependency_graph_complete, unresolved_dependency_edge_count, and dependency_graph_blocking_manifests. Pipfile.lock and Go module manifests remain blocking because their current inventory does not prove the full parent-child module graph.
+- Skill validation adds a blocking finding whenever the graph is incomplete. The pending Skills publication migration now requires graph completeness and zero unresolved dependency edges for reviewer approval and publication. This prevents a package inventory with missing edges from being treated as a complete SBOM.
+
+### Customer Skills Library evidence
+
+- Extended the customer Skills API type to expose dependency graph completeness, unresolved edges, package records, edges and registry metadata counts.
+- The existing customer Skills Library now includes a compact expandable “Bukti dependency & provenance” panel. It shows package/edge counts, exact versions, unresolved items, registry resolution, graph readiness, blocking manifests and extracted edges/findings.
+- The addition uses existing slate/red/amber/green utility patterns and the existing card layout. No navigation, global CSS, design tokens or other customer screens were changed.
+- The API response already includes the validation report/source inventory; no new endpoint or direct Supabase client was added.
+
+### Important limitation
+
+This strict graph gate intentionally keeps publication closed for lockfile cases that cannot yet be resolved to exact package instances. The remaining work is not merely display: npm package-lock target path joins, pnpm importer/peer context edge binding, Yarn Berry workspace/protocol handling, Python environment marker/extras/group resolution, Go module graph and workspace/replacement support, Cargo source-aware target joins, and Ruby source/platform variants remain to be closed. No parser tests or executions were run under the current instruction.
