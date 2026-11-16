@@ -221,3 +221,10 @@ Important remaining integration:
 - `890c1d63c307661c806f0950788267661fbc6e8b`: Customer Notifications now exposes an existing FastAPI-backed preferences panel from its header. It loads `GET /api/v1/notifications/preferences`, updates `in_app_enabled` and `email_enabled` through `PUT /api/v1/notifications/preferences`, shows saving/error state, and rolls back optimistic UI state when the API rejects an update.
 - No new preference schema or direct browser-to-Supabase access was added. Existing `notificationApi` typed client and server-owned preferences table are reused. Category settings remain untouched because the current product UI does not define a canonical category taxonomy.
 - Source-only commit; no tests, lint, typecheck, build, runtime, staging, deployment, or Supabase mutation.
+
+
+## AI Skills provenance registration safeguard — 2026-11-16
+
+- `e13e37cc3618f4483fe786694e2c47aa0f3b999f`: Manual Skill Registry registration form no longer pre-populates an unverified Visual Skills repository/ref, generic version `1.0.0`, or CC-BY-4.0 license and URL. All source identity, version and license fields now begin blank and must be supplied from reviewed evidence.
+- This prevents accidental attribution/license misclassification for Scenario/Motion or other sources and reinforces the existing fail-closed publication/execution gates. Pinned catalog ingestion remains the preferred route for the three governed source families.
+- Source-only; no tests/lint/typecheck/build/runtime, staging, deployment, provider calls or Supabase mutation.
