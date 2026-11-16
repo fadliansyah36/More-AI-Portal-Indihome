@@ -480,27 +480,13 @@ async def mark_browser_session_closed(
     })
     if not runs:
         raise HTTPException(403, "browser_session_run_owner_or_status_mismatch")
-    rows = await repo.update("moreai_browser_sessions", {
-        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
-        "status": "in.(active,close_requested)",
-    }, {
-        "status": "closed", "encrypted_state": None,
-        "closed_at": datetime.now(timezone.utc).isoformat(),
-        "profile_retention_after": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+    result = await repo.rpc("moreai_mark_browser_session_closed", {
+        "p_session_id": str(session_id), "p_user_id": str(body.user_id),
+        "p_run_id": str(body.run_id),
     })
-    if rows:
-        await repo.insert("moreai_browser_session_events", {
-            "session_id": str(session_id), "user_id": str(body.user_id),
-            "event_type": "closed", "metadata": {"source": "worker", "run_id": str(body.run_id)},
-        })
-        return {"session_id": str(session_id), "status": "closed"}
-    current = await repo.select("moreai_browser_sessions", {
-        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
-        "select": "id,status", "limit": "1",
-    })
-    if current and current[0].get("status") == "closed":
-        return {"session_id": str(session_id), "status": "closed", "replayed": True}
-    raise HTTPException(404, "browser_session_not_active")
+    if not isinstance(result, dict) or result.get("status") != "closed":
+        raise HTTPException(503, "browser_session_close_contract_invalid")
+    return result
 
 
 @router.put("/internal/{session_id}/state")
