@@ -27,6 +27,7 @@ from engine.prompts.toolcall import SYSTEM_PROMPT as TOOLCALL_SYSTEM_PROMPT
 def build_agent_registry(
     client: WorkerRpcClient, http_client, *,
     sandbox_tools: IsolatedSandboxToolAdapter | None = None,
+    browser_tools: BrowserSupervisor | None = None,
 ) -> AgentRegistry:
     gateway = create_metered_gateway(client, http_client)
     plan_store = SupabasePlanStore(client)
@@ -67,20 +68,11 @@ def build_agent_registry(
         if workspace_tools is None:
             raise RuntimeError("sandbox_execution_requires_persistent_workspace_store")
         sandbox_tools.workspace_tools = workspace_tools
-    browser_tools = None
-    if os.getenv("MOREAI_BROWSER_ENABLED", "false").lower() == "true":
-        service_url = os.getenv("MOREAI_BROWSER_SERVICE_URL", "")
-        service_token = os.getenv("MOREAI_BROWSER_SERVICE_TOKEN", "")
-        egress_enforced = os.getenv("MOREAI_BROWSER_EGRESS_ENFORCED", "false").lower() == "true"
-        if not service_url or not service_token or not egress_enforced:
-            raise RuntimeError("browser_activation_requires_isolated_supervisor_and_network_egress_enforcement")
-        allow_private_http = os.getenv("MOREAI_BROWSER_PRIVATE_NETWORK_HTTP", "false").lower() == "true"
-        browser_tools = BrowserSupervisor(
-            service_url=service_url, service_token=service_token,
-            egress_enforced=egress_enforced, http=http_client,
-            allow_private_http=allow_private_http,
-            api_url=internal_api_url, internal_token=internal_worker_token,
-        )
+    browser_enabled = os.getenv("MOREAI_BROWSER_ENABLED", "false").lower() == "true"
+    if browser_enabled and browser_tools is None:
+        raise RuntimeError("browser_activation_requires_prevalidated_shared_supervisor")
+    if not browser_enabled and browser_tools is not None:
+        raise RuntimeError("browser_supervisor_supplied_while_browser_runtime_disabled")
 
     sandbox_enabled = os.getenv("MOREAI_SANDBOX_ENABLED", "false").lower() == "true"
     sandbox_gate_passed = os.getenv("MOREAI_SANDBOX_RELEASE_GATE_PASSED", "false").lower() == "true"
