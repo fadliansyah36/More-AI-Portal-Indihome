@@ -91,3 +91,38 @@ No tests, lint, type checks, builds, browser/API/worker/Docker runtime calls, pr
 2. Complete remaining skill lockfile parsers and package provenance mapping, including unsupported ecosystems.
 3. Add reviewer UI presentation for the expanded SBOM/dependency evidence where required; the existing reviewer screen already displays validation report and SPDX data.
 4. Continue customer dashboard route-to-screen closure across Chat, Research, Create, Analyse, Tasks, Files, Memory and Skills.
+
+
+## Phase 09D continuation — dependency parser coverage and dashboard boundary review
+
+Continuation date: 2026-11-16. Changes committed directly to `main`.
+
+### Dependency parser increment
+
+- Added bounded, dependency-free parsers for pnpm lock snapshots and Yarn lock descriptors. Exact package versions are inventoried from lock entries; missing package integrity remains a validation finding rather than being silently accepted.
+- Added Ruby `Gemfile.lock` Specs inventory for direct and transitive gems.
+- Added Go `go.mod` direct declarations and `go.sum` checksum inventory; direct declarations are reconciled against exact lock entries using the common package/version matcher.
+- Poetry lock entries with explicit non-registry source metadata (git/path/custom source) are now marked `non_registry_source_requires_provenance` and are not treated as ordinary PyPI registry packages.
+- Parser provenance continues to identify the exact source lockfile path; Go checksum records and npm integrity values are retained as package evidence.
+- Unsupported or ambiguous lock syntax, unresolved direct declarations, missing integrity, unpinned dependencies, and unsupported registry metadata remain fail-closed. Parser coverage does not itself prove a reproducible build, license compatibility, or full dependency graph closure.
+
+### Customer dashboard integration inventory
+
+The current repository already contains dedicated customer views for Chat, Research, Create, Analyse, Tasks, Files and Skills, plus Memory settings. The relevant integration seams are the typed FastAPI client in `lib/api/client.ts` and customer-scoped FastAPI routers under `apps/api/app/routers/`. Files and Tasks already use durable artifact/workspace and agent-run APIs; Skills uses customer-scoped import/ingest/validate/install/permission endpoints. Browser session history is served by FastAPI. No direct browser PostgREST, Storage, RPC or Realtime access was added.
+
+This continuation did not redesign any screen. A complete per-control route-to-endpoint audit and any missing UI additions remain open; no screenshot comparison was performed because browser execution is explicitly prohibited for this phase.
+
+### Current deployment and verification status
+
+- OpenFuse patch remains committed as a deployment patch only. It has **not** been applied to the pinned deployed OpenFuse service; no OpenFuse deployment credential or authorized deployment action is available in this workflow.
+- Persistent `WORKER_DATA_DIR` volume mount, backup/restore and encryption-at-rest remain infrastructure blockers.
+- Supabase migrations are source-committed but were not applied to the live project.
+- No tests, builds, lint, type checks, runtime calls, staging or deployments were run, per instruction. The new parsers are therefore source changes only and are not represented as verified.
+- The exact target commit for this continuation is recorded in the GitHub branch history; current `main` HEAD must be confirmed after all sequential commits.
+
+### Next implementation sequence
+
+1. Close external OpenFuse deployment and persistent-volume configuration when authorized deployment access is available.
+2. Complete package graph/provenance reconciliation for pnpm/Yarn/Go/Ruby, including source URLs, checksums and dependency-edge evidence; add registry metadata resolvers only where authoritative versioned metadata exists.
+3. Finish route-to-endpoint and persistence audit for Chat, Research, Create, Analyse, Tasks, Files, Memory and Skills; implement only demonstrably missing integration seams and preserve existing UI.
+4. Continue AGENTS.md Phase 09 integration gate evidence. Phase 10/11 remain blocked until the product owner authorizes verification.
