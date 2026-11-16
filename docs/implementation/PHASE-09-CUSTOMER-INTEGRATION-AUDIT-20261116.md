@@ -171,3 +171,44 @@ Commit: `3b587997d35967ee23c1d0c0abf45d6357bd5ae9`.
 ### Verification and deployment boundary
 
 No tests, parser execution, build, lint, type-check, staging, browser/runtime calls, migration application, OpenFuse deployment or Vercel deployment were performed. The code changes above are committed source changes only and remain execution-unverified. No frontend UI files were changed, no Supabase object was modified, and the six Phase 09D migrations remain pending. OpenFuse patch remains unapplied to the active service; persistent private volume configuration remains outstanding.
+
+
+## Continuation — Phase 09 resolver, migration and OpenFuse lifecycle (2026-11-16)
+
+### Latest source commit
+
+This continuation's baseline was `e99a468c1aa1f15b31b36021eee38ca22df483ab`. The current source update adds migration postcondition documentation in commit `860f1e7ba33e51ab051aff4e2fff0814f4024eea`.
+
+### Dependency resolver decision
+
+A source re-review confirms:
+- Pipfile.lock parser inventories exact `==` versions and hashes for default/develop groups but does not yet represent parent-child edges. It therefore remains graph-blocking.
+- Go `go.sum` is checksum evidence, not a selected build graph. The source does not synthesize edges from checksum rows; Go remains blocked until module-aware selected graph resolution can account for MVS, go.work, replace/exclude, toolchain and build constraints.
+- pnpm peer-context/importer and Yarn Berry protocol joins remain incomplete. Non-registry workspace/link/file/portal/patch/git/alias descriptors are explicitly unresolved instead of being bound to a coincidental registry package.
+- Python marker/extras/group environment selection remains incomplete. Exact lock package records do not by themselves prove selected environment graph.
+- The publication validator and database publication RPC continue to require a complete graph and zero unresolved edges. This is intentionally fail-closed.
+
+### OpenFuse worker and browser lifecycle source review
+
+Re-read the current MoreAI browser supervisor, worker reconciliation loop and FastAPI browser-session routes:
+- The browser supervisor targets the pinned OpenFuse session API and exposes profile deletion as a separate adapter operation.
+- Worker retention flow obtains candidates from FastAPI, requests OpenFuse profile deletion, and only then calls the FastAPI acknowledgement endpoint. Failures are logged and do not create a false deletion acknowledgement.
+- The database claim lease is five minutes. The final retry migration replaces the claim/ack RPC definitions so a failed worker attempt can be retried after lease expiry and the claim is cleared on successful acknowledgement.
+- Browser session and run ownership filters are present on internal lifecycle paths. This is source review only; worker token validation, concurrent deletion, real OpenFuse profile state, durable volume persistence, crash recovery and cross-tenant runtime behavior remain unverified.
+- The OpenFuse patch must be applied to the separately deployed pinned service before profile deletion can succeed. The deployment still requires a persistent private `WORKER_DATA_DIR` volume, backup/restore, encryption-at-rest and retention operations.
+
+### Migration reconciliation status
+
+The earlier section describing five pending migrations is historical; the current active set is six, with the retry lease migration last. The companion Phase 09D report now includes:
+- the dependency order and required live postconditions for all six migrations;
+- post-apply catalog/function/ACL/Storage checks required for acceptance;
+- explicit statements that Pipfile and Go graph evidence is incomplete;
+- a warning that migration names/timestamps do not prove SQL-body equivalence.
+
+No migration was applied, and no live database object was changed.
+
+### UI and release boundary
+
+No customer UI file changed in this continuation. Existing styles, colors, typography, button classes, layout and navigation remain untouched. The existing Browser Sessions, Skills Library, Chat, Tasks, Files and Memory views continue to call FastAPI through the typed API client.
+
+No tests, parser execution, build, lint, type-check, browser/runtime, staging, migration apply, OpenFuse deployment or Vercel deployment were performed. Phase 09 remains IN PROGRESS. Phase 10 and Phase 11 remain blocked.
