@@ -586,7 +586,29 @@ export type CustomerBrowserSession = {
   status: 'active' | 'close_requested' | 'closed' | 'expired'; created_at: string; last_used_at: string; expires_at: string;
 };
 
+export type CustomerBrowserTakeoverCommand = {
+  command_id: string; session_id: string; status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'expired';
+  error_code: string | null; created_at: string; claimed_at: string | null; finished_at: string | null;
+};
+
 export const browserSessionApi = {
+  createTakeoverGrant: (sessionId: string, ttlSeconds = 90) => moreAiCustomerApi<{
+    grant_id: string; token: string; session_id: string; scopes: string[]; expires_at: string;
+  }>('/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/takeover-grants', {
+    method: 'POST', body: JSON.stringify({ ttl_seconds: ttlSeconds }),
+  }),
+  submitTakeoverInput: (sessionId: string, grantToken: string, input: Record<string, unknown>) =>
+    moreAiCustomerApi<{ command_id: string; session_id: string; status: 'queued' }>(
+      '/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/takeover-input',
+      { method: 'POST', body: JSON.stringify({ grant_token: grantToken, input }) },
+    ),
+  takeoverCommand: (commandId: string) => moreAiCustomerApi<CustomerBrowserTakeoverCommand>(
+    '/api/v1/customer/browser-sessions/takeover-input/' + encodeURIComponent(commandId),
+  ),
+  revokeTakeoverGrants: (sessionId: string) => moreAiCustomerApi<{ session_id: string; revoked: number }>(
+    '/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/takeover-grants',
+    { method: 'DELETE' },
+  ),
   list: () => moreAiCustomerApi<{ items: CustomerBrowserSession[] }>('/api/v1/customer/browser-sessions'),
   close: (sessionId: string) => moreAiCustomerApi<{ session_id: string; status: 'close_requested' | 'closed' }>(
     '/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/close', { method: 'POST' },
