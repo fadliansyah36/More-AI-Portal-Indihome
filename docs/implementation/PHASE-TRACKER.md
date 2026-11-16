@@ -1787,3 +1787,5 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Cross-RPC fencing, SSE reconnect retention/gap semantics, full route-to-screen mapping and exact-once billing/provider-unknown handling remain explicit reconciliation work.
 - No UI edits, tests, build, lint, typecheck, screenshots, runtime, Docker, provider calls, staging, deployment, migration apply or Supabase mutation.
 - Phase 09 IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+- Browser action receipt fencing implemented: claim and finish now require active Agent Run, matching worker lease owner and unexpired lease; OpenFuse adapter sends worker identity. Commits `7de4e7bc` and `8943a7aa`. Monotonic lease-generation fencing and Computer action parity remain open; no tests/runtime/deploy.
