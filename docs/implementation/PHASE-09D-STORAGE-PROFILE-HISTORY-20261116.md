@@ -223,3 +223,28 @@ No additional UI files changed in this increment. The Memory component already u
 ### Acceptance status
 
 Phase 09D remains IN PROGRESS. This increment improves source correctness and evidence but does not close all customer action mappings, dependency ecosystem coverage, live Supabase migration reconciliation, OpenFuse deployment, or AGENTS.md Phase 09 acceptance. Phase 10 and Phase 11 remain blocked by the owner instruction prohibiting real tests and by unavailable deployment prerequisites.
+
+
+## Follow-up — dependency file provenance and authorization inventory (2026-11-16)
+
+### Source implementation committed
+
+- `apps/api/app/routers/skills.py` now emits a per-manifest/lockfile evidence record containing repository-relative path, ingested SHA-256, Git blob SHA, byte size and file role. The report includes a completeness flag that is false if any inventoried dependency file lacks a valid SHA-256.
+- Cargo dependency edges now preserve both endpoint versions and the lockfile source identity instead of collapsing packages to name-only edges. This avoids merging distinct versions or git/registry source variants in the evidence graph.
+- Corrected a parser control-flow defect: an earlier generic `go.mod` branch shadowed the later structured parser, preventing Go direct requirements from being inventoried. The structured declaration parser is now reachable and direct declarations are still required to reconcile to `go.sum` evidence.
+- Commit: `4536c784c0be16942483a8492f0c1ed5adfca963`.
+- pnpm/Yarn currently retain exact package inventory and integrity status where parsed, but complete dependency edges, peer/optional resolution semantics, workspace aliases, platform conditions and full package-source identity remain open. This increment does not claim ecosystem-complete transitive closure.
+
+### Supabase authorization/storage read-only reconciliation
+
+Canonical project `uunfgimtokhucegqbpce` was queried again using `pg_policies`, bucket metadata and migration history. No DDL, policy, grant, bucket or data mutation was performed.
+
+- Explicit `anon, authenticated` deny policies (`USING false` / `WITH CHECK false`) were observed for core business tables including conversations/messages, agent runs/steps/events, artifacts, credit ledger/reservations, knowledge documents/chunks, skill packages/source files/installs, connection credentials/actions, OAuth states and workspace file/version records.
+- Memory preferences and memory records have owner-scoped authenticated policies using `auth.uid()`. Workspaces and membership tables have membership/owner constrained read policies. Profile, entitlement, partner membership/location and selected network-session tables have narrow owner/member read policies. These policies do not relax the browser-to-FastAPI-only business data boundary in AGENTS.md.
+- Browser session, browser event and browser receipt tables remain RLS-enabled with no explicit policy rows observed for those tables; ordinary anon/authenticated access is therefore not evidenced. Service-role table grants and API repository access still require a separate privilege inventory before acceptance.
+- Storage buckets observed: `moreai-artifacts` (private; 150,000,000-byte limit; text/markdown/json/csv/pdf/png/jpeg/webp) and `moreai-knowledge-private` (private; 26,214,400-byte limit; pdf/jpeg/png/webp). A server-only deny policy was observed for `moreai-knowledge-private`. No matching `storage.objects` policy was returned for `moreai-artifacts`; its effective grant/policy path remains unverified and must be confirmed server-only before release.
+- Live migration history still ends at `20261115101318`. Four repository migrations remain absent from live history: `20261116100000`, `20261116150000`, `20261116153000`, `20261116160000`. Browser retention columns/event constraint remain unapplied. No migrations were applied.
+
+### Acceptance impact
+
+Phase 09 remains IN PROGRESS. Source provenance is stronger, but lockfile dialect/edge completeness, complete dashboard control-to-endpoint authorization mapping, browser service-role grants, artifact-bucket policy/grants, four pending migrations, and OpenFuse patch + persistent volume deployment are still open. No tests, builds, lint, type checks, runtime, staging or deployment were performed. Phase 10/11 remain blocked by the explicit no-test instruction and infrastructure prerequisites.
