@@ -1421,20 +1421,20 @@ export const connectionsApi = {
   disconnect: (connectionId: string) => moreAiCustomerApi<{id:string;status:string}>(
     '/api/v1/customer/connections/' + encodeURIComponent(connectionId), { method: 'DELETE' },
   ),
-  sendGmail: (connectionId: string, to: string[], subject: string, body: string) => moreAiCustomerApi<{status:string;replayed:boolean;receipt?:Record<string,unknown>}>(
+  sendGmail: (connectionId: string, to: string[], subject: string, body: string, idempotencyKey = crypto.randomUUID()) => moreAiCustomerApi<{status:string;replayed:boolean;receipt?:Record<string,unknown>}>(
     '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/gmail/send',
-    { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ to, subject, body, confirmed: true }) },
+    { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ to, subject, body, confirmed: true }) },
   ),
-  createCalendarEvent: (connectionId: string, summary: string, start: string, end: string, description = '') => moreAiCustomerApi<{status:string;replayed:boolean;receipt?:Record<string,unknown>}>(
+  createCalendarEvent: (connectionId: string, summary: string, start: string, end: string, description = '', idempotencyKey = crypto.randomUUID()) => moreAiCustomerApi<{status:string;replayed:boolean;receipt?:Record<string,unknown>}>(
     '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/calendar/events',
-    { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ summary, description, start, end, timezone: 'Asia/Jakarta', confirmed: true }) },
+    { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ summary, description, start, end, timezone: 'Asia/Jakarta', confirmed: true }) },
   ),
-  updateCalendarEvent: (connectionId: string, eventId: string, etag: string, summary: string) => moreAiCustomerApi<{status:string;replayed:boolean;event?:{id:string;summary?:string;etag?:string}}>(
+  updateCalendarEvent: (connectionId: string, eventId: string, etag: string, summary: string, idempotencyKey = crypto.randomUUID()) => moreAiCustomerApi<{status:string;replayed:boolean;event?:{id:string;summary?:string;etag?:string}}>(
     '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/calendar/events/' + encodeURIComponent(eventId),
-    { method: 'PATCH', headers: { 'If-Match': etag, 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ summary, confirmed: true }) },
+    { method: 'PATCH', headers: { 'If-Match': etag, 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ summary, confirmed: true }) },
   ),
-  deleteCalendarEvent: (connectionId: string, eventId: string, etag: string) => moreAiCustomerApi<{status:string;replayed:boolean;event_id:string}>(
+  deleteCalendarEvent: (connectionId: string, eventId: string, etag: string, idempotencyKey = crypto.randomUUID()) => moreAiCustomerApi<{status:string;replayed:boolean;event_id:string}>(
     '/api/v1/customer/connections/' + encodeURIComponent(connectionId) + '/calendar/events/' + encodeURIComponent(eventId) + '?confirmed=true',
-    { method: 'DELETE', headers: { 'If-Match': etag, 'Idempotency-Key': crypto.randomUUID() } },
+    { method: 'DELETE', headers: { 'If-Match': etag, 'Idempotency-Key': idempotencyKey } },
   ),
 };
