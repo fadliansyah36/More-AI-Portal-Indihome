@@ -290,8 +290,28 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 "status": "npm_lockfile_incomplete", "unresolved_direct_dependencies": missing,
             })
 
+    # Match direct declarations to the same ecosystem's resolved lock entries.
+    # A semver-looking manifest string alone is never treated as a reproducible pin.
+    locked_versions: dict[tuple[str, str], list[str]] = {}
+    for item in dependencies:
+        ecosystem, package_name, version = item.get("ecosystem"), item.get("name"), item.get("exact_version")
+        if item.get("status") == "lockfile_pinned" and isinstance(package_name, str) and isinstance(version, str):
+            normalized = re.sub(r"[-_.]+", "-", package_name).lower()
+            locked_versions.setdefault((str(ecosystem), normalized), []).append(version)
+    for item in dependencies:
+        if item.get("status") != "manifest_declared_requires_lockfile":
+            continue
+        ecosystem, package_name = item.get("ecosystem"), item.get("name")
+        normalized = re.sub(r"[-_.]+", "-", package_name).lower() if isinstance(package_name, str) else ""
+        matches = locked_versions.get((str(ecosystem), normalized), [])
+        if matches and len(set(matches)) == 1:
+            item["exact_version"] = matches[0]
+            item["status"] = "locked_declaration_matched"
+        else:
+            item["status"] = "lockfile_declaration_unresolved"
     exact = sum(1 for item in dependencies if item.get("exact_version"))
-    unresolved = sum(1 for item in dependencies if not item.get("exact_version") or item.get("status") not in {"lockfile_pinned"})
+    resolved_statuses = {"lockfile_pinned", "locked_declaration_matched"}
+    unresolved = sum(1 for item in dependencies if not item.get("exact_version") or item.get("status") not in resolved_statuses)
     return {
         "license_files": license_files,
         "manifest_files": sorted(set(manifest_files)),
@@ -481,12 +501,16 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
             break
     if not skill.get("license_evidence") or not source_inventory["license_files"]:
         findings.append("Repository LICENSE/NOTICE evidence is incomplete; legal approval is required.")
+    if source_inventory.get("unresolved_dependency_count", 0):
+        findings.append("Dependency inventory is incomplete: direct declarations are not matched to exact lockfile entries, or a lockfile parser/source is unsupported.")
     if registry_inventory["unresolved_count"]:
         findings.append("One or more exact dependency versions lack authoritative registry metadata; SPDX licenseDeclared remains NOASSERTION.")
     if any(item.get("license_declared") == "NOASSERTION" for item in registry_inventory["packages"]):
         findings.append("One or more dependency license declarations are unknown or not a recognized SPDX expression.")
     if any(item.get("registry_metadata_status") == "range_or_unpinned" for item in registry_inventory["packages"]):
         findings.append("One or more dependencies are not pinned to an exact version; a reproducible dependency lock is required.")
+    if any(item.get("ecosystem") == "npm" and item.get("status") == "lockfile_pinned" and not item.get("integrity") for item in registry_inventory["packages"]):
+        findings.append("One or more npm lockfile entries omit package integrity hashes; provenance evidence is incomplete.")
     if any(item.get("binary_content_base64") for item in files):
         findings.append("Binary assets are inventoried by SHA-256, but provenance, redistribution rights and asset-specific licenses require reviewer evidence.")
 
