@@ -212,3 +212,34 @@ No migration was applied, and no live database object was changed.
 No customer UI file changed in this continuation. Existing styles, colors, typography, button classes, layout and navigation remain untouched. The existing Browser Sessions, Skills Library, Chat, Tasks, Files and Memory views continue to call FastAPI through the typed API client.
 
 No tests, parser execution, build, lint, type-check, browser/runtime, staging, migration apply, OpenFuse deployment or Vercel deployment were performed. Phase 09 remains IN PROGRESS. Phase 10 and Phase 11 remain blocked.
+
+
+## Continuation — Go workspace fail-closed and browser lifecycle endpoint audit (2026-11-16)
+
+### Source change: Go workspace dependency evidence
+
+Commit `c73d5370b9972c2ca6a1eb9e2d1db0dd6bd5476f`:
+- Added `go.work` to dependency-file inventory.
+- Explicitly records workspace manifests as requiring a module-aware resolver.
+- Go `go.sum` checksum rows are now labelled `checksum_record_not_selected_build_node`, so checksum evidence cannot be mistaken for a selected build node.
+- `go.mod`, `go.sum`, and `go.work` remain graph-blocking until selected module graph resolution handles MVS, workspace use/replace, module replace/exclude, toolchain and build constraints.
+- This is a source change only; no parser execution was performed.
+
+### Browser lifecycle endpoint review
+
+Re-read FastAPI browser session routes, worker reconciliation and OpenFuse supervisor:
+- Retention claim endpoint is worker-token protected and delegates to the service-role RPC.
+- Acknowledgement endpoint is worker-token protected and passes canonical session/user identity to the service-role RPC.
+- Worker only acknowledges after OpenFuse returns the expected profile ID and `status=deleted`.
+- Failed OpenFuse deletion or failed acknowledgement is logged and retried by the five-minute claim lease after the final migration is applied.
+- Close-request polling defers a session while its last run remains queued/running/waiting_approval. Physical close occurs in OpenFuse before FastAPI records the closed state.
+- Owner-scoped customer session/history queries use the authenticated user's ID. Internal lifecycle endpoints depend on the worker token and canonical owner filters.
+
+### Source-level risks still open
+
+- The close-complete endpoint updates the session and writes its event in separate repository calls; it is not a single database transaction. A failure between those calls can leave a closed session without the matching event. This should be moved behind an atomic service-role RPC before calling lifecycle audit fully closed.
+- Retention claim and acknowledgement are atomic within their SQL RPCs, but remain unavailable until the six pending migrations are applied.
+- Worker/OpenFuse behavior remains unverified. In particular, the separately deployed OpenFuse worker still needs the delete-profile patch and persistent private volume.
+- No claim is made about cross-tenant denial, concurrency, process-crash recovery, or real browser profile deletion without runtime evidence.
+
+No UI files were modified. No tests, build, lint, type-check, browser/runtime, staging, migration apply or deployment were performed. Phase 09 remains IN PROGRESS.
