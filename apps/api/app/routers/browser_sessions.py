@@ -411,6 +411,21 @@ async def audit_browser_takeover_input(
     return {"grant_id": str(grant_id), "status": body.status}
 
 
+@router.post("/takeover-grants/revoke-all")
+async def revoke_all_customer_browser_takeover_grants(
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Revoke all unconsumed browser takeover grants before the customer signs out."""
+    result = await repository(request).rpc(
+        "moreai_revoke_user_browser_takeover_grants",
+        {"p_user_id": str(user["id"])},
+    )
+    if not isinstance(result, int) or result < 0:
+        raise HTTPException(503, "browser_takeover_logout_revoke_contract_invalid")
+    return {"revoked": result}
+
+
 @router.get("/history")
 async def list_browser_session_history(
     request: Request,
