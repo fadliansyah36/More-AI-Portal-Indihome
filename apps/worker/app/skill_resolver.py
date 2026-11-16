@@ -8,6 +8,9 @@ from typing import Any
 from app.client import WorkerRpcClient
 
 
+MAX_SKILL_SOURCE_FILES = 64
+
+
 # Keep this boundary aligned with DurableOpenManusRuntime.skill_permission_tools.
 # Unknown permission labels must fail closed even if a privileged DB row is malformed.
 ALLOWED_SKILL_PERMISSIONS = frozenset({
@@ -36,7 +39,7 @@ class SupabaseSkillResolver:
                 "id": f"eq.{skill_id}", "owner_user_id": f"eq.{user_id}",
                 "validation_status": "eq.validated", "license_status": "eq.approved",
                 "publication_status": "eq.published",
-                "select": "id,version,content_sha256,source_path,source_blob_sha,manifest,requested_permissions",
+                "select": "id,version,content_sha256,source_path,source_blob_sha,manifest,requested_permissions,validation_report",
                 "limit": "1",
             })
             if not packages:
@@ -66,10 +69,47 @@ class SupabaseSkillResolver:
             files = await self.client.select("moreai_skill_source_files", {
                 "skill_package_id": f"eq.{skill_id}", "owner_user_id": f"eq.{user_id}",
                 "select": "relative_path,git_blob_sha,content_sha256,text_content,binary_content_base64,byte_size,media_type",
-                "order": "relative_path.asc", "limit": "40",
+                "order": "relative_path.asc", "limit": str(MAX_SKILL_SOURCE_FILES),
             })
             if not files:
                 raise PermissionError("skill_source_files_missing")
+
+            # A published skill must resolve the complete file inventory that
+            # passed static validation, not an arbitrary first page of files.
+            validation_report = package.get("validation_report")
+            validation_report = validation_report if isinstance(validation_report, dict) else {}
+            source_inventory = validation_report.get("source_inventory")
+            source_inventory = source_inventory if isinstance(source_inventory, dict) else {}
+            sbom = source_inventory.get("sbom")
+            sbom = sbom if isinstance(sbom, dict) else {}
+            sbom_files = sbom.get("files")
+            if not isinstance(sbom_files, list) or not 1 <= len(sbom_files) <= MAX_SKILL_SOURCE_FILES:
+                raise PermissionError("skill_source_sbom_file_inventory_invalid")
+            expected_sha_by_path: dict[str, str] = {}
+            for item in sbom_files:
+                if not isinstance(item, dict) or not isinstance(item.get("fileName"), str):
+                    raise PermissionError("skill_source_sbom_file_entry_invalid")
+                relative = item["fileName"].removeprefix("./")
+                checksums = item.get("checksums") if isinstance(item.get("checksums"), list) else []
+                sha256 = next(
+                    (checksum.get("checksumValue") for checksum in checksums
+                     if isinstance(checksum, dict) and checksum.get("algorithm") == "SHA256"),
+                    None,
+                )
+                if (
+                    not relative or not isinstance(sha256, str) or len(sha256) != 64
+                    or any(character not in "0123456789abcdef" for character in sha256)
+                    or relative in expected_sha_by_path
+                ):
+                    raise PermissionError("skill_source_sbom_file_entry_invalid")
+                expected_sha_by_path[relative] = sha256
+            actual_paths = {
+                item.get("relative_path") for item in files
+                if isinstance(item.get("relative_path"), str)
+            }
+            if len(files) != len(expected_sha_by_path) or actual_paths != set(expected_sha_by_path):
+                raise PermissionError("skill_source_file_inventory_incomplete")
+
             total_bytes = 0
             root_verified = False
             for source_file in files:
@@ -89,8 +129,11 @@ class SupabaseSkillResolver:
                         raise PermissionError("skill_source_binary_encoding_invalid") from exc
                 else:
                     raise PermissionError("skill_source_file_content_missing")
-                if len(raw) != size or hashlib.sha256(raw).hexdigest() != source_file.get("content_sha256"):
+                content_sha = hashlib.sha256(raw).hexdigest()
+                if len(raw) != size or content_sha != source_file.get("content_sha256"):
                     raise PermissionError("skill_source_sha256_mismatch")
+                if expected_sha_by_path.get(relative_path) != content_sha:
+                    raise PermissionError("skill_source_sbom_content_mismatch")
                 git_blob = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
                 if git_blob != source_file.get("git_blob_sha"):
                     raise PermissionError("skill_source_git_blob_mismatch")
