@@ -29,9 +29,9 @@ Required server-only environment:
 - `MOREAI_AGENT_RUNTIME_ENABLED=true` (off by default)
 - `MOREAI_CREDITS_PER_USD` (business-approved credit conversion; no default is assumed)
 - `MOREAI_CREDIT_WALLET_CURRENCY` (canonical wallet currency key)
-- Provider secret environment variables named by the DB provider config, each beginning `MOREAI_PROVIDER_`
+- Provider secret environment variables named by the DB provider config, matching `MOREAI_PROVIDER_[A-Z0-9_]{1,100}`; each selected route and fallback must have a non-empty value in the worker process
 
-Enabled `chat` and `planning` routing policies must both resolve to an enabled model and provider. The worker startup gate also requires at least one configured provider secret environment variable for each task type. Each selected model must have an HTTPS base URL, secret environment reference, input/output pricing and max output token limit. This check validates metadata and secret presence only; it does not make live provider calls.
+Enabled `chat` and `planning` routing policies must both resolve to an enabled model and provider. The worker startup gate also requires at least one configured provider secret environment variable for each task type. Each selected model must have an HTTPS base URL, secret environment reference, input/output pricing and max output token limit. This check validates metadata and secret presence only; it does not make live provider calls. The runtime router independently filters out every candidate whose secret reference is malformed or whose worker-side value is missing/blank, so an unconfigured fallback cannot be selected during provider failover.
 
 The Super Admin provider form stores only the provider HTTPS base URL and a `MOREAI_PROVIDER_*` environment-variable name in the canonical database. The actual API key value must be added to the persistent worker host secret manager using that exact variable name. The provider stays disabled until an authorized readiness/activation process is completed.
 
