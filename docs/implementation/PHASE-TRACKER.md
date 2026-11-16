@@ -1864,3 +1864,5 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - Existing CSS/Tailwind, compact typography, red action and slate/white cards retained. No mock data or browser-to-Supabase business access.
 - Source-only. Human Takeover migrations remain unapplied; worker/API/OpenFuse runtime and exact deployed OpenFuse input payload semantics are unverified. No tests, lint, typecheck, build, runtime, screenshots, staging, deployment or Supabase mutation.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED. Next: Memory Coordinator lifecycle and Customer route-to-screen reconciliation.
+
+- Follow-up `e95785ab2dd975b08fc7aeec532443592cc80bfe` restores the latest takeover command after reload using existing owner-scoped session events + command status API, and revokes any unconsumed grant after an ambiguous submission failure. Source-only; no tests/runtime/staging/deployment or Supabase mutation. Phase 09 remains IN PROGRESS.
