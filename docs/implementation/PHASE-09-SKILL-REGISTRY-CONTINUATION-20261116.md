@@ -3,7 +3,7 @@
 Date: 2026-11-16  
 Branch: `main`  
 Source baseline: `bed0cebc7f05be5e3f70047636a334cb5959758a`  
-Current source head: `f69f90e00adff242e53dd9abe266b10d3bd57045`
+Current source head before this report refresh: `a75929f742b6484dce88f16177553dc313840510`
 
 ## Source changes committed
 
@@ -26,6 +26,23 @@ Customer UI continuation: `9e0ba8f3623750b08a40f4af4bd75268a28f328c` adds a seco
 - A dedicated Visual + Scenario batch action is now present beside the Motion batch action. It sequentially imports, recursively ingests and validates the 2 Visual and 172 Scenario pinned entrypoints through the authenticated Customer API, and skips packages already in `validated` or `review_required` state on rerun. This source action has not been executed; no package rows exist in the current aggregate snapshot.
 - No provider/model/secret/pricing/entitlement/quota/wallet policy or always-on worker has been provisioned. No fake provider, heartbeat or package records were seeded.
 - Strix was deliberately not used, per the product owner's instruction.
+
+
+
+## Additional ingestion and OpenFuse source hardening
+
+- `1f4f56348eeab7ff03d2e5ab9ee3a7ecf8be99f8` separates the skill file-count limit (64 actual files) from the traversal-node limit (128 file + directory nodes). Tree inspection of the pinned Scenario commit found two skill folders at 77 and 79 total traversal nodes, while the maximum file count is 56. The 512 KiB per-file and 5 MiB per-package byte limits remain unchanged.
+- Pinned GitHub source calls now use a server-only optional `MOREAI_GITHUB_TOKEN` from `Settings.from_env()`, with no browser exposure. All GitHub catalog, entrypoint, repository-root and recursive file requests use the same authenticated header helper. Rate-limit responses become HTTP 503 with `Retry-After` instead of a generic upstream 502. Commits: `b03c063d`, `ed8a8b23`, `d5008dab`, `7f0c6ebd`, `697b572b`. For Compose API services the variable is passed in `docker-compose.runtime.yml`; Vercel API deployments still require a protected server environment variable to be set by the operator.
+- OpenFuse's Playwright base image is now required as an immutable digest input (`MOREAI_OPENFUSE_BASE_IMAGE`), alongside the digest-pinned ClamAV image. Commits: `214d4e3f`, `ad289656`.
+- Added `apps/sandbox/compose.worker-browser.yml` to connect the persistent MoreAI worker to the private `moreai_browser_isolated` network and ClamAV, without publishing the OpenFuse port (`87b8d237`).
+- Added `infra/provision-openfuse-host.sh` (`a75929f7`). The host-side script requires the authorized root context, Docker Compose v2, immutable Playwright/ClamAV image references, 32+ character worker/proxy tokens, exact DNS allowlist entries, and verifies that Docker's persistent data-root is backed by a LUKS/dm-crypt block device before creating named volumes or starting OpenFuse/ClamAV. It pins a single browser supervisor replica. This is a provisioning script, not evidence that the host was provisioned.
+- Added API operator documentation for the server-only GitHub token (`697b572b`).
+
+## Current operational boundary
+
+None of the new provisioning commands were executed. No authorized host or actual image digests/tokens/domain list were supplied. No service containers, Docker networks, encrypted storage or worker overlay were started. No GitHub token was provisioned. The source now contains an explicit operator path, but OpenFuse/ClamAV readiness remains **NOT PROVISIONED** until the script runs on the authorized host and the private worker overlay is attached.
+
+No new Supabase objects were created or altered by this continuation. No package ingestion was run; the canonical Skill package table was previously observed empty. Provider/model registries and fresh worker capability heartbeats remain empty in the last read-only snapshot.
 
 ## Verification constraints and release state
 
