@@ -663,6 +663,72 @@ async def consume_browser_takeover_grant(
     return result
 
 
+@router.get("/{session_id}/state")
+async def get_browser_session_reconnect_state(
+    session_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Restore owner-scoped session, preview command and lease outcome after a page reload."""
+    repo = repository(request)
+    sessions = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,run_id,last_run_id,origin_host,status,created_at,last_used_at,expires_at,closed_at,profile_retention_after,profile_deleted_at",
+        "limit": "1",
+    })
+    if not sessions:
+        raise HTTPException(404, "browser_session_not_found")
+    session = sessions[0]
+    now = datetime.now(timezone.utc)
+    try:
+        expires_at = datetime.fromisoformat(str(session["expires_at"]).replace("Z", "+00:00"))
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(503, "browser_session_expiry_metadata_invalid") from exc
+    effective_status = session.get("status")
+    if effective_status == "active" and expires_at <= now:
+        effective_status = "expired"
+    requests = await repo.select("moreai_browser_preview_requests", {
+        "session_id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,scope,status,artifact_id,error_code,created_at,claimed_at,finished_at",
+        "order": "created_at.desc,id.desc", "limit": "1",
+    })
+    latest_request = requests[0] if requests else None
+    preview = None
+    if (
+        effective_status == "active" and latest_request
+        and latest_request.get("status") == "succeeded"
+        and isinstance(latest_request.get("artifact_id"), str)
+    ):
+        artifacts = await repo.select("artifacts", {
+            "id": f"eq.{latest_request['artifact_id']}",
+            "user_id": f"eq.{user['id']}",
+            "metadata->>source": "eq.openfuse_browser_screenshot",
+            "metadata->>session_id": f"eq.{session_id}",
+            "mime_type": "eq.image/png",
+            "select": "id,run_id,mime_type,size_bytes,checksum_sha256,created_at",
+            "limit": "1",
+        })
+        if artifacts:
+            artifact = artifacts[0]
+            preview = {
+                "artifact_id": artifact["id"], "run_id": artifact.get("run_id"),
+                "mime_type": artifact["mime_type"], "size_bytes": artifact["size_bytes"],
+                "checksum_sha256": artifact.get("checksum_sha256"),
+                "created_at": artifact["created_at"],
+            }
+    events = await repo.select("moreai_browser_session_events", {
+        "session_id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,event_type,metadata,created_at",
+        "order": "created_at.desc,id.desc", "limit": "50",
+    })
+    return {
+        "session": {**session, "effective_status": effective_status},
+        "preview_request": latest_request,
+        "preview": preview,
+        "events": events,
+    }
+
+
 @router.post("/{session_id}/preview-requests", status_code=202)
 async def request_browser_session_preview(
     session_id: UUID,
