@@ -1883,3 +1883,10 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - Customer Notifications preferences controls added: `890c1d63c307661c806f0950788267661fbc6e8b`.
 - Reuses existing FastAPI preference GET/PUT contracts and typed client. Exposes in-app and email toggles with loading, error, busy, and optimistic rollback states. Category settings are deliberately not surfaced until canonical categories are defined.
 - No schema/database changes; Phase 09 remains IN PROGRESS. No tests, lint, typecheck, build, runtime, staging, deployment, or Supabase mutation.
+
+
+## 2026-11-16 AI Skills provenance guard
+
+- Manual Skill Registry form no longer assumes Visual Skills + CC-BY-4.0 + version 1.0.0 for arbitrary imported packages: `e13e37cc3618f4483fe786694e2c47aa0f3b999f`.
+- Source repository/ref, version and license evidence must now be explicitly provided. Pinned catalog remains preferred; unresolved rights stay fail-closed.
+- No tests, lint, typecheck, build, runtime, staging, deployment or Supabase mutation. Phase 09 IN PROGRESS.
