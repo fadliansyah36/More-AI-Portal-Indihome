@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-11-16",
+  "generated_at": "2026-11-16T08:36:00Z",
   "project_ref": "uunfgimtokhucegqbpce",
   "branch": "main",
   "repo_head": "7e1077a89520963e0eb8c5996a226bc577eea41a",
   "counts": {
-    "repository_files": 73,
-    "live_rows": 100,
-    "exact_version_match": 7,
-    "name_match_version_diff": 60,
-    "not_in_live_by_name": 6,
-    "live_only": 28,
-    "duplicate_repository_versions": 2
+    "repository_migrations": 75,
+    "exact_version_matches": 7,
+    "name_match_version_diff": 66,
+    "not_in_live_by_name": 2,
+    "live_migrations": 110,
+    "live_only_migrations": 32,
+    "duplicate_repository_version_ids": 0
   },
   "repository_migrations": [
     {
@@ -58,30 +58,6 @@
       "name": "moreai_tool_approval_lifecycle",
       "live_versions": [
         "20261111061443"
-      ],
-      "status": "name_match_version_diff"
-    },
-    {
-      "path": "supabase/migrations/20261111100000_moreai_notifications_private_artifacts_immutable_audit.sql",
-      "git_blob_sha": "4cc5c995a01f81ac004ea62d06d27763e089c2b3",
-      "size_bytes": 4104,
-      "filename": "20261111100000_moreai_notifications_private_artifacts_immutable_audit.sql",
-      "filename_version": "20261111100000",
-      "name": "moreai_notifications_private_artifacts_immutable_audit",
-      "live_versions": [
-        "20261111083146"
-      ],
-      "status": "name_match_version_diff"
-    },
-    {
-      "path": "supabase/migrations/20261111100000_moreai_outbox_retry_lease_fencing.sql",
-      "git_blob_sha": "8f762e12c38255c28a32f1b49d238734d93e6b43",
-      "size_bytes": 1056,
-      "filename": "20261111100000_moreai_outbox_retry_lease_fencing.sql",
-      "filename_version": "20261111100000",
-      "name": "moreai_outbox_retry_lease_fencing",
-      "live_versions": [
-        "20261111091638"
       ],
       "status": "name_match_version_diff"
     },
@@ -569,30 +545,6 @@
       "status": "name_match_version_diff"
     },
     {
-      "path": "supabase/migrations/20261114083000_moreai_edutech_assessment_derived_progress.sql",
-      "git_blob_sha": "70cbc0bd1cbb4c58f655191761f537bd7f4d1a6c",
-      "size_bytes": 9232,
-      "filename": "20261114083000_moreai_edutech_assessment_derived_progress.sql",
-      "filename_version": "20261114083000",
-      "name": "moreai_edutech_assessment_derived_progress",
-      "live_versions": [
-        "20261115090226"
-      ],
-      "status": "name_match_version_diff"
-    },
-    {
-      "path": "supabase/migrations/20261114083000_moreai_edutech_path_summary_view.sql",
-      "git_blob_sha": "ddf4856a41afc68602efc70b72ff624f7bc2ff6f",
-      "size_bytes": 935,
-      "filename": "20261114083000_moreai_edutech_path_summary_view.sql",
-      "filename_version": "20261114083000",
-      "name": "moreai_edutech_path_summary_view",
-      "live_versions": [
-        "20261114070551"
-      ],
-      "status": "name_match_version_diff"
-    },
-    {
       "path": "supabase/migrations/20261114100000_moreai_skill_intelligence_registry.sql",
       "git_blob_sha": "a003b47fca541f712745f35273e64d48de5fe649",
       "size_bytes": 4113,
@@ -839,18 +791,22 @@
       "filename": "20261116100000_moreai_browser_session_close_event_constraint.sql",
       "filename_version": "20261116100000",
       "name": "moreai_browser_session_close_event_constraint",
-      "live_versions": [],
-      "status": "not_in_live_by_name"
+      "live_versions": [
+        "20261116083451"
+      ],
+      "status": "name_match_version_diff"
     },
     {
       "path": "supabase/migrations/20261116150000_moreai_skill_publication_evidence_gate.sql",
-      "git_blob_sha": "ab1316eeb20fb0f22ced9d18cfa5eb3f8c019c81",
-      "size_bytes": 4748,
+      "git_blob_sha": "532d158233c47c6903dd1bfc712edc31ea5e915d",
+      "size_bytes": 4923,
       "filename": "20261116150000_moreai_skill_publication_evidence_gate.sql",
       "filename_version": "20261116150000",
       "name": "moreai_skill_publication_evidence_gate",
-      "live_versions": [],
-      "status": "not_in_live_by_name"
+      "live_versions": [
+        "20261116083455"
+      ],
+      "status": "name_match_version_diff"
     },
     {
       "path": "supabase/migrations/20261116153000_moreai_browser_profile_retention.sql",
@@ -859,8 +815,10 @@
       "filename": "20261116153000_moreai_browser_profile_retention.sql",
       "filename_version": "20261116153000",
       "name": "moreai_browser_profile_retention",
-      "live_versions": [],
-      "status": "not_in_live_by_name"
+      "live_versions": [
+        "20261116083458"
+      ],
+      "status": "name_match_version_diff"
     },
     {
       "path": "supabase/migrations/20261116160000_moreai_browser_profile_retention_rpcs.sql",
@@ -869,8 +827,10 @@
       "filename": "20261116160000_moreai_browser_profile_retention_rpcs.sql",
       "filename_version": "20261116160000",
       "name": "moreai_browser_profile_retention_rpcs",
-      "live_versions": [],
-      "status": "not_in_live_by_name"
+      "live_versions": [
+        "20261116083502"
+      ],
+      "status": "name_match_version_diff"
     },
     {
       "path": "supabase/migrations/20261116170000_moreai_artifacts_storage_server_only.sql",
@@ -879,6 +839,78 @@
       "filename": "20261116170000_moreai_artifacts_storage_server_only.sql",
       "filename_version": "20261116170000",
       "name": "moreai_artifacts_storage_server_only",
+      "live_versions": [
+        "20261116083506"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116180000_moreai_browser_profile_retention_retry_lease.sql",
+      "git_blob_sha": "254b1c45591beb7e53276177fc9519b735a951b7",
+      "size_bytes": 4335,
+      "filename": "20261116180000_moreai_browser_profile_retention_retry_lease.sql",
+      "filename_version": "20261116180000",
+      "name": "moreai_browser_profile_retention_retry_lease",
+      "live_versions": [
+        "20261116083510"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116190000_moreai_browser_session_close_atomic.sql",
+      "git_blob_sha": "30c78fb9dc239559fc4802a8089d9ef03f7f719a",
+      "size_bytes": 1730,
+      "filename": "20261116190000_moreai_browser_session_close_atomic.sql",
+      "filename_version": "20261116190000",
+      "name": "moreai_browser_session_close_atomic",
+      "live_versions": [
+        "20261116083514"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116200000_moreai_browser_session_close_request_atomic.sql",
+      "git_blob_sha": "791771c30428303e5212c3efce10c152e905bdd5",
+      "size_bytes": 1882,
+      "filename": "20261116200000_moreai_browser_session_close_request_atomic.sql",
+      "filename_version": "20261116200000",
+      "name": "moreai_browser_session_close_request_atomic",
+      "live_versions": [
+        "20261116083517"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116210000_moreai_browser_session_worker_close_atomic.sql",
+      "git_blob_sha": "38cf96a914dd1919b40cebd169686da22a93bd16",
+      "size_bytes": 1714,
+      "filename": "20261116210000_moreai_browser_session_worker_close_atomic.sql",
+      "filename_version": "20261116210000",
+      "name": "moreai_browser_session_worker_close_atomic",
+      "live_versions": [
+        "20261116083521"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116220000_moreai_customer_memory_clear_atomic.sql",
+      "git_blob_sha": "fe80ac48b9d1a626c6361360129557cd00e31b4c",
+      "size_bytes": 5821,
+      "filename": "20261116220000_moreai_customer_memory_clear_atomic.sql",
+      "filename_version": "20261116220000",
+      "name": "moreai_customer_memory_clear_atomic",
+      "live_versions": [
+        "20261116083527"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116083600_moreai_server_only_deny_rls_policies.sql",
+      "git_blob_sha": "ae22d709f0cb70208ebc603fb297024d9b7cf2b8",
+      "size_bytes": 1740,
+      "filename": "20261116083600_moreai_server_only_deny_rls_policies.sql",
+      "filename_version": "20261116083600",
+      "name": "moreai_server_only_deny_rls_policies",
       "live_versions": [],
       "status": "not_in_live_by_name"
     }
@@ -993,19 +1025,32 @@
       "name": "partner_access_codes_atomic_redemption"
     },
     {
+      "version": "20261111083146",
+      "name": "moreai_notifications_private_artifacts_immutable_audit"
+    },
+    {
       "version": "20261111091531",
       "name": "moreai_durable_run_event_outbox_phase_07a"
+    },
+    {
+      "version": "20261111091638",
+      "name": "moreai_outbox_retry_lease_fencing"
+    },
+    {
+      "version": "20261114070551",
+      "name": "moreai_edutech_path_summary_view"
+    },
+    {
+      "version": "20261115090226",
+      "name": "moreai_edutech_assessment_derived_progress"
     }
   ],
-  "duplicate_repository_versions": [
-    "20261111100000",
-    "20261114083000"
-  ],
+  "duplicate_repository_versions": [],
   "notes": [
-    "Name match is not SQL equivalence. Live SQL definitions are not exposed by the migration history listing; compare schema/function/policy postconditions before reconciliation.",
-    "Do not reapply migrations whose live version differs from the repository filename version. Do not rewrite historical applied versions.",
-    "moreai_durable_run_event_outbox has a live historical predecessor named moreai_durable_run_event_outbox_phase_07a; verify SQL postconditions separately.",
-    "Two repository timestamp collisions remain unresolved: 20261111100000 and 20261114083000.",
-    "20261116170000_moreai_artifacts_storage_server_only is new and not applied. It adds an explicit deny policy for anon/authenticated on only the moreai-artifacts bucket."
+    "Live migration versions for the ten Phase 09D operations were assigned by Supabase apply_migration and are recorded in each matching repository_migrations.live_versions field.",
+    "Repository timestamp and live history versions are intentionally not rewritten to match; Supabase generated live versions are authoritative for the applied history.",
+    "Name match is not SQL equivalence for older historical migrations. Do not reapply timestamp-mismatched repository files or rewrite historical applied versions.",
+    "The explicit server-only deny-policy migration 20261116083600 is committed but not yet applied in this ledger snapshot.",
+    "Two historical repository timestamp collisions remain: 20261111100000 and 20261114083000."
   ]
 }

@@ -2,7 +2,7 @@
 
 Updated: 2026-11-16
 
-Implementation is proceeding directly on `main`. In this Phase 09 continuation, additive Supabase migrations were applied to the canonical project; no tests, build, lint, typecheck, browser/API verification, staging or application deployment were run.
+Implementation is proceeding directly on `main`. Ten forward-only Phase 09D migrations were applied to the canonical Supabase project. A further explicit deny-policy migration is committed in source and pending application. No tests, build, lint, typecheck, browser/API/worker/provider verification, staging or application deployment were run.
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -1534,3 +1534,14 @@ Final source baseline update: latest confirmed `main` HEAD before this documenta
 - UI additions reuse the existing Create Studio CSS classes, red primary action, white/light surfaces, slate typography and existing responsive layout; no global styles or navigation were changed.
 - Source commits: `470e9efb23f9d27e62e32ff8d5529b3b97a026b3` (19 Motion pack pins/catalog governance) and `4034404c04fadfb419b196db887d237314fdcc87` (Create Studio skill selector and handoff), followed by a handoff argument correction in this commit.
 - No tests, lint, typecheck, build, browser/API/worker/provider execution, staging, migration apply or deployment were run. This is source-level implementation only.
+
+
+## 2026-11-16 Phase 09D Supabase reconciliation and security boundary
+
+- Applied ten forward-only repository migrations to canonical Supabase project `uunfgimtokhucegqbpce`; live history assigned versions `20261116083451` through `20261116083527`. These cover browser close-event vocabulary, skill publication evidence gate, browser profile retention/claim lease, atomic close lifecycle, private artifact bucket denial, and atomic Customer Memory clear/create/disable.
+- Read-only metadata reconciliation confirmed the four profile-retention columns, eight expected RPC signatures and the explicit private-artifact deny policy. No business records were written by the reconciliation queries.
+- Supabase security advisor reported 16 RLS-enabled tables without explicit policies and Auth leaked-password protection disabled. Added a forward-only explicit deny migration for the 16 server-only tables; it is committed to source and awaiting production apply.
+- Security advisor remediation links and current limitations are documented in [Phase 09D Customer Runtime Closure](./PHASE-09D-CUSTOMER-RUNTIME-CLOSURE-20261116.md).
+- OpenFuse profile-delete patch and durable `WORKER_DATA_DIR` volume remain undeployed/unconfigured; browser download import remains blocked pending malware scanner; cross-replica capacity coordination remains open.
+- Motion catalog pins 19 pack repositories / 56 entrypoints, but recursive ingestion of all 56 has not been executed. Provider/worker media runtime remains fail-closed.
+- No tests, lint, typecheck, build, browser/API/worker/provider execution, staging or deployment. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
