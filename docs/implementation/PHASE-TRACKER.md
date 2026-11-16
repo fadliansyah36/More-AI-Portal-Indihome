@@ -1755,3 +1755,13 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Report: [Memory and OpenFuse adapter integration hardening](./PHASE-09-MEMORY-OPENFUSE-ADAPTER-HARDENING-20261116.md).
 - Source-only. No tests, build, lint, typecheck, API/browser/worker runtime, Docker, provider, staging, migration apply or deployment was run. No UI, Supabase schema/data, secrets or provider configuration changed.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 continuation — Customer Google action idempotency
+
+- `2837339b6c06f84cafb5747607a1893baf40fb3a`: typed Customer API methods accept stable caller-supplied idempotency keys for Gmail send and Calendar create/update/delete, retaining UUID defaults for compatibility.
+- `fe9828fc71640bfc9227eeb1990051e85804c6ed`: Connections Center now reuses an operation key for the same confirmed payload after an ambiguous request failure and clears it only after mutation success. Existing FastAPI routes require the header and use canonical Supabase action receipts.
+- Report: [Google Connections action idempotency continuation](./PHASE-09-GOOGLE-CONNECTIONS-IDEMPOTENCY-20261116.md).
+- UI changes are limited to the existing Connections Center handler; no visual redesign, direct Supabase access, credential, schema or data changes.
+- Source inspection only. No tests/build/lint/typecheck, API/browser/worker/OAuth/provider runtime, staging, deployment or Supabase mutation was run. Key recovery is component-lifetime only; reload-safe recovery remains a documented gap.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
