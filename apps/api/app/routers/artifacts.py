@@ -6,7 +6,7 @@ import os
 import re
 from datetime import datetime
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Query, Response
@@ -371,8 +371,31 @@ async def create_artifact_download(
     signed_path = payload.get("signedURL") or payload.get("signedUrl")
     if not isinstance(signed_path, str) or not signed_path:
         raise HTTPException(502, "Storage did not return a signed download path")
-    signed_url = signed_path if signed_path.startswith("https://") else (
-        f"{request.app.state.settings.supabase_url}/storage/v1"
-        f"{signed_path if signed_path.startswith('/') else '/' + signed_path}"
-    )
+    # Never forward an absolute URL returned by Storage unless it is bound to
+    # the configured Supabase origin. This prevents a malformed/misconfigured
+    # Storage response from turning the customer download endpoint into an
+    # arbitrary external-link redirect.
+    base_parts = urlsplit(str(request.app.state.settings.supabase_url))
+    signed_parts = urlsplit(signed_path)
+    if signed_parts.scheme or signed_parts.netloc:
+        if (
+            signed_parts.scheme != "https"
+            or signed_parts.netloc.lower() != (base_parts.netloc or "").lower()
+            or signed_parts.username is not None
+            or signed_parts.password is not None
+        ):
+            raise HTTPException(502, "Storage returned a signed URL outside the configured Supabase origin")
+        signed_path = signed_parts.path + (("?" + signed_parts.query) if signed_parts.query else "")
+    if (
+        not signed_path.startswith("/")
+        or signed_path.startswith("//")
+        or "\\\\" in signed_path
+        or not (signed_path.startswith("/object/sign/") or signed_path.startswith("/storage/v1/object/sign/"))
+    ):
+        raise HTTPException(502, "Storage returned an invalid signed object path")
+    storage_prefix = "/storage/v1"
+    relative_path = signed_path[len(storage_prefix):] if signed_path.startswith(storage_prefix + "/") else signed_path
+    signed_url = f"{str(request.app.state.settings.supabase_url).rstrip('/')}/storage/v1{relative_path}"
+    if signed_parts.query:
+        signed_url += "?" + signed_parts.query
     return {"artifact_id": str(artifact_id), "url": signed_url, "expires_in": 60}
