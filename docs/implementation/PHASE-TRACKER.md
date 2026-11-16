@@ -1727,3 +1727,13 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Source-only: no Supabase schema/data, customer UI, routes, provider settings, billing policy or worker deployment changed. No tests, lint, typecheck, build, browser/API runtime, worker/provider execution, staging or deployment was run.
 - The worker resolver complete-SPDX snapshot change is also source-only; no persistent worker is provisioned. The API ingestion-resume commit remains absent from latest observed API deployment.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+## 2026-11-16 final read-only deployment/runtime reconciliation
+
+- Latest observed frontend Vercel production deployment: READY, deployment dpl_F154ZFwNnwkKEhu8sLDnepjo7pQQ, source commit 5a8ef67a1fe75752702abb1e280376832d47d999. The current main HEAD has advanced further through tracker-only documentation commit 4d1328802b4697eefc915fa7719c008d03a756da.
+- Latest observed FastAPI Vercel production deployment remains READY at source commit 7628d110b1e7ce0b262ab38262ad2cd887a369a2. It does not include the later Skill-ingestion idempotency source commit 1f612973efa4797399556e19237c48ee935fe017.
+- The Memory Context Coordinator commits and Worker Skill snapshot-completeness commit are source-only. No persistent worker host exists in the available project connections, so none is confirmed running.
+- API environment metadata still does not list MOREAI_GITHUB_TOKEN. MOREAI_AGENT_EXECUTION_ENABLED remains false. No secret values were decrypted or modified.
+- Read-only Supabase count snapshot: 0 Skill packages, 0 Skill source files, 0 LLM providers, 0 LLM models, 0 fresh worker heartbeats, 0 active browser sessions, 0 active browser leases. Applied migrations: 116, including the two new forward-only Skill-ingestion migrations.
+- Therefore the 230-entry Customer batch remains blocked. Do not treat deployment READY as Customer/worker/OpenFuse/provider E2E acceptance.
+- No tests, lint, typecheck, build, API/browser/worker/provider runtime, staging, manual deployment, promotion or rollback was run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
