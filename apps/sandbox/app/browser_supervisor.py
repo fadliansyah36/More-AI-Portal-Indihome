@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import socket
 from urllib.parse import quote, urlsplit
 
 import httpx
