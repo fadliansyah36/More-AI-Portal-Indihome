@@ -1342,6 +1342,8 @@ export type CustomerSkillPackage = {
     source_inventory?: {
       dependency_count?: number; dependency_edge_count?: number;
       exact_version_count?: number; unresolved_dependency_count?: number;
+      unresolved_dependency_edge_count?: number; dependency_graph_complete?: boolean;
+      dependency_graph_blocking_manifests?: string[];
       dependencies?: Array<{ ecosystem?: string; name?: string; exact_version?: string; status?: string; source_manifest?: string }>;
       dependency_edges?: Array<{ ecosystem?: string; from?: string; from_locator?: string; from_version?: string; to?: string; to_locator?: string; to_version?: string; requested?: string; kind?: string; resolution_status?: string }>;
       registry_resolution?: { exact_version_count?: number; registry_metadata_resolved_count?: number; unresolved_count?: number };
