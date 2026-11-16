@@ -1625,3 +1625,14 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Commit `f69f90e0` raises the per-skill file cap from 40 to 64 in both recursive ingestion and validation, and aligns the validation query row limit. Per-file (512 KiB) and per-package (5 MiB) limits remain unchanged. This is a measured adjustment to the pinned source tree, not an unbounded expansion.
 - Current supporting report: [Phase 09 Skill Registry continuation](./PHASE-09-SKILL-REGISTRY-CONTINUATION-20261116.md).
 - No ingestion was executed and no packages were written. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 OpenFuse host provisioning and Skill ingestion hardening continuation
+
+- Current supporting report: [Phase 09 Skill Registry continuation](./PHASE-09-SKILL-REGISTRY-CONTINUATION-20261116.md).
+- Skill ingestion now separates maximum 64 files from maximum 128 traversal nodes, based on inspected pinned Scenario trees (up to 56 files/79 total nodes); 512 KiB per file and 5 MiB per package remain unchanged. Commit `1f4f5634`.
+- Pinned GitHub API fetches use the server-only `MOREAI_GITHUB_TOKEN` setting in FastAPI. Rate-limit responses map to HTTP 503 with `Retry-After`. The API Compose file forwards the variable; the value itself has not been provisioned. Commits `b03c063d`, `ed8a8b23`, `d5008dab`, `7f0c6ebd`, `697b572b`.
+- OpenFuse Docker build now requires an immutable Playwright base image digest and immutable ClamAV image digest. A separate worker network overlay attaches MoreAI's persistent worker to the private OpenFuse/ClamAV network. Commits `214d4e3f`, `ad289656`, `87b8d237`.
+- `infra/provision-openfuse-host.sh` requires an authorized Linux host, LUKS/dm-crypt-backed Docker data-root, exact DNS allowlist, digest-pinned images and strong service tokens before launching the single-replica OpenFuse/ClamAV stack. Commit `a75929f7`. **The script has not been executed; no host/runtime provisioning is claimed.**
+- No Customer skill batch has been executed; no actual GitHub token, Docker image digest, browser service token, proxy token, host allowlist or persistent host was supplied.
+- No tests/build/lint/typecheck/runtime/browser/provider/staging/deployment were run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
