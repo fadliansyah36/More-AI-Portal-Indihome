@@ -1,0 +1,1000 @@
+{
+  "generated_at": "2026-11-16",
+  "project_ref": "uunfgimtokhucegqbpce",
+  "branch": "main",
+  "repo_head": "518919855379460da1d207227c59865d3e7e8028",
+  "counts": {
+    "repository_files": 72,
+    "live_rows": 100,
+    "exact_version_match": 7,
+    "name_match_version_diff": 60,
+    "not_in_live_by_name": 5,
+    "live_only": 28,
+    "duplicate_repository_versions": 2
+  },
+  "repository_migrations": [
+    {
+      "path": "supabase/migrations/20261111030000_moreai_enqueue_chat_run.sql",
+      "git_blob_sha": "5496f3f51100b843d9b5e96032e52cc10de482d3",
+      "size_bytes": 3130,
+      "filename": "20261111030000_moreai_enqueue_chat_run.sql",
+      "filename_version": "20261111030000",
+      "name": "moreai_enqueue_chat_run",
+      "live_versions": [
+        "20261111030000"
+      ],
+      "status": "exact_version_match"
+    },
+    {
+      "path": "supabase/migrations/20261111033000_moreai_llm_reserve_with_entitlement_quota.sql",
+      "git_blob_sha": "9b4984abcd100c558a50e676f0f39a7296d49b66",
+      "size_bytes": 6032,
+      "filename": "20261111033000_moreai_llm_reserve_with_entitlement_quota.sql",
+      "filename_version": "20261111033000",
+      "name": "moreai_llm_reserve_with_entitlement_quota",
+      "live_versions": [
+        "20261111033000"
+      ],
+      "status": "exact_version_match"
+    },
+    {
+      "path": "supabase/migrations/20261111040000_moreai_llm_quota_settlement_reconciliation.sql",
+      "git_blob_sha": "7bb174c960aeabba71c49a84e95f30a13552eece",
+      "size_bytes": 12103,
+      "filename": "20261111040000_moreai_llm_quota_settlement_reconciliation.sql",
+      "filename_version": "20261111040000",
+      "name": "moreai_llm_quota_settlement_reconciliation",
+      "live_versions": [
+        "20261111040000"
+      ],
+      "status": "exact_version_match"
+    },
+    {
+      "path": "supabase/migrations/20261111050000_moreai_tool_approval_lifecycle.sql",
+      "git_blob_sha": "54a27f0a32404ef73e2e463c1b16d820bd771228",
+      "size_bytes": 5880,
+      "filename": "20261111050000_moreai_tool_approval_lifecycle.sql",
+      "filename_version": "20261111050000",
+      "name": "moreai_tool_approval_lifecycle",
+      "live_versions": [
+        "20261111061443"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261111100000_moreai_notifications_private_artifacts_immutable_audit.sql",
+      "git_blob_sha": "4cc5c995a01f81ac004ea62d06d27763e089c2b3",
+      "size_bytes": 4104,
+      "filename": "20261111100000_moreai_notifications_private_artifacts_immutable_audit.sql",
+      "filename_version": "20261111100000",
+      "name": "moreai_notifications_private_artifacts_immutable_audit",
+      "live_versions": [
+        "20261111083146"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261111100000_moreai_outbox_retry_lease_fencing.sql",
+      "git_blob_sha": "8f762e12c38255c28a32f1b49d238734d93e6b43",
+      "size_bytes": 1056,
+      "filename": "20261111100000_moreai_outbox_retry_lease_fencing.sql",
+      "filename_version": "20261111100000",
+      "name": "moreai_outbox_retry_lease_fencing",
+      "live_versions": [
+        "20261111091638"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261111103000_moreai_admin_partner_status_atomic_audit.sql",
+      "git_blob_sha": "c366008f7f8bef7bf0b26232a163db08a8ccefb2",
+      "size_bytes": 4374,
+      "filename": "20261111103000_moreai_admin_partner_status_atomic_audit.sql",
+      "filename_version": "20261111103000",
+      "name": "moreai_admin_partner_status_atomic_audit",
+      "live_versions": [
+        "20261111083342"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261111110000_moreai_durable_run_event_outbox.sql",
+      "git_blob_sha": "79aeae1396cf93280e55c18c189adb7459cf2dfd",
+      "size_bytes": 11668,
+      "filename": "20261111110000_moreai_durable_run_event_outbox.sql",
+      "filename_version": "20261111110000",
+      "name": "moreai_durable_run_event_outbox",
+      "live_versions": [],
+      "status": "not_in_live_by_name"
+    },
+    {
+      "path": "supabase/migrations/20261111120000_moreai_explicit_server_only_rls_denials.sql",
+      "git_blob_sha": "bb5bf6bcc11bc29910b90b25b4c1cd38d95d1b71",
+      "size_bytes": 1794,
+      "filename": "20261111120000_moreai_explicit_server_only_rls_denials.sql",
+      "filename_version": "20261111120000",
+      "name": "moreai_explicit_server_only_rls_denials",
+      "live_versions": [
+        "20261111112556"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261111140000_moreai_run_level_approval_pause_resume.sql",
+      "git_blob_sha": "a9e55af137027e55f24c6e9b2c6fa3ca7df07172",
+      "size_bytes": 10412,
+      "filename": "20261111140000_moreai_run_level_approval_pause_resume.sql",
+      "filename_version": "20261111140000",
+      "name": "moreai_run_level_approval_pause_resume",
+      "live_versions": [
+        "20261111122750"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261111150000_moreai_workspace_file_cas_versioning.sql",
+      "git_blob_sha": "9d89a944a0fb5aab8a4a71188cde6f35110105dc",
+      "size_bytes": 7877,
+      "filename": "20261111150000_moreai_workspace_file_cas_versioning.sql",
+      "filename_version": "20261111150000",
+      "name": "moreai_workspace_file_cas_versioning",
+      "live_versions": [
+        "20261111140238",
+        "20261111140255"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261111160000_moreai_cancel_waiting_approval_and_outbox.sql",
+      "git_blob_sha": "0cbd1299234f06713085fedc6d4fff5377055899",
+      "size_bytes": 3314,
+      "filename": "20261111160000_moreai_cancel_waiting_approval_and_outbox.sql",
+      "filename_version": "20261111160000",
+      "name": "moreai_cancel_waiting_approval_and_outbox",
+      "live_versions": [
+        "20261111140514"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261111170000_moreai_workspace_cas_expiry_recovery.sql",
+      "git_blob_sha": "7b77816b5120e9378d715975f6e13c2a438d7acf",
+      "size_bytes": 6508,
+      "filename": "20261111170000_moreai_workspace_cas_expiry_recovery.sql",
+      "filename_version": "20261111170000",
+      "name": "moreai_workspace_cas_expiry_recovery",
+      "live_versions": [
+        "20261111141018"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261111180000_moreai_openmanus_approval_tool_keys.sql",
+      "git_blob_sha": "c1e1435f7f2f76bc18b3e1ae8306bdd8a6943840",
+      "size_bytes": 2445,
+      "filename": "20261111180000_moreai_openmanus_approval_tool_keys.sql",
+      "filename_version": "20261111180000",
+      "name": "moreai_openmanus_approval_tool_keys",
+      "live_versions": [
+        "20261111160343"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261112073357_moreai_workspace_delete_rename_lease_fencing.sql",
+      "git_blob_sha": "adb066d0eb3c6576d03c00a7bb7784fcc3a126d3",
+      "size_bytes": 6903,
+      "filename": "20261112073357_moreai_workspace_delete_rename_lease_fencing.sql",
+      "filename_version": "20261112073357",
+      "name": "moreai_workspace_delete_rename_lease_fencing",
+      "live_versions": [
+        "20261112073357"
+      ],
+      "status": "exact_version_match"
+    },
+    {
+      "path": "supabase/migrations/20261112073831_moreai_workspace_restore_deleted_file.sql",
+      "git_blob_sha": "4f25ff578db4bc16006f51bbbf33ec6c4ced9636",
+      "size_bytes": 4301,
+      "filename": "20261112073831_moreai_workspace_restore_deleted_file.sql",
+      "filename_version": "20261112073831",
+      "name": "moreai_workspace_restore_deleted_file",
+      "live_versions": [
+        "20261112073831"
+      ],
+      "status": "exact_version_match"
+    },
+    {
+      "path": "supabase/migrations/20261112084047_moreai_auth_profile_provisioning_and_owner_update.sql",
+      "git_blob_sha": "b916fd7dd49ce4bda67a23fa9cc0d7f7dfae97c6",
+      "size_bytes": 1409,
+      "filename": "20261112084047_moreai_auth_profile_provisioning_and_owner_update.sql",
+      "filename_version": "20261112084047",
+      "name": "moreai_auth_profile_provisioning_and_owner_update",
+      "live_versions": [
+        "20261112084047"
+      ],
+      "status": "exact_version_match"
+    },
+    {
+      "path": "supabase/migrations/20261112100000_moreai_workspace_file_version_history.sql",
+      "git_blob_sha": "0ba45b25884dbb7bd1fedf1811b17e2113ba8d2a",
+      "size_bytes": 2583,
+      "filename": "20261112100000_moreai_workspace_file_version_history.sql",
+      "filename_version": "20261112100000",
+      "name": "moreai_workspace_file_version_history",
+      "live_versions": [
+        "20261112044816",
+        "20261113002544"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261112120000_moreai_workspace_restore_approval_key.sql",
+      "git_blob_sha": "e40dbc00da691d6690fb8fa2dc4bee73213e1874",
+      "size_bytes": 2501,
+      "filename": "20261112120000_moreai_workspace_restore_approval_key.sql",
+      "filename_version": "20261112120000",
+      "name": "moreai_workspace_restore_approval_key",
+      "live_versions": [
+        "20261112044822",
+        "20261113002550"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261112130000_moreai_customer_learning_progress.sql",
+      "git_blob_sha": "87d8450bc89be650268417bca29b5fe96def65c3",
+      "size_bytes": 2521,
+      "filename": "20261112130000_moreai_customer_learning_progress.sql",
+      "filename_version": "20261112130000",
+      "name": "moreai_customer_learning_progress",
+      "live_versions": [
+        "20261112044926",
+        "20261113002555"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261112150000_moreai_knowledge_rag_vector.sql",
+      "git_blob_sha": "2a1dcd49b8755a66fdd1fc21fc4728a216ec8d2b",
+      "size_bytes": 4499,
+      "filename": "20261112150000_moreai_knowledge_rag_vector.sql",
+      "filename_version": "20261112150000",
+      "name": "moreai_knowledge_rag_vector",
+      "live_versions": [
+        "20261112060109",
+        "20261113002601"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261112170000_moreai_durable_knowledge_file_ingestion.sql",
+      "git_blob_sha": "cddd8ea9d21f8170e53ca676f784659d484e11bd",
+      "size_bytes": 4428,
+      "filename": "20261112170000_moreai_durable_knowledge_file_ingestion.sql",
+      "filename_version": "20261112170000",
+      "name": "moreai_durable_knowledge_file_ingestion",
+      "live_versions": [
+        "20261113002607"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113001500_moreai_customer_workspace_upload_cas.sql",
+      "git_blob_sha": "7cf5a1cd63eb1efdf905db9b8dc4de39e5399c14",
+      "size_bytes": 6149,
+      "filename": "20261113001500_moreai_customer_workspace_upload_cas.sql",
+      "filename_version": "20261113001500",
+      "name": "moreai_customer_workspace_upload_cas",
+      "live_versions": [
+        "20261113002613"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113100000_moreai_enable_toolcall_agent.sql",
+      "git_blob_sha": "b232b11938d29efa4180c0af59eed94be5f97413",
+      "size_bytes": 3142,
+      "filename": "20261113100000_moreai_enable_toolcall_agent.sql",
+      "filename_version": "20261113100000",
+      "name": "moreai_enable_toolcall_agent",
+      "live_versions": [
+        "20261113002618"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113120000_moreai_workspace_atomic_execution_commit.sql",
+      "git_blob_sha": "97c37ba55cb93ea6563b188ad029cafe8bea1fe2",
+      "size_bytes": 9683,
+      "filename": "20261113120000_moreai_workspace_atomic_execution_commit.sql",
+      "filename_version": "20261113120000",
+      "name": "moreai_workspace_atomic_execution_commit",
+      "live_versions": [
+        "20261113002624"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113130000_moreai_chat_attachment_lifecycle.sql",
+      "git_blob_sha": "f2e305766dd855698058c05797920b0467f4bc58",
+      "size_bytes": 6070,
+      "filename": "20261113130000_moreai_chat_attachment_lifecycle.sql",
+      "filename_version": "20261113130000",
+      "name": "moreai_chat_attachment_lifecycle",
+      "live_versions": [
+        "20261113003132"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113140000_moreai_customer_usage_analytics.sql",
+      "git_blob_sha": "08f8e4c821214d2805f97abe54a637fd8fd2963d",
+      "size_bytes": 2952,
+      "filename": "20261113140000_moreai_customer_usage_analytics.sql",
+      "filename_version": "20261113140000",
+      "name": "moreai_customer_usage_analytics",
+      "live_versions": [
+        "20261113051221"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113160000_moreai_customer_workspace_union_pagination.sql",
+      "git_blob_sha": "5a4f337687dfbc24832c1d395aa410f03c59615e",
+      "size_bytes": 2206,
+      "filename": "20261113160000_moreai_customer_workspace_union_pagination.sql",
+      "filename_version": "20261113160000",
+      "name": "moreai_customer_workspace_union_pagination",
+      "live_versions": [
+        "20261113132826"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113170000_moreai_customer_workspace_file_lifecycle.sql",
+      "git_blob_sha": "0278942b405b9f6ad3b9a230ca08521d3be4ee37",
+      "size_bytes": 5027,
+      "filename": "20261113170000_moreai_customer_workspace_file_lifecycle.sql",
+      "filename_version": "20261113170000",
+      "name": "moreai_customer_workspace_file_lifecycle",
+      "live_versions": [
+        "20261113133149"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113180000_moreai_customer_workspace_pagination_indexes.sql",
+      "git_blob_sha": "15c5bd0bc6d475f2cf1991ebcc61ea771e3dd257",
+      "size_bytes": 392,
+      "filename": "20261113180000_moreai_customer_workspace_pagination_indexes.sql",
+      "filename_version": "20261113180000",
+      "name": "moreai_customer_workspace_pagination_indexes",
+      "live_versions": [
+        "20261113133346"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113182657_moreai_atomic_approval_decision_events.sql",
+      "git_blob_sha": "aa579c3833ae7dbd200e4c044aabe59285c69d28",
+      "size_bytes": 7748,
+      "filename": "20261113182657_moreai_atomic_approval_decision_events.sql",
+      "filename_version": "20261113182657",
+      "name": "moreai_atomic_approval_decision_events",
+      "live_versions": [
+        "20261113182657"
+      ],
+      "status": "exact_version_match"
+    },
+    {
+      "path": "supabase/migrations/20261113190000_moreai_customer_workspace_restore_immutable_version.sql",
+      "git_blob_sha": "9740a410506331916b5527c727765b661b78f625",
+      "size_bytes": 4265,
+      "filename": "20261113190000_moreai_customer_workspace_restore_immutable_version.sql",
+      "filename_version": "20261113190000",
+      "name": "moreai_customer_workspace_restore_immutable_version",
+      "live_versions": [
+        "20261113133453"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113200000_moreai_customer_workspace_delete_version_archive.sql",
+      "git_blob_sha": "498794d75e0f6de1a0d75ca0d40524035c7cbffb",
+      "size_bytes": 2848,
+      "filename": "20261113200000_moreai_customer_workspace_delete_version_archive.sql",
+      "filename_version": "20261113200000",
+      "name": "moreai_customer_workspace_delete_version_archive",
+      "live_versions": [
+        "20261113133519"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113220000_moreai_worker_workspace_restore_immutable_version.sql",
+      "git_blob_sha": "cbcaef705f423e985f39e2a66d58cd9b5cfdefe6",
+      "size_bytes": 4690,
+      "filename": "20261113220000_moreai_worker_workspace_restore_immutable_version.sql",
+      "filename_version": "20261113220000",
+      "name": "moreai_worker_workspace_restore_immutable_version",
+      "live_versions": [
+        "20261113133656"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113230000_moreai_customer_workspace_restore_empty_file.sql",
+      "git_blob_sha": "707926e48c9cf59d3f088c8f10970da085ffac37",
+      "size_bytes": 3780,
+      "filename": "20261113230000_moreai_customer_workspace_restore_empty_file.sql",
+      "filename_version": "20261113230000",
+      "name": "moreai_customer_workspace_restore_empty_file",
+      "live_versions": [
+        "20261113133736"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113240000_moreai_customer_learning_progress_pagination.sql",
+      "git_blob_sha": "57c6b312497b3f1e1916635f6c8126f980305e6c",
+      "size_bytes": 1027,
+      "filename": "20261113240000_moreai_customer_learning_progress_pagination.sql",
+      "filename_version": "20261113240000",
+      "name": "moreai_customer_learning_progress_pagination",
+      "live_versions": [
+        "20261113134251"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261113250000_moreai_customer_knowledge_chunk_count.sql",
+      "git_blob_sha": "d77d3ed51ca9f23b4008cb221bd3550a8a453277",
+      "size_bytes": 1095,
+      "filename": "20261113250000_moreai_customer_knowledge_chunk_count.sql",
+      "filename_version": "20261113250000",
+      "name": "moreai_customer_knowledge_chunk_count",
+      "live_versions": [
+        "20261113134544"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114010000_moreai_customer_personal_memory_privacy.sql",
+      "git_blob_sha": "b1c4eb8e08302f6fd8e9613cceebb169e1b6277f",
+      "size_bytes": 5060,
+      "filename": "20261114010000_moreai_customer_personal_memory_privacy.sql",
+      "filename_version": "20261114010000",
+      "name": "moreai_customer_personal_memory_privacy",
+      "live_versions": [
+        "20261114033138"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114020000_moreai_personal_memory_retention_purge.sql",
+      "git_blob_sha": "6bb341905cf79b50f7c997ce0a736a4386e86c82",
+      "size_bytes": 643,
+      "filename": "20261114020000_moreai_personal_memory_retention_purge.sql",
+      "filename_version": "20261114020000",
+      "name": "moreai_personal_memory_retention_purge",
+      "live_versions": [
+        "20261114033442"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114040000_moreai_customer_agent_configuration_capability_registry.sql",
+      "git_blob_sha": "8b6d52457083b7bbbd888a67d5be2cb520644d03",
+      "size_bytes": 6931,
+      "filename": "20261114040000_moreai_customer_agent_configuration_capability_registry.sql",
+      "filename_version": "20261114040000",
+      "name": "moreai_customer_agent_configuration_capability_registry",
+      "live_versions": [
+        "20261114034343"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114050000_moreai_agent_config_chat_attachments.sql",
+      "git_blob_sha": "9d5967f2e0ae0edcefdfafb97c6b3a2aa054dbb8",
+      "size_bytes": 5326,
+      "filename": "20261114050000_moreai_agent_config_chat_attachments.sql",
+      "filename_version": "20261114050000",
+      "name": "moreai_agent_config_chat_attachments",
+      "live_versions": [
+        "20261114034649"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114060000_moreai_agent_config_retry_snapshot.sql",
+      "git_blob_sha": "ebf478f793891c2f856d868a7175b79f92c18dc1",
+      "size_bytes": 6244,
+      "filename": "20261114060000_moreai_agent_config_retry_snapshot.sql",
+      "filename_version": "20261114060000",
+      "name": "moreai_agent_config_retry_snapshot",
+      "live_versions": [
+        "20261114035142"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114070000_moreai_media_artifact_bucket_capacity.sql",
+      "git_blob_sha": "bae15e2e45bd4e4a417466832f30b0a035f8ef4b",
+      "size_bytes": 305,
+      "filename": "20261114070000_moreai_media_artifact_bucket_capacity.sql",
+      "filename_version": "20261114070000",
+      "name": "moreai_media_artifact_bucket_capacity",
+      "live_versions": [
+        "20261114060758"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114080000_moreai_edutech_learning_domain.sql",
+      "git_blob_sha": "eeef67a92cc34a3470adfe57d10c3a501895e35d",
+      "size_bytes": 20507,
+      "filename": "20261114080000_moreai_edutech_learning_domain.sql",
+      "filename_version": "20261114080000",
+      "name": "moreai_edutech_learning_domain",
+      "live_versions": [
+        "20261114065521"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114081000_moreai_edutech_tool_idempotency.sql",
+      "git_blob_sha": "6e879e5d8ac33107d10732879bf336c1553e395d",
+      "size_bytes": 10781,
+      "filename": "20261114081000_moreai_edutech_tool_idempotency.sql",
+      "filename_version": "20261114081000",
+      "name": "moreai_edutech_tool_idempotency",
+      "live_versions": [
+        "20261114065844"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114082000_moreai_edutech_progress_rollup.sql",
+      "git_blob_sha": "0a5c842d347327f446554d077409b5d8e6f72213",
+      "size_bytes": 3808,
+      "filename": "20261114082000_moreai_edutech_progress_rollup.sql",
+      "filename_version": "20261114082000",
+      "name": "moreai_edutech_progress_rollup",
+      "live_versions": [
+        "20261114070403"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114083000_moreai_edutech_assessment_derived_progress.sql",
+      "git_blob_sha": "70cbc0bd1cbb4c58f655191761f537bd7f4d1a6c",
+      "size_bytes": 9232,
+      "filename": "20261114083000_moreai_edutech_assessment_derived_progress.sql",
+      "filename_version": "20261114083000",
+      "name": "moreai_edutech_assessment_derived_progress",
+      "live_versions": [
+        "20261115090226"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114083000_moreai_edutech_path_summary_view.sql",
+      "git_blob_sha": "ddf4856a41afc68602efc70b72ff624f7bc2ff6f",
+      "size_bytes": 935,
+      "filename": "20261114083000_moreai_edutech_path_summary_view.sql",
+      "filename_version": "20261114083000",
+      "name": "moreai_edutech_path_summary_view",
+      "live_versions": [
+        "20261114070551"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114100000_moreai_skill_intelligence_registry.sql",
+      "git_blob_sha": "a003b47fca541f712745f35273e64d48de5fe649",
+      "size_bytes": 4113,
+      "filename": "20261114100000_moreai_skill_intelligence_registry.sql",
+      "filename_version": "20261114100000",
+      "name": "moreai_skill_intelligence_registry",
+      "live_versions": [
+        "20261115084346"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114101000_moreai_skill_permission_grants.sql",
+      "git_blob_sha": "3402d22143c39a19c02d40004fa2c6c51770425b",
+      "size_bytes": 178,
+      "filename": "20261114101000_moreai_skill_permission_grants.sql",
+      "filename_version": "20261114101000",
+      "name": "moreai_skill_permission_grants",
+      "live_versions": [
+        "20261115084350"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114102000_moreai_skill_source_files_and_audit.sql",
+      "git_blob_sha": "4cb37f847beab9f36ebc609f02bfe84081a7e116",
+      "size_bytes": 2995,
+      "filename": "20261114102000_moreai_skill_source_files_and_audit.sql",
+      "filename_version": "20261114102000",
+      "name": "moreai_skill_source_files_and_audit",
+      "live_versions": [
+        "20261115084355"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114103000_moreai_skill_aware_chat_enqueue.sql",
+      "git_blob_sha": "17a4be3cdf35417b6fe427ae529bd32390de2378",
+      "size_bytes": 12392,
+      "filename": "20261114103000_moreai_skill_aware_chat_enqueue.sql",
+      "filename_version": "20261114103000",
+      "name": "moreai_skill_aware_chat_enqueue",
+      "live_versions": [
+        "20261115084400"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114104000_moreai_skill_atomic_ingestion_and_registry_audit.sql",
+      "git_blob_sha": "a49616b166eaff3cb48442317f20ad81c5039c57",
+      "size_bytes": 7926,
+      "filename": "20261114104000_moreai_skill_atomic_ingestion_and_registry_audit.sql",
+      "filename_version": "20261114104000",
+      "name": "moreai_skill_atomic_ingestion_and_registry_audit",
+      "live_versions": [
+        "20261115084405"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114105000_moreai_skill_package_review_rpc.sql",
+      "git_blob_sha": "ecb51e1f1be7becdc9f110caf21b1f85c93d0415",
+      "size_bytes": 2495,
+      "filename": "20261114105000_moreai_skill_package_review_rpc.sql",
+      "filename_version": "20261114105000",
+      "name": "moreai_skill_package_review_rpc",
+      "live_versions": [
+        "20261115084409"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114106000_moreai_google_connections_center.sql",
+      "git_blob_sha": "ee5a8061107f963d3791462034bd0a8347dc070f",
+      "size_bytes": 7848,
+      "filename": "20261114106000_moreai_google_connections_center.sql",
+      "filename_version": "20261114106000",
+      "name": "moreai_google_connections_center",
+      "live_versions": [
+        "20261115084413"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114107000_moreai_connection_action_receipts.sql",
+      "git_blob_sha": "b4752caf061e9335a85add0f978de6481366fab8",
+      "size_bytes": 5247,
+      "filename": "20261114107000_moreai_connection_action_receipts.sql",
+      "filename_version": "20261114107000",
+      "name": "moreai_connection_action_receipts",
+      "live_versions": [
+        "20261115084417"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114108000_moreai_calendar_event_mutation_actions.sql",
+      "git_blob_sha": "f9eed9dbaa29e748e3dfd02bb67d3b2a01f552c1",
+      "size_bytes": 2690,
+      "filename": "20261114108000_moreai_calendar_event_mutation_actions.sql",
+      "filename_version": "20261114108000",
+      "name": "moreai_calendar_event_mutation_actions",
+      "live_versions": [
+        "20261115084420"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261114120000_moreai_openfuse_persistent_browser_sessions.sql",
+      "git_blob_sha": "9dc2861544a47fcc3ed739caddc2518f0bd433d7",
+      "size_bytes": 2064,
+      "filename": "20261114120000_moreai_openfuse_persistent_browser_sessions.sql",
+      "filename_version": "20261114120000",
+      "name": "moreai_openfuse_persistent_browser_sessions",
+      "live_versions": [
+        "20261115084424"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115090000_moreai_agent_model_preferences.sql",
+      "git_blob_sha": "86c53087c128b6a867bc462f4b3671ad716ea048",
+      "size_bytes": 5956,
+      "filename": "20261115090000_moreai_agent_model_preferences.sql",
+      "filename_version": "20261115090000",
+      "name": "moreai_agent_model_preferences",
+      "live_versions": [
+        "20261115084819"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115100000_moreai_agent_model_preferences_attachment_compat.sql",
+      "git_blob_sha": "86c53087c128b6a867bc462f4b3671ad716ea048",
+      "size_bytes": 5956,
+      "filename": "20261115100000_moreai_agent_model_preferences_attachment_compat.sql",
+      "filename_version": "20261115100000",
+      "name": "moreai_agent_model_preferences_attachment_compat",
+      "live_versions": [
+        "20261115085314"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115110000_moreai_provider_configuration_and_route_types.sql",
+      "git_blob_sha": "e88042d70e06f3b55dbb2f11fdb160fd8998eb7b",
+      "size_bytes": 6830,
+      "filename": "20261115110000_moreai_provider_configuration_and_route_types.sql",
+      "filename_version": "20261115110000",
+      "name": "moreai_provider_configuration_and_route_types",
+      "live_versions": [
+        "20261115092653"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115111000_moreai_provider_endpoint_allowlist.sql",
+      "git_blob_sha": "0475ff6dd22bf59e63976fb079996004271d6fa5",
+      "size_bytes": 3121,
+      "filename": "20261115111000_moreai_provider_endpoint_allowlist.sql",
+      "filename_version": "20261115111000",
+      "name": "moreai_provider_endpoint_allowlist",
+      "live_versions": [
+        "20261115092950"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115130000_moreai_browser_action_receipts.sql",
+      "git_blob_sha": "ed5795d85ecbf6741009be31d927b0dccf653d00",
+      "size_bytes": 1962,
+      "filename": "20261115130000_moreai_browser_action_receipts.sql",
+      "filename_version": "20261115130000",
+      "name": "moreai_browser_action_receipts",
+      "live_versions": [
+        "20261115095114"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115131000_moreai_browser_action_receipt_action_types.sql",
+      "git_blob_sha": "ce18eecf0110157f154b3c2d9701659763f9a336",
+      "size_bytes": 410,
+      "filename": "20261115131000_moreai_browser_action_receipt_action_types.sql",
+      "filename_version": "20261115131000",
+      "name": "moreai_browser_action_receipt_action_types",
+      "live_versions": [
+        "20261115095611"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115132000_moreai_browser_session_close_requests.sql",
+      "git_blob_sha": "e7b345e5802bd0b3cad652b49aaf3cdc7c24e945",
+      "size_bytes": 382,
+      "filename": "20261115132000_moreai_browser_session_close_requests.sql",
+      "filename_version": "20261115132000",
+      "name": "moreai_browser_session_close_requests",
+      "live_versions": [
+        "20261115095839"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115133000_moreai_browser_action_receipt_screenshot.sql",
+      "git_blob_sha": "7b1d6d92623c8b960867fdb69d3d7fac2eb0fecc",
+      "size_bytes": 333,
+      "filename": "20261115133000_moreai_browser_action_receipt_screenshot.sql",
+      "filename_version": "20261115133000",
+      "name": "moreai_browser_action_receipt_screenshot",
+      "live_versions": [
+        "20261115100136"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115134000_moreai_browser_action_receipt_result_retention.sql",
+      "git_blob_sha": "ed88a05110c61e299b2a1d8f51041812b20ae65d",
+      "size_bytes": 979,
+      "filename": "20261115134000_moreai_browser_action_receipt_result_retention.sql",
+      "filename_version": "20261115134000",
+      "name": "moreai_browser_action_receipt_result_retention",
+      "live_versions": [
+        "20261115100615"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261115140000_moreai_computer_action_receipts.sql",
+      "git_blob_sha": "4364d8bbb77a486dd9702cd743778f682684e5b9",
+      "size_bytes": 2253,
+      "filename": "20261115140000_moreai_computer_action_receipts.sql",
+      "filename_version": "20261115140000",
+      "name": "moreai_computer_action_receipts",
+      "live_versions": [
+        "20261115101318"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116100000_moreai_browser_session_close_event_constraint.sql",
+      "git_blob_sha": "f8c67c1a7f7612cffdc5814ef8bed8805ea548e2",
+      "size_bytes": 550,
+      "filename": "20261116100000_moreai_browser_session_close_event_constraint.sql",
+      "filename_version": "20261116100000",
+      "name": "moreai_browser_session_close_event_constraint",
+      "live_versions": [],
+      "status": "not_in_live_by_name"
+    },
+    {
+      "path": "supabase/migrations/20261116150000_moreai_skill_publication_evidence_gate.sql",
+      "git_blob_sha": "ab1316eeb20fb0f22ced9d18cfa5eb3f8c019c81",
+      "size_bytes": 4748,
+      "filename": "20261116150000_moreai_skill_publication_evidence_gate.sql",
+      "filename_version": "20261116150000",
+      "name": "moreai_skill_publication_evidence_gate",
+      "live_versions": [],
+      "status": "not_in_live_by_name"
+    },
+    {
+      "path": "supabase/migrations/20261116153000_moreai_browser_profile_retention.sql",
+      "git_blob_sha": "1bb4a8d9874ca71ca8c804fcc5018d14151cb7ef",
+      "size_bytes": 1548,
+      "filename": "20261116153000_moreai_browser_profile_retention.sql",
+      "filename_version": "20261116153000",
+      "name": "moreai_browser_profile_retention",
+      "live_versions": [],
+      "status": "not_in_live_by_name"
+    },
+    {
+      "path": "supabase/migrations/20261116160000_moreai_browser_profile_retention_rpcs.sql",
+      "git_blob_sha": "f3e92b2afc0d0800172cd3b0948474d513cd00c1",
+      "size_bytes": 3480,
+      "filename": "20261116160000_moreai_browser_profile_retention_rpcs.sql",
+      "filename_version": "20261116160000",
+      "name": "moreai_browser_profile_retention_rpcs",
+      "live_versions": [],
+      "status": "not_in_live_by_name"
+    }
+  ],
+  "live_only_migrations": [
+    {
+      "version": "20261102073329",
+      "name": "revoke_public_rls_event_function_execution"
+    },
+    {
+      "version": "20261102073850",
+      "name": "moreai_phase02_identity_partner_network_foundation"
+    },
+    {
+      "version": "20261102073934",
+      "name": "moreai_phase02_permission_matrix_seed"
+    },
+    {
+      "version": "20261102074028",
+      "name": "fix_workspace_membership_rls_qualification"
+    },
+    {
+      "version": "20261102074504",
+      "name": "moreai_phase02_tenant_read_rls_policies"
+    },
+    {
+      "version": "20261102075051",
+      "name": "explicit_server_only_deny_policies"
+    },
+    {
+      "version": "20261102075825",
+      "name": "moreai_phase02_agent_billing_campaign_domains"
+    },
+    {
+      "version": "20261102080148",
+      "name": "moreai_atomic_credit_reservation_settlement"
+    },
+    {
+      "version": "20261102081613",
+      "name": "moreai_durable_worker_run_lifecycle"
+    },
+    {
+      "version": "20261102082317",
+      "name": "moreai_worker_leases_recovery_cancellation_deadletter"
+    },
+    {
+      "version": "20261102082504",
+      "name": "moreai_worker_lease_lifecycle_hardening"
+    },
+    {
+      "version": "20261102083716",
+      "name": "moreai_worker_cancel_and_legacy_rpc_hardening"
+    },
+    {
+      "version": "20261102084310",
+      "name": "moreai_llm_durable_idempotent_settlement"
+    },
+    {
+      "version": "20261102084950",
+      "name": "moreai_llm_request_record_server_only_policy"
+    },
+    {
+      "version": "20261103100442",
+      "name": "single_active_network_verification_method"
+    },
+    {
+      "version": "20261103101050",
+      "name": "grant_super_admin_partner_org_permissions"
+    },
+    {
+      "version": "20261103101208",
+      "name": "partner_onboarding_and_review_atomic_rpcs"
+    },
+    {
+      "version": "20261103101333",
+      "name": "serialize_partner_application_submission"
+    },
+    {
+      "version": "20261103101453",
+      "name": "atomic_admin_llm_provider_model_routing_management"
+    },
+    {
+      "version": "20261103102141",
+      "name": "atomic_platform_role_assignment_and_revocation"
+    },
+    {
+      "version": "20261103102304",
+      "name": "serialize_super_admin_role_revocation"
+    },
+    {
+      "version": "20261103102756",
+      "name": "preserve_partner_invites_on_approval"
+    },
+    {
+      "version": "20261103122523",
+      "name": "workspace_chat_idempotency"
+    },
+    {
+      "version": "20261103122556",
+      "name": "extend_completed_chat_idempotency_retention"
+    },
+    {
+      "version": "20261103122824",
+      "name": "atomic_admin_role_permission_matrix"
+    },
+    {
+      "version": "20261103123820",
+      "name": "use_invoker_security_for_admin_rpcs"
+    },
+    {
+      "version": "20261105095527",
+      "name": "partner_access_codes_atomic_redemption"
+    },
+    {
+      "version": "20261111091531",
+      "name": "moreai_durable_run_event_outbox_phase_07a"
+    }
+  ],
+  "duplicate_repository_versions": [
+    "20261111100000",
+    "20261114083000"
+  ],
+  "notes": [
+    "Name match is not SQL equivalence. Live SQL definitions are not exposed by the migration history listing; compare schema/function/policy postconditions before reconciliation.",
+    "Do not reapply migrations whose live version differs from the repository filename version. Do not rewrite historical applied versions.",
+    "moreai_durable_run_event_outbox has a live historical predecessor named moreai_durable_run_event_outbox_phase_07a; verify SQL postconditions separately.",
+    "Two repository timestamp collisions remain unresolved: 20261111100000 and 20261114083000."
+  ]
+}
