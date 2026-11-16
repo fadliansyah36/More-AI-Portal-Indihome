@@ -12,7 +12,20 @@ from pydantic import BaseModel, Field
 from .runner import DockerSandbox, SandboxLimits
 
 app = FastAPI(title="MoreAI Isolated Execution Supervisor", version="0.1.0")
-_active: dict[str, tuple[asyncio.Task, str, str]] = {}
+# Live cancellation handles only; durable receipts and workspace state remain in FastAPI/Supabase.
+_active: dict[tuple[str, str, str], asyncio.Task] = {}
+_active_lock = asyncio.Lock()
+
+
+def _capacity_limits() -> tuple[int, int]:
+    try:
+        per_customer = int(os.getenv("MOREAI_SANDBOX_MAX_ACTIVE_PER_CUSTOMER", "2"))
+        global_limit = int(os.getenv("MOREAI_SANDBOX_MAX_ACTIVE_GLOBAL", "16"))
+    except ValueError as exc:
+        raise HTTPException(503, "sandbox_capacity_configuration_invalid") from exc
+    if not 1 <= per_customer <= 8 or not per_customer <= global_limit <= 64:
+        raise HTTPException(503, "sandbox_capacity_configuration_invalid")
+    return per_customer, global_limit
 
 
 class ExecutionRequest(BaseModel):
@@ -70,8 +83,14 @@ async def execute(
     authorization: str | None = Header(default=None),
 ):
     _authorize(authorization)
-    if body.request_id in _active:
-        raise HTTPException(409, "sandbox_request_already_active")
+    per_customer_limit, global_limit = _capacity_limits()
+    active_key = (body.user_id, body.run_id, body.request_id)
+    async with _active_lock:
+        if active_key in _active:
+            raise HTTPException(409, "sandbox_request_already_active")
+        customer_active = sum(1 for user_id, _, _ in _active if user_id == body.user_id)
+        if customer_active >= per_customer_limit or len(_active) >= global_limit:
+            raise HTTPException(429, "sandbox_execution_capacity_exceeded")
     if len(body.workspace_files) > 200:
         raise HTTPException(413, "sandbox_workspace_file_count_exceeded")
     snapshot = {}
@@ -93,7 +112,13 @@ async def execute(
     task = asyncio.current_task()
     if task is None:
         raise HTTPException(503, "sandbox_task_context_unavailable")
-    _active[body.request_id] = (task, body.run_id, body.user_id)
+    async with _active_lock:
+        customer_active = sum(1 for user_id, _, _ in _active if user_id == body.user_id)
+        if active_key in _active:
+            raise HTTPException(409, "sandbox_request_already_active")
+        if customer_active >= per_customer_limit or len(_active) >= global_limit:
+            raise HTTPException(429, "sandbox_execution_capacity_exceeded")
+        _active[active_key] = task
     try:
         result = await sandbox.execute(
             body.source,
@@ -119,7 +144,8 @@ async def execute(
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(503, "sandbox_execution_unavailable") from exc
     finally:
-        _active.pop(body.request_id, None)
+        async with _active_lock:
+            _active.pop(active_key, None)
 
 
 @app.post("/v1/cancel")
@@ -128,11 +154,10 @@ async def cancel(
     authorization: str | None = Header(default=None),
 ):
     _authorize(authorization)
-    active = _active.get(body.request_id)
-    if active is None:
-        return {"cancelled": False, "status": "not_active"}
-    task, run_id, user_id = active
-    if run_id != body.run_id or user_id != body.user_id:
-        raise HTTPException(404, "sandbox_execution_not_found")
-    task.cancel()
+    active_key = (body.user_id, body.run_id, body.request_id)
+    async with _active_lock:
+        task = _active.get(active_key)
+        if task is None:
+            return {"cancelled": False, "status": "not_active"}
+        task.cancel()
     return {"cancelled": True, "status": "cancellation_requested"}
