@@ -54,7 +54,7 @@ type SkillReviewRow = {
   source_repository: string; source_commit: string; source_path: string;
   license_id: string; license_url: string | null; license_evidence: string | null;
   license_status: string; validation_status: string; publication_status: string;
-  validation_report: { findings?: string[]; file_count?: number; total_bytes?: number; source_inventory?: { license_files?: Array<{path:string;sha256:string}>; manifest_files?: string[]; dependency_manifests?: string[]; dependency_count?: number; exact_version_count?: number; unresolved_dependency_count?: number; warning?: string; dependencies?: Array<{ecosystem?:string;name?:string;exact_version?:string|null;license_declared?:string;license_declared_raw?:string|null;registry_metadata_status?:string}>; registry_resolution?: { exact_version_count?: number; registry_metadata_resolved_count?: number; license_assertion_count?: number; unresolved_count?: number; note?: string }; sbom?: { spdxVersion?: string; packages?: Array<{name:string;versionInfo?:string;licenseDeclared?:string;SPDXID?:string}>; files?: Array<{fileName:string;SPDXID?:string;checksums?:Array<{algorithm:string;checksumValue:string}>;licenseConcluded?:string}>; comment?: string } } };
+  validation_report: { findings?: string[]; file_count?: number; total_bytes?: number; source_inventory?: { license_files?: Array<{path:string;sha256:string}>; manifest_files?: string[]; dependency_manifests?: string[]; dependency_count?: number; dependency_edge_count?: number; dependency_edges?: Array<{ecosystem?:string;from?:string;to?:string;kind?:string}>; exact_version_count?: number; unresolved_dependency_count?: number; warning?: string; dependencies?: Array<{ecosystem?:string;name?:string;exact_version?:string|null;license_declared?:string;license_declared_raw?:string|null;registry_metadata_status?:string}>; registry_resolution?: { exact_version_count?: number; registry_metadata_resolved_count?: number; license_assertion_count?: number; unresolved_count?: number; note?: string }; sbom?: { spdxVersion?: string; packages?: Array<{name:string;versionInfo?:string;licenseDeclared?:string;SPDXID?:string}>; files?: Array<{fileName:string;SPDXID?:string;checksums?:Array<{algorithm:string;checksumValue:string}>;licenseConcluded?:string}>; comment?: string } } };
   requested_permissions: string[];
   installations: Array<{
     id: string; owner_user_id: string; status: string;
@@ -261,6 +261,10 @@ export default function SuperAdminPage() {
                   {(skill.validation_report.source_inventory.sbom.files||[]).slice(0,80).map(file=><p key={file.SPDXID||file.fileName} className="break-all">{file.fileName} · {file.checksums?.[0]?.algorithm||'SHA256'}:{file.checksums?.[0]?.checksumValue?.slice(0,20)||'hash unavailable'}… · {file.licenseConcluded||'NOASSERTION'}</p>)}
                   {(skill.validation_report.source_inventory.sbom.packages||[]).slice(0,80).map(pkg=><p key={pkg.SPDXID||pkg.name} className="break-all">{pkg.name}@{pkg.versionInfo||'UNKNOWN'} · license: {pkg.licenseDeclared||'NOASSERTION'}</p>)}
                 </div>
+              </div>}
+              {(skill.validation_report.source_inventory.dependency_edges||[]).length>0&&<div className="mt-2 max-h-36 space-y-1 overflow-y-auto border-t border-slate-200 pt-2">
+                <p className="font-bold text-slate-700">Transitive dependency graph · {skill.validation_report.source_inventory.dependency_edge_count||0} edges</p>
+                {(skill.validation_report.source_inventory.dependency_edges||[]).slice(0,100).map((edge,index)=><p key={index} className="break-all">{edge.ecosystem} · {edge.from} → {edge.to} · {edge.kind||'dependency'}</p>)}
               </div>}
               {(skill.validation_report.source_inventory.dependencies||[]).length>0&&<div className="mt-2 max-h-44 space-y-1 overflow-y-auto border-t border-slate-200 pt-2">
                 <p className="font-bold text-slate-700">Dependency evidence (maks. 100)</p>
