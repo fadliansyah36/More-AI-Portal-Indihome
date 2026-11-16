@@ -471,3 +471,18 @@ The server-only Storage policy migration remains a forward-only source artifact.
 ### Verification boundary
 
 No SQL migration was executed, no live Supabase object was changed, and no test/build/lint/type-check/runtime/staging operation was performed. This is source and metadata reconciliation only.
+
+
+## Dependency provenance increment — Cargo and Composer package-instance identity (2026-11-16)
+
+The lockfile edge inventory now retains additional package-instance provenance:
+- Cargo edges include parent package name/version/source and target package name/version/source as encoded by the lockfile dependency record. This prevents distinct git/registry source instances from being represented as if package name and version alone were globally unique.
+- Composer edges include parent package name/version, parent dist/source reference when present, target package name, requested constraint, dependency group and lockfile path. PHP platform and extension requirements are excluded from third-party package edges.
+
+Commits:
+- `928a6148e0024b17ca1d129dc444b6dd7a60e7fc` — Cargo and Composer source identity.
+- `7e1077a89520963e0eb8c5996a226bc577eea41a` — npm parent locator and requested constraint.
+
+Remaining graph limitations are unchanged and explicit: pnpm importer/snapshot descriptor resolution, Yarn descriptor-to-instance dependency mapping, Python marker/extras and source identity, Go module graph/workspace/replacement resolution, and exact target-node joins for ecosystems whose lockfiles encode only a requested package name. These parsers are not tested or executed in this workflow; publication remains fail-closed where unresolved evidence is reported.
+
+No UI file, database object, migration history, Storage policy or deployment was changed in this increment.
