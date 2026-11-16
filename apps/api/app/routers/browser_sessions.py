@@ -260,29 +260,12 @@ async def complete_browser_session_close(
     x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
 ):
     _worker_auth(request, x_moreai_worker_token)
-    repo = repository(request)
-    rows = await repo.update("moreai_browser_sessions", {
-        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
-        "status": "eq.close_requested",
-    }, {
-        "status": "closed", "encrypted_state": None,
-        "closed_at": datetime.now(timezone.utc).isoformat(),
-        "profile_retention_after": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+    result = await repository(request).rpc("moreai_complete_browser_session_close", {
+        "p_session_id": str(session_id), "p_user_id": str(body.user_id),
     })
-    if rows:
-        await repo.insert("moreai_browser_session_events", {
-            "session_id": str(session_id), "user_id": str(body.user_id),
-            "event_type": "closed", "metadata": {"source": "worker_reconciler"},
-        })
-        return {"session_id": str(session_id), "status": "closed"}
-    current = await repo.select("moreai_browser_sessions", {
-        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
-        "select": "id,status", "limit": "1",
-    })
-    if current and current[0].get("status") == "closed":
-        return {"session_id": str(session_id), "status": "closed", "replayed": True}
-    raise HTTPException(404, "browser_session_close_request_not_found")
-
+    if not isinstance(result, dict) or result.get("status") != "closed":
+        raise HTTPException(503, "browser_session_close_completion_contract_invalid")
+    return result
 
 @router.post("/internal/actions/claim")
 async def claim_browser_action_receipt(
