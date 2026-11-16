@@ -263,3 +263,35 @@ Limitations:
 - No SQL execution, tests, build, lint, type-check, staging, browser/runtime verification or deployment was performed.
 
 Phase 09 remains **IN PROGRESS**. No Phase 10 or Phase 11 gate is claimed.
+
+
+## Continuation — complete atomic browser close request/worker paths (2026-11-16)
+
+Baseline: `f88f15a7bf25603e6684fbd06f26d688fa86c6f5`.
+Source commits:
+- `70413f5f11028665edcc2bfb58735395ec9f155a` — atomic close request for customer, TTL reconciler and acquire-expiry guard.
+- `ac322ad222dfc6146a43ed63840d278bc947b377` — atomic worker close path.
+
+Changes:
+- Added `20261116200000_moreai_browser_session_close_request_atomic.sql` with `moreai_request_browser_session_close(uuid,uuid,text,text)`. It row-locks and validates owner/status/source/reason, transitions active → close_requested and appends one event in the same transaction. Replays of close_requested/closed return without duplicate events.
+- Customer `POST /{session_id}/close`, internal TTL/idle expiry reconciler, and acquire-expiry guard now call this RPC. The TTL scanner still discovers candidates through a bounded read; the state transition and event append are atomic and concurrency-safe.
+- Added `20261116210000_moreai_browser_session_worker_close_atomic.sql` with `moreai_mark_browser_session_closed(uuid,uuid,uuid)`. The worker close endpoint now validates the owning Agent Run and delegates the session transition plus event append to one transaction.
+- The prior `moreai_complete_browser_session_close` RPC remains the reconciler close-completion path. All three close state transitions now use atomic database functions; duplicate close requests/completions are idempotent.
+
+Customer API audit snapshot:
+- `customer.py`: customer-principal dependency on all customer routes; conversation/run reads use owner-scoped repository methods; enqueue/cancel/usage/memory-consent paths use server-side RPCs. Memory clear disables consent, purges episodic metadata, then deletes user memories as separate operations. Failure returns 503 and invites retry, but this is not a single atomic transaction; partial progress is possible and must remain visible/retryable.
+- `knowledge.py`: upload/list/detail/retry/reindex/archive routes require customer principal and workspace-access checks. Detail chunk count uses a scoped RPC. Processing depends on durable worker availability; live processing not verified.
+- `skills.py`: all customer skill routes require customer principal. Validation, import, ingestion, installation and permission workflows are distinct. Install/execute remain gated by publication/validation and permission policy; parser graph incompleteness remains fail-closed. Live worker publication/installation not verified.
+- `artifacts.py`: customer list/create/download routes use authenticated principal and owner-scoped run/conversation/artifact checks; signed download URLs are server-created and origin-validated. Storage policy migration remains unapplied.
+- `workspaces.py`: list and file lifecycle operations use workspace membership/role checks; delete/restore/upload use server RPCs; run listing requires `agent.run.read`. No browser-side direct Storage/PostgREST access is intended.
+- `agent_runs.py` and customer run routes: owner-scoped run reads, steps/logs/thinking/progress/events/stream, cancel through worker RPC; workspace access checked for enqueue. Runtime stream/retry/cancel behavior remains unverified.
+- Memory router is housed in `customer.py`, not a separate `personal_memory.py` module.
+
+Remaining audit/implementation gaps:
+- Memory clear-all still consists of multiple database operations rather than one transaction. A dedicated owner-scoped atomic purge RPC should replace the sequence, while preserving episodic cleanup semantics and auditability.
+- Browser session creation, restore/update, state-save and initial event append still contain multi-request write sequences. The close-specific lifecycle paths are atomic; this does not yet establish full atomicity for every browser event.
+- TTL candidate discovery is bounded to 100 active rows and currently does not page. A sustained backlog may delay later candidates; use cursor/claim batching or a database-side expiry claim RPC.
+- Migration sources `20261116190000`, `20261116200000`, and `20261116210000` are committed but not applied. Their dependency is after existing close-event vocabulary and retention columns (the prior Phase 09D six-migration chain); verify live postconditions and function privileges before any apply.
+- No actual tests/build/lint/type-check, SQL execution, staging, browser/runtime verification or deployment was performed.
+
+Phase 09 remains **IN PROGRESS**. UI files were not changed in this continuation; existing frontend visual system remains untouched.
