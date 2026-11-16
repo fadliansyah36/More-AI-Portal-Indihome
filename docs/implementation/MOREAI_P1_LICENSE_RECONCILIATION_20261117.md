@@ -55,3 +55,31 @@ At the pinned commits listed in the recursive manifests, raw root `LICENSE` cont
 - Finalize copy/adapt/archive-only/exclude/defer decisions per file and selected capability.
 
 No code was imported or executed. No tests, builds, migrations, Supabase writes, staging or deployment were performed.
+
+## Recursive license/NOTICE filename re-scan — 2026-11-17 continuation
+
+A second path-level scan was performed against the captured recursive tree manifests (the five primary trees plus both 19-pack Motion child manifests). The filename patterns included `LICENSE`, `LICENCE`, `COPYING`, `NOTICE`, `COPYRIGHT` and common extension variants. Every returned license-like file was fetched by immutable Git blob SHA and its content inspected.
+
+### Primary source trees
+
+| Repository | Path | Git blob SHA | Content-level finding |
+|---|---|---|---|
+| OpenManusWeb | `LICENSE` | `db2216e1a5bfd392213f57a257930e9b2dcca684` | MIT, copyright 2025 manna_and_poem |
+| OpenFuse | `LICENSE` | `0e1238724a08528992a39ef43c63f899432a282c` | MIT, copyright 2026 OpenFuse contributors |
+| Visual Skills | `LICENSE` | `da6ab6cc8f333d7e89a99812866df8f24374d47c` | CC BY 4.0 full license text |
+| Visual Skills | `NOTICE` | `ec40c203365e6b3747c2e711e77e8ab327f98e44` | Serge Shima attribution + agentara/skills method acknowledgment |
+| Scenario Skills | `LICENSE` | `05676553d9d10a0effff673b507b4fcfed652c17` | MIT, copyright 2026 Scenario Inc. |
+| Scenario Skills | `.agents/skills/skill-creator/LICENSE.txt` | `4f881c52d1f72f4cfb720e339e2d35c3058d01a9` | Apache License 2.0; scoped to nested internal skill-creator tree |
+| Motion Skills root | `LICENSE` | `a61b911146037f2ef312f67e9b45de6c99b7f870` | MIT, copyright 2026 iart.ai |
+
+### Motion child packs
+
+The two child-pack manifests were re-parsed for every license-like path. Exactly 18 of 19 child repositories contain a root `LICENSE`; all 18 point to the same Git blob SHA `a61b911146037f2ef312f67e9b45de6c99b7f870` (1,064 bytes), whose content is MIT, copyright 2026 iart.ai. The missing-license pack is `generative-illustration-skills`; it remains blocked. The 18 repository-specific source commit/path records and identical raw SHA-256 are already listed in `MOREAI_P1_RAW_SHA256_MANIFEST_20261117.csv`.
+
+### Scope and limitations
+
+- This re-scan establishes the set of license-like filenames present in the captured recursive source trees; it does not establish that every code/media/font/model asset is original or covered by the root license.
+- A path scan cannot discover license text embedded in source headers, package metadata, copied snippets, binary/media metadata, external downloads or links. Those require file-content and asset provenance review.
+- Scenario's nested Apache-2.0 notice must remain separately attributed; root MIT is not a blanket override.
+- Visual Skills CC BY 4.0 and NOTICE requirements remain mandatory for any adapted material; the 13 deferred provider-logo assets and three pending-provenance visuals remain excluded from approval.
+- No file has been promoted from preliminary disposition to final approval by this scan. P1 remains open.
