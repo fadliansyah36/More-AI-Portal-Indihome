@@ -40,6 +40,7 @@ The 18 pack repositories with a root LICENSE were inspected and identify MIT. `g
 
 - Added all 19 pinned pack repositories to the server-side source allowlist used by the existing Skill Registry catalog and import endpoints.
 - Customer catalog discovery now enumerates only `skills/*/SKILL.md` from the pinned Motion pack repositories; it does not treat aggregator README text, showcase media or shell verification scripts as skills.
+- The existing Create Studio video workflow now lists only customer-installed Motion packages whose installation is approved and execution-enabled. Customers can select up to 10 skill IDs; the selection is passed through the existing Create Studio → Chat → FastAPI enqueue contract to the OpenManus resolver. The selector does not bypass provider, credit, quota, approval or artifact gates.
 - Import accepts only pinned `iart-ai/*` repositories and entrypoints under `skills/` ending in `SKILL.md`.
 - Existing recursive ingestion remains bounded (40 files, 512 KiB per file, 5 MiB per skill), verifies Git blob SHA-1 and SHA-256, stores immutable source records through the existing transactional Supabase RPC, and does not grant execution permission.
 - The existing OpenManus resolver, approval workflow, license/dependency evidence and fail-closed publication gates remain authoritative. No second runtime or database was introduced.
@@ -62,4 +63,4 @@ The 18 pack repositories with a root LICENSE were inspected and identify MIT. `g
 
 ## Next phase
 
-Continue Phase 09 customer Skill Registry closure: finish the 56-entry catalog review, recursively ingest selected approved packages, complete dependency/license/asset evidence, then wire media skill selection through Agent Studio → Chat enqueue → durable OpenManus Agent Run → provider routing/metering → private artifact projection. Keep image/video generation unavailable until real provider, worker and billing readiness gates pass.
+Continue Phase 09 customer Skill Registry closure: finish the 56-entry catalog review, recursively ingest selected approved packages, complete dependency/license/asset evidence, then wire media skill selection through Create Studio and Agent Studio → Chat enqueue → durable OpenManus Agent Run → provider routing/metering → private artifact projection. Keep image/video generation unavailable until real provider, worker and billing readiness gates pass.

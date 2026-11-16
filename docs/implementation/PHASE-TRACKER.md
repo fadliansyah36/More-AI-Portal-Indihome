@@ -1525,3 +1525,12 @@ Final source baseline update: latest confirmed `main` HEAD before this documenta
 - Customer catalog/import endpoints now recognize the 19 immutable pack commit pins and restrict imports to `skills/*/SKILL.md`. Existing recursive ingestion, hash checks, owner scope, review and execution gates remain unchanged.
 - Detailed inventory: [MOTION-SKILLS-SOURCE-INVENTORY-20261116.md](./MOTION-SKILLS-SOURCE-INVENTORY-20261116.md).
 - Source-only implementation. No tests, lint, build, typecheck, browser/API/worker/provider execution, staging, migration apply or deployment were run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 Create Studio Motion Skill handoff
+
+- Existing Create Studio now queries the canonical FastAPI Customer Skill Registry and shows only installed Motion packages with approved permission and execution enabled.
+- Customer can select up to 10 Motion skill IDs from the video creator. The IDs pass through the existing Create Studio → Chat → FastAPI enqueue contract to the existing OpenManus skill resolver. The UI does not claim that a video was rendered when the worker/provider capability is unavailable.
+- UI additions reuse the existing Create Studio CSS classes, red primary action, white/light surfaces, slate typography and existing responsive layout; no global styles or navigation were changed.
+- Source commits: `470e9efb23f9d27e62e32ff8d5529b3b97a026b3` (19 Motion pack pins/catalog governance) and `4034404c04fadfb419b196db887d237314fdcc87` (Create Studio skill selector and handoff), followed by a handoff argument correction in this commit.
+- No tests, lint, typecheck, build, browser/API/worker/provider execution, staging, migration apply or deployment were run. This is source-level implementation only.

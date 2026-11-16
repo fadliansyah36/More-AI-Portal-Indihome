@@ -194,7 +194,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
               ? 'Brief pembuatan file dibuka di Chat AI. Agent menyimpan artifact hanya jika tool storage berhasil.'
               : 'Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.'
     );
-    onNavigateToChat(taskInstruction + '\n\nInstruksi pengguna:\n' + customPrompt.trim(), selected.agentKey);
+    onNavigateToChat(taskInstruction + '\n\nInstruksi pengguna:\n' + customPrompt.trim(), selected.agentKey, isVideoGeneration ? selectedMotionSkillIds : []);
   };
 
   return (
