@@ -1804,3 +1804,6 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 
 - Follow-up commits `63ff42a3`, `9258fead`, `0bbf681e`, `57ac2b0f`: session status transitions automatically revoke unconsumed grants; worker records success/failure of takeover input against the consumed grant and exact session/customer. The worker verifies grant scope/session before sending input to the existing OpenFuse profile.
 - End-to-end remains incomplete until a customer dashboard interaction obtains a grant, securely delivers it to the private worker input path, and displays live/reconnect state; current work establishes the secure server/worker primitive only. Logout and Agent Run terminal-state revocation still need explicit hooks. No UI changes were made because the AGENTS screenshot gate was not satisfied.
+
+
+- Follow-up revocation hardening commits `296aa3ff`, `f93868e0`, `7daacc67`, `41aa3443`: Agent Run terminal transitions revoke outstanding unconsumed takeover grants with audit events; added customer-scoped logout revoke RPC, FastAPI endpoint and typed frontend API method. **The existing logout callback is not yet wired to call the method**, so logout revocation is not end-to-end. Dashboard-to-worker input transport/UI is also still absent. Migrations are committed, not applied. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
