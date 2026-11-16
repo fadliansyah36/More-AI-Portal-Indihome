@@ -3,7 +3,7 @@ alter table public.moreai_browser_session_events
   drop constraint if exists moreai_browser_session_events_event_type_check;
 alter table public.moreai_browser_session_events
   add constraint moreai_browser_session_events_event_type_check
-  check (event_type in ('created','restored','state_saved','closed','expired','takeover_grant_created','takeover_grant_consumed','takeover_grants_revoked'));
+  check (event_type in ('created','restored','state_saved','closed','expired','takeover_grant_created','takeover_grant_consumed','takeover_grants_revoked','takeover_input_succeeded','takeover_input_failed'));
 create table if not exists public.moreai_browser_takeover_grants (
   id uuid primary key default gen_random_uuid(),
   session_id uuid not null references public.moreai_browser_sessions(id) on delete cascade,
