@@ -708,17 +708,6 @@ export type CustomerEpisodicMemoryItem = {
   expires_at: string;
 };
 
-export type CustomerBrowserSession = {
-  id: string;
-  run_id: string;
-  last_run_id: string | null;
-  origin_host: string;
-  status: 'active' | 'close_requested';
-  created_at: string;
-  last_used_at: string;
-  expires_at: string;
-};
-
 export type CustomerComputerActionReceipt = {
   id: string;
   run_id: string;
