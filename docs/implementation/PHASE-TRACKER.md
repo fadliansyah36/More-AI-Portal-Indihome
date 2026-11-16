@@ -1807,3 +1807,5 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 
 
 - Follow-up revocation hardening commits `296aa3ff`, `f93868e0`, `7daacc67`, `41aa3443`: Agent Run terminal transitions revoke outstanding unconsumed takeover grants with audit events; added customer-scoped logout revoke RPC, FastAPI endpoint and typed frontend API method. **The existing logout callback is not yet wired to call the method**, so logout revocation is not end-to-end. Dashboard-to-worker input transport/UI is also still absent. Migrations are committed, not applied. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+- Commit `9918b1c2`: wired the existing Profile Settings logout callback in `app/page.tsx` to call the authenticated FastAPI takeover-grant revoke-all method before Supabase Auth sign-out, then route to login. Revoke failure is logged and does not block sign-out; grants remain short-lived. Dashboard-to-worker takeover transport/preview/reconnect remains incomplete. No UI styling changes, screenshot, tests, runtime, staging, deployment or migration apply. Phase 09 IN PROGRESS.
