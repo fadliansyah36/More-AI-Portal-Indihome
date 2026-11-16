@@ -41,6 +41,18 @@
       {
         "name": "reproducibility",
         "value": "MoreAI root package.json has no root lockfile; apps/api and apps/worker pyproject.toml have no uv/poetry lock; OpenManusWeb requirements.txt contains unpinned/range dependencies"
+      },
+      {
+        "name": "peerDependencyConstraintsExcludedFromComponentNodes",
+        "value": "37 unresolved peer dependency range declarations were incorrectly parsed as package components in the prior inventory; removed from components. These constraints are not resolved package@version coordinates and require separate peer-dependency reconciliation."
+      },
+      {
+        "name": "correctedComponentCount",
+        "value": "1995"
+      },
+      {
+        "name": "correctedNoAssertionCount",
+        "value": "1989"
       }
     ]
   },
@@ -4945,31 +4957,6 @@
     },
     {
       "type": "library",
-      "name": "    '",
-      "version": "gorhom/bottom-sheet",
-      "purl": "pkg:npm/    '@gorhom/bottom-sheet",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "@copilotkit/runtime-client-gql",
       "version": "1.70.1",
       "purl": "pkg:npm/%40copilotkit/runtime-client-gql@1.70.1",
@@ -5010,156 +4997,6 @@
           "content": "/aZX4amHYdjHr4KDvLMmpMw2P8C7Sw6s0+7oPnnDPJ0qu/XSGRPqKw4a50UsND2VgSCINxLhICUR5krd9JgBbw=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "anthropic-ai/sdk",
-      "purl": "pkg:npm/    '@anthropic-ai/sdk",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "langchain/aws",
-      "purl": "pkg:npm/    '@langchain/aws",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "langchain/community",
-      "purl": "pkg:npm/    '@langchain/community",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "langchain/google-gauth",
-      "purl": "pkg:npm/    '@langchain/google-gauth",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "langchain/langgraph-sdk",
-      "purl": "pkg:npm/    '@langchain/langgraph-sdk",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "langchain/openai",
-      "purl": "pkg:npm/    '@langchain/openai",
       "properties": [
         {
           "name": "sourceRepository",
@@ -7352,31 +7189,6 @@
     },
     {
       "type": "library",
-      "name": "    '",
-      "version": "modelcontextprotocol/sdk",
-      "purl": "pkg:npm/    '@modelcontextprotocol/sdk",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "@graphql-tools/executor",
       "version": "2.0.1",
       "purl": "pkg:npm/%40graphql-tools/executor@2.0.1",
@@ -8741,56 +8553,6 @@
     },
     {
       "type": "library",
-      "name": "    '",
-      "version": "opentelemetry/api",
-      "purl": "pkg:npm/    '@opentelemetry/api",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "opentelemetry/api-logs",
-      "purl": "pkg:npm/    '@opentelemetry/api-logs",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "@modelcontextprotocol/ext-apps",
       "version": "1.7.5",
       "purl": "pkg:npm/%40modelcontextprotocol/ext-apps@1.7.5",
@@ -8831,31 +8593,6 @@
           "content": "xKd8OIzlqNzcqcNumGAa6g+PW2kjD5vrpcKOnfldAUPP3j7lnqMPwlTXQm8gF+UwH72z0lqaRbjr9hqGz0eITA=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "cfworker/json-schema",
-      "purl": "pkg:npm/    '@cfworker/json-schema",
       "properties": [
         {
           "name": "sourceRepository",
@@ -9445,56 +9182,6 @@
           "content": "v4zggRcjadnI+ClKDuijlQEW4tw3NoaeHc/PwpKnLoLLKNUG4InLegkstooLcRIUWCs+8L22dGURCVuFfOKfnA=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "types/react",
-      "purl": "pkg:npm/    '@types/react",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "types/react-dom",
-      "purl": "pkg:npm/    '@types/react-dom",
       "properties": [
         {
           "name": "sourceRepository",
@@ -10456,56 +10143,6 @@
           "content": "yWRlmEOtcyvSZ4+OvqPabt+NS36vg0K/WADTQLhrYrm9qdZSuXmq8PmdJWz/68wAqKQ+4KTILiq2kjRQwnyhQw=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "react-native-community/cli",
-      "purl": "pkg:npm/    '@react-native-community/cli",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "react-native/metro-config",
-      "purl": "pkg:npm/    '@react-native/metro-config",
       "properties": [
         {
           "name": "sourceRepository",
@@ -11529,31 +11166,6 @@
           "content": "PIq+Qki7AfSHWmg1R+Lyouh9+WYlbB4fVTLdHOBgISJQG1aQAn8OMsX9SxMH8S2cGRTu8ILamX8+k8V8vLskpw=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "anthropic-ai/vertex-sdk",
-      "purl": "pkg:npm/    '@anthropic-ai/vertex-sdk",
       "properties": [
         {
           "name": "sourceRepository",
@@ -16204,31 +15816,6 @@
           "content": "6xeSkdaixmQhWSYL7tfLu0pOS0BY+8ftwmdNSHtpEFSizrXYZkCjk/B6Dxr+6nwNRihixMcS0aBlWS1wlDl3pw=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "babel/runtime",
-      "purl": "pkg:npm/    '@babel/runtime",
       "properties": [
         {
           "name": "sourceRepository",
@@ -22978,56 +22565,6 @@
     },
     {
       "type": "library",
-      "name": "    '",
-      "version": "expo/dom-webview",
-      "purl": "pkg:npm/    '@expo/dom-webview",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "expo/metro-runtime",
-      "purl": "pkg:npm/    '@expo/metro-runtime",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "exponential-backoff",
       "version": "3.1.3",
       "purl": "pkg:npm/exponential-backoff@3.1.3",
@@ -28307,56 +27844,6 @@
           "content": "QQjH27gbMHGfEwCMN7wcE2a+AV3GrVAL3dZX33ZMGC45a6XeGtSB4Qnl1JiNdWe4QS4P3dsYQLsuCnN1Liztmw=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "opentelemetry/exporter-trace-otlp-proto",
-      "purl": "pkg:npm/    '@opentelemetry/exporter-trace-otlp-proto",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "opentelemetry/sdk-trace-base",
-      "purl": "pkg:npm/    '@opentelemetry/sdk-trace-base",
       "properties": [
         {
           "name": "sourceRepository",
@@ -35075,81 +34562,6 @@
     },
     {
       "type": "library",
-      "name": "    '",
-      "version": "aws-sdk/credential-provider-node",
-      "purl": "pkg:npm/    '@aws-sdk/credential-provider-node",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "smithy/hash-node",
-      "purl": "pkg:npm/    '@smithy/hash-node",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "smithy/signature-v4",
-      "purl": "pkg:npm/    '@smithy/signature-v4",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "openapi-fetch",
       "version": "0.14.1",
       "purl": "pkg:npm/openapi-fetch@0.14.1",
@@ -39065,31 +38477,6 @@
           "content": "bXfMZtsaomK6ysNN/UGRIcasQAYkC10NtPmP0oOHOV8YOhA2TXmwRXCku4qOzjIFxAPfish5+XS0eIug2PzNZA=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "OpenFuse"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "types/mdast",
-      "purl": "pkg:npm/    '@types/mdast",
       "properties": [
         {
           "name": "sourceRepository",
@@ -49032,31 +48419,6 @@
     },
     {
       "type": "library",
-      "name": "    '",
-      "version": "noble/hashes",
-      "purl": "pkg:npm/    '@noble/hashes",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "@google-automations/git-file-utils",
       "version": "3.2.1",
       "purl": "pkg:npm/%40google-automations/git-file-utils@3.2.1",
@@ -51329,31 +50691,6 @@
           "content": "4KpkGdIrSqBihx/JyP/e+S+IKB98etg1XDQiLAxksLfcShnwi1VReGeOT9NI43hLHbknosKp/1CCLn9Zgcs8mg=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "vitest/browser",
-      "purl": "pkg:npm/    '@vitest/browser",
       "properties": [
         {
           "name": "sourceRepository",
@@ -59405,56 +58742,6 @@
     },
     {
       "type": "library",
-      "name": "    '",
-      "version": "types/node",
-      "purl": "pkg:npm/    '@types/node",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "vitejs/devtools",
-      "purl": "pkg:npm/    '@vitejs/devtools",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "vitest",
       "version": "5.0.5",
       "purl": "pkg:npm/vitest@5.0.5",
@@ -59464,206 +58751,6 @@
           "content": "cPODOMF8YnkiiYtDdHo6n4wWmBrOBBbOIYH2d33M4l3CdNn72h+qMmO6uXffUN6A5AZFXNND/d+krS9mgkXRfg=="
         }
       ],
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "edge-runtime/vm",
-      "purl": "pkg:npm/    '@edge-runtime/vm",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "opentelemetry/api",
-      "purl": "pkg:npm/    '@opentelemetry/api",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "vitest/browser-playwright",
-      "purl": "pkg:npm/    '@vitest/browser-playwright",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "vitest/browser-preview",
-      "purl": "pkg:npm/    '@vitest/browser-preview",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "vitest/browser-webdriverio",
-      "purl": "pkg:npm/    '@vitest/browser-webdriverio",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "vitest/coverage-istanbul",
-      "purl": "pkg:npm/    '@vitest/coverage-istanbul",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "vitest/coverage-v8",
-      "purl": "pkg:npm/    '@vitest/coverage-v8",
-      "properties": [
-        {
-          "name": "sourceRepository",
-          "value": "Scenario Skills"
-        },
-        {
-          "name": "sourceLockfile",
-          "value": "pnpm-lock.yaml"
-        },
-        {
-          "name": "resolutionStatus",
-          "value": "LOCKFILE_RESOLVED"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "NOASSERTION"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "    '",
-      "version": "vitest/ui",
-      "purl": "pkg:npm/    '@vitest/ui",
       "properties": [
         {
           "name": "sourceRepository",
