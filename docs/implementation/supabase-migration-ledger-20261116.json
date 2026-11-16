@@ -2,13 +2,13 @@
   "generated_at": "2026-11-16",
   "project_ref": "uunfgimtokhucegqbpce",
   "branch": "main",
-  "repo_head": "518919855379460da1d207227c59865d3e7e8028",
+  "repo_head": "9c4164de83f453e0e39ac9dbf5c154851a4fccc1",
   "counts": {
-    "repository_files": 72,
+    "repository_files": 73,
     "live_rows": 100,
     "exact_version_match": 7,
     "name_match_version_diff": 60,
-    "not_in_live_by_name": 5,
+    "not_in_live_by_name": 6,
     "live_only": 28,
     "duplicate_repository_versions": 2
   },
@@ -871,6 +871,16 @@
       "name": "moreai_browser_profile_retention_rpcs",
       "live_versions": [],
       "status": "not_in_live_by_name"
+    },
+    {
+      "path": "supabase/migrations/20261116170000_moreai_artifacts_storage_server_only.sql",
+      "git_blob_sha": "e9bb9ecce6acf88c34e09c296f7df3b2ad49b9f1",
+      "size_bytes": 973,
+      "filename": "20261116170000_moreai_artifacts_storage_server_only.sql",
+      "filename_version": "20261116170000",
+      "name": "moreai_artifacts_storage_server_only",
+      "live_versions": [],
+      "status": "not_in_live_by_name"
     }
   ],
   "live_only_migrations": [
@@ -995,6 +1005,7 @@
     "Name match is not SQL equivalence. Live SQL definitions are not exposed by the migration history listing; compare schema/function/policy postconditions before reconciliation.",
     "Do not reapply migrations whose live version differs from the repository filename version. Do not rewrite historical applied versions.",
     "moreai_durable_run_event_outbox has a live historical predecessor named moreai_durable_run_event_outbox_phase_07a; verify SQL postconditions separately.",
-    "Two repository timestamp collisions remain unresolved: 20261111100000 and 20261114083000."
+    "Two repository timestamp collisions remain unresolved: 20261111100000 and 20261114083000.",
+    "20261116170000_moreai_artifacts_storage_server_only is new and not applied. It adds an explicit deny policy for anon/authenticated on only the moreai-artifacts bucket."
   ]
 }
