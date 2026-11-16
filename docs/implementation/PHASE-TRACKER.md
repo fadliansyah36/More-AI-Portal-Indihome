@@ -1737,3 +1737,12 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Read-only Supabase count snapshot: 0 Skill packages, 0 Skill source files, 0 LLM providers, 0 LLM models, 0 fresh worker heartbeats, 0 active browser sessions, 0 active browser leases. Applied migrations: 116, including the two new forward-only Skill-ingestion migrations.
 - Therefore the 230-entry Customer batch remains blocked. Do not treat deployment READY as Customer/worker/OpenFuse/provider E2E acceptance.
 - No tests, lint, typecheck, build, API/browser/worker/provider runtime, staging, manual deployment, promotion or rollback was run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 continuation — Motion source and live migration ledger reconciliation
+
+- Added [Motion Skills aggregator source reconciliation](./PHASE-09-MOTION-SKILLS-AGGREGATOR-RECONCILIATION-20261116.md). The reviewed `iart-ai/motion-skills` aggregator is pinned at `9b9ce041932da787cc856d4cdf23afb6cd13d4bf` (branch `master`), MIT, and has 12 recursive tree entries with no `SKILL.md` entrypoints. It is a catalogue for 19 separately installable child repositories / 56 skills, not a runnable skill package. Existing MoreAI child-repository pins and the authenticated Customer batch remain the correct ingestion path.
+- Fresh read-only Supabase connector inspection on canonical project `uunfgimtokhucegqbpce` returned 116 applied migration versions and 94 public tables. This supersedes the 114-version point-in-time count in earlier tracker notes; no migration or database write was performed in this continuation.
+- Repository branch `main` was observed at `e185488ed7469eef506fc34b4f86ea8d21222652` before the documentation continuation. The Motion reconciliation report was committed directly to `main` as `e1d66d70b8b32822b9dd404684ac4f7cb53da21e`.
+- No source package was imported, no Customer-owned Skill rows were seeded, and no code was executed. No tests, build, lint, typecheck, runtime verification, staging, migration apply, provider call, or deployment was performed.
+- Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED. Phase 11 remains BLOCKED. P1 source governance remains IN PROGRESS until all recursive child-pack inventories, exact dependency graphs, license/NOTICE/asset evidence, and per-file decisions are closed.
