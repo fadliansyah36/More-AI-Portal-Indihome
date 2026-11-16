@@ -289,19 +289,93 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
             dependency_files.append(path)
             try:
                 parsed = tomllib.loads(text)
-                declared = parsed.get("project", {}).get("dependencies", [])
-                poetry = parsed.get("tool", {}).get("poetry", {})
-                declared = list(declared) if isinstance(declared, list) else []
-                poetry_deps = poetry.get("dependencies", {}) if isinstance(poetry, dict) else {}
-                if isinstance(poetry_deps, dict):
-                    declared.extend(f"{key}{value}" for key, value in poetry_deps.items() if key.lower() != "python")
-                for raw in declared:
-                    name_match = re.match(r"^([A-Za-z0-9_.-]+)", str(raw))
-                    dependencies.append({
-                        "ecosystem": "pypi", "name": name_match.group(1) if name_match else str(raw),
-                        "requested": raw, "exact_version": None, "source_manifest": path,
-                        "status": "manifest_declared_requires_lockfile",
+                project = parsed.get("project", {}) if isinstance(parsed.get("project"), dict) else {}
+                tool = parsed.get("tool", {}) if isinstance(parsed.get("tool"), dict) else {}
+                poetry = tool.get("poetry", {}) if isinstance(tool.get("poetry"), dict) else {}
+                declarations: list[dict[str, Any]] = []
+
+                def record_python_declaration(raw: Any, group: str, *, extra: str | None = None) -> None:
+                    if not isinstance(raw, str):
+                        dependencies.append({
+                            "manifest": path, "ecosystem": "pypi",
+                            "status": "unsupported_dependency_declaration_shape",
+                            "dependency_group": group,
+                        })
+                        return
+                    name_match = re.match(r"^([A-Za-z0-9_.-]+)", raw)
+                    marker_match = re.search(r";\\s*(.+)$", raw)
+                    declarations.append({
+                        "ecosystem": "pypi",
+                        "name": name_match.group(1) if name_match else raw,
+                        "requested": raw,
+                        "exact_version": None,
+                        "source_manifest": path,
+                        "dependency_group": group,
+                        "extra": extra,
+                        "marker": marker_match.group(1).strip() if marker_match else None,
+                        "status": "manifest_declared_requires_environment_aware_lock_resolution",
                     })
+
+                for raw in project.get("dependencies", []) if isinstance(project.get("dependencies"), list) else []:
+                    record_python_declaration(raw, "project.dependencies")
+                optional = project.get("optional-dependencies", {})
+                if isinstance(optional, dict):
+                    for extra_name, values in optional.items():
+                        if isinstance(values, list):
+                            for raw in values:
+                                record_python_declaration(raw, f"project.optional-dependencies.{extra_name}", extra=str(extra_name))
+                groups = parsed.get("dependency-groups", {})
+                if isinstance(groups, dict):
+                    for group_name, values in groups.items():
+                        if isinstance(values, list):
+                            for raw in values:
+                                record_python_declaration(raw, f"dependency-groups.{group_name}")
+                poetry_deps = poetry.get("dependencies", {})
+                if isinstance(poetry_deps, dict):
+                    for package_name, spec in poetry_deps.items():
+                        if str(package_name).lower() == "python":
+                            continue
+                        if isinstance(spec, str):
+                            record_python_declaration(f"{package_name}{spec}", "tool.poetry.dependencies")
+                        elif isinstance(spec, dict):
+                            version = spec.get("version", "")
+                            extras = spec.get("extras", [])
+                            markers = spec.get("markers")
+                            record = {
+                                "ecosystem": "pypi", "name": str(package_name),
+                                "requested": str(version), "exact_version": None,
+                                "source_manifest": path, "dependency_group": "tool.poetry.dependencies",
+                                "extra": ",".join(str(value) for value in extras) if isinstance(extras, list) else None,
+                                "marker": str(markers) if markers else None,
+                                "source": {key: spec.get(key) for key in ("url", "git", "branch", "tag", "rev", "path") if spec.get(key)},
+                                "status": "manifest_declared_requires_environment_aware_lock_resolution",
+                            }
+                            declarations.append(record)
+                        else:
+                            dependencies.append({
+                                "manifest": path, "ecosystem": "pypi", "name": str(package_name),
+                                "status": "unsupported_dependency_declaration_shape",
+                            })
+                poetry_groups = poetry.get("group", {})
+                if isinstance(poetry_groups, dict):
+                    for group_name, group_data in poetry_groups.items():
+                        group_data = group_data if isinstance(group_data, dict) else {}
+                        group_deps = group_data.get("dependencies", {})
+                        if isinstance(group_deps, dict):
+                            for package_name, spec in group_deps.items():
+                                if isinstance(spec, str):
+                                    record_python_declaration(f"{package_name}{spec}", f"tool.poetry.group.{group_name}")
+                                elif isinstance(spec, dict):
+                                    declarations.append({
+                                        "ecosystem": "pypi", "name": str(package_name),
+                                        "requested": str(spec.get("version") or ""),
+                                        "exact_version": None, "source_manifest": path,
+                                        "dependency_group": f"tool.poetry.group.{group_name}",
+                                        "extra": ",".join(str(value) for value in spec.get("extras", []) if isinstance(spec.get("extras"), list)),
+                                        "marker": str(spec.get("markers") or "") or None,
+                                        "status": "manifest_declared_requires_environment_aware_lock_resolution",
+                                    })
+                dependencies.extend(declarations)
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "pypi", "status": "parse_error"})
         elif name in {"poetry.lock", "uv.lock"}:
