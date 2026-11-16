@@ -185,7 +185,13 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                             for group in ("dependencies", "optionalDependencies", "peerDependencies"):
                                 declared_edges = details.get(group)
                                 if isinstance(declared_edges, dict):
-                                    dependency_edges.extend({"ecosystem": "npm", "from": package_name, "to": dep, "kind": group} for dep in declared_edges if isinstance(dep, str))
+                                    dependency_edges.extend({
+                                        "ecosystem": "npm", "from": package_name,
+                                        "from_locator": package_path,
+                                        "from_version": version, "to": dep,
+                                        "requested": str(requested_spec),
+                                        "kind": group, "source_manifest": path,
+                                    } for dep, requested_spec in declared_edges.items() if isinstance(dep, str))
                 # npm lockfile v1 stores transitive entries recursively under dependencies.
                 def visit_v1(entries: Any) -> None:
                     if not isinstance(entries, dict):
@@ -199,7 +205,12 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                             add_dependency("npm", package_name, version, path, status="lockfile_pinned", integrity=details.get("integrity"))
                             declared_edges = details.get("requires")
                             if isinstance(declared_edges, dict):
-                                dependency_edges.extend({"ecosystem": "npm", "from": package_name, "to": dep, "kind": "requires"} for dep in declared_edges if isinstance(dep, str))
+                                dependency_edges.extend({
+                                    "ecosystem": "npm", "from": package_name,
+                                    "from_version": version, "to": dep,
+                                    "requested": str(requested_spec), "kind": "requires",
+                                    "source_manifest": path,
+                                } for dep, requested_spec in declared_edges.items() if isinstance(dep, str))
                         visit_v1(details.get("dependencies"))
                 visit_v1(parsed.get("dependencies"))
                 npm_locked[path] = locked
