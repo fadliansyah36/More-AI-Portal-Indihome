@@ -331,20 +331,50 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
             dependency_files.append(path)
             try:
                 parsed = json.loads(text)
-                for package in parsed.get("packages", []) + parsed.get("packages-dev", []):
-                    add_dependency("composer", package.get("name"), package.get("version"), path, status="lockfile_pinned")
+                composer_packages: dict[str, list[dict[str, Any]]] = {}
+                composer_edges: list[dict[str, Any]] = []
+                for package in (parsed.get("packages", []) or []) + (parsed.get("packages-dev", []) or []):
+                    if not isinstance(package, dict):
+                        continue
+                    package_name = package.get("name")
+                    package_version = str(package.get("version") or "")
+                    source = package.get("source") if isinstance(package.get("source"), dict) else {}
+                    dist = package.get("dist") if isinstance(package.get("dist"), dict) else {}
+                    locator = {
+                        "name": package_name, "version": package_version,
+                        "source_type": source.get("type"), "source_url": source.get("url"),
+                        "source_reference": source.get("reference"),
+                        "dist_type": dist.get("type"), "dist_url": dist.get("url"),
+                        "dist_reference": dist.get("reference"),
+                    }
+                    if isinstance(package_name, str):
+                        composer_packages.setdefault(package_name, []).append(locator)
+                    add_dependency("composer", package_name, package_version, path, status="lockfile_pinned",
+                                   integrity=dist.get("shasum") or dist.get("reference"))
                     for group in ("require", "require-dev"):
                         required = package.get(group)
                         if isinstance(required, dict):
-                            dependency_edges.extend({
-                                "ecosystem": "composer",
-                                "from": str(package.get("name")),
-                                "from_version": str(package.get("version") or ""),
-                                "from_reference": str(package.get("dist", {}).get("reference") or package.get("source", {}).get("reference") or ""),
-                                "to": dep, "requested": str(constraint),
-                                "kind": group, "source_manifest": path,
-                            } for dep, constraint in required.items()
-                              if isinstance(dep, str) and not dep.lower().startswith(("php", "ext-", "lib-")))
+                            for dep, constraint in required.items():
+                                if not isinstance(dep, str) or dep.lower().startswith(("php", "ext-", "lib-")):
+                                    continue
+                                composer_edges.append({
+                                    "ecosystem":"composer", "from":str(package_name),
+                                    "from_version":package_version,
+                                    "from_source_reference":str(source.get("reference") or ""),
+                                    "from_dist_reference":str(dist.get("reference") or ""),
+                                    "to":dep, "requested":str(constraint),
+                                    "kind":group, "source_manifest":path,
+                                })
+                for edge in composer_edges:
+                    candidates = composer_packages.get(edge["to"], [])
+                    if len(candidates) == 1:
+                        edge["to_version"] = candidates[0]["version"]
+                        edge["to_source_reference"] = candidates[0]["source_reference"]
+                        edge["to_dist_reference"] = candidates[0]["dist_reference"]
+                        edge["resolution_status"] = "unique_locked_package_instance"
+                    else:
+                        edge["resolution_status"] = "ambiguous_or_unresolved_package_instance"
+                    dependency_edges.append(edge)
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "composer", "status": "parse_error"})
         elif name == "pnpm-lock.yaml":
