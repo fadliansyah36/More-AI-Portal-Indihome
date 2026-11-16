@@ -70,3 +70,20 @@ A static key-level comparison was rerun against the pinned OpenFuse and Scenario
 Corrected CycloneDX component count: **1,995**; corrected `NOASSERTION`: **1,989**; declared-license components: **6**. This resolves the exact coordinate parity of those two pnpm package sections only. It does not complete dependency edges/snapshot graph, nested peer dependency resolution, other source manifests, exact-version registry licenses, vulnerability review, or P1 closure.
 
 The correction is committed in `fec0c32dd1531eb0bc26785eeac25965d0611e7d`. No dependency installation, build, package script or test was run.
+
+## Pinned pnpm graph and registry-license reconciliation — 2026-11-17
+
+This addendum supersedes the earlier statement that the dependency graph and all exact-version registry metadata were still wholly unexamined. The graph has now been structurally extracted from both pinned pnpm v9 lockfiles and exported to `MOREAI_P1_PNPM_EDGES_20261117.csv`.
+
+| Source | Importers | Package keys | Snapshot keys | Integrity records | Dependency declarations |
+|---|---:|---:|---:|---:|---:|
+| OpenFuse | 3 | 1,452 | 1,454 | 1,452 | 3,464 |
+| Scenario Skills | 1 | 466 | 466 | 466 | 644 |
+
+OpenFuse dependency declarations resolve as 2,650 exact, 809 peer-context and 5 npm aliases; Scenario resolves as 610 exact and 34 peer-context. No dependency declaration remains unresolved after the alias correction. Peer constraints, optional peer metadata and transitive peer-context declarations are separately retained in the edge export.
+
+Across the two lockfiles, 1,808 unique exact package coordinates were compared to the existing CycloneDX BOM. All 1,808 are present; 16 other npm PURLs in the BOM originate outside these two lockfiles and are listed in `MOREAI_P1_SBOM_EXTRA_NPM_COORDINATES_20261117.csv` pending source attribution.
+
+Exact-version npm registry metadata was queried for all 1,808 coordinates; all returned HTTP 200. 1,797 package records contained a license field, while 11 did not and remain NOASSERTION. A token-level check against the SPDX license identifier list found one non-SPDX raw string, `CC BY-SA 4.0`, requiring manual evidence review. The 11 missing and one non-SPDX package are listed in `MOREAI_P1_REGISTRY_LICENSE_REVIEW_REQUIRED_20261117.csv`.
+
+These registry values are not legal approval. Package tarballs were not downloaded/unpacked; artifact notices, source headers, vulnerability advisories and bundled assets remain open. P1 remains OPEN.
