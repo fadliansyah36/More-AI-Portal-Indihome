@@ -378,25 +378,45 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
             dependency_files.append(path)
             try:
                 parsed = tomllib.loads(text)
+                cargo_instances: dict[tuple[str, str, str], list[str]] = {}
+                cargo_pending_edges: list[dict[str, Any]] = []
                 for package in parsed.get("package", []):
-                    add_dependency("cargo", package.get("name"), package.get("version"), path, status="lockfile_pinned")
+                    if not isinstance(package, dict):
+                        continue
+                    package_name = str(package.get("name") or "")
+                    package_version = str(package.get("version") or "")
+                    package_source = str(package.get("source") or "")
+                    if package_name and package_version:
+                        locator = package_name + "@" + package_version + "#" + (package_source or "workspace")
+                        cargo_instances.setdefault((package_name, package_version, package_source), []).append(locator)
+                        add_dependency("cargo", package_name, package_version, path, status="lockfile_pinned")
                     for dependency in package.get("dependencies", []) if isinstance(package.get("dependencies"), list) else []:
-                        if isinstance(dependency, str):
-                            # Cargo lock entries encode name, version and source in a
-                            # single string; retain all three rather than collapsing
-                            # distinct versions or registry/git sources by name.
-                            parts = dependency.split(" ")
-                            dependency_edges.append({
-                                "ecosystem": "cargo",
-                                "from": str(package.get("name")),
-                                "from_version": str(package.get("version") or ""),
-                                "from_source": str(package.get("source") or ""),
-                                "to": parts[0],
-                                "to_version": parts[1] if len(parts) > 1 else "",
-                                "to_source": " ".join(parts[2:]) if len(parts) > 2 else "",
-                                "to_locator": (parts[0] + "@" + parts[1] + "#" + (" ".join(parts[2:]) if len(parts) > 2 else "registry")) if len(parts) > 1 else None,
-                                "kind": "dependency", "source_manifest": path,
-                            })
+                        if not isinstance(dependency, str):
+                            continue
+                        # Cargo lock dependency strings encode name, version and
+                        # optional source. Resolve only against an exact lock node.
+                        parts = dependency.split(" ")
+                        target_name = parts[0]
+                        target_version = parts[1] if len(parts) > 1 else ""
+                        target_source = " ".join(parts[2:]) if len(parts) > 2 else ""
+                        cargo_pending_edges.append({
+                            "ecosystem": "cargo",
+                            "from": package_name,
+                            "from_version": package_version,
+                            "from_source": package_source,
+                            "to": target_name,
+                            "to_version": target_version,
+                            "to_source": target_source,
+                            "kind": "dependency", "source_manifest": path,
+                        })
+                for edge in cargo_pending_edges:
+                    candidates = cargo_instances.get((edge["to"], edge["to_version"], edge["to_source"]), [])
+                    if len(candidates) == 1:
+                        edge["to_locator"] = candidates[0]
+                        edge["resolution_status"] = "exact_lock_node"
+                    else:
+                        edge["resolution_status"] = "cargo_exact_source_target_unresolved"
+                    dependency_edges.append(edge)
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "cargo", "status": "parse_error"})
         elif name == "composer.lock":
