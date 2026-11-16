@@ -70,3 +70,17 @@ These are source-level corrections only; no runtime verification was performed.
 - Added `hooks/use-browser-session-preview.ts`: restores state on mount, polls durable request status after reload, queues customer-triggered preview refresh, obtains image URLs only through FastAPI signed-download, handles timeout/failure/expired states and allows signed URL renewal: `4eaf616e4ed3c3b3e0acff51d3f9db7a95eeffb2`.
 
 Still outstanding: this hook is not mounted by the existing Profile Settings screen. The PNG renderer and refresh/reconnect controls are not visible to customers until that screen is connected. AGENTS.md requires before/after screenshots for any UI-file change; no browser screenshot capture facility or approved baseline route screenshots are available in this implementation context, so the protected UI file has not been edited. No tests, lint, typecheck, build, runtime verification, Supabase migration apply, staging or deployment were performed.
+
+
+### 2026-11-16 — Customer dashboard preview wiring
+
+The product owner explicitly authorized proceeding with the narrowly scoped UI integration without the AGENTS.md before/after screenshot gate for this continuation. The existing Profile Settings visual structure and styles were preserved; only the required preview panel was added inside each existing browser session card.
+
+- `59dedaff85405a616fa294187f6953c936cf40ec`: added `components/views/browser-session-preview.tsx` with PNG renderer, customer-triggered refresh action, reconnect/status display and signed-URL renewal.
+- `0ab52f1c7d16b3203bcfe0507f631673f1ad9675` and `694084b0e6731bf999aab0c9a22bd2cb2627651b`: mounted preview panel in existing Profile Settings browser-session cards and allowed the panel to wrap within the existing card layout.
+- `a8312eebc1d3b8ce45a72202573741aa20c7f532`: owner-scoped session list now includes recent closed/expired sessions, allowing reconnect UI to display terminal states rather than silently dropping them.
+- `a8d0c8221474cbe88b052a8fc0cb31ce66ddc667`: removed duplicate polling; enqueue state transition owns the single reconnect poll loop.
+
+The three requested source paths are now connected in code: (1) customer refresh enqueues a durable `browser.preview` command, (2) renderer obtains owner-scoped artifact metadata and a short-lived signed URL through FastAPI before displaying the PNG, and (3) reconnect restores durable request/session state and polls queued/processing requests, displaying active, close-requested, closed, expired, failed and lease-expired outcome-unknown states.
+
+**Not verified / not complete operationally:** migration `20261116300000_moreai_browser_preview_requests.sql` remains committed but unapplied; worker/API deployment configuration and actual OpenFuse runtime are not confirmed. No tests, lint, typecheck, build, API calls, browser runtime, screenshot, staging, deployment, Docker execution or Supabase mutation were performed as instructed. This is a source integration milestone, not a claim of live functionality or Phase 09 completion.
