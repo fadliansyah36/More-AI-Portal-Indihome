@@ -7,10 +7,10 @@ import { customerSkillApi, type CustomerSkillExecutionAudit, type CustomerSkillP
 const permissionOptions = ['network.read','workspace.read','workspace.write','browser.navigate','browser.download','search.web','files.read','files.write','calendar.read','calendar.write','gmail.read','gmail.send'];
 
 const emptyForm = {
-  slug: '', name: '', description: '', source_repository: 'smixs/visual-skills',
-  source_ref: 'main', source_commit: '', source_path: '', source_blob_sha: '',
-  content_sha256: '', version: '1.0.0', license_id: 'CC-BY-4.0',
-  license_url: 'https://creativecommons.org/licenses/by/4.0/',
+  slug: '', name: '', description: '', source_repository: '',
+  source_ref: '', source_commit: '', source_path: '', source_blob_sha: '',
+  content_sha256: '', version: '', license_id: '',
+  license_url: '',
   license_evidence: '', requested_permissions: [] as string[],
 };
 
