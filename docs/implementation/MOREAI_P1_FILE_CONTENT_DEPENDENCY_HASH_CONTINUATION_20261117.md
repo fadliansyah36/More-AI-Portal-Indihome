@@ -158,3 +158,15 @@ The package-key vs integrity-record delta is 3 for OpenFuse and 1 for Scenario. 
 5. Do not use the stale counts elsewhere in P1 reports as accepted evidence. Update dependent summaries when their next controlled revision is made.
 
 **P1 remains OPEN.** The next dependency-graph deliverable must be a normalized importer → snapshot → package-coordinate edge export with peer contexts retained, followed by authoritative exact-version license/NOTICE evidence. Unknown or inaccessible metadata remains `NOASSERTION`; it must never be inferred from package names.
+
+## Pinned pnpm graph extraction and exact-version registry pass — 2026-11-17
+
+A structural parser pass was completed on the immutable OpenFuse and Scenario lockfiles. See `MOREAI_P1_NORMALIZED_PNPM_GRAPH_AND_REGISTRY_LICENSES_20261117.md` and the committed package/edge CSVs for exact details.
+
+- OpenFuse: 1,452 package entries, 1,454 snapshot entries, 3 importers, 3,464 dependency declarations; alias handling resolves 5 npm alias edges and preserves peer-context resolution.
+- Scenario: 466 package entries, 466 snapshot entries, 1 importer, 644 dependency declarations.
+- Both lockfiles: 1,808 unique exact package coordinates in total, with zero missing coordinates against the current CycloneDX npm PURLs.
+- Sixteen additional npm PURLs in the BOM remain to be mapped to their other source lockfiles.
+- Registry metadata: 1,808 exact-version requests succeeded; 11 packages have no published license field; one package declares non-SPDX text `CC BY-SA 4.0`.
+
+The graph CSV also preserves peer constraints, optional peer metadata and transitive peer context. The registry pass does not constitute a vulnerability scan, artifact inspection, legal approval, or P1 closure. No packages were installed or executed.
