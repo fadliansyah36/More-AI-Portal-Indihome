@@ -1,0 +1,24 @@
+# Optional overlay: attach the persistent MoreAI worker to the private
+# OpenFuse/ClamAV network after compose.browser.yml has created it.
+# Deploy with both docker-compose.runtime.yml and this file, using --profile worker.
+services:
+  worker:
+    environment:
+      MOREAI_BROWSER_ENABLED: "true"
+      MOREAI_BROWSER_SERVICE_URL: "http://browser-supervisor:8790"
+      MOREAI_BROWSER_SERVICE_TOKEN: ${MOREAI_BROWSER_SERVICE_TOKEN:?set the same token used by OpenFuse WORKER_TOKEN}
+      MOREAI_BROWSER_EGRESS_ENFORCED: "true"
+      MOREAI_BROWSER_PRIVATE_NETWORK_HTTP: "true"
+      MOREAI_INTERNAL_API_URL: "http://api:8000"
+      MOREAI_WORKER_INTERNAL_TOKEN: ${MOREAI_WORKER_INTERNAL_TOKEN:?set the worker-to-FastAPI token}
+      MOREAI_CLAMAV_HOST: "clamav"
+      MOREAI_CLAMAV_PORT: "3310"
+    networks:
+      - default
+      - browser_private
+
+networks:
+  default: {}
+  browser_private:
+    external: true
+    name: moreai_browser_isolated
