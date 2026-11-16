@@ -103,3 +103,12 @@ This report records source-governance and architecture-documentation progress on
 - No source skill payload was copied/adapted as part of this follow-up. No license, dependency or asset gate was closed by the 67-entrypoint hash manifest.
 
 Additional commits: `1e1c203f55d844afdd4d063730d166ccfb857fa7` (selected entrypoint SHA-256 manifest) and `a28019cf9992d5fa105ba844678b4d134ea06c4d` (content/dependency continuation note). A later scratch-file cleanup is recorded in Git history; it is not an evidence artifact.
+
+## 7. Recursive license filename/content re-scan
+
+- Re-parsed the captured recursive manifests for primary source trees and all 19 Motion child packs using license/notice filename patterns.
+- Fetched and inspected every returned license-like blob. Primary tree results: OpenManusWeb MIT, OpenFuse MIT, Visual Skills CC BY 4.0 + NOTICE attribution, Scenario root MIT plus nested Apache-2.0 for `.agents/skills/skill-creator`, Motion root MIT.
+- Motion child-pack manifests contain 18 root MIT LICENSE files with identical 1,064-byte blob; `generative-illustration-skills` remains unlicensed and blocked.
+- Updated `MOREAI_P1_LICENSE_RECONCILIATION_20261117.md` with exact paths, Git blob SHAs, scope and limitations. This closes the filename/content pass for discovered license-like files only; it does not close per-asset rights, embedded source notices, external downloads, package licenses or P1.
+- No skill payload files were copied/adapted; no packages, scripts or tests were run.
+- Evidence commit: `a8b967fcc9ce56dd1501e287edc80db6e82f190e`.
