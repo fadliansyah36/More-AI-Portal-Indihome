@@ -43,7 +43,7 @@ Direct package declarations are no longer satisfied by a same-named package foun
 - same parent directory as the declaring manifest; and
 - an explicitly supported lockfile for that ecosystem.
 
-Current supported matching pairs are package.json ↔ package-lock.json/npm-shrinkwrap.json, pyproject/requirements declarations ↔ poetry.lock/uv.lock only where the matching directory and package inventory allow it, Gemfile ↔ Gemfile.lock, Cargo ↔ Cargo.lock, and Composer ↔ composer.lock. Unsupported formats remain blocked separately rather than being promoted by a name-only match.
+Current supported direct-declaration matching is limited to package.json ↔ package-lock.json/npm-shrinkwrap.json, requirements.txt ↔ a sibling poetry.lock/uv.lock only where the exact package inventory permits it, and Gemfile ↔ Gemfile.lock. pyproject.toml, Cargo.toml, composer.json and their incomplete ecosystems remain blocking; their lockfiles are not promoted to complete direct-dependency proofs.
 
 ## Architecture and data flow
 
