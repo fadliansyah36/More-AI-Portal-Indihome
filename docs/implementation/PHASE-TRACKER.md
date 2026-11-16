@@ -1775,3 +1775,15 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Do not add takeover/terminal controls or claim capability until scoped grants, same-session reconnect/stream, revocation, audit and isolated supervisor readiness are implemented. Browser profile deletion/download scanning and worker deployment remain operationally gated.
 - No UI changes, tests, build, lint, typecheck, screenshots, runtime, Docker, staging, deployment, migration apply or Supabase mutation were performed.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 continuation — Customer lifecycle, Skills and provider reconciliation
+
+- Added [Phase 09 Customer Integration Continuation report](./PHASE-09-CUSTOMER-INTEGRATION-CONTINUATION-20261116.md), based on source inspection at baseline HEAD d56ffbd6198dba6513a45261f6c437db9f6d2e5b.
+- Confirmed durable Agent Run event sequence, Last-Event-ID cursor validation, SSE, checkpoint-safe projection, Customer Tasks/Workflow stream consumption, worker checkpoint restore, heartbeat/lease-loss fail-closed behavior, cancellation/retry and durable event outbox. Extend these canonical mechanisms; do not duplicate them.
+- Confirmed Skills catalog/import/ingest/validate/install/permission API and worker-side provenance/SBOM/license/permission verification. Recursive source governance and publication review remain incomplete.
+- Confirmed Customer wallet/ledger/usage/entitlement/quota endpoints and worker model router/metered gateway source. Production provider/model records, secrets, pricing and active worker readiness are not proven; do not seed demo data.
+- Human Takeover still lacks a short-lived one-time scoped grant plus private same-profile OpenFuse attach/consume/revoke/audit handshake. Computer Workspace still lacks customer-authorized interactive session/stream/reconnect/cancel protocol. No UI controls added before complete contracts and required screenshot gate.
+- Cross-RPC fencing, SSE reconnect retention/gap semantics, full route-to-screen mapping and exact-once billing/provider-unknown handling remain explicit reconciliation work.
+- No UI edits, tests, build, lint, typecheck, screenshots, runtime, Docker, provider calls, staging, deployment, migration apply or Supabase mutation.
+- Phase 09 IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
