@@ -21,6 +21,12 @@ PERMISSION_KEYS = {"network.read", "workspace.read", "workspace.write", "browser
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 SHA64 = re.compile(r"^[0-9a-f]{64}$")
 SLUG = re.compile(r"^[a-z0-9][a-z0-9._-]{1,119}$")
+# Pinned Scenario packages contain up to 56 files in a single skill folder.
+# Keep the package byte and per-file bounds unchanged while allowing a
+# narrowly increased file count for the audited upstream tree.
+MAX_SKILL_SOURCE_FILES = 64
+MAX_SKILL_SOURCE_FILE_BYTES = 512 * 1024
+MAX_SKILL_SOURCE_PACKAGE_BYTES = 5 * 1024 * 1024
 
 
 class SkillImportRequest(BaseModel):
@@ -1152,7 +1158,7 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
     files = await repo.select("moreai_skill_source_files", {
         "skill_package_id": f"eq.{skill_id}", "owner_user_id": f"eq.{user['id']}",
         "select": "relative_path,git_blob_sha,content_sha256,byte_size,text_content,binary_content_base64",
-        "limit": "40",
+        "limit": str(MAX_SKILL_SOURCE_FILES),
     })
     source_inventory = _source_review_inventory(files)
     registry_inventory = await _resolve_exact_dependency_licenses(request.app.state.http, source_inventory["dependencies"])
@@ -1174,7 +1180,7 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
         findings.append("A source-controlled SKILL.md or package manifest is required; user-entered metadata alone is not a skill manifest.")
     if not files:
         findings.append("Pinned source files have not been ingested and integrity-verified.")
-    if len(files) > 40 or sum(int(item.get("byte_size") or 0) for item in files) > 5 * 1024 * 1024:
+    if len(files) > MAX_SKILL_SOURCE_FILES or sum(int(item.get("byte_size") or 0) for item in files) > MAX_SKILL_SOURCE_PACKAGE_BYTES:
         findings.append("Source package exceeds the file-count or expanded-size limit.")
     if files and not any(item.get("git_blob_sha") == skill.get("source_blob_sha") and item.get("content_sha256") == skill.get("content_sha256") for item in files):
         findings.append("Root entrypoint does not match the immutable provenance hashes.")
@@ -1643,7 +1649,7 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
         if relative in seen:
             continue
         seen.add(relative)
-        if len(seen) > 40:
+        if len(seen) > MAX_SKILL_SOURCE_FILES:
             raise HTTPException(413, "skill_source_file_count_limit_exceeded")
         url = f"https://api.github.com/repos/{parts[0]}/{parts[1]}/contents/{quote(relative, safe='/')}?ref={skill['source_commit']}"
         response = await http.get(url, headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}, timeout=15.0, follow_redirects=False)
@@ -1669,10 +1675,10 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
             content = base64.b64decode(encoded, validate=False)
         except Exception as exc:
             raise HTTPException(502, "skill_source_base64_invalid") from exc
-        if len(content) > 524288:
+        if len(content) > MAX_SKILL_SOURCE_FILE_BYTES:
             raise HTTPException(413, "skill_source_file_size_limit_exceeded")
         total_bytes += len(content)
-        if total_bytes > 5 * 1024 * 1024:
+        if total_bytes > MAX_SKILL_SOURCE_PACKAGE_BYTES:
             raise HTTPException(413, "skill_source_package_size_limit_exceeded")
         git_sha = hashlib.sha1(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest()
         sha_api = item.get("sha")
