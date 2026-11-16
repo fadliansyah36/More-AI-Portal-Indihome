@@ -316,11 +316,14 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                             # distinct versions or registry/git sources by name.
                             parts = dependency.split(" ")
                             dependency_edges.append({
-                                "ecosystem": "cargo", "from": str(package.get("name")),
+                                "ecosystem": "cargo",
+                                "from": str(package.get("name")),
                                 "from_version": str(package.get("version") or ""),
-                                "to": parts[0], "to_version": parts[1] if len(parts) > 1 else "",
-                                "source": " ".join(parts[2:]) if len(parts) > 2 else "",
-                                "kind": "dependency",
+                                "from_source": str(package.get("source") or ""),
+                                "to": parts[0],
+                                "to_version": parts[1] if len(parts) > 1 else "",
+                                "to_source": " ".join(parts[2:]) if len(parts) > 2 else "",
+                                "kind": "dependency", "source_manifest": path,
                             })
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "cargo", "status": "parse_error"})
@@ -333,7 +336,15 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                     for group in ("require", "require-dev"):
                         required = package.get(group)
                         if isinstance(required, dict):
-                            dependency_edges.extend({"ecosystem": "composer", "from": str(package.get("name")), "to": dep, "kind": group} for dep in required if isinstance(dep, str) and not dep.startswith("php"))
+                            dependency_edges.extend({
+                                "ecosystem": "composer",
+                                "from": str(package.get("name")),
+                                "from_version": str(package.get("version") or ""),
+                                "from_reference": str(package.get("dist", {}).get("reference") or package.get("source", {}).get("reference") or ""),
+                                "to": dep, "requested": str(constraint),
+                                "kind": group, "source_manifest": path,
+                            } for dep, constraint in required.items()
+                              if isinstance(dep, str) and not dep.lower().startswith(("php", "ext-", "lib-")))
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "composer", "status": "parse_error"})
         elif name == "pnpm-lock.yaml":
