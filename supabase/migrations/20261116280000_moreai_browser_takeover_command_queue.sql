@@ -1,3 +1,14 @@
+-- Include the existing close lifecycle and the new durable takeover audit event.
+alter table public.moreai_browser_session_events
+  drop constraint if exists moreai_browser_session_events_event_type_check;
+alter table public.moreai_browser_session_events
+  add constraint moreai_browser_session_events_event_type_check
+  check (event_type in (
+    'created','restored','state_saved','close_requested','closed','expired',
+    'takeover_grant_created','takeover_grant_consumed','takeover_grants_revoked',
+    'takeover_input_succeeded','takeover_input_failed','takeover_command_queued'
+  ));
+
 -- Durable, encrypted transport for customer-authorized OpenFuse Human Takeover.
 create table if not exists public.moreai_browser_takeover_commands (
   id uuid primary key default gen_random_uuid(),
