@@ -412,6 +412,7 @@ async def run_worker() -> None:
             stop_outbox = asyncio.Event()
             stop_browser_reconciliation = asyncio.Event()
             stop_browser_takeover = asyncio.Event()
+            stop_browser_preview = asyncio.Event()
             browser_reconciliation_task = (
                 asyncio.create_task(
                     _browser_session_close_reconciliation_loop(
