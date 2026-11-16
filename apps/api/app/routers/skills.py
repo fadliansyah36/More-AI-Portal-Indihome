@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import asyncio
 import json
+import os
 import tomllib
 from pathlib import PurePosixPath
 from urllib.parse import quote
@@ -27,6 +28,44 @@ SLUG = re.compile(r"^[a-z0-9][a-z0-9._-]{1,119}$")
 MAX_SKILL_SOURCE_FILES = 64
 MAX_SKILL_SOURCE_FILE_BYTES = 512 * 1024
 MAX_SKILL_SOURCE_PACKAGE_BYTES = 5 * 1024 * 1024
+
+
+def _github_source_headers(request: Request) -> dict[str, str]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    settings = getattr(request.app.state, "settings", None)
+    token = getattr(settings, "github_token", None) or os.getenv("MOREAI_GITHUB_TOKEN")
+    if isinstance(token, str) and token.strip():
+        headers["Authorization"] = f"Bearer {token.strip()}"
+    return headers
+
+
+def _raise_github_source_error(response: Any, error_code: str) -> None:
+    status = int(getattr(response, "status_code", 0) or 0)
+    headers = getattr(response, "headers", {}) or {}
+    body = str(getattr(response, "text", "") or "").lower()
+    rate_limited = (
+        status == 429
+        or (status == 403 and (
+            str(headers.get("X-RateLimit-Remaining", "")) == "0"
+            or "api rate limit exceeded" in body
+            or "secondary rate limit" in body
+        ))
+    )
+    if rate_limited:
+        retry_after = headers.get("Retry-After")
+        if not retry_after:
+            reset = headers.get("X-RateLimit-Reset")
+            if reset and str(reset).isdigit():
+                retry_after = str(max(1, int(reset) - int(datetime.now(timezone.utc).timestamp())))
+        raise HTTPException(
+            status_code=503,
+            detail="pinned_skill_source_rate_limited_retry_after_header",
+            headers={"Retry-After": str(retry_after or 60)},
+        )
+    raise HTTPException(status_code=502, detail=error_code)
 
 
 class SkillImportRequest(BaseModel):
@@ -1469,12 +1508,12 @@ async def list_pinned_skill_catalog(
         url = f"https://api.github.com/repos/{source_owner}/{source_repo}/git/trees/{commit}?recursive=1"
         response = await http.get(
             url,
-            headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
+            headers=_github_source_headers(request),
             timeout=20.0,
             follow_redirects=False,
         )
         if response.status_code != 200:
-            raise HTTPException(502, "pinned_skill_catalog_source_unavailable")
+            _raise_github_source_error(response, "pinned_skill_catalog_source_unavailable")
         payload = response.json()
         if not isinstance(payload, dict):
             raise HTTPException(502, "pinned_skill_catalog_payload_invalid")
@@ -1559,7 +1598,7 @@ async def import_pinned_skill_from_catalog(
         follow_redirects=False,
     )
     if response.status_code != 200:
-        raise HTTPException(502, "pinned_skill_entrypoint_fetch_failed")
+        _raise_github_source_error(response, "pinned_skill_entrypoint_fetch_failed")
     item = response.json()
     if not isinstance(item, dict) or item.get("type") != "file" or item.get("encoding") != "base64":
         raise HTTPException(502, "pinned_skill_entrypoint_payload_invalid")
@@ -1630,9 +1669,9 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
     http = request.app.state.http
     # Repository-level LICENSE/NOTICE files govern many nested skill directories.
     root_listing_url = f"https://api.github.com/repos/{parts[0]}/{parts[1]}/contents?ref={skill['source_commit']}"
-    root_listing = await http.get(root_listing_url, headers={"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}, timeout=15.0, follow_redirects=False)
+    root_listing = await http.get(root_listing_url, headers=_github_source_headers(request), timeout=15.0, follow_redirects=False)
     if root_listing.status_code != 200:
-        raise HTTPException(502, "skill_repository_root_listing_failed")
+        _raise_github_source_error(root_listing, "skill_repository_root_listing_failed")
     root_items = root_listing.json()
     if not isinstance(root_items, list):
         raise HTTPException(502, "skill_repository_root_listing_invalid")
@@ -1654,7 +1693,7 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
         url = f"https://api.github.com/repos/{parts[0]}/{parts[1]}/contents/{quote(relative, safe='/')}?ref={skill['source_commit']}"
         response = await http.get(url, headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}, timeout=15.0, follow_redirects=False)
         if response.status_code != 200:
-            raise HTTPException(502, "skill_source_fetch_failed")
+            _raise_github_source_error(response, "skill_source_fetch_failed")
         item = response.json()
         if isinstance(item, list):
             # Directory traversal captures nested scripts, manifests, licenses,
