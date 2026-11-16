@@ -128,6 +128,45 @@ async def list_browser_action_receipts(
     return {"items": rows}
 
 
+@router.get("/internal/expire-requests")
+async def mark_expired_browser_sessions_for_close(
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    """Turn TTL/idle expiry into durable close work; the isolated worker owns Chromium cleanup."""
+    _worker_auth(request, x_moreai_worker_token)
+    repo = repository(request)
+    now = datetime.now(timezone.utc)
+    idle_before = now - timedelta(minutes=IDLE_TTL_MINUTES)
+    rows = await repo.select("moreai_browser_sessions", {
+        "status": "eq.active",
+        "select": "id,user_id,expires_at,last_used_at",
+        "order": "last_used_at.asc",
+        "limit": "100",
+    })
+    queued = []
+    for row in rows:
+        try:
+            expires_at = datetime.fromisoformat(str(row["expires_at"]).replace("Z", "+00:00"))
+            last_used_at = datetime.fromisoformat(str(row["last_used_at"]).replace("Z", "+00:00"))
+        except (KeyError, TypeError, ValueError):
+            expires_at, last_used_at = now - timedelta(seconds=1), idle_before - timedelta(seconds=1)
+        reason = "ttl" if expires_at <= now else "idle" if last_used_at <= idle_before else None
+        if reason is None:
+            continue
+        changed = await repo.update("moreai_browser_sessions", {
+            "id": f"eq.{row['id']}", "user_id": f"eq.{row['user_id']}", "status": "eq.active",
+        }, {"status": "close_requested"})
+        if not changed:
+            continue
+        await repo.insert("moreai_browser_session_events", {
+            "session_id": str(row["id"]), "user_id": str(row["user_id"]),
+            "event_type": "close_requested", "metadata": {"source": "ttl_reconciler", "reason": reason},
+        })
+        queued.append({"session_id": str(row["id"]), "user_id": str(row["user_id"])})
+    return {"items": queued}
+
+
 @router.get("/internal/close-requests")
 async def list_browser_session_close_requests(
     request: Request,
