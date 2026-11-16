@@ -573,3 +573,45 @@ This strict graph gate intentionally keeps publication closed for lockfile cases
 - This closes an important ambiguity where package name alone could refer to multiple nested versions. npm lockfile v1 still needs equivalent recursive path-based target joins; it remains a remaining graph item.
 - The customer Skills evidence panel now reports graph readiness and unresolved edge count. The publication gate rejects incomplete graphs before approval/publication.
 
+
+
+## Continuation — live SQL postcondition audit and retention retry safety (2026-11-16)
+
+### Read-only live postcondition results
+
+A further read-only query against `MoreAIdb` confirmed:
+- Live `moreai_browser_session_events_event_type_check` currently allows only `created`, `restored`, `state_saved`, `closed`, and `expired`. It does not yet allow `close_requested`, `profile_retention_eligible`, or `profile_deleted`.
+- None of `profile_retention_after`, `profile_deleted_at`, `profile_retention_notified_at`, or `profile_retention_claimed_at` currently exists on `moreai_browser_sessions`.
+- `moreai-artifacts` exists and is private; no matching artifact-specific Storage policy was returned by the live policy query.
+- The live `moreai_review_skill_package` function is older than the repository source migration. Its current definition checks validation and license evidence but does not enforce empty findings, complete dependency graph, zero unresolved edges, or resolved registry metadata. The pending publication-evidence migration therefore has a material, not cosmetic, schema/function delta.
+
+These findings establish that the Phase 09D migration set is still pending. They do not establish historical SQL equivalence for the previously moved migrations. No live object was changed.
+
+### Retention retry correction
+
+Source review found a retry-safety issue in the first retention claim RPC: it set `profile_retention_notified_at` before the worker had successfully deleted the OpenFuse profile. A worker/network failure could therefore strand a profile outside future claim results.
+
+Added `supabase/migrations/20261116180000_moreai_browser_profile_retention_retry_lease.sql`:
+- Adds `profile_retention_claimed_at`.
+- Uses a five-minute claim lease so a failed worker attempt becomes eligible for retry.
+- Emits the eligibility event only on the first claim.
+- Clears the claim timestamp only after the worker's successful deletion acknowledgement.
+- Rejects a null/invalid claim limit and preserves service-role-only RPC execution.
+
+This is a source-only forward migration. It has not been applied, and the worker/API path has not been executed.
+
+### Active pending migration set
+
+The active Phase 09D migration directory now contains six pending migrations, in timestamp order:
+1. `20261116100000_moreai_browser_session_close_event_constraint`
+2. `20261116150000_moreai_skill_publication_evidence_gate`
+3. `20261116153000_moreai_browser_profile_retention`
+4. `20261116160000_moreai_browser_profile_retention_rpcs`
+5. `20261116170000_moreai_artifacts_storage_server_only`
+6. `20261116180000_moreai_browser_profile_retention_retry_lease`
+
+Do not run the worker retention loop against the live database before these migrations are applied in an authorized change window. No migration was applied during this continuation.
+
+### Verification boundary
+
+No tests, builds, lint, type checks, browser/runtime calls, staging, migration application, or deployment were performed. This continuation consists of source review, a new forward-only migration, and read-only live metadata/function inspection. Phase 09 remains IN PROGRESS; Phase 10 and Phase 11 remain blocked.
