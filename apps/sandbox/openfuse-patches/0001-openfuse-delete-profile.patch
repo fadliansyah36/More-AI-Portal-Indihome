@@ -1,0 +1,47 @@
+diff --git a/apps/worker/src/browser.ts b/apps/worker/src/browser.ts
+index 0000000..0000000 100644
+--- a/apps/worker/src/browser.ts
++++ b/apps/worker/src/browser.ts
+@@
+     closeSession: (id: string) => serial(id, () => closeSession(id)),
++    deleteProfile: (id: string) =>
++      serial(id, async () => {
++        validateSessionId(id);
++        const instance = running.get(id);
++        if (instance) {
++          throw new WorkerError(
++            "SESSION_ACTIVE",
++            "An active browser profile cannot be deleted.",
++            409,
++          );
++        }
++        if (!sessions.has(id)) {
++          await rm(directory(id), { recursive: true, force: true });
++          return { id, status: "deleted", already_absent: true };
++        }
++        await rm(directory(id), { recursive: true, force: true });
++        sessions.delete(id);
++        return { id, status: "deleted", already_absent: false };
++      }),
+     screenshot: (id: string) =>
+       serial(id, () => active(id).page.screenshot({ type: "png", timeout: 10_000 })),
+diff --git a/apps/worker/src/server.ts b/apps/worker/src/server.ts
+index 0000000..0000000 100644
+--- a/apps/worker/src/server.ts
++++ b/apps/worker/src/server.ts
+@@
+-        /^\/sessions\/([^/]+)\/(navigate|close|screenshot|read|input|downloads)(?:\/([^/]+))?$/.exec(
++        /^\/sessions\/([^/]+)\/(navigate|close|screenshot|read|input|downloads|delete-profile)(?:\/([^/]+))?$/.exec(
+           pathname,
+         );
+@@
+       else if (action === "downloads" && request.method === "GET") {
+         if (!downloadId) json(200, await browser.downloads(id));
+         else {
+@@
+           response.end(result.bytes);
+         }
+       }
++      else if (action === "delete-profile" && !downloadId && request.method === "DELETE")
++        json(200, await browser.deleteProfile(id));
+       else throw new WorkerError("NOT_FOUND", "Worker endpoint not found.", 404);
