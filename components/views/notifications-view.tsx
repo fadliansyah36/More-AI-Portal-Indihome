@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Gift, Wifi, Sparkles, CheckCheck, Bell, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Gift, Wifi, Sparkles, CheckCheck, Bell, RefreshCw, Settings2 } from 'lucide-react';
 import { NavigationTab } from '@/types/moreai';
 import { useToast } from '@/components/ui/toast-context';
-import { notificationApi, CustomerNotification } from '@/lib/api/client';
+import { notificationApi, CustomerNotification, CustomerNotificationPreferences } from '@/lib/api/client';
 
 interface NotificationsViewProps {
   onBack: () => void;
@@ -40,7 +40,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [paginationError, setPaginationError] = useState<string | null>(null);
+  const [paginationError, setPaginationError] = useState<string | null>(null);\n  const [preferences, setPreferences] = useState<CustomerNotificationPreferences | null>(null);\n  const [preferencesOpen, setPreferencesOpen] = useState(false);\n  const [preferencesLoading, setPreferencesLoading] = useState(false);\n  const [preferencesBusy, setPreferencesBusy] = useState(false);\n  const [preferencesError, setPreferencesError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -61,6 +61,36 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
     void Promise.resolve().then(() => { if (active) void load(); });
     return () => { active = false; };
   }, [load]);
+
+  const loadPreferences = async () => {
+    setPreferencesLoading(true);
+    setPreferencesError(null);
+    try {
+      setPreferences(await notificationApi.preferences());
+    } catch (cause) {
+      setPreferencesError(cause instanceof Error ? cause.message : 'Preferensi notifikasi gagal dimuat.');
+    } finally {
+      setPreferencesLoading(false);
+    }
+  };
+
+  const updatePreference = async (key: 'in_app_enabled' | 'email_enabled', value: boolean) => {
+    if (!preferences || preferencesBusy) return;
+    const previous = preferences;
+    setPreferencesBusy(true);
+    setPreferencesError(null);
+    setPreferences({ ...previous, [key]: value });
+    try {
+      const saved = await notificationApi.updatePreferences({ [key]: value });
+      setPreferences(saved);
+      showToast('Preferensi notifikasi disimpan.', 'success');
+    } catch (cause) {
+      setPreferences(previous);
+      setPreferencesError(cause instanceof Error ? cause.message : 'Preferensi notifikasi gagal disimpan.');
+    } finally {
+      setPreferencesBusy(false);
+    }
+  };
 
   const loadMore = async () => {
     if (!nextCursor || loadingMore) return;
@@ -116,9 +146,33 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
         <h1 className="text-base font-bold text-slate-900 leading-tight">Notifikasi</h1>
         <div className="flex items-center gap-2">
           <button onClick={() => { setLoading(true); setError(null); void load(); }} disabled={loading} className="p-1 text-slate-400 hover:text-slate-700" aria-label="Muat ulang"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
+          <button onClick={() => { setPreferencesOpen((open) => !open); if (!preferences) void loadPreferences(); }} className={`p-1 ${preferencesOpen ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`} aria-label="Pengaturan notifikasi"><Settings2 className="w-4 h-4" /></button>
           <button onClick={() => void markAllRead()} disabled={busy || items.every((item) => item.read_at)} className="text-xs text-red-600 font-semibold disabled:opacity-40"><CheckCheck className="w-4 h-4 inline mr-1" />Baca semua</button>
         </div>
       </div>
+
+      {preferencesOpen && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs" aria-label="Preferensi notifikasi">
+          <div className="mb-3 flex items-center justify-between">
+            <div><h2 className="text-xs font-bold text-slate-900">Preferensi notifikasi</h2><p className="mt-1 text-[10px] text-slate-500">Pengaturan tersimpan pada akun melalui FastAPI.</p></div>
+            {preferencesBusy && <span className="text-[10px] text-slate-400">Menyimpan…</span>}
+          </div>
+          {preferencesError && <p role="alert" className="mb-3 rounded-lg bg-amber-50 p-2 text-[10px] text-amber-800">{preferencesError}</p>}
+          {preferencesLoading || !preferences ? <p className="py-3 text-xs text-slate-400">Memuat preferensi…</p> : (
+            <div className="space-y-3">
+              <label className="flex items-center justify-between gap-3 text-xs text-slate-700">
+                <span><span className="block font-semibold">Notifikasi dalam aplikasi</span><span className="text-[10px] text-slate-400">Tampilkan pemberitahuan di MoreAI</span></span>
+                <input type="checkbox" checked={preferences.in_app_enabled} disabled={preferencesBusy} onChange={(event) => void updatePreference('in_app_enabled', event.target.checked)} className="h-4 w-4 accent-red-600" />
+              </label>
+              <div className="border-t border-slate-100" />
+              <label className="flex items-center justify-between gap-3 text-xs text-slate-700">
+                <span><span className="block font-semibold">Notifikasi email</span><span className="text-[10px] text-slate-400">Izinkan pengiriman notifikasi melalui email</span></span>
+                <input type="checkbox" checked={preferences.email_enabled} disabled={preferencesBusy} onChange={(event) => void updatePreference('email_enabled', event.target.checked)} className="h-4 w-4 accent-red-600" />
+              </label>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="flex items-center gap-1 p-1 bg-white rounded-2xl border border-slate-200 shadow-2xs">
         <button onClick={() => setFilter('semua')} className={`flex-1 py-1.5 text-xs font-semibold rounded-xl transition ${filter === 'semua' ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Semua</button>
