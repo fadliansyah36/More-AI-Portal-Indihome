@@ -349,34 +349,118 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 dependencies.append({"manifest": path, "ecosystem": "composer", "status": "parse_error"})
         elif name == "pnpm-lock.yaml":
             dependency_files.append(path)
-            # Parse package snapshots without a YAML dependency. pnpm v6/v9 lock
-            # entries encode exact package versions in the package/snapshot key.
-            current_name = None
-            current_version = None
-            current_integrity = None
-            def flush_pnpm() -> None:
-                if current_name and current_version:
-                    add_dependency("npm", current_name, current_version, path,
-                                   status="lockfile_pinned" if current_integrity else "lockfile_pinned_integrity_missing",
-                                   integrity=current_integrity)
+            # Parse pnpm v6/v9 package/snapshot blocks and importer descriptors
+            # without guessing package identity from a bare name.
             try:
+                section = ""
+                current_locator = None
+                current_name = None
+                current_version = None
+                current_integrity = None
+                current_edge_group = None
+                package_nodes: dict[str, dict[str, Any]] = {}
+                pending_edges: list[dict[str, Any]] = []
+                def flush_pnpm_node() -> None:
+                    nonlocal current_locator, current_name, current_version, current_integrity, current_edge_group
+                    if current_locator and current_name and current_version:
+                        package_nodes[current_locator] = {
+                            "name": current_name, "version": current_version,
+                            "integrity": current_integrity,
+                        }
+                    current_edge_group = None
+                def parse_pnpm_locator(raw_key: str) -> tuple[str | None, str | None]:
+                    key = raw_key.strip().strip("'").strip('"').lstrip("/")
+                    if key.startswith("@") and "/" in key:
+                        scope, tail = key.split("/", 1)
+                        if "@" not in tail:
+                            return None, None
+                        pkg, ver = tail.split("@", 1)
+                        package_name = scope + "/" + pkg
+                    else:
+                        if "@" not in key:
+                            return None, None
+                        package_name, ver = key.rsplit("@", 1)
+                    version_match = re.match(r"^([^(/]+)", ver)
+                    return package_name, version_match.group(1) if version_match else None
                 for line in text.splitlines():
-                    match = re.match(r"^  ['\"]?(/?@?[^:\s'\"]+?)@([^:\s'\"]+?)['\"]?:\s*$", line)
-                    if match:
-                        flush_pnpm()
-                        raw_name, current_version = match.group(1).lstrip("/"), match.group(2)
-                        if raw_name.startswith("@") and "/" in raw_name:
-                            current_name = raw_name
-                        else:
-                            current_name = raw_name
-                        current_integrity = None
+                    top = re.match(r"^(importers|packages|snapshots):\\s*$", line)
+                    if top:
+                        flush_pnpm_node()
+                        section = top.group(1)
+                        current_locator = current_name = current_version = current_integrity = None
+                        current_edge_group = None
                         continue
-                    integrity_match = re.search(r"\bintegrity:\s*['\"]?([^\s'\"]+)", line)
+                    if section == "importers":
+                        # Importer dependency descriptors resolve to exact package locators.
+                        importer_match = re.match(r"^\\s{4}([^:]+):\\s*$", line)
+                        if importer_match and importer_match.group(1) in {"dependencies", "devDependencies", "optionalDependencies"}:
+                            current_edge_group = importer_match.group(1)
+                            continue
+                        dep_match = re.match(r"^\\s{6}(['\"]?[^:'\"]+['\"]?):\\s*$", line)
+                        if dep_match and current_edge_group:
+                            pending_edges.append({"ecosystem":"npm","from":"<workspace-importer>","to_descriptor":dep_match.group(1).strip("'\""),"kind":current_edge_group,"source_manifest":path})
+                        resolved_match = re.match(r"^\\s{8}version:\\s*['\"]?([^'\"]+)", line)
+                        if resolved_match and pending_edges and pending_edges[-1].get("to_locator") is None:
+                            pending_edges[-1]["resolved_reference"] = resolved_match.group(1)
+                        continue
+                    if section not in {"packages", "snapshots"}:
+                        continue
+                    node_match = re.match(r"^\\s{2}(['\"]?[^:'\"]+['\"]?):\\s*$", line)
+                    if node_match:
+                        flush_pnpm_node()
+                        current_locator = node_match.group(1).strip("'\"")
+                        current_name, current_version = parse_pnpm_locator(current_locator)
+                        current_integrity = None
+                        current_edge_group = None
+                        continue
+                    if not current_locator:
+                        continue
+                    integrity_match = re.search(r"\\bintegrity:\\s*['\"]?([^\\s,'\"]+)", line)
                     if integrity_match:
                         current_integrity = integrity_match.group(1)
-                flush_pnpm()
-                if not any(item.get("source_manifest") == path for item in dependencies):
-                    dependencies.append({"manifest": path, "ecosystem": "npm", "status": "pnpm_lockfile_no_package_entries"})
+                    edge_group_match = re.match(r"^\\s{4}(dependencies|optionalDependencies|peerDependencies):\\s*$", line)
+                    if edge_group_match:
+                        current_edge_group = edge_group_match.group(1)
+                        continue
+                    edge_match = re.match(r"^\\s{6}(['\"]?[^:'\"]+['\"]?):\\s*['\"]?([^'\"]+)['\"]?\\s*$", line)
+                    if edge_match and current_edge_group and current_name:
+                        target_name = edge_match.group(1).strip("'\"")
+                        requested = edge_match.group(2).strip()
+                        pending_edges.append({
+                            "ecosystem":"npm", "from":current_name,
+                            "from_locator":current_locator, "from_version":current_version,
+                            "to":target_name, "requested":requested,
+                            "kind":current_edge_group, "source_manifest":path,
+                        })
+                flush_pnpm_node()
+                locator_by_name_version = {
+                    (node["name"], node["version"]): locator
+                    for locator, node in package_nodes.items()
+                }
+                for locator, node in package_nodes.items():
+                    add_dependency("npm", node["name"], node["version"], path,
+                                   status="lockfile_pinned" if node["integrity"] else "lockfile_pinned_integrity_missing",
+                                   integrity=node["integrity"])
+                for edge in pending_edges:
+                    resolved_ref = edge.get("resolved_reference") or edge.get("requested")
+                    target_name = edge.get("to")
+                    if not target_name:
+                        descriptor = str(edge.get("to_descriptor") or "")
+                        target_name = descriptor.rsplit("@", 1)[0] if descriptor.startswith("@") else descriptor.split("@", 1)[0]
+                    candidates = [key for key in locator_by_name_version if key[0] == target_name]
+                    if isinstance(resolved_ref, str):
+                        version_hint = re.match(r"^([^(/]+)", resolved_ref.lstrip("/"))
+                        if version_hint:
+                            exact = [key for key in candidates if key[1] == version_hint.group(1)]
+                            candidates = exact or candidates
+                    if len(candidates) == 1:
+                        edge["to_locator"] = locator_by_name_version[candidates[0]]
+                        edge["to_version"] = candidates[0][1]
+                    else:
+                        edge["resolution_status"] = "ambiguous_or_unresolved_package_instance"
+                    dependency_edges.append(edge)
+                if not package_nodes:
+                    dependencies.append({"manifest":path,"ecosystem":"npm","status":"pnpm_lockfile_no_package_entries"})
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "npm", "status": "parse_error"})
         elif name == "yarn.lock":
