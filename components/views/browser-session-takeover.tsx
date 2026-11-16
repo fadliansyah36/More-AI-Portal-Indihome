@@ -28,6 +28,28 @@ export function BrowserSessionTakeover({ sessionId, sessionStatus }: Props) {
   };
 
   useEffect(() => {
+    let active = true;
+    browserSessionApi.state(sessionId).then(async (state) => {
+      if (!active) return;
+      const queuedEvent = state.events.find((event) =>
+        event.event_type === 'takeover_command_queued'
+        && typeof event.metadata?.command_id === 'string'
+      );
+      const commandId = queuedEvent?.metadata?.command_id;
+      if (typeof commandId === 'string') {
+        const latest = await browserSessionApi.takeoverCommand(commandId);
+        if (active) {
+          setCommand(latest);
+          setPolling(latest.status === 'queued' || latest.status === 'processing');
+        }
+      }
+    }).catch(() => {
+      // Preview/session restore has its own status surface; takeover remains available for active sessions.
+    });
+    return () => { active = false; };
+  }, [sessionId]);
+
+  useEffect(() => {
     if (!command || (command.status !== 'queued' && command.status !== 'processing')) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -75,6 +97,9 @@ export function BrowserSessionTakeover({ sessionId, sessionStatus }: Props) {
       );
       await refreshCommand(queued.command_id);
     } catch (cause) {
+      // If enqueue failed or its response was lost, revoke any still-unconsumed
+      // grant so an orphaned capability cannot be used later.
+      await browserSessionApi.revokeTakeoverGrants(sessionId).catch(() => undefined);
       setError(cause instanceof Error ? cause.message : 'Input browser gagal dikirim.');
     } finally {
       setSubmitting(false);
