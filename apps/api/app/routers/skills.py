@@ -103,6 +103,7 @@ async def import_skill(body: SkillImportRequest, request: Request, user: dict[st
 def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     license_files: list[dict[str, Any]] = []
     dependency_files: list[str] = []
+    dependency_file_evidence: list[dict[str, Any]] = []
     manifest_files: list[str] = []
     dependencies: list[dict[str, Any]] = []
     dependency_edges: list[dict[str, str]] = []
@@ -124,6 +125,14 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
         text = item.get("text_content")
         if name in {"skill.md", "skill.yaml", "skill.yml", "skill.json", "manifest.json", "package.json", "pyproject.toml"}:
             manifest_files.append(path)
+        if name in {"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "yarn.lock", "requirements.txt", "requirements.lock", "pyproject.toml", "poetry.lock", "uv.lock", "pipfile", "pipfile.lock", "cargo.toml", "cargo.lock", "go.mod", "go.sum", "composer.json", "composer.lock", "gemfile", "gemfile.lock"}:
+            dependency_file_evidence.append({
+                "path": path,
+                "sha256": item.get("content_sha256"),
+                "git_blob_sha": item.get("git_blob_sha"),
+                "byte_size": item.get("byte_size"),
+                "role": "lockfile" if name.endswith((".lock", "-lock.json", ".sum")) or name in {"pnpm-lock.yaml", "yarn.lock", "go.sum"} else "manifest_or_constraints",
+            })
         if name.startswith(("license", "licence", "copying", "notice", "third_party")):
             license_files.append({
                 "path": path, "sha256": item.get("content_sha256"),
@@ -291,12 +300,19 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                     add_dependency("cargo", package.get("name"), package.get("version"), path, status="lockfile_pinned")
                     for dependency in package.get("dependencies", []) if isinstance(package.get("dependencies"), list) else []:
                         if isinstance(dependency, str):
-                            dependency_edges.append({"ecosystem": "cargo", "from": str(package.get("name")), "to": dependency.split(" ", 1)[0], "kind": "dependency"})
+                            # Cargo lock entries encode name, version and source in a
+                            # single string; retain all three rather than collapsing
+                            # distinct versions or registry/git sources by name.
+                            parts = dependency.split(" ")
+                            dependency_edges.append({
+                                "ecosystem": "cargo", "from": str(package.get("name")),
+                                "from_version": str(package.get("version") or ""),
+                                "to": parts[0], "to_version": parts[1] if len(parts) > 1 else "",
+                                "source": " ".join(parts[2:]) if len(parts) > 2 else "",
+                                "kind": "dependency",
+                            })
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "cargo", "status": "parse_error"})
-        elif name == "go.mod":
-            dependency_files.append(path)
-            dependencies.append({"manifest": path, "ecosystem": "go", "status": "go_mod_requires_go_sum_and_registry_review"})
         elif name == "composer.lock":
             dependency_files.append(path)
             try:
@@ -476,6 +492,8 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
         "license_files": license_files,
         "manifest_files": sorted(set(manifest_files)),
         "dependency_manifests": sorted(set(dependency_files)),
+        "dependency_file_evidence": sorted(dependency_file_evidence, key=lambda item: item["path"]),
+        "dependency_files_sha256_complete": bool(dependency_file_evidence) and all(SHA64.fullmatch(str(item.get("sha256") or "")) for item in dependency_file_evidence),
         "dependencies": dependencies,
         "dependency_edges": dependency_edges,
         "dependency_edge_count": len(dependency_edges),
