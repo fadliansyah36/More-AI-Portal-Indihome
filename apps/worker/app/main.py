@@ -130,8 +130,14 @@ async def _browser_session_close_reconciliation_loop(
                 ownership.raise_for_status()
                 owner_payload = ownership.json()
                 owned = owner_payload.get("items") if isinstance(owner_payload, dict) else None
-                if not isinstance(owned, list) or any(not isinstance(value, str) for value in owned):
-                    raise RuntimeError("browser_profile_ownership_contract_invalid")
+                if (
+                    not isinstance(owned, list)
+                    or owner_payload.get("complete") is not True
+                    or owner_payload.get("total") != len(owned)
+                    or any(not isinstance(value, str) for value in owned)
+                    or len(set(owned)) != len(owned)
+                ):
+                    raise RuntimeError("browser_profile_ownership_inventory_incomplete")
                 profiles = await browser.list_profiles()
                 owned_set = set(owned)
                 for profile in profiles:
