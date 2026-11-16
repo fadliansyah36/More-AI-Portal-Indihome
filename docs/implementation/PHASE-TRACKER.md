@@ -1813,3 +1813,8 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Skill execution observability increment: `24cbd189` adds authenticated owner-scoped `GET /api/v1/customer/skills/audit` with bounded filtering by Agent Run/Skill; `8b3087b` adds the typed Customer client. Reads existing durable `moreai_skill_execution_audit`; no duplicate ledger. Customer UI timeline and full source review/publication remain open. Phase 09 IN PROGRESS.
 
 - Human Takeover durable transport code increment: commits `fed63381`, `3dfd1f70`, `1c01c497`, `19773964`, `c1c19ff9`, `60e6a5cd`, `6edc5a74` add encrypted Supabase command queue, owner-scoped FastAPI submit/status, worker-authenticated atomic claim/finish and OpenFuse worker polling. Migration not applied; dashboard controls/preview/reconnect remain open. Phase 09 IN PROGRESS.
+
+
+## 2026-11-16 continuation — Human Takeover preview lookup
+
+Phase 09 remains **IN PROGRESS**. Added owner-scoped FastAPI browser-session preview metadata lookup and typed customer client method. Commits: API `226a8cdb5f2224bd330b0e469cbaa3343940b7f8`; typed client `9e395bfc5de02d2ee6263ace59180d13fc486d34`; continuation report `5335cfe192903c206cf9aa03ef18d2326b108656`. The endpoint resolves the newest persisted OpenFuse PNG for an active session owned by the caller and returns metadata only; the existing artifact signed-download endpoint remains the download boundary. Dashboard preview/reconnect UI and customer-triggered screenshot refresh remain outstanding. No tests/build/lint/typecheck/runtime/screenshots/staging/deployment/Supabase mutation were run.
