@@ -517,14 +517,26 @@ A new read-only inventory against canonical project `uunfgimtokhucegqbpce` confi
 - `moreai-artifacts` and `moreai-knowledge-private` buckets both exist and are private. Current Storage policies show an explicit server-only deny policy only for `moreai-knowledge-private`; no policy row for `moreai-artifacts` was observed.
 - The committed artifact Storage migration checks that the bucket exists and is private, then creates a bucket-specific deny policy for anon/authenticated. It does not revoke global Storage grants or affect other buckets.
 
-The following six repository migrations remain unapplied and require reviewed forward-only sequencing:
+The following five repository migrations remain unapplied and require reviewed forward-only sequencing:
 `20261116100000_moreai_browser_session_close_event_constraint`,
 `20261116150000_moreai_skill_publication_evidence_gate`,
 `20261116153000_moreai_browser_profile_retention`,
 `20261116160000_moreai_browser_profile_retention_rpcs`,
 `20261116170000_moreai_artifacts_storage_server_only`,
-plus the remaining pending migration count must be reconciled against the complete current repository tree before any push. No migration was applied.
+The two historical-name SQL definitions for notifications and Edutech assessment, plus the outbox lease-fencing and Edutech path-summary definitions, have been moved out of the active migration directory into `docs/implementation/sql-reconciliation-reference/`. They are retained for SQL/postcondition comparison against their live-history counterparts and must not be replayed as new migrations. Their exact historical SQL equivalence is not yet proven because Supabase's migration ledger does not expose the original SQL bodies. No migration was applied.
 
 ### Current source-only status
 
 No tests, parser execution, build, lint, type-check, runtime, browser, staging, migration application or deployment was performed. The pnpm/Yarn parser increment and migration version repair are source changes only. Exact historical SQL equivalence remains unavailable from the live migration ledger; current live postconditions are evidence, not proof that every historical migration body matches the repository file.
+
+
+### Migration source directory de-duplication
+
+The active `supabase/migrations` directory now contains exactly five unapplied Phase 09D migrations:
+1. Browser close-event constraint.
+2. Skills publication evidence gate.
+3. Browser profile retention columns/events/index.
+4. Browser profile retention claim/ack RPCs.
+5. Artifacts Storage server-only policy.
+
+Four migration definitions whose names already exist in live history under different versions were moved to `docs/implementation/sql-reconciliation-reference/` so they cannot be replayed by the normal migration runner while exact SQL equivalence is reviewed. This includes notifications/private artifacts, outbox lease fencing, Edutech assessment derived progress and Edutech path summary. The source SQL bodies are preserved unchanged. Their live version mappings are based on migration names and current metadata, not proof of historical SQL-body identity; retain them as unresolved until a trusted historical definition or complete postcondition comparison is available.
