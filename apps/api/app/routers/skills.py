@@ -26,6 +26,9 @@ SLUG = re.compile(r"^[a-z0-9][a-z0-9._-]{1,119}$")
 # Keep the package byte and per-file bounds unchanged while allowing a
 # narrowly increased file count for the audited upstream tree.
 MAX_SKILL_SOURCE_FILES = 64
+# Traversal counts both files and directory entries. Pinned Scenario skill
+# folders reach 79 total tree nodes while staying below 56 files.
+MAX_SKILL_SOURCE_NODES = 128
 MAX_SKILL_SOURCE_FILE_BYTES = 512 * 1024
 MAX_SKILL_SOURCE_PACKAGE_BYTES = 5 * 1024 * 1024
 
@@ -1688,8 +1691,8 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
         if relative in seen:
             continue
         seen.add(relative)
-        if len(seen) > MAX_SKILL_SOURCE_FILES:
-            raise HTTPException(413, "skill_source_file_count_limit_exceeded")
+        if len(seen) > MAX_SKILL_SOURCE_NODES:
+            raise HTTPException(413, "skill_source_tree_node_limit_exceeded")
         url = f"https://api.github.com/repos/{parts[0]}/{parts[1]}/contents/{quote(relative, safe='/')}?ref={skill['source_commit']}"
         response = await http.get(url, headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}, timeout=15.0, follow_redirects=False)
         if response.status_code != 200:
@@ -1707,6 +1710,8 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
             continue
         if not isinstance(item, dict) or item.get("type") != "file" or item.get("encoding") != "base64":
             raise HTTPException(422, "skill_source_file_type_unsupported")
+        if len(records) >= MAX_SKILL_SOURCE_FILES:
+            raise HTTPException(413, "skill_source_file_count_limit_exceeded")
         encoded = item.get("content")
         if not isinstance(encoded, str):
             raise HTTPException(502, "skill_source_content_missing")
