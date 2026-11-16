@@ -1051,10 +1051,14 @@ async def _resolve_exact_dependency_licenses(http: Any, dependencies: list[dict[
 
 
 def _spdx_skill_sbom(
-    skill: dict[str, Any], packages: list[dict[str, Any]], files: list[dict[str, Any]],
+    skill: dict[str, Any],
+    packages: list[dict[str, Any]],
+    files: list[dict[str, Any]],
+    dependency_edges: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     spdx_packages = []
     relationships = []
+    package_ids_by_coordinate: dict[tuple[str, str, str], list[str]] = {}
     for index, item in enumerate(packages, start=1):
         name = str(item.get("name") or "unknown")
         version = str(item.get("exact_version") or item.get("requested") or "UNKNOWN")
@@ -1071,6 +1075,40 @@ def _spdx_skill_sbom(
             "comment": f"{item.get('ecosystem')} · {item.get('registry_metadata_status')} · {item.get('source_manifest')}",
         })
         relationships.append({"spdxElementId":"SPDXRef-DOCUMENT","relationshipType":"DESCRIBES","relatedSpdxElement":package_id})
+        coordinate = (
+            str(item.get("ecosystem") or ""),
+            name,
+            str(item.get("exact_version") or ""),
+        )
+        if all(coordinate):
+            package_ids_by_coordinate.setdefault(coordinate, []).append(package_id)
+
+    # Preserve only dependency edges whose two endpoints resolve to exact,
+    # inventoried package coordinates. Unresolved or range-only edges remain
+    # in source_inventory findings and are never guessed into the SPDX graph.
+    resolved_edge_relationships: set[tuple[str, str]] = set()
+    for edge in dependency_edges or []:
+        ecosystem = str(edge.get("ecosystem") or "")
+        from_name = edge.get("from")
+        to_name = edge.get("to")
+        from_version = edge.get("from_version") or edge.get("from_exact_version")
+        to_version = edge.get("to_version") or edge.get("resolved_exact_version")
+        if not all(isinstance(value, str) and value for value in (
+            ecosystem, from_name, to_name, from_version, to_version,
+        )):
+            continue
+        from_ids = package_ids_by_coordinate.get((ecosystem, str(from_name), str(from_version)), [])
+        to_ids = package_ids_by_coordinate.get((ecosystem, str(to_name), str(to_version)), [])
+        for from_id in from_ids:
+            for to_id in to_ids:
+                if from_id != to_id:
+                    resolved_edge_relationships.add((from_id, to_id))
+    relationships.extend({
+        "spdxElementId": from_id,
+        "relationshipType": "DEPENDS_ON",
+        "relatedSpdxElement": to_id,
+    } for from_id, to_id in sorted(resolved_edge_relationships))
+
     spdx_files = []
     for index, item in enumerate(files, start=1):
         path = str(item.get("relative_path") or "")
@@ -1118,7 +1156,10 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
     })
     source_inventory = _source_review_inventory(files)
     registry_inventory = await _resolve_exact_dependency_licenses(request.app.state.http, source_inventory["dependencies"])
-    sbom = _spdx_skill_sbom(skill, registry_inventory["packages"], files)
+    sbom = _spdx_skill_sbom(
+        skill, registry_inventory["packages"], files,
+        source_inventory["dependency_edges"],
+    )
     source_inventory["registry_resolution"] = {
         "exact_version_count": registry_inventory["exact_version_count"],
         "registry_metadata_resolved_count": registry_inventory["registry_metadata_resolved_count"],
