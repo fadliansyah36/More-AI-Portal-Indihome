@@ -650,12 +650,21 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                     if not target_name:
                         descriptor = str(edge.get("to_descriptor") or "")
                         target_name = descriptor.rsplit("@", 1)[0] if descriptor.startswith("@") else descriptor.split("@", 1)[0]
+                    # Workspace, link, file, git and alias descriptors need a
+                    # workspace/protocol-aware resolver; a same-name registry
+                    # package is not an acceptable substitute.
+                    reference_text = str(resolved_ref or "")
+                    if reference_text.startswith(("workspace:", "link:", "file:", "portal:", "patch:", "git+", "git:", "github:", "npm:")):
+                        edge["resolution_status"] = "pnpm_non_registry_protocol_requires_workspace_resolver"
+                        dependency_edges.append(edge)
+                        continue
                     candidates = [key for key in locator_by_name_version if key[0] == target_name]
                     if isinstance(resolved_ref, str):
                         version_hint = re.match(r"^([^(/]+)", resolved_ref.lstrip("/"))
                         if version_hint:
                             exact = [key for key in candidates if key[1] == version_hint.group(1)]
-                            candidates = exact or candidates
+                            if exact:
+                                candidates = exact
                     if len(candidates) == 1:
                         edge["to_locator"] = locator_by_name_version[candidates[0]]
                         edge["to_version"] = candidates[0][1]
@@ -746,6 +755,13 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                             dependency_section = False
                 flush_yarn()
                 for edge in yarn_edges:
+                    requested = str(edge.get("requested") or "")
+                    # Berry workspace/portal/patch/git/alias protocols are not
+                    # equivalent to a registry package with the same name.
+                    if requested.startswith(("workspace:", "portal:", "patch:", "git+", "git:", "github:", "link:", "file:", "npm:")):
+                        edge["resolution_status"] = "yarn_berry_protocol_requires_protocol_aware_resolver"
+                        dependency_edges.append(edge)
+                        continue
                     candidates = [node for (pkg, _), node in yarn_nodes.items() if pkg == edge["to"]]
                     if len(candidates) == 1:
                         edge["to_locator"] = candidates[0]["locator"]
