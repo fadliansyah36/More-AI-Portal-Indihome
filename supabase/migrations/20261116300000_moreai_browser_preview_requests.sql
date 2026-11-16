@@ -68,7 +68,7 @@ begin
     join public.agent_runs r on r.id=p.run_id and r.user_id=p.user_id
     where p.status='queued' and p.attempts < 3
       and s.status='active' and s.expires_at>now()
-      and r.status in ('running','completed')
+      and r.status in ('running','succeeded')
     order by p.created_at
     for update of p skip locked
     limit p_limit
