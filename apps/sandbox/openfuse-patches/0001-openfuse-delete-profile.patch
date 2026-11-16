@@ -13,12 +13,11 @@ diff --git a/apps/worker/src/browser.ts b/apps/worker/src/browser.ts
 +        if (instance) {
 +          throw new WorkerError("SESSION_ACTIVE", "An active browser profile cannot be deleted.", 409);
 +        }
-+        if (!sessions.has(id)) {
-+          await rm(directory(id), { recursive: true, force: true });
-+          return { id, status: "deleted", already_absent: true };
-+        }
 +        await rm(directory(id), { recursive: true, force: true });
 +        await rm(join("/tmp", `openfuse-downloads-${id}`), { recursive: true, force: true });
++        if (!sessions.has(id)) {
++          return { id, status: "deleted", already_absent: true };
++        }
 +        sessions.delete(id);
 +        return { id, status: "deleted", already_absent: false };
 +      }),
