@@ -2,7 +2,7 @@
 
 Updated: 2026-11-16
 
-Implementation is proceeding directly on `main`. Ten forward-only Phase 09D migrations were applied to the canonical Supabase project. A further explicit deny-policy migration is committed in source and pending application. No tests, build, lint, typecheck, browser/API/worker/provider verification, staging or application deployment were run.
+Implementation is proceeding directly on `main`. Fourteen forward-only Phase 09D migrations were applied to the canonical Supabase project. A further explicit deny-policy migration is committed in source and pending application. No tests, build, lint, typecheck, browser/API/worker/provider verification, staging or application deployment were run.
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -1554,3 +1554,15 @@ Final source baseline update: latest confirmed `main` HEAD before this documenta
 - Read-only metadata confirmed all 16 policies. The Supabase security advisor no longer reports the previous 16 `rls_enabled_no_policy` findings. One Auth warning remains: leaked-password protection is disabled; it requires Auth dashboard configuration and was not changed.
 - Updated [migration ledger](./supabase-migration-ledger-20261116.json) and [Phase 09D runtime closure report](./PHASE-09D-CUSTOMER-RUNTIME-CLOSURE-20261116.md).
 - No tests, lint, typecheck, build, browser/API/worker/provider execution, staging or application deployment. Phase 09 IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 OpenFuse capacity, persistent profile and download security
+
+- Applied three shared capacity migrations to canonical Supabase: `moreai_browser_capacity_leases` (`20261116083856`), `moreai_browser_capacity_lease_owner_fencing` (`20261116083934`), and `moreai_browser_capacity_single_worker_limit` (`20261116084745`). Admission is serialized across API/worker replicas; global cap 3, per-customer cap 2, 660-second lease; same browser-service identity required to renew an unexpired session lease; close lifecycle releases lease atomically.
+- MoreAI BrowserSupervisor now identifies the browser service by stable configured service hostname rather than the calling worker container hostname.
+- Added pinned OpenFuse Docker build, persistent profile volume, 10-minute idle context close/reopen, internal-only browser worker network, HTTPS CONNECT-only proxy forwarding to the separate allowlist/pinned-IP egress proxy, and ClamAV service definition. The MoreAI worker's external network attachment and private service env are documented.
+- Browser download bytes now pass ClamAV INSTREAM, PDF signature/size checks, SHA-256 and owner/run/session validation before private artifact storage. No unscanned download is imported.
+- Skills Library now offers a sequential batch workflow to import, recursively ingest and validate the 56 pinned Motion skills. It does not install, publish, grant permissions or enable execution. The batch has not been run in this assistant session; user-authenticated Customer action is required.
+- Source/Compose only. No Docker build, container startup, test, lint, typecheck, browser/API/worker/provider runtime, staging or deployment. Production ClamAV image digest, secrets, allowlist, worker network attachment and encrypted volume remain operational prerequisites.
+- Supabase security advisor now reports only the Auth leaked-password-protection warning; RLS-without-policy findings are closed.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.

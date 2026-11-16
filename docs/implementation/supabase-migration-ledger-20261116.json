@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-11-16T08:37:00Z",
+  "generated_at": "2026-11-16T08:50:00Z",
   "project_ref": "uunfgimtokhucegqbpce",
   "branch": "main",
-  "repo_head": "64c7519b094531d138bd8f711c902b09a5425dbb",
+  "repo_head": "1e6d8635a89c2ea25fb69fb1ced44a97cdda5e20",
   "counts": {
-    "repository_migrations": 75,
+    "repository_migrations": 78,
     "exact_version_matches": 7,
-    "name_match_version_diff": 67,
+    "name_match_version_diff": 70,
     "not_in_live_by_name": 1,
-    "live_migrations": 111,
+    "live_migrations": 114,
     "live_only_migrations": 32,
     "duplicate_repository_version_ids": 0
   },
@@ -797,6 +797,42 @@
       "status": "name_match_version_diff"
     },
     {
+      "path": "supabase/migrations/20261116090000_moreai_browser_capacity_leases.sql",
+      "git_blob_sha": "4af671e99151bf2859558909ab51c9d51e4d8369",
+      "size_bytes": 8414,
+      "filename": "20261116090000_moreai_browser_capacity_leases.sql",
+      "filename_version": "20261116090000",
+      "name": "moreai_browser_capacity_leases",
+      "live_versions": [
+        "20261116083856"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116091000_moreai_browser_capacity_lease_owner_fencing.sql",
+      "git_blob_sha": "d5ce788ff41b7721c735fb1a72a73eed57331d0c",
+      "size_bytes": 3462,
+      "filename": "20261116091000_moreai_browser_capacity_lease_owner_fencing.sql",
+      "filename_version": "20261116091000",
+      "name": "moreai_browser_capacity_lease_owner_fencing",
+      "live_versions": [
+        "20261116083934"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116092000_moreai_browser_capacity_single_worker_limit.sql",
+      "git_blob_sha": "0f85536c1d57244bcfa56ec7fb694ff56563a911",
+      "size_bytes": 3548,
+      "filename": "20261116092000_moreai_browser_capacity_single_worker_limit.sql",
+      "filename_version": "20261116092000",
+      "name": "moreai_browser_capacity_single_worker_limit",
+      "live_versions": [
+        "20261116084745"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
       "path": "supabase/migrations/20261116100000_moreai_browser_session_close_event_constraint.sql",
       "git_blob_sha": "f8c67c1a7f7612cffdc5814ef8bed8805ea548e2",
       "size_bytes": 550,
@@ -1049,10 +1085,10 @@
   ],
   "duplicate_repository_versions": [],
   "notes": [
-    "Eleven Phase 09D migrations applied on 2026-11-16; live migration versions are captured in each repository_migrations.live_versions field, including generated Supabase versions that differ from repository filenames.",
+    "Fourteen forward-only Phase 09D migrations applied on 2026-11-16; live migration versions are captured in each matching repository_migrations.live_versions field, including generated Supabase versions that differ from repository filenames.",
     "Repository timestamp and live history versions are intentionally not rewritten; Supabase generated live versions are authoritative for applied history.",
     "Name match is not SQL equivalence for older historical migrations. Do not reapply timestamp-mismatched repository files or rewrite historical applied versions.",
-    "Current main tree contains no duplicate repository migration filename versions. Earlier audit collision notes were superseded by the current tree inventory.",
-    "Thirty-two historical live-only migration rows remain and require provenance mapping; they are not blindly re-applied."
+    "Current main tree contains no duplicate repository migration filename versions.",
+    "Historical live-only migration rows remain and require provenance mapping; they are not blindly re-applied."
   ]
 }

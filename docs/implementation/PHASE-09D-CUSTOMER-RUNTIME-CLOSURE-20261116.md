@@ -9,7 +9,7 @@ Execution policy: no tests, builds, lint, typecheck, browser/API/worker/provider
 
 Project: `uunfgimtokhucegqbpce` (MoreAIdb, PostgreSQL 17).
 
-The repository contained ten forward-only Phase 09D migrations absent from live migration history. Their SQL was reviewed against the live schema, current migration history, and existing MoreAI data/API boundaries. They were applied sequentially using Supabase migration operations; no historical version was rewritten and no destructive table/data operation was used.
+The repository contained ten forward-only Phase 09D migrations absent from live migration history. Four additional forward-only security/capacity migrations were added and applied during this continuation. Their SQL was reviewed against the live schema, current migration history, and existing MoreAI data/API boundaries. All fourteen were applied sequentially using Supabase migration operations; no historical version was rewritten and no destructive table/data operation was used.
 
 | Repository migration | Live migration version | Result |
 |---|---:|---|
@@ -23,6 +23,10 @@ The repository contained ten forward-only Phase 09D migrations absent from live 
 | `20261116200000_moreai_browser_session_close_request_atomic` | `20261116083517` | Applied |
 | `20261116210000_moreai_browser_session_worker_close_atomic` | `20261116083521` | Applied |
 | `20261116220000_moreai_customer_memory_clear_atomic` | `20261116083527` | Applied |
+| `20261116083600_moreai_server_only_deny_rls_policies` | `20261116083654` | Applied |
+| `20261116090000_moreai_browser_capacity_leases` | `20261116083856` | Applied |
+| `20261116091000_moreai_browser_capacity_lease_owner_fencing` | `20261116083934` | Applied |
+| `20261116092000_moreai_browser_capacity_single_worker_limit` | `20261116084745` | Applied |
 
 Read-only metadata reconciliation after migration application confirmed:
 - Browser profile retention columns exist on `moreai_browser_sessions`.
@@ -35,19 +39,21 @@ No business records were inserted, deleted, or modified by the read-only reconci
 
 ## Security advisor finding and source migration
 
-The Supabase security advisor initially reported 16 RLS-enabled application tables without explicit policies. They were default-deny, but the MoreAI architecture requires an explicit browser-deny policy for all business data. Migration `20261116083600_moreai_server_only_deny_rls_policies.sql` was applied as live version `20261116083654`; read-only metadata confirmed all 16 `USING (false)` / `WITH CHECK (false)` policies. The policy migration does not grant client access or change the FastAPI service-role access boundary.
+The Supabase security advisor initially reported 16 RLS-enabled application tables without explicit policies. They were default-deny, but the MoreAI architecture requires an explicit browser-deny policy for all business data. Migration `20261116083600_moreai_server_only_deny_rls_policies.sql` was applied as live version `20261116083654`; read-only metadata confirmed all 16 `USING (false)` / `WITH CHECK (false)` policies. The new `moreai_browser_capacity_leases` table also has its own explicit deny policy. The policy migration does not grant client access or change the FastAPI service-role access boundary.
 
 The migration is committed in source and applied to production as live version `20261116083654`. Read-only metadata confirms 16 explicit deny policies now exist. The security advisor no longer reports the 16 `rls_enabled_no_policy` findings.
 
-After the deny-policy migration, the security advisor no longer reports `rls_enabled_no_policy`. One warning remains: leaked-password protection is disabled in Supabase Auth. This is an Auth dashboard configuration and is not changed by SQL migration.
+After the deny-policy migrations, the security advisor no longer reports `rls_enabled_no_policy`. One warning remains: leaked-password protection is disabled in Supabase Auth. This is an Auth dashboard configuration and is not changed by SQL migration.
 
 ## OpenFuse runtime parity
 
 - The pinned OpenFuse worker restores session metadata from its configured `WORKER_DATA_DIR` and reopens the same persistent profile ID; MoreAI's worker adapter already reuses the canonical session UUID.
 - The profile deletion extension remains a committed patch against the pinned upstream worker, not deployed to the live OpenFuse service.
-- Durable private `WORKER_DATA_DIR` volume, backup/restore and encryption-at-rest are not configured from this repository workflow.
-- Browser download import remains fail-closed because no malware scanning service is provisioned.
-- Per-process OpenFuse `maxSessions` is not a cross-replica tenant admission coordinator. Multi-replica capacity coordination remains open.
+- Added a pinned OpenFuse worker image build that clones commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`, applies the profile-delete patch and a MoreAI private-egress proxy override. The Node worker is isolated on an internal Docker network and can reach public sites only through the separate allowlist/pinned-IP egress proxy.
+- Compose now defines a persistent `openfuse_browser_profiles` volume, a 10-minute idle context timeout, a private `moreai_browser_isolated` network, and a ClamAV service. Same UUID/profile is reopened after context close or worker restart when the same persistent volume is mounted.
+- The MoreAI worker adapter now uses a stable browser-service worker identity, obtains a shared Supabase capacity lease (global limit 3, per-user limit 2, 660-second lease) and is fenced against another browser service instance taking an unexpired session lease. The cap matches the pinned OpenFuse worker's `maxSessions=3`; do not scale browser-worker replicas until profile storage is shared and routing is sticky.
+- Browser download bytes are fetched only from the private OpenFuse worker, scanned with ClamAV INSTREAM, then posted to the owner/run/session-checked FastAPI internal artifact endpoint with signature, size and SHA-256 checks. Scanner failure blocks import.
+- These are source/Compose integrations only. The production host has not supplied the immutable ClamAV image digest, secrets, allowlist, external network attachment or encrypted persistent-volume attestation. No OpenFuse/ClamAV containers were started and no runtime browser/download scan was executed.
 - No OpenFuse deployment, Docker/browser execution or worker runtime operation was performed.
 
 ## Skills and media
@@ -72,12 +78,12 @@ Existing Chat, Research, Create, Analyse, Tasks, Files, Memory, Skills, Agent St
 
 ## Next work
 
-1. Close the remaining Auth leaked-password protection warning through the Supabase Auth configuration surface when an authorized configuration window is available.
-2. Add shared tenant/global browser capacity leases or a database-backed admission coordinator before multi-replica OpenFuse operation.
-3. Apply the pinned OpenFuse profile-delete patch to the deployed service and provision persistent private profile storage through authorized infrastructure access.
-4. Provision a malware scanner and keep download import blocked until a clean verdict is recorded.
-5. Add a resumable bulk ingestion workflow for the 56 Motion entrypoints; complete dependency edge closure, SBOM, nested license and asset provenance, then reviewer approval.
-6. Connect real provider/worker media generation and durable artifact projection only after secrets, pricing, entitlements and quota/credit settlement are configured.
+1. Provision the OpenFuse Compose stack on an authorized host with immutable ClamAV image digest, secrets, allowlist, external worker network attachment and encrypted persistent profile volume; keep it to one browser-worker replica until shared profile storage is available.
+2. Run the Customer Skills Library batch action to recursively ingest the 56 Motion entrypoints; resolve dependency edge closure, SBOM, nested licenses and asset provenance, then reviewer approval. The batch action is source code only and has not been run in this assistant session.
+3. Finish Visual/Scenario recursive package ingestion and exact-version dependency/asset provenance.
+4. Connect real media providers and persistent workers; only then enable image/video generation and wire provider routing, wallet reservation/settlement, ledger and private artifact projection.
+5. Complete Customer dashboard action-to-API acceptance and security review without bypassing FastAPI or Supabase.
+6. Resolve the remaining Supabase Auth leaked-password protection warning through the Auth configuration surface.
 
 
 ## Supabase explicit deny policy applied
@@ -85,3 +91,26 @@ Existing Chat, Research, Create, Analyse, Tasks, Files, Memory, Skills, Agent St
 - Live migration version: `20261116083654` for `moreai_server_only_deny_rls_policies`.
 - Read-only metadata query confirmed 16 explicit deny policies on the 16 server-only tables.
 - Updated Supabase security advisor output now contains only the Auth leaked-password-protection warning; the previous 16 RLS-without-policy INFO findings are no longer present.
+
+
+## 2026-11-16 OpenFuse persistent profile, egress, download scanning and capacity continuation
+
+### Source integration
+- Added `apps/sandbox/Dockerfile.openfuse`, which builds the pinned upstream worker commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`, applies the profile-delete patch and overlays a MoreAI egress proxy implementation.
+- The OpenFuse worker's loopback proxy accepts HTTPS CONNECT only and forwards to the separate MoreAI egress proxy. The browser worker container is attached only to the Docker internal network; the egress proxy validates the allowlist and public DNS/IP before connecting.
+- Compose now mounts persistent `openfuse_browser_profiles`, retains profile metadata/cookies across restart, closes idle contexts after 10 minutes, and reopens the same session UUID on the next action.
+- The MoreAI worker uses a stable browser-service worker ID (service hostname by default), not its own container hostname. This keeps leases stable across worker process restarts when the browser service/volume remains the same.
+- Shared Supabase capacity lease is serialized by a transaction advisory lock and owner-fenced. Current single OpenFuse service cap: 3 active sessions globally, 2 per customer, 660-second lease; the 10-minute OpenFuse idle close gives a one-minute lease grace. Close completion deletes the lease atomically.
+- ClamAV INSTREAM scanning is now in the MoreAI BrowserSupervisor download path. Only a clean PDF with matching SHA-256, expected signature, active owner session and running/completed owner Agent Run is accepted by the internal FastAPI artifact endpoint. The resulting artifact is stored in the private artifact bucket and appears through the existing Customer artifact list.
+
+### Applied Supabase capacity migrations
+| Migration | Live version | Result |
+|---|---:|---|
+| `moreai_browser_capacity_leases` | `20261116083856` | Applied |
+| `moreai_browser_capacity_lease_owner_fencing` | `20261116083934` | Applied |
+| `moreai_browser_capacity_single_worker_limit` | `20261116084745` | Applied |
+
+Read-only metadata confirms the capacity lease table is RLS-enabled with an explicit anon/authenticated deny policy, the admission function is SECURITY DEFINER with an empty search_path, and the live function now uses the 3-session global limit. No active capacity lease rows existed at the time of metadata inspection.
+
+### Operational boundary
+The Compose stack and worker network attachment are committed but not deployed. The actual host still needs a digest-pinned ClamAV image, secrets, exact domain allowlist, external private network attachment for the MoreAI worker, and encrypted persistent volume/backup policy. The browser worker must remain a single replica until profile storage is shared across replicas. No container was built or started; no browser runtime, session recovery, malware scan or download import was executed.
