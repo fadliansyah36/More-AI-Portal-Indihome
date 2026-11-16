@@ -1,6 +1,6 @@
 # MoreAI Implementation Phase Tracker
 
-Updated: 2026-11-15
+Updated: 2026-11-16
 
 Implementation is proceeding directly on `main`. In this Phase 09 continuation, additive Supabase migrations were applied to the canonical project; no tests, build, lint, typecheck, browser/API verification, staging or application deployment were run.
 
@@ -1516,3 +1516,12 @@ Final source baseline update: latest confirmed `main` HEAD before this documenta
 - This is not persistent Linux desktop/VNC or OpenFuse E2B Computer. Dedicated per-customer persistent computer supervisor remains blocked.
 - Source commits: `972d260f`, `2a9f250b`, `f4214405`, `8dcf6f3b`, `abe7cdce`, `fac2e72d`, `1fbbd436`, `b81b6b5e`, `149a79f9`, `2ebeb5e3`.
 - No tests/build/lint/typecheck/browser/API/worker/provider probes, staging or deployment. 09A/09B operationally BLOCKED; 09C/09D PARTIAL; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 Motion Skills source-governance continuation
+
+- Added the 19 iart.ai pack repositories referenced by the supplied Motion Skills aggregator to the pinned Skill Registry source catalog: 56 `SKILL.md` entrypoints discovered across complete recursive trees.
+- The aggregator repository itself is catalog metadata, not a skill pack. Eighteen pack repositories have inspected MIT root licenses; `generative-illustration-skills` has no root LICENSE and remains `NOASSERTION` / publication-blocked.
+- Customer catalog/import endpoints now recognize the 19 immutable pack commit pins and restrict imports to `skills/*/SKILL.md`. Existing recursive ingestion, hash checks, owner scope, review and execution gates remain unchanged.
+- Detailed inventory: [MOTION-SKILLS-SOURCE-INVENTORY-20261116.md](./MOTION-SKILLS-SOURCE-INVENTORY-20261116.md).
+- Source-only implementation. No tests, lint, build, typecheck, browser/API/worker/provider execution, staging, migration apply or deployment were run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.

@@ -1251,6 +1251,25 @@ from pathlib import PurePosixPath
 PINNED_SKILL_SOURCES = {
     ("smixs", "visual-skills"): {"61a60d317f0fa0c3dc98902e58a7cb178838ae3f"},
     ("scenario-labs", "skills"): {"94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9"},
+    ("iart-ai", "tiktok-video-skills"): {"88e7152fc2710fa16852d013959cfd988a8adc8b"},
+    ("iart-ai", "text-message-video-skills"): {"10ae6bb32e89519c904b8f7950479ff655f839aa"},
+    ("iart-ai", "youtube-video-skills"): {"7838388571a3a6301bf5633e91941f9dfed0abfd"},
+    ("iart-ai", "ecommerce-video-skills"): {"a430fbbb7660783c421ad0a145bcc1c98d6f0b7b"},
+    ("iart-ai", "ad-video-skills"): {"cc8071678f4225ee7bdccc4506f2468722bb3515"},
+    ("iart-ai", "data-animation-skills"): {"6570c0c4fbc9daa8d7ac1f1163a890352344206b"},
+    ("iart-ai", "explainer-video-skills"): {"3c13a1bc360c08503f24f9c9a99fda6d3d35de56"},
+    ("iart-ai", "map-animation-skills"): {"c8ef8463f5a4a8aa35ff0c6c17f42e52bbf588a5"},
+    ("iart-ai", "web-animation-skills"): {"ed3a045192679b24d32090ee7a983871311ababd"},
+    ("iart-ai", "motion-design-skills"): {"b85e50c4cef5ff17aa2187a10d49d2dae9226c74"},
+    ("iart-ai", "kinetic-typography-skills"): {"2b79c81230c6647a344844f9ed53b6fa07f3f1f9"},
+    ("iart-ai", "freelance-motion-skills"): {"9f294eb6df73cde7e2dea235f42275df11a16466"},
+    ("iart-ai", "webgl-animation-skills"): {"0041933813688c357804f7b13dcb85095c5a3210"},
+    ("iart-ai", "manim-skills"): {"3e989cb044f6a6fed8c07b06dddade6e3463d7ac"},
+    ("iart-ai", "generative-illustration-skills"): {"e7d62437c875fc8ad5eff6e90fe0e25b30e43933"},
+    ("iart-ai", "javascript-animation-skills"): {"060f7467a6e5ae5b57c90c9cb1b3508c13b88e49"},
+    ("iart-ai", "lower-thirds-skills"): {"58d3623da95a2c97a4890a2d3f6d9d67e040b3d7"},
+    ("iart-ai", "b-roll-skills"): {"bcd56742a8a99edaa699a6f7bc5a45922a8ec567"},
+    ("iart-ai", "talking-head-skills"): {"eac1f6b01467f6f95d8ab7602310ba0ff67ed91b"},
 }
 LOCAL_REFERENCE = re.compile(r"!?(?:\[[^\]]*\])\(([^)]+)\)|^\s*[-*+]\s+.*?\]\(([^)]+)\)", re.MULTILINE)
 
@@ -1273,6 +1292,101 @@ PINNED_SKILL_LICENSES = {
         "license_id": "MIT",
         "license_url": "https://github.com/scenario-labs/skills/blob/94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9/LICENSE",
         "license_evidence": "Pinned repository root LICENSE is present. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "tiktok-video-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/tiktok-video-skills/blob/88e7152fc2710fa16852d013959cfd988a8adc8b/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "text-message-video-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/text-message-video-skills/blob/10ae6bb32e89519c904b8f7950479ff655f839aa/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "youtube-video-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/youtube-video-skills/blob/7838388571a3a6301bf5633e91941f9dfed0abfd/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "ecommerce-video-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/ecommerce-video-skills/blob/a430fbbb7660783c421ad0a145bcc1c98d6f0b7b/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "ad-video-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/ad-video-skills/blob/cc8071678f4225ee7bdccc4506f2468722bb3515/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "data-animation-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/data-animation-skills/blob/6570c0c4fbc9daa8d7ac1f1163a890352344206b/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "explainer-video-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/explainer-video-skills/blob/3c13a1bc360c08503f24f9c9a99fda6d3d35de56/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "map-animation-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/map-animation-skills/blob/c8ef8463f5a4a8aa35ff0c6c17f42e52bbf588a5/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "web-animation-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/web-animation-skills/blob/ed3a045192679b24d32090ee7a983871311ababd/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "motion-design-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/motion-design-skills/blob/b85e50c4cef5ff17aa2187a10d49d2dae9226c74/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "kinetic-typography-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/kinetic-typography-skills/blob/2b79c81230c6647a344844f9ed53b6fa07f3f1f9/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "freelance-motion-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/freelance-motion-skills/blob/9f294eb6df73cde7e2dea235f42275df11a16466/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "webgl-animation-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/webgl-animation-skills/blob/0041933813688c357804f7b13dcb85095c5a3210/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "manim-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/manim-skills/blob/3e989cb044f6a6fed8c07b06dddade6e3463d7ac/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "generative-illustration-skills"): {
+        "license_id": "NOASSERTION",
+        "license_url": None,
+        "license_evidence": "Pinned tree has no root LICENSE file. Keep license unverified and block publication/execution pending rights evidence.",
+    },
+    ("iart-ai", "javascript-animation-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/javascript-animation-skills/blob/060f7467a6e5ae5b57c90c9cb1b3508c13b88e49/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "lower-thirds-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/lower-thirds-skills/blob/58d3623da95a2c97a4890a2d3f6d9d67e040b3d7/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "b-roll-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/b-roll-skills/blob/bcd56742a8a99edaa699a6f7bc5a45922a8ec567/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
+    },
+    ("iart-ai", "talking-head-skills"): {
+        "license_id": "MIT",
+        "license_url": "https://github.com/iart-ai/talking-head-skills/blob/eac1f6b01467f6f95d8ab7602310ba0ff67ed91b/LICENSE",
+        "license_evidence": "Pinned repository root LICENSE was inspected and identifies MIT License, Copyright (c) 2026 iart.ai. Nested licenses, assets, scripts and transitive dependencies remain unverified; human review is required.",
     },
 }
 
@@ -1330,6 +1444,8 @@ async def list_pinned_skill_catalog(
                 continue
             if source_repo == "skills" and not path.startswith("skills/"):
                 continue
+            if source_owner == "iart-ai" and not (path.startswith("skills/") and path.endswith("/SKILL.md")):
+                continue
             if not isinstance(blob_sha, str) or not SHA40.fullmatch(blob_sha):
                 continue
             parent = str(PurePosixPath(path).parent)
@@ -1365,8 +1481,10 @@ async def import_pinned_skill_from_catalog(
     source_path = _safe_skill_path(body.source_path)
     if parts[1] == "visual-skills" and source_path not in {"image/SKILL.md", "video/SKILL.md"}:
         raise HTTPException(403, "visual_skill_entrypoint_not_allowlisted")
-    if parts[1] == "skills" and not (source_path.startswith("skills/") and source_path.endswith("/SKILL.md")):
+    if parts[0] == "scenario-labs" and not (source_path.startswith("skills/") and source_path.endswith("/SKILL.md")):
         raise HTTPException(403, "scenario_skill_entrypoint_not_allowlisted")
+    if parts[0] == "iart-ai" and not (source_path.startswith("skills/") and source_path.endswith("/SKILL.md")):
+        raise HTTPException(403, "motion_skill_entrypoint_not_allowlisted")
 
     repo = repository(request)
     existing = await repo.select("moreai_skill_packages", {
@@ -1424,7 +1542,7 @@ async def import_pinned_skill_from_catalog(
         "license_evidence": license_info["license_evidence"],
         "manifest": {
             "name": name, "version": f"pinned-{body.source_commit[:12]}",
-            "source_catalog": "pinned_visual_scenario_skills",
+            "source_catalog": "pinned_multi_repository_skill_catalog",
             "source_entrypoint": source_path, "source_review_required": True,
         },
         "requested_permissions": [], "license_status": "unverified",
