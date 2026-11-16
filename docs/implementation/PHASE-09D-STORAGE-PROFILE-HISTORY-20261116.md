@@ -126,3 +126,59 @@ This continuation did not redesign any screen. A complete per-control route-to-e
 2. Complete package graph/provenance reconciliation for pnpm/Yarn/Go/Ruby, including source URLs, checksums and dependency-edge evidence; add registry metadata resolvers only where authoritative versioned metadata exists.
 3. Finish route-to-endpoint and persistence audit for Chat, Research, Create, Analyse, Tasks, Files, Memory and Skills; implement only demonstrably missing integration seams and preserve existing UI.
 4. Continue AGENTS.md Phase 09 integration gate evidence. Phase 10/11 remain blocked until the product owner authorizes verification.
+
+
+## Phase 09D continuation — research entrypoint, dependency graph and live Supabase reconciliation
+
+### Additional source changes
+
+- `components/views/research-view.tsx`: added a visible “Mulai Riset dengan AI” action and Enter-key submission. It hands the user query to the existing parent Chat navigation callback with an explicit research instruction; execution therefore remains on the authenticated Chat → FastAPI → durable Agent Run path. No public/trending topic samples were fabricated. This is a minimal UI addition using the existing red action button, border, typography and spacing conventions.
+- `apps/api/app/routers/skills.py`: dependency inventory now retains transitive dependency edges where the lockfile explicitly exposes them (npm package-lock v2/v3 and v1, Cargo, Composer). The graph is persisted inside the existing validation report/SBOM evidence; no new table or database was introduced.
+- `components/views/super-admin-view.tsx`: reviewer evidence now presents the transitive dependency graph edges and count alongside the existing dependency inventory and SPDX SBOM.
+
+### Live Supabase read-only inventory
+
+The connected project was identified as `MoreAIdb`, ref `uunfgimtokhucegqbpce`, PostgreSQL 17, region `ap-southeast-2`, status `ACTIVE_HEALTHY`. Read-only schema, migration-history and `pg_policies` metadata were inspected; no migration or data mutation was performed.
+
+Observed relevant tables and RLS state:
+- Chat/workflow: `conversations`, `conversation_messages`, `agent_runs`, `agent_run_steps`, `workspaces` — RLS enabled.
+- Files/knowledge: `artifacts`, `agent_workspace_files`, `knowledge_documents`, `knowledge_chunks` — RLS enabled.
+- Memory: `moreai_customer_memory_preferences`, `moreai_customer_memories` — RLS enabled.
+- Skills: `moreai_skill_packages`, `moreai_skill_source_files`, `moreai_skill_installs` — RLS enabled.
+- Browser: `moreai_browser_sessions`, `moreai_browser_session_events`, `moreai_browser_action_receipts` — RLS enabled.
+
+Observed policy posture:
+- Chat tables, agent runs/steps, artifacts, knowledge tables, workspace files and skill tables have explicit deny-client policies (false predicates) for anon/authenticated roles, consistent with the FastAPI-only business-data boundary.
+- Workspaces expose an authenticated SELECT policy constrained to active membership or ownership.
+- Personal memory preference and memory tables expose owner-scoped authenticated policies using `auth.uid()`. Frontend code must nevertheless continue using FastAPI only; these policies are defense in depth, not permission for direct browser PostgREST access.
+- The browser-session tables were RLS-enabled but no policy rows for those tables appeared in the inspected `pg_policies` result; this is default-deny behavior for roles without a policy, but service-role access and API repository behavior still require separate verification.
+
+Migration reconciliation finding:
+- Live migration history currently ends at `20261115101318` (`moreai_computer_action_receipts`).
+- Repository migrations dated `20261116100000`, `20261116150000`, `20261116153000`, and `20261116160000` are not recorded in the live migration history at inspection time.
+- Correspondingly, live `moreai_browser_sessions` did not expose `profile_retention_after`, `profile_deleted_at`, or `profile_retention_notified_at`; live event constraint metadata also did not show the new retention event vocabulary. These migrations remain unapplied.
+- Do not run the worker's profile-retention loop against this live schema until the pending migrations have been applied through an authorized change window. The source already has fail-closed API/RPC error handling, but deployment/runtime behavior remains unverified.
+- Migration history contains multiple similarly named historical versions for workspace, knowledge and learning objects. Reconciliation must use exact version IDs and SQL definitions, not filename-only assumptions.
+
+### Dashboard integration evidence and remaining gaps
+
+- Chat: conversation restore, message enqueue, SSE run streaming, cancellation, retry, attachments and workspace selection use typed FastAPI API client methods.
+- Research: run and artifact history are loaded through FastAPI; the new research query action hands off to Chat so a durable Agent Run is created only after user submission.
+- Create: provider capabilities are read from FastAPI; selected creation prompts hand off to Chat. Media generation remains blocked unless the worker capability endpoint reports an available provider.
+- Analyse: upload/ingestion and document retrieval use FastAPI Knowledge APIs; analysis hands off with an explicit selected document ID.
+- Tasks: Agent Run list/detail/progress/activity, cancellation/retry and artifact/learning outputs use FastAPI.
+- Files: artifacts and workspace files/versions/upload/download lifecycle use FastAPI.
+- Memory: consent, personal notes, episodic summaries and deletion use FastAPI customer memory routes.
+- Skills: catalog/import/ingest/validate/install/permissions use FastAPI customer skill routes; admin reviewer evidence uses server-side admin routes.
+- These are source-level integration paths, not end-to-end proof. Full per-control coverage, error-state review and auth/tenant verification remain open.
+
+### UI preservation
+
+Only `components/views/research-view.tsx` and `components/views/super-admin-view.tsx` were changed in this increment. Research gained one explicit run-start action; Super Admin gained a compact dependency-graph evidence block. Existing navigation, layout, colors, typography, responsive structure and component patterns were retained. Before/after browser screenshots were not captured because browser testing is prohibited by the current instruction.
+
+### Verification and blockers
+
+- Supabase schema and policy inspection was read-only; no DDL, data writes, migration apply, test, build, lint, typecheck, browser, runtime, staging or deployment was performed.
+- OpenFuse deployment patch and persistent `WORKER_DATA_DIR` volume remain unapplied/unconfigured.
+- The live Supabase schema is behind the latest repository migrations for browser retention. The new retention path must not be considered operational until those migrations and OpenFuse deployment are completed.
+- pnpm/Yarn/Go/Ruby parsers and dependency-edge extraction are source-only, not validated. Registry metadata/license coverage remains incomplete for Go/Ruby and non-registry sources. Full transitive closure and integrity are not proven.
