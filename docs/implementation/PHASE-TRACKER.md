@@ -1847,3 +1847,11 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - Closed/expired sessions remain visible in the recent session list; state API computes effective expiry. Lease expiry is terminalized by the queue claim RPC as `worker_lease_expired_outcome_unknown`, avoiding blind replay.
 - Source-level wiring for the three preview tasks is implemented. **Operational status remains unverified**: migration `20261116300000_moreai_browser_preview_requests.sql` is committed but not applied; worker/API runtime/configuration not confirmed. No tests, lint, typecheck, build, runtime, screenshots, staging, deployment or Supabase mutation performed.
 - Phase 09 remains **IN PROGRESS**; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED. Computer Workspace item #2 has not been started; next work is continue Customer dashboard integration after this preview source milestone, subject to user direction and available backend/runtime constraints.
+
+
+### 2026-11-16 — Frontend policy update and Customer Skills audit
+
+- `AGENTS.md` commit `a2d54a36863512542d295009484833ed820b9907`: removed before/after screenshot requirements as a UI-change prerequisite. Replaced them with mandatory consistency rules: every frontend change must reuse existing CSS/Tailwind conventions, fonts, buttons, colors, animations, loading/progress patterns, responsive behavior and interaction models; no competing design system or unrelated restyling. Phase 00/11 and UI review wording no longer require screenshot artifacts.
+- `components/views/skills-library-view.tsx` commit `02f700b62873b52ad6bec7105e4c2b308f78ed9b`: connected the existing AI Skills Library to the already available owner-scoped Skills execution audit API. It renders the latest durable resolver/rejection/execution events, Skill version/hash, Agent Run, permission snapshot, timestamp and reason where available. Uses existing styles; no mock or direct browser-to-Supabase data access.
+- Report: `9a18984afeedc84ec5fd3f47c66409a69c707de3`.
+- No tests, lint, typecheck, build, runtime, screenshots, staging, deployment or Supabase mutation performed. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
