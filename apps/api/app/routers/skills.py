@@ -976,18 +976,37 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
 
     # Match direct declarations to the same ecosystem's resolved lock entries.
     # A semver-looking manifest string alone is never treated as a reproducible pin.
-    locked_versions: dict[tuple[str, str], list[str]] = {}
+    # A package pinned in another nested directory is not evidence for a
+    # declaration in this manifest. Also exclude text-inventory formats whose
+    # resolver is not complete; they remain graph blockers below.
+    supported_lockfiles = {
+        "npm": {"package-lock.json", "npm-shrinkwrap.json"},
+        "pypi": {"poetry.lock", "uv.lock"},
+        "rubygems": {"gemfile.lock"},
+        "cargo": {"cargo.lock"},
+        "composer": {"composer.lock"},
+    }
+    locked_versions: dict[tuple[str, str, str], list[str]] = {}
     for item in dependencies:
         ecosystem, package_name, version = item.get("ecosystem"), item.get("name"), item.get("exact_version")
-        if item.get("status") == "lockfile_pinned" and isinstance(package_name, str) and isinstance(version, str):
+        lock_path = str(item.get("source_manifest") or "")
+        lock_name = PurePosixPath(lock_path).name.lower()
+        lock_directory = str(PurePosixPath(lock_path).parent)
+        if (
+            item.get("status") == "lockfile_pinned"
+            and isinstance(package_name, str) and isinstance(version, str)
+            and lock_name in supported_lockfiles.get(str(ecosystem), set())
+        ):
             normalized = re.sub(r"[-_.]+", "-", package_name).lower()
-            locked_versions.setdefault((str(ecosystem), normalized), []).append(version)
+            locked_versions.setdefault((str(ecosystem), normalized, lock_directory), []).append(version)
     for item in dependencies:
         if item.get("status") != "manifest_declared_requires_lockfile":
             continue
         ecosystem, package_name = item.get("ecosystem"), item.get("name")
+        manifest_path = str(item.get("source_manifest") or item.get("manifest") or "")
+        manifest_directory = str(PurePosixPath(manifest_path).parent)
         normalized = re.sub(r"[-_.]+", "-", package_name).lower() if isinstance(package_name, str) else ""
-        matches = locked_versions.get((str(ecosystem), normalized), [])
+        matches = locked_versions.get((str(ecosystem), normalized, manifest_directory), [])
         if matches and len(set(matches)) == 1:
             item["exact_version"] = matches[0]
             item["status"] = "locked_declaration_matched"
