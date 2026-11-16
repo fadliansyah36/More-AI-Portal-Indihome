@@ -67,6 +67,7 @@ def load_lock(path: Path) -> dict[str, Any]:
 
 def build_rows(lock: dict[str, Any], source: str) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     packages: dict[tuple[str, str], list[str]] = {}
+    package_keys: set[str] = set()
     package_rows: list[dict[str, str]] = []
     for key, meta in lock["packages"].items():
         parsed = parse_package_key(str(key))
@@ -74,6 +75,7 @@ def build_rows(lock: dict[str, Any], source: str) -> tuple[list[dict[str, str]],
             package_rows.append({"source": source, "package_key": str(key), "name": "", "version": "", "integrity": "", "resolution": "UNPARSED_PACKAGE_KEY"})
             continue
         name, version = parsed
+        package_keys.add(str(key).lstrip("/"))
         packages.setdefault((name, version), []).append(str(key))
         integrity = ""
         if isinstance(meta, dict):
@@ -86,7 +88,12 @@ def build_rows(lock: dict[str, Any], source: str) -> tuple[list[dict[str, str]],
     edges: list[dict[str, str]] = []
     def add_edge(parent_type: str, parent: str, dep_name: str, raw_value: Any, relation: str) -> None:
         resolved = dependency_version(raw_value)
-        matches = packages.get((dep_name, resolved), []) if resolved else []
+        exact_key = f"{dep_name}@{resolved}" if resolved else ""
+        if exact_key and exact_key in package_keys:
+            matches = ["/" + exact_key]
+        else:
+            base_version = resolved.split("(", 1)[0] if resolved else ""
+            matches = packages.get((dep_name, base_version), []) if base_version else []
         state = "RESOLVED_EXACT" if len(matches) == 1 else ("AMBIGUOUS_PEER_CONTEXT" if len(matches) > 1 else "UNRESOLVED_OR_NON_REGISTRY")
         edges.append({
             "source": source, "parent_type": parent_type, "parent": parent,
