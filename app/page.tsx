@@ -276,7 +276,7 @@ export default function App() {
               {currentTab === 'files' && <FilesView />}
 
               {currentTab === 'create' && (
-                <CreateView onNavigateToChat={handleStartPrompt} />
+                <CreateView onNavigateToChat={(prompt, agentKey, skillIds = []) => handleStartPrompt(prompt, agentKey, null, skillIds)} />
               )}
 
               {currentTab === 'research' && (

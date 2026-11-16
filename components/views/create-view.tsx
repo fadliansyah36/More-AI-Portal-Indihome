@@ -11,10 +11,10 @@ import {
   ChevronRight,
   Wand2,
 } from 'lucide-react';
-import { platformCatalogApi } from '@/lib/api/client';
+import { customerSkillApi, platformCatalogApi } from '@/lib/api/client';
 
 interface CreateViewProps {
-  onNavigateToChat?: (prompt: string, agentKey?: 'manus' | 'planning' | 'toolcall') => void;
+  onNavigateToChat?: (prompt: string, agentKey?: 'manus' | 'planning' | 'toolcall', skillIds?: string[]) => void;
 }
 
 export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
@@ -28,9 +28,25 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     file_generation: { available: boolean; worker_count: number; provider: string | null; reason: string | null };
   } | null>(null);
   const [mediaCapabilitiesLoading, setMediaCapabilitiesLoading] = useState(true);
+  const [motionSkills, setMotionSkills] = useState<Array<{ id: string; name: string; description: string }>>([]);
+  const [motionSkillsLoading, setMotionSkillsLoading] = useState(true);
+  const [motionSkillsError, setMotionSkillsError] = useState<string | null>(null);
+  const [selectedMotionSkillIds, setSelectedMotionSkillIds] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
+    customerSkillApi.list()
+      .then((result) => {
+        if (!active) return;
+        setMotionSkills(result.items.filter((skill) =>
+          skill.source_repository.startsWith('iart-ai/')
+          && skill.installation?.status === 'installed'
+          && skill.installation.permission_status === 'approved'
+          && skill.installation.execution_enabled,
+        ));
+      })
+      .catch((cause) => { if (active) setMotionSkillsError(cause instanceof Error ? cause.message : 'Skill Motion tidak dapat dimuat.'); })
+      .finally(() => { if (active) setMotionSkillsLoading(false); });
     platformCatalogApi.mediaCapabilities()
       .then((result) => { if (active) setMediaCapabilities(result); })
       .catch(() => { if (active) setMediaCapabilities(null); })
@@ -277,6 +293,42 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
             </span>
             <span className="text-[10px] text-slate-500 font-semibold bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">Eksekusi melalui Agent Chat</span>
           </div>
+
+          {selectedTool === 'video-gen' && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-bold text-slate-800">Skill Motion Video (opsional)</p>
+                <span className="text-[10px] text-slate-500">{selectedMotionSkillIds.length}/10 dipilih</span>
+              </div>
+              {motionSkillsLoading ? (
+                <p className="text-[10px] text-slate-500">Memuat skill Motion yang telah diinstal dan disetujui…</p>
+              ) : motionSkillsError ? (
+                <p className="text-[10px] text-amber-700">{motionSkillsError}</p>
+              ) : motionSkills.length ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto">
+                  {motionSkills.map((skill) => (
+                    <label key={skill.id} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedMotionSkillIds.includes(skill.id)}
+                        onChange={(event) => setSelectedMotionSkillIds((current) => event.target.checked
+                          ? [...current, skill.id].slice(0, 10)
+                          : current.filter((id) => id !== skill.id))}
+                        className="mt-0.5 accent-red-600"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-semibold text-slate-800">{skill.name}</span>
+                        <span className="block text-[9px] leading-relaxed text-slate-500 line-clamp-2">{skill.description}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[10px] text-slate-500">Belum ada Skill Motion yang berstatus installed, permission approved, dan execution enabled. Impor dan selesaikan review melalui Skill Library terlebih dahulu.</p>
+              )}
+              <p className="text-[9px] leading-relaxed text-slate-500">Skill hanya dikirim sebagai konteks untuk OpenManus. Provider, approval, quota, wallet/ledger dan penyimpanan artifact tetap diputuskan backend.</p>
+            </div>
+          )}
 
           <textarea
             value={customPrompt}
