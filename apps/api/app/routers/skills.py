@@ -383,7 +383,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                     version_match = re.match(r"^([^(/]+)", ver)
                     return package_name, version_match.group(1) if version_match else None
                 for line in text.splitlines():
-                    top = re.match(r"^(importers|packages|snapshots):\\s*$", line)
+                    top = re.match(r"^(importers|packages|snapshots):\s*$", line)
                     if top:
                         flush_pnpm_node()
                         section = top.group(1)
@@ -392,20 +392,20 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                         continue
                     if section == "importers":
                         # Importer dependency descriptors resolve to exact package locators.
-                        importer_match = re.match(r"^\\s{4}([^:]+):\\s*$", line)
+                        importer_match = re.match(r"^\s{4}([^:]+):\s*$", line)
                         if importer_match and importer_match.group(1) in {"dependencies", "devDependencies", "optionalDependencies"}:
                             current_edge_group = importer_match.group(1)
                             continue
-                        dep_match = re.match(r"^\\s{6}(['\"]?[^:'\"]+['\"]?):\\s*$", line)
+                        dep_match = re.match(r"^\s{6}(['\"]?[^:'\"]+['\"]?):\s*$", line)
                         if dep_match and current_edge_group:
                             pending_edges.append({"ecosystem":"npm","from":"<workspace-importer>","to_descriptor":dep_match.group(1).strip("'\""),"kind":current_edge_group,"source_manifest":path})
-                        resolved_match = re.match(r"^\\s{8}version:\\s*['\"]?([^'\"]+)", line)
+                        resolved_match = re.match(r"^\s{8}version:\s*['\"]?([^'\"]+)", line)
                         if resolved_match and pending_edges and pending_edges[-1].get("to_locator") is None:
                             pending_edges[-1]["resolved_reference"] = resolved_match.group(1)
                         continue
                     if section not in {"packages", "snapshots"}:
                         continue
-                    node_match = re.match(r"^\\s{2}(['\"]?[^:'\"]+['\"]?):\\s*$", line)
+                    node_match = re.match(r"^\s{2}(['\"]?[^:'\"]+['\"]?):\s*$", line)
                     if node_match:
                         flush_pnpm_node()
                         current_locator = node_match.group(1).strip("'\"")
@@ -415,14 +415,14 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                         continue
                     if not current_locator:
                         continue
-                    integrity_match = re.search(r"\\bintegrity:\\s*['\"]?([^\\s,'\"]+)", line)
+                    integrity_match = re.search(r"\bintegrity:\s*['\"]?([^\s,'\"]+)", line)
                     if integrity_match:
                         current_integrity = integrity_match.group(1)
-                    edge_group_match = re.match(r"^\\s{4}(dependencies|optionalDependencies|peerDependencies):\\s*$", line)
+                    edge_group_match = re.match(r"^\s{4}(dependencies|optionalDependencies|peerDependencies):\s*$", line)
                     if edge_group_match:
                         current_edge_group = edge_group_match.group(1)
                         continue
-                    edge_match = re.match(r"^\\s{6}(['\"]?[^:'\"]+['\"]?):\\s*['\"]?([^'\"]+)['\"]?\\s*$", line)
+                    edge_match = re.match(r"^\s{6}(['\"]?[^:'\"]+['\"]?):\s*['\"]?([^'\"]+)['\"]?\s*$", line)
                     if edge_match and current_edge_group and current_name:
                         target_name = edge_match.group(1).strip("'\"")
                         requested = edge_match.group(2).strip()
