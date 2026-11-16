@@ -1717,3 +1717,13 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Source-only: no frontend/UI, Supabase schema/data, migrations, provider settings or runtime credentials changed. No tests, lint, typecheck, build, worker/provider execution, staging or deployment were run.
 - The persistent worker has not been provisioned, so this source resolver is not confirmed running. The latest observed API Vercel deployment still predates the idempotent Skill ingestion recovery source commit. No 230-entry Skill batch is started until the approved API deployment and GitHub encrypted token are in place.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+## 2026-11-16 Unified Memory Context Coordinator source continuation
+
+- Source commits on main: 50926ee1bd32846ba4b6c31cf11484e9293f0f6f (collect six domains), 2affed0468d0cf6a5a1ee7f3dc12de6c5e0f32e3 (route DurableOpenManusRuntime through the coordinator), and fa361c04efb100164853b4cba6b202b65d18a3b0 (retain the coordinated working-checkpoint snapshot).
+- A single MemoryContextCoordinator now composes Working (durable run checkpoints), Conversation (owner/run transcript), Long-term/Personal (versioned consented personal records), Episodic (consented and expiring task episodes), Semantic (owner/workspace-scoped Knowledge/pgvector retrieval with citation markers), and Procedural (approved Skill Resolver snapshots).
+- The coordinator does not create a separate database or change canonical persistence. It reuses existing Supabase tables/services, consent/retention controls and Skill validation/permission gates. Retrieved notes, RAG excerpts and Skill instructions remain untrusted context. No memory grants tools or bypasses runtime policy.
+- Report: [Unified Memory Context Coordinator](./PHASE-09-UNIFIED-MEMORY-CONTEXT-COORDINATOR-20261116.md).
+- Source-only: no Supabase schema/data, customer UI, routes, provider settings, billing policy or worker deployment changed. No tests, lint, typecheck, build, browser/API runtime, worker/provider execution, staging or deployment was run.
+- The worker resolver complete-SPDX snapshot change is also source-only; no persistent worker is provisioned. The API ingestion-resume commit remains absent from latest observed API deployment.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
