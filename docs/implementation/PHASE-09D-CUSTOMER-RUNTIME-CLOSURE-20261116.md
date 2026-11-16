@@ -35,11 +35,11 @@ No business records were inserted, deleted, or modified by the read-only reconci
 
 ## Security advisor finding and source migration
 
-The Supabase security advisor reported 16 RLS-enabled application tables without explicit policies. They were default-deny, but the MoreAI architecture requires an explicit browser-deny policy for all business data. This commit adds a forward-only migration that creates `USING (false)` / `WITH CHECK (false)` policies for the 16 learning, browser receipt/session, computer receipt, agent configuration and worker capability tables. It does not grant client access or change the FastAPI service-role access boundary.
+The Supabase security advisor initially reported 16 RLS-enabled application tables without explicit policies. They were default-deny, but the MoreAI architecture requires an explicit browser-deny policy for all business data. Migration `20261116083600_moreai_server_only_deny_rls_policies.sql` was applied as live version `20261116083654`; read-only metadata confirmed all 16 `USING (false)` / `WITH CHECK (false)` policies. The policy migration does not grant client access or change the FastAPI service-role access boundary.
 
-The migration is committed in source. Its production apply is a separate operation from the ten completed migrations and is recorded as pending until applied.
+The migration is committed in source and applied to production as live version `20261116083654`. Read-only metadata confirms 16 explicit deny policies now exist. The security advisor no longer reports the 16 `rls_enabled_no_policy` findings.
 
-The advisor also reports leaked-password protection disabled in Supabase Auth. This is an Auth dashboard configuration and is not changed by SQL migration.
+After the deny-policy migration, the security advisor no longer reports `rls_enabled_no_policy`. One warning remains: leaked-password protection is disabled in Supabase Auth. This is an Auth dashboard configuration and is not changed by SQL migration.
 
 ## OpenFuse runtime parity
 
@@ -72,9 +72,16 @@ Existing Chat, Research, Create, Analyse, Tasks, Files, Memory, Skills, Agent St
 
 ## Next work
 
-1. Apply the committed explicit deny-policy migration and record its live version.
+1. Close the remaining Auth leaked-password protection warning through the Supabase Auth configuration surface when an authorized configuration window is available.
 2. Add shared tenant/global browser capacity leases or a database-backed admission coordinator before multi-replica OpenFuse operation.
 3. Apply the pinned OpenFuse profile-delete patch to the deployed service and provision persistent private profile storage through authorized infrastructure access.
 4. Provision a malware scanner and keep download import blocked until a clean verdict is recorded.
 5. Add a resumable bulk ingestion workflow for the 56 Motion entrypoints; complete dependency edge closure, SBOM, nested license and asset provenance, then reviewer approval.
 6. Connect real provider/worker media generation and durable artifact projection only after secrets, pricing, entitlements and quota/credit settlement are configured.
+
+
+## Supabase explicit deny policy applied
+
+- Live migration version: `20261116083654` for `moreai_server_only_deny_rls_policies`.
+- Read-only metadata query confirmed 16 explicit deny policies on the 16 server-only tables.
+- Updated Supabase security advisor output now contains only the Auth leaked-password-protection warning; the previous 16 RLS-without-policy INFO findings are no longer present.

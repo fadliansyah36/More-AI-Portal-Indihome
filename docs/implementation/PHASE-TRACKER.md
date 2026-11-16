@@ -1545,3 +1545,12 @@ Final source baseline update: latest confirmed `main` HEAD before this documenta
 - OpenFuse profile-delete patch and durable `WORKER_DATA_DIR` volume remain undeployed/unconfigured; browser download import remains blocked pending malware scanner; cross-replica capacity coordination remains open.
 - Motion catalog pins 19 pack repositories / 56 entrypoints, but recursive ingestion of all 56 has not been executed. Provider/worker media runtime remains fail-closed.
 - No tests, lint, typecheck, build, browser/API/worker/provider execution, staging or deployment. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 explicit server-only RLS deny closure
+
+- Applied `20261116083600_moreai_server_only_deny_rls_policies.sql` to the canonical Supabase project; live version `20261116083654`.
+- Added explicit `anon, authenticated` deny policies for 16 RLS-enabled server-only tables across learning, browser sessions/receipts, computer receipts, customer agent configs and worker capability snapshots.
+- Read-only metadata confirmed all 16 policies. The Supabase security advisor no longer reports the previous 16 `rls_enabled_no_policy` findings. One Auth warning remains: leaked-password protection is disabled; it requires Auth dashboard configuration and was not changed.
+- Updated [migration ledger](./supabase-migration-ledger-20261116.json) and [Phase 09D runtime closure report](./PHASE-09D-CUSTOMER-RUNTIME-CLOSURE-20261116.md).
+- No tests, lint, typecheck, build, browser/API/worker/provider execution, staging or application deployment. Phase 09 IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
