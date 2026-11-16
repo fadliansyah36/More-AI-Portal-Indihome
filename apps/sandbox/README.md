@@ -120,3 +120,15 @@ When the independently gated Python/Bash tools are enabled, the worker now:
 The current write-back uploads immutable Storage objects first, then commits all changed/new/deleted file metadata in one lease-fenced PostgreSQL RPC transaction. A version conflict or invalid path rolls back the complete metadata batch; no subset of the workspace metadata is committed. Storage objects uploaded before a failed metadata transaction can remain orphaned and require a later garbage-collection pass. The RPC is idempotent per run and deterministic operation key, so retry after a lost response returns the prior committed result. Failed/timed-out commands discard their ephemeral changes. Deleted workspace paths cannot be recreated implicitly; use the explicit restore flow. Snapshot limits are intentionally conservative and can be raised only with a coordinated API, supervisor, runner and Storage policy change.
 
 This is a source-level implementation. Sandbox remains disabled unless both runtime and release-gate flags are enabled, and no deployment/runtime acceptance is implied.
+
+## Per-customer execution capacity
+
+The execution supervisor now keys live cancellation handles by the complete `(user_id, run_id, request_id)` tuple rather than request ID alone. This prevents one tenant's cancellation request from addressing another tenant's active execution even if request identifiers collide.
+
+Admission control is enforced atomically under a process-local lock:
+- `MOREAI_SANDBOX_MAX_ACTIVE_PER_CUSTOMER` defaults to `2` and accepts `1..8`.
+- `MOREAI_SANDBOX_MAX_ACTIVE_GLOBAL` defaults to `16` and accepts a value from the per-customer limit through `64`.
+- Requests exceeding either budget receive HTTP `429`; malformed capacity configuration fails closed with HTTP `503`.
+- Limits are enforced before starting a container and rechecked under the lock to prevent concurrent admission races.
+
+These limits are per supervisor process. A multi-replica deployment must route a customer's executions consistently to one supervisor shard or add a shared admission coordinator before claiming a global cross-replica quota. Durable action receipts remain in FastAPI/Supabase; the in-memory map is not a durable job queue. This is source hardening, not proof of a deployed per-customer desktop supervisor.
