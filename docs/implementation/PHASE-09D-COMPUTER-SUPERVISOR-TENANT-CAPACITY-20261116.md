@@ -49,3 +49,14 @@ Per owner instruction, no tests, build, lint, typecheck, browser/API/worker exec
 3. Connect persistent worker and supervisor hosts, immutable image digests, restricted Docker socket proxy, private networking and secret manager.
 4. Continue Phase 09C action-to-screen reconciliation and AI Skills governance inventory/license/SBOM/reviewer workflow.
 5. Phase 10 verification remains NOT ACCEPTED; Phase 11 remains BLOCKED.
+
+## 2026-11-16 follow-up — container audit identity
+
+The disposable runner now attaches SHA-256-only Docker labels for the customer, Agent Run and request identities. Raw user/run/request identifiers are not persisted in Docker labels. `apps/sandbox/app/execution_supervisor.py` propagates the authenticated worker request identity into `DockerSandbox.execute`; `apps/sandbox/app/runner.py` validates each identity and constructs fixed `--label` arguments. This supports live container inventory and audit correlation without exposing raw customer identifiers in daemon metadata.
+
+Additional commits:
+- `13e7e10424a66747b0921cde69ba65f4f2057676` — add hashed tenant/run/request labels to disposable runner containers.
+- `35b182dea37189856a5a9febdb83b598857f651c` — propagate supervisor identity into runner labels.
+- `8f8e51ee0a9f45261bc46e5ccabcd02b8cc374d7` — document container audit labels.
+
+This remains an execution-container audit enhancement, not a persistent desktop session supervisor. Docker labels disappear with the disposable container and are not a replacement for durable Supabase action receipts. No tests/build/lint/typecheck/Docker/API/worker execution or deployment was performed.
