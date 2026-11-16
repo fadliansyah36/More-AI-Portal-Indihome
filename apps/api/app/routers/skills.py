@@ -230,7 +230,17 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                     raise ValueError("lockfile_package_list_missing")
                 for package in entries:
                     if isinstance(package, dict):
-                        add_dependency("pypi", package.get("name"), package.get("version"), path, status="lockfile_pinned")
+                        source = package.get("source")
+                        if isinstance(source, dict) and any(source.get(key) for key in ("url", "reference", "type")):
+                            dependencies.append({
+                                "ecosystem": "pypi", "name": package.get("name"),
+                                "exact_version": package.get("version"), "source_manifest": path,
+                                "status": "non_registry_source_requires_provenance",
+                                "source_type": source.get("type"), "source_url": source.get("url"),
+                                "source_reference": source.get("reference"),
+                            })
+                        else:
+                            add_dependency("pypi", package.get("name"), package.get("version"), path, status="lockfile_pinned")
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "pypi", "status": "parse_error"})
         elif name == "pipfile.lock":
@@ -378,7 +388,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                     if match:
                         dependencies.append({"ecosystem": "go", "name": match.group(1), "requested": match.group(2),
                                              "exact_version": None, "source_manifest": path,
-                                             "status": "manifest_declared_requires_go_sum"})
+                                             "status": "manifest_declared_requires_lockfile"})
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "go", "status": "parse_error"})
         elif name == "go.sum":
