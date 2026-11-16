@@ -334,3 +334,37 @@ This change covers the shared browser-to-FastAPI origin gate. It does not invent
 No browser/API runtime test, preflight request, test suite, build, lint, type-check, staging, migration application or deployment was run, in accordance with the product-owner instruction. The CORS fix is committed source code but remains production-runtime unverified. The domain's API URL and Vercel deployment configuration remain operational blockers until read access is restored.
 
 Phase 09 remains **IN PROGRESS**. The next required work is to verify the existing Vercel production environment variable names (without exposing secret values), confirm the API project is mapped to the actual FastAPI service, and then continue the customer control-by-control integration audit and atomic Memory cleanup. Phase 10 and Phase 11 are not claimed.
+
+
+## Continuation — atomic Personal Memory clear, consent disable and create (2026-11-16)
+
+Baseline: `b65a1f42fc9200230c05a28a8baac2cc9b8d3a7f`.
+
+### Source changes on main
+
+- `3530ecc0ee780f4b1a057a7b18e7dcb3899175eb` — added forward-only migration `20261116220000_moreai_customer_memory_clear_atomic.sql`.
+- `4437ff8c1cabf101b4a35dce399b30cfc1da924a` — extended the same migration with a separate atomic consent-disable path.
+- `b58517fb146f4cbf8a5b238ebb9a658480356d11` — rewired `DELETE /api/v1/customer/memory` and `POST /api/v1/customer/memory` to the new owner-scoped RPC contracts.
+- `375b7d605a20773bcdb97887723f973294580fe7` — rewired `PUT /api/v1/customer/memory/consent` to use atomic cleanup only when consent is disabled; enabling consent continues to use the existing consent RPC.
+- `a855414637b63efed0edface2b491e235a26af67` — removed the superseded multi-request episodic purge helper.
+
+### Transaction boundaries and data semantics
+
+The migration defines three service-role-only RPCs, each with an empty `search_path` and explicit argument validation:
+
+1. `moreai_customer_clear_memory_atomic(uuid)` locks the customer's preference row, disables consent, deletes owner-authored Personal Memory records and strips only episodic-memory metadata from that owner's `conversation_messages`. The original chat content and citations are retained. The function returns explicit completion/count metadata. All database changes occur within one PostgreSQL transaction.
+2. `moreai_customer_disable_memory_consent_atomic(uuid,text)` disables consent and strips episodic-memory metadata in one transaction while deliberately preserving user-authored Personal Memory records. This preserves the existing distinction between turning Memory off and the explicit clear-all operation.
+3. `moreai_customer_create_personal_memory(uuid,text,text,text,integer)` locks the owner's consent row, validates active current-version consent and input bounds, and inserts the Memory item. The row lock serializes creation against clear/disable operations so a concurrent create cannot slip through an in-progress clear.
+
+FastAPI derives `p_user_id` from the authenticated customer principal; the browser does not supply an owner identity. The existing customer API paths remain unchanged, and no frontend file or direct browser-to-Supabase data path was added.
+
+### Database and rollout status
+
+- Read-only Supabase inspection confirmed the live tables and columns used by these functions: `moreai_customer_memory_preferences`, `moreai_customer_memories`, and `conversation_messages.metadata` (jsonb), with the expected owner key `user_id`.
+- Read-only inspection of the live function definitions confirmed the prior `moreai_customer_clear_personal_memory` only disabled preferences and deleted personal records; it did not clean episodic metadata. The prior set-consent function was also separate from the episodic cleanup.
+- The new migration is committed to Git but has **not** been applied to Supabase project `uunfgimtokhucegqbpce`. FastAPI now calls the new RPCs; until the migration is applied through the approved migration process, these calls will fail closed in the live API. The previous live RPC definitions are not modified by this source-only work.
+- The new functions are `SECURITY INVOKER`, use `search_path = ''`, and grant execute only to `service_role`; PUBLIC, anon and authenticated execution is revoked. FastAPI uses the existing server-side service-role repository boundary after customer-principal authorization.
+
+### Verification limits
+
+No SQL was executed to create/replace objects, no migration was applied, and no API/browser test, build, lint, type-check, staging or deployment was run. The function source was reviewed against the existing schema/function definitions, but PostgreSQL execution, concurrency behavior and API response compatibility remain unverified. Phase 09 remains **IN PROGRESS**.
