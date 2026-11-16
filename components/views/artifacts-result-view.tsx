@@ -163,11 +163,12 @@ export const ArtifactsResultView: React.FC<ArtifactsResultViewProps> = ({ onBack
           : sessionError ? <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{sessionError}</div>
           : sessions.length === 0 ? <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">Tidak ada sesi browser tersimpan.</p>
           : sessions.map((session) => <div key={session.id} className="rounded-2xl border border-slate-100 p-3 space-y-2">
-            <div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-bold text-slate-900">{session.origin_host}</span><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${session.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{session.status === 'active' ? 'Tersimpan' : 'Menunggu penutupan'}</span></div>
+            <div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-bold text-slate-900">{session.origin_host}</span><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${session.status === 'active' ? 'bg-emerald-50 text-emerald-700' : session.status === 'close_requested' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{session.status === 'active' ? 'Tersimpan' : session.status === 'close_requested' ? 'Menunggu penutupan' : session.status === 'closed' ? 'Sudah ditutup' : 'Kedaluwarsa'}</span></div>
             <p className="text-[10px] text-slate-500">Terakhir digunakan: {new Date(session.last_used_at).toLocaleString('id-ID')}</p>
             <p className="text-[10px] text-slate-500">Berakhir: {new Date(session.expires_at).toLocaleString('id-ID')}</p>
             <p className="text-[10px] text-slate-500">Agent Run: {(session.last_run_id || session.run_id).slice(0, 12)}</p>
-            <button type="button" disabled={closingSessionId === session.id || session.status === 'close_requested'} onClick={() => void closeBrowserSession(session.id)} className="rounded-xl border border-rose-200 px-3 py-2 text-[10px] font-semibold text-rose-700 disabled:opacity-50">{closingSessionId === session.id ? 'Mengirim…' : session.status === 'close_requested' ? 'Menunggu worker…' : 'Tutup sesi'}</button>
+            {session.status === 'active' && <button type="button" disabled={closingSessionId === session.id} onClick={() => void closeBrowserSession(session.id)} className="rounded-xl border border-rose-200 px-3 py-2 text-[10px] font-semibold text-rose-700 disabled:opacity-50">{closingSessionId === session.id ? 'Mengirim…' : 'Tutup sesi'}</button>}
+            {session.status === 'close_requested' && <p className="text-[10px] font-semibold text-amber-700">Menunggu worker mengonfirmasi penutupan.</p>}
           </div>)}
       </section>
 
