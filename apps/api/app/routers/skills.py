@@ -722,6 +722,12 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     exact = sum(1 for item in dependencies if item.get("exact_version"))
     resolved_statuses = {"lockfile_pinned", "locked_declaration_matched"}
     unresolved = sum(1 for item in dependencies if not item.get("exact_version") or item.get("status") not in resolved_statuses)
+    graph_blocking_manifests = [
+        path for path in dependency_files
+        if PurePosixPath(path).name.lower() in {"pipfile.lock", "go.mod", "go.sum"}
+    ]
+    unresolved_edges = sum(1 for edge in dependency_edges if not edge.get("to_locator"))
+    graph_complete = unresolved_edges == 0 and not graph_blocking_manifests
     return {
         "license_files": license_files,
         "manifest_files": sorted(set(manifest_files)),
@@ -731,6 +737,9 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
         "dependencies": dependencies,
         "dependency_edges": dependency_edges,
         "dependency_edge_count": len(dependency_edges),
+        "unresolved_dependency_edge_count": unresolved_edges,
+        "dependency_graph_blocking_manifests": graph_blocking_manifests,
+        "dependency_graph_complete": graph_complete,
         "dependency_count": len(dependencies),
         "exact_version_count": exact,
         "unresolved_dependency_count": unresolved,
@@ -917,6 +926,8 @@ async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] 
         findings.append("Repository LICENSE/NOTICE evidence is incomplete; legal approval is required.")
     if source_inventory.get("unresolved_dependency_count", 0):
         findings.append("Dependency inventory is incomplete: direct declarations are not matched to exact lockfile entries, or a lockfile parser/source is unsupported.")
+    if not source_inventory.get("dependency_graph_complete", False):
+        findings.append("Transitive dependency graph is incomplete: one or more package-instance edges or ecosystem lockfile semantics remain unresolved.")
     if registry_inventory["unresolved_count"]:
         findings.append("One or more exact dependency versions lack authoritative registry metadata; SPDX licenseDeclared remains NOASSERTION.")
     if any(item.get("license_declared") == "NOASSERTION" for item in registry_inventory["packages"]):
