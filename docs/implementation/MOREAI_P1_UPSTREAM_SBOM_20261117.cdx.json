@@ -2,7 +2,7 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
   "serialNumber": "urn:uuid:9d4e2a4a-bbb1-4f34-a11b-7a1f4d4b0017",
-  "version": 1,
+  "version": 2,
   "metadata": {
     "timestamp": "2026-11-17T00:00:00Z",
     "tools": [
@@ -14,7 +14,7 @@
     ],
     "component": {
       "type": "application",
-      "name": "MoreAI-Upstream-Source-Dependency-Inventory",
+      "name": "MoreAI-and-Upstream-Source-Dependency-Inventory",
       "version": "2026-11-17"
     },
     "properties": [
@@ -24,15 +24,19 @@
       },
       {
         "name": "scope",
-        "value": "OpenFuse pnpm lock; Scenario Skills pnpm lock; OpenFuse worker npm lock; Motion Skills talking-head pnpm lock; OpenManusWeb requirements.txt"
+        "value": "OpenFuse pnpm-lock; Scenario Skills pnpm-lock; OpenFuse worker package-lock; Motion talking-head pnpm-lock; OpenManusWeb requirements.txt; MoreAI root package.json; apps/api and apps/worker pyproject.toml"
       },
       {
         "name": "dependencyGraph",
-        "value": "not yet complete; package inventory extracted from lockfile package records; direct/transitive relationships need full parser reconciliation"
+        "value": "package component inventory extracted from lockfile records and direct manifests; full dependency edge graph not yet reconciled"
       },
       {
         "name": "licenseStatus",
-        "value": "partial; lockfiles do not declare license for most pnpm packages; registry metadata reconciliation outstanding"
+        "value": "partial; most pnpm lock packages do not declare license; exact registry metadata and SPDX NOASSERTION reconciliation outstanding"
+      },
+      {
+        "name": "reproducibility",
+        "value": "MoreAI root package.json has no root lockfile; apps/api and apps/worker pyproject.toml have no uv/poetry lock; OpenManusWeb requirements.txt contains unpinned/range dependencies"
       }
     ]
   },
@@ -59820,6 +59824,627 @@
         {
           "name": "licenseReview",
           "value": "NOT_ASSERTED_BY_LOCKFILE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@hookform/resolvers",
+      "purl": "pkg:npm/%40hookform/resolvers",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^5.2.1"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "autoprefixer",
+      "purl": "pkg:npm/autoprefixer",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^10.4.21"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "class-variance-authority",
+      "purl": "pkg:npm/class-variance-authority",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^0.7.1"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "clsx",
+      "purl": "pkg:npm/clsx",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^2.1.1"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lucide-react",
+      "purl": "pkg:npm/lucide-react",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^0.553.0"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "motion",
+      "purl": "pkg:npm/motion",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^12.23.24"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "next",
+      "purl": "pkg:npm/next",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^15.4.9"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postcss",
+      "purl": "pkg:npm/postcss",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^8.5.6"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "react",
+      "purl": "pkg:npm/react",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^19.2.1"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "react-dom",
+      "purl": "pkg:npm/react-dom",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^19.2.1"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tailwind-merge",
+      "purl": "pkg:npm/tailwind-merge",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^3.3.1"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@supabase/supabase-js",
+      "purl": "pkg:npm/%40supabase/supabase-js",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "2.119.0"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@tailwindcss/postcss",
+      "purl": "pkg:npm/%40tailwindcss/postcss",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "4.1.11"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@tailwindcss/typography",
+      "purl": "pkg:npm/%40tailwindcss/typography",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^0.5.19"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/node",
+      "purl": "pkg:npm/%40types/node",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^20"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/react",
+      "purl": "pkg:npm/%40types/react",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^19"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/react-dom",
+      "purl": "pkg:npm/%40types/react-dom",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^19"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "eslint",
+      "purl": "pkg:npm/eslint",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "9.39.1"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "eslint-config-next",
+      "purl": "pkg:npm/eslint-config-next",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "16.0.8"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "firebase-tools",
+      "purl": "pkg:npm/firebase-tools",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^15.0.0"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tailwindcss",
+      "purl": "pkg:npm/tailwindcss",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "4.1.11"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tw-animate-css",
+      "purl": "pkg:npm/tw-animate-css",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "^1.4.0"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "typescript",
+      "purl": "pkg:npm/typescript",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Portal frontend"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "package.json"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "5.9.3"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
         }
       ]
     }
