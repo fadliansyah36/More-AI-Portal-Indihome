@@ -109,6 +109,13 @@ class BrowserTakeoverGrantConsume(BaseModel):
     token: str = Field(min_length=32, max_length=256)
     worker_id: str = Field(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
 
+class BrowserTakeoverInputAudit(BaseModel):
+    session_id: UUID
+    user_id: UUID
+    worker_id: str = Field(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
+    status: Literal["succeeded", "failed"]
+    error_code: str | None = Field(default=None, max_length=100)
+
 
 @router.get("/actions")
 async def list_browser_action_receipts(
@@ -375,6 +382,33 @@ async def finish_browser_action_receipt(
     if current[0]["status"] == body.status:
         return {"receipt_id": str(receipt_id), "status": body.status, "replayed": True}
     raise HTTPException(409, "browser_action_receipt_already_finalized")
+
+
+
+@router.post("/internal/takeover-grants/{grant_id}/input-result")
+async def audit_browser_takeover_input(
+    grant_id: UUID,
+    body: BrowserTakeoverInputAudit,
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    repo = repository(request)
+    grants = await repo.select("moreai_browser_takeover_grants", {
+        "id": f"eq.{grant_id}", "session_id": f"eq.{body.session_id}",
+        "user_id": f"eq.{body.user_id}", "consumed_by_worker": f"eq.{body.worker_id}",
+        "consumed_at": "not.is.null",
+        "select": "id,session_id,user_id", "limit": "1",
+    })
+    if not grants:
+        raise HTTPException(404, "browser_takeover_grant_audit_target_not_found")
+    await repo.insert("moreai_browser_session_events", {
+        "session_id": str(body.session_id), "user_id": str(body.user_id),
+        "event_type": "takeover_input_succeeded" if body.status == "succeeded" else "takeover_input_failed",
+        "metadata": {"grant_id": str(grant_id), "worker_id": body.worker_id,
+                     "error_code": body.error_code if body.status == "failed" else None},
+    })
+    return {"grant_id": str(grant_id), "status": body.status}
 
 
 @router.get("/history")
