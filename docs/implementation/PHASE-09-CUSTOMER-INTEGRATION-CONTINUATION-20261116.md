@@ -85,3 +85,22 @@ Scope boundary:
 - This fences browser receipt claim/finalization by the current worker lease owner identity and expiry. It does not add a monotonic lease-generation token; if a deployment reuses the same worker ID across overlapping process incarnations, a generation/fencing token is still required.
 - Computer action receipt path is not yet updated to the same contract and remains an explicit gap.
 - No runtime, tests, lint, build, typecheck, screenshots, staging, deployment, Docker or Supabase mutation were performed.
+
+
+## Implementation update — Computer action worker-lease fencing
+
+Commits:
+- FastAPI claim/finish fencing: `13599f9e5e54de6a1e18591d41bffe5625d67c12`
+- Isolated sandbox adapter worker identity: `adad58945bca37a0c68a471f5edfbe2c5b324430`
+- Worker runtime identity binding: `4eed28a8e3cfd5b1f54f1513482438880c9307ea`
+
+Implemented on `main`:
+- Computer action claim now requires a running Agent Run, matching workspace, matching `lease_owner`, and an unexpired lease.
+- Computer action finish now requires the same active worker ownership and unexpired lease; stale workers cannot finalize after lease loss or run termination.
+- IsolatedSandboxToolAdapter sends worker identity for claim and finish, bound to the WorkerRuntime's configured `WORKER_ID`.
+
+Remaining safety boundary:
+- Human Takeover is not marked implemented. Current OpenFuse browser console is a signed preview/input console, but MoreAI does not yet provide a customer-authorized, one-time, short-lived, session/profile-bound grant with revocation and audit that the browser supervisor consumes. Adding only a frontend button or signed URL would bypass the required grant contract, so that shortcut was deliberately not introduced.
+- A monotonic lease-generation/fencing token is still needed to protect against worker process reincarnation that reuses the same worker ID.
+- Computer workspace streaming/reconnect/cancellation/resource accounting and broader Customer screen reconciliation remain open.
+- No tests, build, lint, typecheck, runtime calls, staging, deployment, Docker execution, or Supabase mutation were performed.
