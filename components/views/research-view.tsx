@@ -124,16 +124,31 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ onBack, onSelectTopi
         </div>
       </div>
 
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cari topik riset, industri, atau tren pasar..."
-          className="w-full text-xs sm:text-sm pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs"
-        />
+      {/* Search Input — a research query is handed to the existing authenticated Chat → FastAPI → durable Agent Run flow. */}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="relative min-w-0 flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && searchQuery.trim() && onSelectTopic) {
+                onSelectTopic('Lakukan riset mendalam dan terstruktur mengenai: ' + searchQuery.trim() + '. Sajikan pertanyaan riset, metodologi, temuan dengan sumber/citation yang tersedia, analisis, keterbatasan data, dan kesimpulan. Jangan mengarang sumber atau angka.');
+              }
+            }}
+            placeholder="Cari topik riset, industri, atau tren pasar..."
+            className="w-full text-xs sm:text-sm pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs"
+          />
+        </div>
+        <button
+          type="button"
+          disabled={!searchQuery.trim() || !onSelectTopic}
+          onClick={() => onSelectTopic?.('Lakukan riset mendalam dan terstruktur mengenai: ' + searchQuery.trim() + '. Sajikan pertanyaan riset, metodologi, temuan dengan sumber/citation yang tersedia, analisis, keterbatasan data, dan kesimpulan. Jangan mengarang sumber atau angka.')}
+          className="shrink-0 rounded-2xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Mulai Riset dengan AI
+        </button>
       </div>
 
       {/* Tabs */}
