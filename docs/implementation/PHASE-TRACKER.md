@@ -1598,3 +1598,12 @@ Execution order remains: (1) authorized OpenFuse/ClamAV host and encrypted stora
 - No UI source was modified in this continuation. No tests/build/lint/typecheck/browser/API/worker/provider runtime, staging or deployment was run. The Phase 00 workflow row records a historical run, not verification of this continuation.
 
 Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains BLOCKED. The next operational work still follows the product owner's stated order: authorized OpenFuse/ClamAV host provisioning; authenticated Motion batch ingestion and evidence review; Visual/Scenario recursive ingestion; real provider/secrets/pricing/entitlement/quota/wallet and always-on worker provisioning; then full Customer action/security closure.
+
+
+## 2026-11-16 Customer Skill Registry source repair
+
+- Current Phase 09 source continuation head: `a22a35ce444d5c920eed4828d47a91b4c2eb1bc9`; report: [Customer Skill Registry continuation](./PHASE-09-SKILL-REGISTRY-CONTINUATION-20261116.md).
+- Skills API fix commits: `fca8d53b` (Customer package/install list cap raised from 100 to 500 to cover the 230 pinned source catalog), `ba727397` (register the authenticated validation handler at the intended FastAPI route), and `a22a35ce` (emit SPDX `DEPENDS_ON` relationships only for exact resolved package coordinates).
+- A read-only aggregate query against `moreai_skill_packages` returned no rows. Motion, Visual and Scenario ingestion is therefore not evidenced as started in the canonical database.
+- OpenFuse/ClamAV is source-only and not provisioned on an authorized host. Real provider/model registries and worker capability snapshots remain empty. The 56 Motion batch has not run; Visual/Scenario require an additional bulk UI action and have not been ingested.
+- No UI component changed. No tests/build/lint/typecheck/runtime/browser/provider/staging/deployment were run. Phase 09 remains IN PROGRESS; Phase 10 is NOT ACCEPTED; Phase 11 is BLOCKED.
