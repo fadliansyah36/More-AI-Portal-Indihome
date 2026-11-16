@@ -135,3 +135,20 @@ Important remaining gap:
 - If the revoke API is unavailable, the customer is still signed out; grants remain bounded by their short TTL. The failure is logged and is not represented as a successful revoke.
 - This closes the missing callback path identified in the prior inspection. It does not complete Human Takeover: dashboard grant issuance/input, preview streaming, reconnect and private worker command delivery remain outstanding.
 - UI structure and styling were not changed; only the existing callback wiring was added. No screenshot was produced, no tests/build/lint/typecheck/runtime were run, and no migration was applied.
+
+
+## Implementation update — customer-visible Skill execution audit API
+
+Commits:
+- FastAPI owner-scoped audit reader: `24cbd18946dcf7b6c79f3d86f9c907c5309db11e`
+- Typed Customer API client: `8b3087b8396b011d356f32d6233a07d59ce05cbf`
+
+Implemented:
+- Added authenticated `GET /api/v1/customer/skills/audit` with bounded limit (1–100), optional Agent Run and Skill filters, owner scoping, and newest-first ordering.
+- Exposes only the caller's existing durable `moreai_skill_execution_audit` receipts: resolved/rejected/executed event, immutable skill version/content hash, permission snapshot, run/install references and event detail.
+- Added `CustomerSkillExecutionAudit` and `customerSkillApi.audit()` typed client contract. No new table or duplicate audit ledger was introduced.
+
+Boundary:
+- This exposes audit data to the existing Customer API layer; the Skills Library UI has not yet been changed to render the audit timeline.
+- Existing source catalog/batch implementation already covers 2 Visual, 172 Scenario and 56 Motion child-pack entrypoints; the Motion aggregator itself is a catalogue and has no executable SKILL.md. Actual batch ingestion and approval remain separate owner/reviewer actions. No customer package rows were fabricated.
+- No tests, build, lint, typecheck, screenshots, runtime, staging, deployment or Supabase mutation were performed. Phase 09 remains IN PROGRESS.
