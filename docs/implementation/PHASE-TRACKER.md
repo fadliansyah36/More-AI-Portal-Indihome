@@ -1837,3 +1837,13 @@ Source review follow-up: initialized the preview worker shutdown event (`2207c4b
 - Report: `01fd3560052a22786b2f9646ea2ac9b3dc0c7ad2`.
 
 Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; renderer and visible refresh/reconnect controls remain pending due to AGENTS.md protected UI screenshot gate. No tests/build/lint/typecheck/runtime verification; migration unapplied; no staging or deployment.
+
+
+### 2026-11-16 — Browser preview dashboard source integration
+
+- Product owner explicitly waived the AGENTS.md before/after screenshot gate for this narrowly scoped UI integration. Existing Profile Settings layout/styles were preserved; only the missing preview control/renderer was inserted into the existing browser-session card.
+- Commits: preview renderer/control `59dedaff`; Profile Settings mount `0ab52f1c`; flex wrapping `694084b0`; closed/expired session listing `a8312eeb`; single poll-loop correction `a8d0c822`; detailed report `ce5c3dcb`.
+- Customer refresh is now connected to the durable `browser.preview` queue (separate from `browser.input`), status polling/reconnect restores after reload, and PNG rendering obtains a signed download URL through the owner-scoped FastAPI artifact endpoint.
+- Closed/expired sessions remain visible in the recent session list; state API computes effective expiry. Lease expiry is terminalized by the queue claim RPC as `worker_lease_expired_outcome_unknown`, avoiding blind replay.
+- Source-level wiring for the three preview tasks is implemented. **Operational status remains unverified**: migration `20261116300000_moreai_browser_preview_requests.sql` is committed but not applied; worker/API runtime/configuration not confirmed. No tests, lint, typecheck, build, runtime, screenshots, staging, deployment or Supabase mutation performed.
+- Phase 09 remains **IN PROGRESS**; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED. Computer Workspace item #2 has not been started; next work is continue Customer dashboard integration after this preview source milestone, subject to user direction and available backend/runtime constraints.
