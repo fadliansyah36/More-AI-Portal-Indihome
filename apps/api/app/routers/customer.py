@@ -1339,53 +1339,6 @@ async def customer_personal_memory(
     }
 
 
-async def _purge_customer_episodic_metadata(repo: Any, user_id: str) -> int:
-    """Delete episodic memory metadata while preserving chat content and citations."""
-    removed = 0
-    for _ in range(20):
-        rows = await repo.select("conversation_messages", {
-            "user_id": f"eq.{user_id}",
-            "metadata->>memory_type": "eq.episodic",
-            "select": "id,metadata",
-            "order": "created_at.asc,id.asc",
-            "limit": "500",
-        })
-        if not rows:
-            return removed
-        for row in rows:
-            prior = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
-            cleaned = {
-                key: value for key, value in prior.items()
-                if key not in {
-                    "memory_type", "memory_scope", "workspace_id",
-                    "episode", "episode_expires_at",
-                }
-            }
-            updated = await repo.update(
-                "conversation_messages",
-                {"id": f"eq.{row['id']}", "user_id": f"eq.{user_id}"},
-                {"metadata": cleaned},
-            )
-            if not updated:
-                still_present = await repo.select("conversation_messages", {
-                    "id": f"eq.{row['id']}", "user_id": f"eq.{user_id}",
-                    "metadata->>memory_type": "eq.episodic",
-                    "select": "id", "limit": "1",
-                })
-                if still_present:
-                    raise RuntimeError("episodic_memory_metadata_delete_failed")
-            removed += 1
-    remaining = await repo.select("conversation_messages", {
-        "user_id": f"eq.{user_id}",
-        "metadata->>memory_type": "eq.episodic",
-        "select": "id",
-        "limit": "1",
-    })
-    if remaining:
-        raise RuntimeError("episodic_memory_cleanup_requires_background_continuation")
-    return removed
-
-
 @router.put("/memory/consent")
 async def update_customer_memory_consent(
     body: CustomerMemoryConsentUpdate, request: Request,
