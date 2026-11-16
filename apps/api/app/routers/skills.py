@@ -303,7 +303,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                         })
                         return
                     name_match = re.match(r"^([A-Za-z0-9_.-]+)", raw)
-                    marker_match = re.search(r";\\s*(.+)$", raw)
+                    marker_match = re.search(r";\s*(.+)$", raw)
                     declarations.append({
                         "ecosystem": "pypi",
                         "name": name_match.group(1) if name_match else raw,
