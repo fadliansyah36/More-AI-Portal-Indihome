@@ -586,6 +586,13 @@ export type CustomerBrowserSession = {
   status: 'active' | 'close_requested' | 'closed' | 'expired'; created_at: string; last_used_at: string; expires_at: string;
 };
 
+export type CustomerBrowserPreviewRequest = {
+  id: string; session_id: string; scope: 'browser.preview';
+  status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'expired';
+  artifact_id: string | null; error_code: string | null;
+  created_at: string; claimed_at: string | null; finished_at: string | null;
+};
+
 export type CustomerBrowserTakeoverCommand = {
   command_id: string; session_id: string; status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'expired';
   error_code: string | null; created_at: string; claimed_at: string | null; finished_at: string | null;
@@ -613,6 +620,15 @@ export const browserSessionApi = {
     session_id: string; artifact_id: string; run_id: string | null; mime_type: 'image/png';
     size_bytes: number; checksum_sha256: string | null; created_at: string;
   }>('/api/v1/artifacts/browser-sessions/' + encodeURIComponent(sessionId) + '/preview'),
+  requestPreview: (sessionId: string) => moreAiCustomerApi<{
+    request_id: string; session_id: string; scope: 'browser.preview';
+    status: 'queued' | 'processing'; reused: boolean;
+  }>('/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/preview-requests', {
+    method: 'POST',
+  }),
+  previewRequest: (requestId: string) => moreAiCustomerApi<CustomerBrowserPreviewRequest>(
+    '/api/v1/customer/browser-sessions/preview-requests/' + encodeURIComponent(requestId),
+  ),
   list: () => moreAiCustomerApi<{ items: CustomerBrowserSession[] }>('/api/v1/customer/browser-sessions'),
   close: (sessionId: string) => moreAiCustomerApi<{ session_id: string; status: 'close_requested' | 'closed' }>(
     '/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/close', { method: 'POST' },
