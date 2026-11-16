@@ -64,3 +64,32 @@ No tests, lint, typecheck, build, browser/API/worker runtime probes, external pr
 ## Next implementation phase
 
 **Skill Intelligence Platform — Source Ingestion & OpenManus Runtime Resolver.** Complete the immutable source fetch/verification and nested-file manifest first; then implement worker-side per-run resolution and permission enforcement before enabling any skill execution. After that, implement Connections Center (OAuth/Gmail/Calendar) through the existing FastAPI and Supabase boundary, then continue customer dashboard gaps.
+
+## Source ingestion & resolver follow-up (2026-11-16)
+
+A current-source reconciliation found that the earlier "not implemented" list above had become stale: the pinned catalog importer, recursive bounded source ingestion endpoint, atomic Supabase persistence RPC, and worker-side `SupabaseSkillResolver` are now present in `main`. The resolver is wired into the OpenManus durable runtime, loads only the authenticated owner's installed/published/validated/licence-approved package, verifies each stored file's SHA-256 and Git blob SHA, verifies the root entrypoint provenance, snapshots granted permissions per run, and records resolution/execution audit events.
+
+This increment hardens one remaining authorization edge:
+- Added an explicit worker-side allowlist for skill permission identifiers.
+- Rejects non-string, unknown, duplicate, or unrequested permissions even if malformed permission rows reach the worker database boundary.
+- This duplicates the runtime tool mapping intentionally as defense in depth; both boundaries must fail closed.
+
+Changed file:
+- `apps/worker/app/skill_resolver.py`
+
+Commit:
+- `b6752873947f5491e2dbf9cf9135c49a18945df7` — `fix(skills): fail closed on unknown skill permissions`
+
+### Remaining skill gates
+
+- Ingestion currently has bounded limits (40 files, 512 KiB/file, 5 MiB/package); larger skills need a reviewed manifest-based ingestion policy rather than relaxing limits blindly.
+- Source ingestion and hash verification do not establish license compatibility, full transitive dependency provenance, malware safety, or asset/trademark rights.
+- Admin reviewer UX, complete per-skill nested-license and SBOM review, and a durable approved-skill release process remain open.
+- Skill instructions are untrusted user-level context; they cannot grant tools or override system/developer policy.
+- Execution remains disabled unless the package is published, validated, license-approved, installed, and granted the exact required permissions. No source change here enables execution globally.
+
+### Verification and next phase
+
+No tests, build, lint, typecheck, API/worker execution, provider calls, staging, Supabase mutation or deployment were run. Runtime and UI acceptance remain NOT VERIFIED.
+
+Next: **Phase 09A/09B operational closure and Phase 09C dashboard action closure**, while finishing the admin skill review/SBOM governance workflow. Phase 09D Computer/Desktop remains blocked on a dedicated isolated per-customer supervisor; do not mount OpenFuse's shared-key single-owner Computer service into the multi-tenant API.
