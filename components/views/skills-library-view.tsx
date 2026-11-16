@@ -66,22 +66,27 @@ export function SkillsLibraryView() {
     } finally { setBusy(null); }
   };
 
-  const ingestAllMotion = async () => {
-    const motion = catalogItems.filter(item => item.source_repository.startsWith('iart-ai/'));
-    if (!motion.length) {
-      setError('Pinned Motion Skills belum dimuat atau katalog kosong.');
+  const ingestCatalogBatch = async (
+    sources: PinnedSkillCatalogItem[],
+    busyKey: string,
+    emptyMessage: string,
+  ) => {
+    if (!sources.length) {
+      setError(emptyMessage);
       return;
     }
-    setBusy('motion-bulk');
+    setBusy(busyKey);
     setError(null);
     const failures: string[] = [];
     let completed = 0;
     try {
+      // Load the complete pinned catalog membership (FastAPI list limit: 500)
+      // before importing so an already-imported package is ingested, not duplicated.
       let packages = (await customerSkillApi.list()).items;
       setItems(packages);
-      setBulkProgress({ total: motion.length, completed: 0, failed: 0, current: 'Menyiapkan katalog Motion…', failures: [] });
-      for (const source of motion) {
-        setBulkProgress({ total: motion.length, completed, failed: failures.length, current: source.name, failures: failures.slice(0, 5) });
+      setBulkProgress({ total: sources.length, completed: 0, failed: 0, current: 'Menyiapkan batch…', failures: [] });
+      for (const source of sources) {
+        setBulkProgress({ total: sources.length, completed, failed: failures.length, current: source.name, failures: failures.slice(0, 5) });
         try {
           let skill = packages.find(item =>
             item.source_repository === source.source_repository
@@ -96,29 +101,43 @@ export function SkillsLibraryView() {
             });
             packages = [...packages, skill];
           }
-          // Recursive ingestion fetches the complete skill directory and local
-          // references with the existing path, blob-hash and size boundaries.
-          // Validation records SBOM/license findings but never publishes or installs.
+          // Ingestion is recursive and integrity-checked. Validation records
+          // SBOM/license findings but never publishes, installs or grants access.
           await customerSkillApi.ingest(skill.id);
           await customerSkillApi.validate(skill.id);
         } catch (cause) {
           failures.push(source.name + ': ' + (cause instanceof Error ? cause.message : 'ingest/validation gagal'));
         }
         completed += 1;
-        setBulkProgress({ total: motion.length, completed, failed: failures.length, current: source.name, failures: failures.slice(0, 5) });
+        setBulkProgress({ total: sources.length, completed, failed: failures.length, current: source.name, failures: failures.slice(0, 5) });
       }
       await refresh();
       await loadCatalog();
       setBulkProgress({
-        total: motion.length, completed, failed: failures.length, current: 'Selesai',
+        total: sources.length, completed, failed: failures.length, current: 'Selesai',
         failures: failures.slice(0, 5),
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Batch Motion Skills gagal dimulai.');
+      setError(cause instanceof Error ? cause.message : 'Batch ingestion gagal dimulai.');
     } finally {
       setBusy(null);
     }
   };
+
+  const ingestAllMotion = async () => ingestCatalogBatch(
+    catalogItems.filter(item => item.source_repository.startsWith('iart-ai/')),
+    'motion-bulk',
+    'Pinned Motion Skills belum dimuat atau katalog kosong.',
+  );
+
+  const ingestVisualAndScenario = async () => ingestCatalogBatch(
+    catalogItems.filter(item =>
+      item.source_repository === 'smixs/visual-skills'
+      || item.source_repository === 'scenario-labs/skills',
+    ),
+    'visual-scenario-bulk',
+    'Pinned Visual dan Scenario Skills belum dimuat atau katalog kosong.',
+  );
 
   const validate = async (id: string) => {
     setBusy(id); setError(null);
@@ -177,6 +196,11 @@ export function SkillsLibraryView() {
             onClick={() => void ingestAllMotion()}
             className="rounded-xl bg-red-600 px-3 py-2 text-[10px] font-semibold text-white hover:bg-red-700 disabled:opacity-50">
             {busy === 'motion-bulk' ? 'Memproses Motion…' : 'Ingest 56 Motion Skills'}
+          </button>
+          <button type="button" disabled={busy !== null || catalogLoading || !catalogItems.some(item => item.source_repository === 'smixs/visual-skills' || item.source_repository === 'scenario-labs/skills')}
+            onClick={() => void ingestVisualAndScenario()}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+            {busy === 'visual-scenario-bulk' ? 'Memproses Visual & Scenario…' : 'Ingest 2 Visual + 172 Scenario'}
           </button>
         </div>
       </div>
