@@ -8,6 +8,17 @@ from typing import Any
 from app.client import WorkerRpcClient
 
 
+# Keep this boundary aligned with DurableOpenManusRuntime.skill_permission_tools.
+# Unknown permission labels must fail closed even if a privileged DB row is malformed.
+ALLOWED_SKILL_PERMISSIONS = frozenset({
+    "network.read", "search.web",
+    "workspace.read", "workspace.write",
+    "browser.navigate", "browser.download",
+    "files.read", "files.write",
+    "gmail.read", "calendar.read", "gmail.send", "calendar.write",
+})
+
+
 class SupabaseSkillResolver:
     """Resolves only immutable, approved skill snapshots for a single durable Agent Run."""
 
@@ -42,7 +53,15 @@ class SupabaseSkillResolver:
             package, install = packages[0], installs[0]
             requested = package.get("requested_permissions") or []
             granted = install.get("granted_permissions") or []
-            if not isinstance(requested, list) or not isinstance(granted, list) or not set(granted).issubset(set(requested)):
+            if (
+                not isinstance(requested, list)
+                or not isinstance(granted, list)
+                or any(not isinstance(value, str) or value not in ALLOWED_SKILL_PERMISSIONS for value in requested)
+                or any(not isinstance(value, str) or value not in ALLOWED_SKILL_PERMISSIONS for value in granted)
+                or len(requested) != len(set(requested))
+                or len(granted) != len(set(granted))
+                or not set(granted).issubset(set(requested))
+            ):
                 raise PermissionError("skill_permission_snapshot_invalid")
             files = await self.client.select("moreai_skill_source_files", {
                 "skill_package_id": f"eq.{skill_id}", "owner_user_id": f"eq.{user_id}",
