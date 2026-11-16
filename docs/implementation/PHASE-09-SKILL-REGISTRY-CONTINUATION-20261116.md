@@ -3,7 +3,7 @@
 Date: 2026-11-16  
 Branch: `main`  
 Source baseline: `bed0cebc7f05be5e3f70047636a334cb5959758a`  
-Current source head: `a22a35ce444d5c920eed4828d47a91b4c2eb1bc9`
+Current source head: `c110274750e806009e392e5b1c0126f757d568a2`
 
 ## Source changes committed
 
@@ -11,7 +11,7 @@ Current source head: `a22a35ce444d5c920eed4828d47a91b4c2eb1bc9`
 2. `ba72739770e4b3ed3d1cfddd4baca2ed82077cb0` — FastAPI `POST /api/v1/customer/skills/{skill_id}/validate` was attached to the wrong function. The route decorator sat above the internal synchronous `_source_review_inventory(files)` helper, while the intended authenticated async `validate_skill(skill_id, request, user)` handler was not registered. The decorator now targets `validate_skill`, which performs owner scoping, source inventory, SBOM generation and validation reporting.
 3. `a22a35ce444d5c920eed4828d47a91b4c2eb1bc9` — SPDX SBOM generation now includes `DEPENDS_ON` relationships for dependency edges whose source and target resolve to exact package coordinates already present in the inventory. Unresolved, range-only or ambiguous edges are not guessed into the graph; they remain in source inventory review findings.
 
-No customer UI files or visual styles were changed in this continuation.
+Customer UI continuation: `9e0ba8f3623750b08a40f4af4bd75268a28f328c` adds a second Skill Library batch action for Visual (2) + Scenario (172), reusing the existing button styles and Customer API client; `c110274750e806009e392e5b1c0126f757d568a2` makes reruns skip packages already `validated` or `review_required`, so an interrupted batch resumes at pending packages. This is a narrowly scoped addition to one existing view; no global CSS, design token or layout migration was made. Because no authenticated Customer browser session was available and the user prohibited real testing, before/after UI screenshots were not captured; visual acceptance remains open.
 
 ## Canonical Supabase read-only snapshot
 
@@ -23,7 +23,7 @@ No customer UI files or visual styles were changed in this continuation.
 
 - The OpenFuse/ClamAV Compose stack has not been started on an authorized host. The host-specific ClamAV digest, private network attachment, secret injection, encrypted persistent volume and backup/restore attestation are not available in the connected repository/database interfaces.
 - The 56 Motion package batch has not been executed. It requires an authenticated Customer session so package rows are created under the correct owner. The batch UI uses the authenticated Customer API; no Customer access token/session is available in this engineering execution context.
-- Visual (2) and Scenario (172) catalog entries can be imported individually using the existing pinned catalog flow, but the current batch button only covers Motion. A dedicated bulk batch action for Visual and Scenario has not yet been implemented. Their recursive source ingestion and validation have not run.
+- A dedicated Visual + Scenario batch action is now present beside the Motion batch action. It sequentially imports, recursively ingests and validates the 2 Visual and 172 Scenario pinned entrypoints through the authenticated Customer API, and skips packages already in `validated` or `review_required` state on rerun. This source action has not been executed; no package rows exist in the current aggregate snapshot.
 - No provider/model/secret/pricing/entitlement/quota/wallet policy or always-on worker has been provisioned. No fake provider, heartbeat or package records were seeded.
 - Strix was deliberately not used, per the product owner's instruction.
 
