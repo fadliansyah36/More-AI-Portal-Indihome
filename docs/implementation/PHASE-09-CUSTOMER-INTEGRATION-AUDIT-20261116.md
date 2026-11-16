@@ -243,3 +243,23 @@ Re-read FastAPI browser session routes, worker reconciliation and OpenFuse super
 - No claim is made about cross-tenant denial, concurrency, process-crash recovery, or real browser profile deletion without runtime evidence.
 
 No UI files were modified. No tests, build, lint, type-check, browser/runtime, staging, migration apply or deployment were performed. Phase 09 remains IN PROGRESS.
+
+
+## Continuation — atomic browser close completion (2026-11-16)
+
+Baseline: `6b760c110faf76cce4bf060229afe057ed35e7d9`.
+Implementation commit: `23832ff3f8b630644134b3375484baf1ce0cdd4f`.
+
+- Added forward-only migration source `20261116190000_moreai_browser_session_close_atomic.sql`.
+- Added `public.moreai_complete_browser_session_close(uuid,uuid)`: validates non-null identity, locks the canonical session row, verifies the owner and `close_requested` state, updates the session to `closed`, clears encrypted state, sets close/retention timestamps, and inserts the `closed` lifecycle event in the same PostgreSQL transaction.
+- The function is idempotent for an already-closed session and returns a replay result without inserting a duplicate event.
+- Execute privilege is revoked from `PUBLIC`, `anon`, and `authenticated`; only `service_role` is granted execution. FastAPI continues to authenticate the worker token before invoking the RPC.
+- FastAPI `/internal/{session_id}/close-complete` now delegates to this RPC and validates its response contract; it no longer performs separate PATCH and INSERT requests.
+
+Limitations:
+- The migration is committed as source only and has **not** been applied to Supabase project `uunfgimtokhucegqbpce`. Until applied, the endpoint will fail closed because the RPC does not yet exist in the live database.
+- The customer close-request path, TTL expiry reconciler and acquire-expiry guard still have separate status/event writes; these remain the next atomicity work.
+- The migration was added directly to the repository using the GitHub file/tree API because no local Supabase CLI workspace was available in this execution. It was not generated with `supabase migration new`; reconcile this against the project's migration-generation convention before applying.
+- No SQL execution, tests, build, lint, type-check, staging, browser/runtime verification or deployment was performed.
+
+Phase 09 remains **IN PROGRESS**. No Phase 10 or Phase 11 gate is claimed.
