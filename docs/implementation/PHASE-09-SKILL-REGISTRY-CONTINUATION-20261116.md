@@ -3,13 +3,13 @@
 Date: 2026-11-16  
 Branch: `main`  
 Source baseline: `bed0cebc7f05be5e3f70047636a334cb5959758a`  
-Current source head: `c110274750e806009e392e5b1c0126f757d568a2`
+Current source head: `f69f90e00adff242e53dd9abe266b10d3bd57045`
 
 ## Source changes committed
 
 1. `fca8d53b04cd56f627285b74c863614219dd3c48` — Customer Skill Registry list now loads up to 500 packages and installs, rather than 100. The pinned catalog contains 230 entrypoints across Motion (56), Scenario (172) and Visual (2); the smaller list bound could hide pre-imported packages from the sequential batch reconciler and cause duplicate-import conflicts after the first 100 entries.
 2. `ba72739770e4b3ed3d1cfddd4baca2ed82077cb0` — FastAPI `POST /api/v1/customer/skills/{skill_id}/validate` was attached to the wrong function. The route decorator sat above the internal synchronous `_source_review_inventory(files)` helper, while the intended authenticated async `validate_skill(skill_id, request, user)` handler was not registered. The decorator now targets `validate_skill`, which performs owner scoping, source inventory, SBOM generation and validation reporting.
-3. `a22a35ce444d5c920eed4828d47a91b4c2eb1bc9` — SPDX SBOM generation now includes `DEPENDS_ON` relationships for dependency edges whose source and target resolve to exact package coordinates already present in the inventory. Unresolved, range-only or ambiguous edges are not guessed into the graph; they remain in source inventory review findings.
+3. `a22a35ce444d5c920eed4828d47a91b4c2eb1bc9` — SPDX SBOM generation now includes `DEPENDS_ON` relationships for dependency edges whose source and target resolve to exact package coordinates already present in the inventory. Unresolved, range-only or ambiguous edges are not guessed into the graph; they remain in source inventory review findings. `f69f90e00adff242e53dd9abe266b10d3bd57045` raises the per-skill file cap from 40 to 64 after pinned-tree inspection showed four of the 172 Scenario skill folders contain 42–56 files; their maximum expanded size is about 698 KB and largest individual file about 197 KB. Per-file (512 KiB) and per-package (5 MiB) limits remain unchanged. Motion folders are at most 11 files; Visual folders at most 24.
 
 Customer UI continuation: `9e0ba8f3623750b08a40f4af4bd75268a28f328c` adds a second Skill Library batch action for Visual (2) + Scenario (172), reusing the existing button styles and Customer API client; `c110274750e806009e392e5b1c0126f757d568a2` makes reruns skip packages already `validated` or `review_required`, so an interrupted batch resumes at pending packages. This is a narrowly scoped addition to one existing view; no global CSS, design token or layout migration was made. Because no authenticated Customer browser session was available and the user prohibited real testing, before/after UI screenshots were not captured; visual acceptance remains open.
 
