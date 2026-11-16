@@ -292,3 +292,31 @@ The preceding source commit `4536c784c0be16942483a8492f0c1ed5adfca963` adds file
 - Apply the pinned OpenFuse profile deletion patch and configure durable private `WORKER_DATA_DIR` storage only when deployment access and explicit deployment authorization are available.
 
 No tests, lint, type checks, builds, screenshots, runtime calls, migrations, staging or deployment were performed. Phase 09 remains IN PROGRESS; Phase 10/11 remain blocked.
+
+
+## Follow-up — exact migration filename/version reconciliation (2026-11-16)
+
+A fresh comparison was made between all tracked `supabase/migrations/*.sql` files on `main` and the live `supabase_migrations.schema_migrations` listing. The comparison uses both the migration name and timestamp version; filename-only matching is not treated as proof that SQL definitions are identical.
+
+- Repository contains 72 migration SQL files; live history contains 100 rows.
+- 67 repository migration names are present in live history, but their repository filename timestamp differs from the live recorded version. These require SQL-definition comparison and historical provenance mapping before any migration CLI operation; do not reapply them merely because timestamp strings differ.
+- Five repository migration names are absent from live history:
+  - `20261111110000_moreai_durable_run_event_outbox.sql`
+  - `20261116100000_moreai_browser_session_close_event_constraint.sql`
+  - `20261116150000_moreai_skill_publication_evidence_gate.sql`
+  - `20261116153000_moreai_browser_profile_retention.sql`
+  - `20261116160000_moreai_browser_profile_retention_rpcs.sql`
+- Live history includes `20261111091531_moreai_durable_run_event_outbox_phase_07a`, which appears to be the historical predecessor/equivalent lineage for the repository's `moreai_durable_run_event_outbox` migration. The live schema already contains the event outbox objects. The exact SQL definition and post-migration state must be compared before classifying this as safely reconciled; it is not included in the four known browser/skills pending migrations.
+- Therefore the four new browser/skills migrations remain pending; the outbox migration is a separate historical-name/version reconciliation item.
+- Repository filenames contain duplicate timestamp versions: `20261111100000` is used by both notifications/private artifacts and outbox lease fencing; `20261114083000` is used by both Edutech assessment progress and path summary. Duplicate version IDs must be resolved in the repository migration ledger before future migration application. No file was renamed and no migration was applied in this increment.
+- Live history also contains 26 earlier foundation/phase migrations with no same-named current repository file. This may reflect historical migrations retained in the database after repository consolidation; they must remain recorded and must not be deleted or recreated.
+
+### Migration gate
+
+The migration history is not yet reconciled to a one-to-one, SQL-definition-backed ledger. Before any push, create a reviewed manifest mapping every live version to a source migration or documented historical-only migration, resolve duplicate repository version IDs without rewriting applied history, compare the outbox predecessor SQL/state, and prepare a forward-only apply order for the four genuinely pending migrations. Current instruction still prohibits applying them.
+
+### Authorization evidence refinement
+
+The catalog ACL query confirms that critical public application tables (`artifacts`, browser sessions/events/receipts, customer memories and Skills tables) have RLS enabled and ACL entries only for `postgres` and `service_role`; no anon/authenticated ACL entries were returned. Storage `objects`/`buckets` have anon/authenticated SQL table privileges but RLS is enabled. The `moreai-knowledge-private` bucket has an explicit server-only deny policy; `moreai-artifacts` has no observed policy row and thus remains default-deny under RLS for ordinary client roles unless another policy is discovered. API storage access verifies private-bucket status and uses server-only service-role credentials.
+
+No tests, migration apply, DDL, policy/grant changes, staging or deployment were performed.
