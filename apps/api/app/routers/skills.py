@@ -248,7 +248,25 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                                 "source_reference": source.get("reference"),
                             })
                         else:
-                            add_dependency("pypi", package.get("name"), package.get("version"), path, status="lockfile_pinned")
+                            package_name = package.get("name")
+                            package_version = package.get("version")
+                            add_dependency("pypi", package_name, package_version, path, status="lockfile_pinned")
+                        package_name = package.get("name")
+                        package_dependencies = package.get("dependencies")
+                        if isinstance(package_dependencies, dict):
+                            dependency_edges.extend({
+                                "ecosystem": "pypi", "from": str(package_name),
+                                "to": str(dep_name), "kind": "dependency",
+                                "requested": str(dep_spec),
+                            } for dep_name, dep_spec in package_dependencies.items())
+                        elif isinstance(package_dependencies, list):
+                            for dependency in package_dependencies:
+                                if isinstance(dependency, dict) and isinstance(dependency.get("name"), str):
+                                    dependency_edges.append({
+                                        "ecosystem": "pypi", "from": str(package_name),
+                                        "to": dependency["name"], "kind": "dependency",
+                                        "requested": str(dependency.get("specifier") or dependency.get("version") or ""),
+                                    })
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "pypi", "status": "parse_error"})
         elif name == "pipfile.lock":
