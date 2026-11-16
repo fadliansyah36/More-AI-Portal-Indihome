@@ -102,9 +102,6 @@ async def import_skill(body: SkillImportRequest, request: Request, user: dict[st
     })
 
 
-@router.post("/{skill_id}/validate", response_model=SkillValidationResponse)
-
-
 def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     license_files: list[dict[str, Any]] = []
     dependency_files: list[str] = []
@@ -1102,6 +1099,7 @@ def _spdx_skill_sbom(
     }
 
 
+@router.post("/{skill_id}/validate", response_model=SkillValidationResponse)
 async def validate_skill(skill_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     repo = repository(request)
     rows = await repo.select("moreai_skill_packages", {
