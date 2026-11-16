@@ -67,3 +67,21 @@ No UI files were changed. The existing UI is protected under AGENTS.md. Adding H
 No tests, lint, build, type-check, screenshot capture, browser/API/worker runtime, Docker, provider/OAuth calls, staging, deployment, migration apply or Supabase mutation were performed.
 
 Phase 09 remains **IN PROGRESS**. Phase 10 remains **NOT ACCEPTED**. Phase 11 remains **BLOCKED**.
+
+
+## Implementation update — Browser action worker-lease fencing
+
+Commits:
+- API: `7de4e7bc2dc7c731d56e8b437a225cfde404ac2c`
+- OpenFuse adapter: `8943a7aa25436963d5f51f5539c4deb1909512ae`
+
+Implemented on `main`:
+- Browser action receipt claim now carries the authenticated internal worker identity and only accepts a run that is still running, owned by that worker ID, and has an unexpired lease.
+- Browser action receipt finish now applies the same active-owner/unexpired-lease condition. A late worker cannot finalize a receipt after lease loss or after the run has left the active state.
+- OpenFuse BrowserSupervisor supplies its configured worker ID on both claim and finish calls.
+- Existing receipt idempotency and unknown-outcome handling remain intact.
+
+Scope boundary:
+- This fences browser receipt claim/finalization by the current worker lease owner identity and expiry. It does not add a monotonic lease-generation token; if a deployment reuses the same worker ID across overlapping process incarnations, a generation/fencing token is still required.
+- Computer action receipt path is not yet updated to the same contract and remains an explicit gap.
+- No runtime, tests, lint, build, typecheck, screenshots, staging, deployment, Docker or Supabase mutation were performed.
