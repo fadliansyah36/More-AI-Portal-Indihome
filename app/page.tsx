@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { customerApi } from '@/lib/api/client';
 import {
   Home,
   MessageSquare,
@@ -218,6 +219,17 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleCustomerLogout = async () => {
+    try {
+      await customerApi.revokeBrowserTakeoverGrantsOnLogout();
+    } catch (error) {
+      console.error('browser_takeover_logout_revoke_failed', error);
+    }
+    const { error } = await createSupabaseBrowserClient().auth.signOut();
+    if (error) console.error('customer_auth_signout_failed', error);
+    handleNavigate('login');
+  };
+
   const handleStartPrompt = (
     promptText: string,
     agentKey: 'manus' | 'planning' | 'toolcall' = 'manus',
@@ -319,6 +331,7 @@ export default function App() {
               {currentTab === 'profile' && (
                 <ProfileSettingsView
                   onNavigateTab={handleNavigate}
+                  onLogout={handleCustomerLogout}
                   isDarkMode={isDarkMode}
                   onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
                 />
