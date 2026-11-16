@@ -104,3 +104,24 @@ Remaining safety boundary:
 - A monotonic lease-generation/fencing token is still needed to protect against worker process reincarnation that reuses the same worker ID.
 - Computer workspace streaming/reconnect/cancellation/resource accounting and broader Customer screen reconciliation remain open.
 - No tests, build, lint, typecheck, runtime calls, staging, deployment, Docker execution, or Supabase mutation were performed.
+
+
+## Implementation update — takeover revocation lifecycle hardening
+
+Commits:
+- Agent Run terminal-state revocation migration: `296aa3ffe284027982d956385c66d074795d2629`
+- Customer logout revocation RPC migration: `f93868e0c192a074ce87081e2ce9793ea58f7348`
+- FastAPI owner-scoped logout revocation endpoint: `7daacc6783eed84a7232fd478bc511a12e5a2fda`
+- Typed Customer API method: `41aa34432ffff2a595e6006b06f82d8819f8db79`
+
+Implemented:
+- Unconsumed grants associated with a browser session are revoked when its linked Agent Run transitions to a terminal state (`succeeded`, `failed`, `cancelled`, `timed_out`, `expired`). The trigger covers both `run_id` and `last_run_id` associations and records a per-session audit event.
+- Added a service-role-only RPC to revoke all unconsumed browser takeover grants for one customer, with per-session `customer_logout` audit events.
+- Added authenticated FastAPI `POST /api/v1/customer/browser-sessions/takeover-grants/revoke-all`, scoped to the current customer principal.
+- Added a typed frontend API method `customerApi.revokeBrowserTakeoverGrantsOnLogout()`.
+
+Important remaining gap:
+- The logout revocation endpoint and typed client method are available, but the existing logout callback has **not yet been wired** to invoke it before Supabase Auth sign-out. UI-file edits remain gated by AGENTS.md screenshot evidence.
+- The dashboard-to-worker takeover command transport and customer input/preview interface are still not wired. Thus Human Takeover remains **backend lifecycle foundation**, not end-to-end.
+- The migrations are committed but not applied to Supabase. No tests, build, lint, type-check, screenshots, runtime, Docker, staging, deployment or Supabase mutation were performed.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
