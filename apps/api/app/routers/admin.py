@@ -444,7 +444,8 @@ async def get_skill_source_evidence(
 ):
     repo = repository(request)
     packages = await repo.select("moreai_skill_packages", {
-        "id": f"eq.{skill_id}", "select": "id,owner_user_id,name,source_repository,source_commit,source_path",
+        "id": f"eq.{skill_id}",
+        "select": "id,owner_user_id,name,source_repository,source_commit,source_path,source_blob_sha,content_sha256,license_id,license_url,license_evidence,license_status,validation_status,validation_report,publication_status,manifest,requested_permissions",
         "limit": "1",
     })
     if not packages:
@@ -469,5 +470,24 @@ async def get_skill_source_evidence(
             "text_content": content[:30000] if isinstance(content,str) else None,
             "content_available": isinstance(content,str),
         })
-    return {"skill": {key:package.get(key) for key in ("id","name","source_repository","source_commit","source_path")},
-        "files": evidence, "count":len(evidence)}
+    report = package.get("validation_report") if isinstance(package.get("validation_report"), dict) else {}
+    inventory = report.get("source_inventory") if isinstance(report.get("source_inventory"), dict) else {}
+    return {
+        "skill": {key:package.get(key) for key in (
+            "id","name","source_repository","source_commit","source_path",
+            "source_blob_sha","content_sha256","license_id","license_url",
+            "license_evidence","license_status","validation_status",
+            "publication_status","manifest","requested_permissions",
+        )},
+        "validation": {
+            "findings": report.get("findings", []),
+            "checked_at": report.get("checked_at"),
+            "scope": report.get("scope"),
+            "dependency_manifests": inventory.get("dependency_manifests", []),
+            "dependency_count": inventory.get("dependency_count", 0),
+            "unresolved_dependency_count": inventory.get("unresolved_dependency_count"),
+            "registry_resolution": inventory.get("registry_resolution", {}),
+            "sbom": inventory.get("sbom"),
+        },
+        "files": evidence, "count": len(evidence),
+    }
