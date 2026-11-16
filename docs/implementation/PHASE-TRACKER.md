@@ -1866,3 +1866,5 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED. Next: Memory Coordinator lifecycle and Customer route-to-screen reconciliation.
 
 - Follow-up `e95785ab2dd975b08fc7aeec532443592cc80bfe` restores the latest takeover command after reload using existing owner-scoped session events + command status API, and revokes any unconsumed grant after an ambiguous submission failure. Source-only; no tests/runtime/staging/deployment or Supabase mutation. Phase 09 remains IN PROGRESS.
+
+- Human Takeover contract correction: `fbf03b0bde78b16492c535ba4d723adfce43079b` maps database `id` to API `command_id` so owner-scoped command status matches `CustomerBrowserTakeoverCommand` and the UI's reconnect/polling contract. Source-only, not runtime-verified.
