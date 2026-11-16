@@ -1791,3 +1791,13 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Browser action receipt fencing implemented: claim and finish now require active Agent Run, matching worker lease owner and unexpired lease; OpenFuse adapter sends worker identity. Commits `7de4e7bc` and `8943a7aa`. Monotonic lease-generation fencing and Computer action parity remain open; no tests/runtime/deploy.
 
 - Computer action receipt fencing implemented: claim/finish require matching active worker lease owner, unexpired lease and workspace ownership; isolated sandbox adapter sends the runtime worker ID. Commits `13599f9e`, `adad5894`, `4eed28a8`. Human Takeover grant/worker consumption, monotonic lease generation, streaming and lifecycle remain open. No tests/runtime/deploy.
+
+
+## 2026-11-16 continuation — Human Takeover grant foundation
+
+- `d054ec24` / `277182d2`: added forward-only migration for one-time browser takeover grants. Tokens are stored as SHA-256 digests, grants are bound to customer + existing browser session, scopes are restricted to `browser.input`, expiry is bounded to 30–120 seconds at API issuance (maximum 3 minutes at schema level), and grant consumption/revocation are atomic database functions. Audit events record issuance, consumption and revocation.
+- `4ef06b08`: FastAPI now exposes owner-authenticated grant issuance/revocation and an internal worker-authenticated one-time consume endpoint. Raw token is returned only at issuance.
+- `23a0858e`: BrowserSupervisor adds a consume-before-input adapter. It verifies returned session ID and `browser.input` scope before forwarding input to the same OpenFuse profile.
+- This is a backend/worker grant foundation, **not yet a complete customer Human Takeover journey**: no customer-facing grant/input UI or authenticated command transport from the existing dashboard is wired yet; logout/run-terminal revocation hooks and complete takeover action audit are also outstanding. Do not enable or advertise takeover in the UI yet.
+- Migration is committed but **not applied** to Supabase. No tests, build, lint, typecheck, screenshots, API/worker/browser runtime, staging or deployment were run.
+- Computer Workspace streaming/reconnect/cancellation/resource accounting and full route-to-screen Customer integration remain open. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
