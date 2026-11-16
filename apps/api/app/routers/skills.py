@@ -339,6 +339,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                                 "to": parts[0],
                                 "to_version": parts[1] if len(parts) > 1 else "",
                                 "to_source": " ".join(parts[2:]) if len(parts) > 2 else "",
+                                "to_locator": (parts[0] + "@" + parts[1] + "#" + (" ".join(parts[2:]) if len(parts) > 2 else "registry")) if len(parts) > 1 else None,
                                 "kind": "dependency", "source_manifest": path,
                             })
             except Exception:
@@ -385,6 +386,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                     candidates = composer_packages.get(edge["to"], [])
                     if len(candidates) == 1:
                         edge["to_version"] = candidates[0]["version"]
+                        edge["to_locator"] = edge["to"] + "@" + candidates[0]["version"] + "#" + str(candidates[0]["source_reference"] or candidates[0]["dist_reference"] or "dist")
                         edge["to_source_reference"] = candidates[0]["source_reference"]
                         edge["to_dist_reference"] = candidates[0]["dist_reference"]
                         edge["resolution_status"] = "unique_locked_package_instance"
@@ -638,6 +640,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                             "to": edge_match.group(1), "kind": "runtime_dependency",
                             "requested": requested,
                             "resolved_exact_version": requested[2:].strip() if requested.startswith("= ") else None,
+                            "to_locator": (edge_match.group(1) + "@" + requested[2:].strip()) if requested.startswith("= ") else None,
                             "source_manifest": path,
                         })
                 if not any(item.get("source_manifest") == path for item in dependencies):
