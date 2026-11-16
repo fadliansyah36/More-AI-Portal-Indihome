@@ -188,3 +188,14 @@ Important remaining integration:
 - The existing screen now renders the last 50 durable Skill resolver/rejection/execution receipts, including immutable Skill version/content hash, Agent Run reference, permission snapshot, timestamp and rejection reason when present. Loading, empty and API error states use the existing card, typography, border and red/neutral status styles.
 - No new table, mock data, direct Supabase browser access, automatic publication, permission grant or Skill execution was introduced.
 - Source change only; no tests, lint, typecheck, build, runtime, staging, deployment or Supabase mutation were performed.
+
+
+## Implementation update — Customer Human Takeover dashboard wiring
+
+- Component commit: `1ee94506eca59df5731456563c59a09c319fe98a`; Profile Settings integration: `ae3926b9b96d3676ecc4b650d4d8dfa2e7964a55`; input-schema neutrality correction: `2ae92fcc8775e959fe353b36f44564ef0e75a9ac`.
+- Added `components/views/browser-session-takeover.tsx` and mounted it inside each existing Profile Settings browser-session card, alongside the existing preview.
+- Customer can submit a JSON object to the existing FastAPI takeover contract. The UI obtains a 90-second one-time grant, holds its raw token only in component memory, queues the command through the typed Customer API, and polls the owner-scoped command status. It surfaces queued/processing/succeeded/failed/expired states and API errors. Closed/expired sessions do not expose input controls.
+- The payload editor intentionally does not prescribe an OpenFuse action schema; the adapter accepts a bounded object and forwards it to the existing OpenFuse session input endpoint. The exact payload semantics remain determined by the deployed OpenFuse contract.
+- UI follows the existing Profile Settings card, Tailwind, red action, slate border, compact typography and responsive patterns. No direct Supabase data access or mock responses were added.
+- Source-only implementation. The takeover queue/grant migrations remain committed but unapplied; worker/API/OpenFuse runtime and deployed input payload semantics are unverified. No tests, lint, typecheck, build, runtime, staging, deployment, screenshot capture or Supabase mutation was performed.
+- Phase 09 remains **IN PROGRESS**; Phase 10 remains **NOT ACCEPTED**; Phase 11 remains **BLOCKED**. Next: persist/recover recent takeover command status from the existing session event/command history contract where available, then continue Memory Coordinator lifecycle and full route-to-screen reconciliation.
