@@ -187,6 +187,8 @@ export function SkillsLibraryView() {
           </div>
           <div className="mt-2 space-y-1 text-[10px] text-slate-600">
             <p>Registry metadata: {skill.validation_report.source_inventory.registry_resolution?.registry_metadata_resolved_count ?? 0}/{skill.validation_report.source_inventory.registry_resolution?.exact_version_count ?? 0} resolved · {skill.validation_report.source_inventory.registry_resolution?.unresolved_count ?? 0} unresolved</p>
+            <p className={skill.validation_report.source_inventory.dependency_graph_complete ? 'font-semibold text-emerald-700' : 'font-semibold text-amber-700'}>Graph: {skill.validation_report.source_inventory.dependency_graph_complete ? 'lengkap menurut parser' : 'belum lengkap · publikasi tetap diblokir'} · {skill.validation_report.source_inventory.unresolved_dependency_edge_count ?? 0} edge belum terpetakan</p>
+            {(skill.validation_report.source_inventory.dependency_graph_blocking_manifests ?? []).map(path => <p key={path} className="break-all text-amber-700">Butuh resolusi graph: {path}</p>)}
             {(skill.validation_report.source_inventory.dependency_edges ?? []).slice(0, 8).map((edge, index) => <p key={index} className="break-all rounded-lg bg-slate-50 px-2 py-1 font-mono">{edge.from}{edge.from_version ? '@' + edge.from_version : ''} → {edge.to}{edge.to_version ? '@' + edge.to_version : ''} <span className="text-slate-400">({edge.kind || 'dependency'}{edge.resolution_status ? ' · ' + edge.resolution_status : ''})</span></p>)}
             {(skill.validation_report.findings ?? []).map((finding, index) => <p key={'finding-' + index} className="text-amber-700">• {finding}</p>)}
           </div>
