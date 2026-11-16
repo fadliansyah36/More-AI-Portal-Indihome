@@ -3,7 +3,7 @@
 Date: 2026-11-16  
 Target branch: `main`  
 Baseline commit: `8b00ba16f46aaf81f29b7d68551f86fcc56a8870` (start of this continuation)  
-Target commit at report update: recorded in the final main-branch HEAD check.
+Target code commit: `7c52eca3fad29fdfee5bbd2eee8ebb4dbae2d798`.
 
 ## Pinned OpenFuse contract inspected
 
