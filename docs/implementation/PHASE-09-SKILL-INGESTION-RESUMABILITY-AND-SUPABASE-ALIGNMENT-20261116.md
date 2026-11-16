@@ -87,3 +87,13 @@ Next operational order remains:
 5. Configure approved provider/model secrets, pricing, billing, credits, quota and entitlements.
 6. Start the persistent worker and obtain heartbeat/readiness.
 7. Complete Customer action-by-action API/security review and obtain the authorized integration acceptance evidence.
+
+## Post-commit deployment reconciliation (read-only)
+
+After the source and migration commits:
+- Latest observed frontend production deployment: READY, deployment `dpl_FJU1QCdDefhwBSSTXh8KzwYopJFZ`, source commit `fddb8e7b418de44bec13bbddda1a36758b3567cc`.
+- Latest observed FastAPI production deployment: READY, deployment `dpl_3osyzfU6os8UMV1zpmRRZ1zYowxo`, source commit `7628d110b1e7ce0b262ab38262ad2cd887a369a2`.
+- The FastAPI idempotent-ingestion source commit `1f612973efa4797399556e19237c48ee935fe017` has no corresponding Vercel API deployment in the read-only deployment history. It is source-committed but is not confirmed in the current deployed API.
+- The latest read-only API environment inventory still has no `MOREAI_GITHUB_TOKEN`; `MOREAI_AGENT_EXECUTION_ENABLED` remains `false`.
+- No manual Vercel deployment or promotion was initiated. The existing Vercel Git integration produced the frontend deployment automatically; READY state is not runtime/E2E acceptance.
+- Consequently, do not start the 230-skill batch against production until the API source update is deployed through the approved release process and the GitHub token is configured.
