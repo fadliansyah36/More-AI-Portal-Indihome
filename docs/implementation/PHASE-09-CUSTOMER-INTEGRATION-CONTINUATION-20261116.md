@@ -206,3 +206,11 @@ Important remaining integration:
 ## Contract correction — Human Takeover status response
 
 - Commit `fbf03b0bde78b16492c535ba4d723adfce43079b` aligns `GET /api/v1/customer/browser-sessions/takeover-input/{command_id}` with the existing typed client: the database `id` is now returned as `command_id`, with only the documented owner-scoped status fields. This fixes the response mismatch that would otherwise prevent the newly wired UI from reading command status/reconnect state. Source-only; no tests/runtime/migration apply/staging/deployment.
+
+
+## Customer Dashboard continuation — EduTech and Workspace file history
+
+- `d27d92705fd2952e227fcb08819346b998cc1e0e`: EduTech dashboard now requests only one progress-detail row when it needs only the aggregate count. The API's owner-scoped count remains authoritative; this avoids retrieving up to 500 unused progress rows.
+- `b7cdb52b5f9dc5689300d0b1d5cc295b85b5844d`: typed `workspaceApi.versions` now accepts bounded page size and cursor and reads the backend's `X-Next-Cursor` keyset header.
+- `0758c9d8c64e5d05651ea4ef185ca548452d1f15`: Files UI now loads the first 50 immutable file versions and exposes “Muat versi sebelumnya” while a cursor remains. Appended versions are deduplicated by file/version identity; existing download and version rendering remain unchanged.
+- These changes close an existing pagination gap in Workspace version history and reduce unnecessary EduTech progress payload. Source-only; no tests/lint/typecheck/build/runtime, staging, deployment, or Supabase mutation.
