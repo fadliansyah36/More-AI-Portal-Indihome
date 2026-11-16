@@ -413,3 +413,38 @@ Phase 09 remains **IN PROGRESS**. The next blockers are production FastAPI CORS/
 - No migration was applied, no Vercel deployment was triggered, and no API/browser/runtime test was run.
 
 The ten migrations must be reviewed/reconciled against the existing historical migration lineage and then applied in dependency order under the approved production change process. The browser/API origin source change and Memory API source changes must not be described as live until their respective API deployment and database migrations are in place.
+
+
+## 2026-11-16 current-state reconciliation (supersedes stale status notes above)
+
+This addendum records the latest source and canonical Supabase state. Historical sections above are retained as point-in-time audit notes and must not be interpreted as the current migration/runtime status.
+
+### Source and database changes since the prior audit snapshot
+- Fourteen forward-only Phase 09D migrations are now applied to canonical Supabase project `uunfgimtokhucegqbpce`; the exact repository-to-live version mapping is in `supabase-migration-ledger-20261116.json`.
+- Atomic Customer Memory clear/create/disable RPCs are applied. `DELETE /api/v1/customer/memory` now uses the atomic clear contract; this supersedes earlier notes describing the clear operation as multi-step/non-atomic.
+- Private artifact bucket client-deny policy is applied. Browser-download import now checks run owner, active browser session owner, PDF signature, declared MIME, size, SHA-256 and ClamAV clean verdict before writing private artifact metadata.
+- Seventeen server-only tables have explicit anon/authenticated deny policies (16 original service-only tables plus the browser capacity lease table). The Supabase security advisor no longer reports RLS-enabled tables without policies.
+- OpenFuse source topology now includes a pinned upstream Docker build, profile-delete patch, private-egress proxy override, persistent profile volume, 10-minute idle context closure/reopen, ClamAV service, and a shared Supabase capacity lease with a 3-session global cap and 2-per-customer cap. The Compose stack and worker network attachment are not deployed.
+- Customer Skills Library now contains a sequential batch action to import, recursively ingest and validate the 56 pinned Motion skill entrypoints. The batch has not been run; it requires an authenticated Customer session and intentionally does not install/publish/enable skills.
+
+### Canonical registry and worker readiness (read-only counts)
+At the latest metadata inspection:
+
+| Registry | Total | Enabled / fresh |
+|---|---:|---:|
+| `llm_providers` | 0 | 0 |
+| `llm_models` | 0 | 0 |
+| `moreai_worker_capability_snapshots` | 0 | 0 within 90 seconds |
+| `moreai_browser_sessions` | 0 | 0 active |
+| `moreai_browser_capacity_leases` | 0 | 0 unexpired |
+
+This means the database has no enabled LLM provider/model and no fresh worker heartbeat. The source contains provider routing and metered image/video adapter paths, but actual Agent execution, media rendering, wallet reservation/settlement, and artifact generation cannot be advertised as available until real provider records/secrets, pricing/entitlement settings and an always-on worker are provisioned. No dummy provider or mock worker was inserted.
+
+### Remaining Phase 09 blockers
+1. Deploy the pinned OpenFuse/ClamAV Compose stack on an authorized host, supply digest-pinned scanner image, secrets, domain allowlist, encrypted persistent volume and attach the MoreAI worker to `moreai_browser_isolated`. Keep a single browser worker replica until profile storage is shared.
+2. Execute the authenticated batch ingestion for 56 Motion skills, then close SBOM/dependency edges, nested license/asset provenance and human review. Complete the corresponding Visual and Scenario source ingestion and provenance work.
+3. Provision real LLM/image/video providers, provider secrets, model pricing, wallet conversion/entitlement/quota settings and the always-on worker. Only then enable image/video generation.
+4. Complete customer control-by-control API/UX acceptance and security review. This remains source-only because browser/API/worker tests, staging and runtime checks are explicitly prohibited.
+5. Enable Supabase Auth leaked-password protection in the Auth configuration surface; this is the only remaining security advisor warning.
+
+Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains BLOCKED.

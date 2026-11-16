@@ -1566,3 +1566,8 @@ Final source baseline update: latest confirmed `main` HEAD before this documenta
 - Source/Compose only. No Docker build, container startup, test, lint, typecheck, browser/API/worker/provider runtime, staging or deployment. Production ClamAV image digest, secrets, allowlist, worker network attachment and encrypted volume remain operational prerequisites.
 - Supabase security advisor now reports only the Auth leaked-password-protection warning; RLS-without-policy findings are closed.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 canonical provider/worker readiness snapshot
+
+Read-only Supabase counts show `llm_providers=0`, `llm_models=0`, `moreai_worker_capability_snapshots=0` (fresh within 90 seconds), `moreai_browser_sessions=0` active and `moreai_browser_capacity_leases=0` unexpired. No mock provider or worker was inserted. Media generation and Agent execution remain unavailable until real provider secrets/pricing/entitlements and an always-on worker are provisioned. See the current-state addendum in [Customer Integration Audit](./PHASE-09-CUSTOMER-INTEGRATION-AUDIT-20261116.md).

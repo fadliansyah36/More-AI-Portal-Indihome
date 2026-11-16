@@ -114,3 +114,8 @@ Read-only metadata confirms the capacity lease table is RLS-enabled with an expl
 
 ### Operational boundary
 The Compose stack and worker network attachment are committed but not deployed. The actual host still needs a digest-pinned ClamAV image, secrets, exact domain allowlist, external private network attachment for the MoreAI worker, and encrypted persistent volume/backup policy. The browser worker must remain a single replica until profile storage is shared across replicas. No container was built or started; no browser runtime, session recovery, malware scan or download import was executed.
+
+
+## Canonical provider and worker registry snapshot
+
+Read-only Supabase counts at the latest reconciliation: `llm_providers=0`, `llm_models=0`, `moreai_worker_capability_snapshots=0` fresh within 90 seconds, `moreai_browser_sessions=0` active, and `moreai_browser_capacity_leases=0` unexpired. The provider/worker adapters remain source-level only. No fake provider, model, heartbeat or credit ledger record was seeded. Actual OpenManus execution and media generation remain unavailable until the real provider secrets, model prices, quota/entitlement policy and always-on worker are provisioned.
