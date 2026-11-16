@@ -60,3 +60,13 @@ Phase 09 remains **IN PROGRESS**. Human Takeover is now **backend lifecycle impl
 - Preview queue eligibility now uses the canonical Agent Run terminal status `succeeded` (not `completed`), consistent with `apps/api/app/routers/agent_runs.py`. Migration correction commit: `3fb90e782ead1700ba7d29283345eda07d154d12`.
 
 These are source-level corrections only; no runtime verification was performed.
+
+
+### Reconnect contract and frontend polling hook follow-up
+
+- Corrected the FastAPI preview enqueue and screenshot artifact persistence Agent Run status filters to use `running|succeeded`, matching the canonical Agent Run status model: `6b3298ba2363564bbc9efacf656cf5f14de3fb58` and `8c094be2c0c1688142d369870369311558b59b11`.
+- Added owner-scoped `GET /api/v1/customer/browser-sessions/{session_id}/state`. It restores effective session status (including expiry derived from `expires_at`), the latest durable preview request, its terminal/lease error state, matching screenshot artifact metadata, and recent session events: `ea78fcfd595cd6dd994425f979789316d72cb44e`.
+- Added typed `browserSessionApi.state()`: `ff36332b19ef5b19f4ca9fbaf0aaff19bdb02a85`.
+- Added `hooks/use-browser-session-preview.ts`: restores state on mount, polls durable request status after reload, queues customer-triggered preview refresh, obtains image URLs only through FastAPI signed-download, handles timeout/failure/expired states and allows signed URL renewal: `4eaf616e4ed3c3b3e0acff51d3f9db7a95eeffb2`.
+
+Still outstanding: this hook is not mounted by the existing Profile Settings screen. The PNG renderer and refresh/reconnect controls are not visible to customers until that screen is connected. AGENTS.md requires before/after screenshots for any UI-file change; no browser screenshot capture facility or approved baseline route screenshots are available in this implementation context, so the protected UI file has not been edited. No tests, lint, typecheck, build, runtime verification, Supabase migration apply, staging or deployment were performed.
