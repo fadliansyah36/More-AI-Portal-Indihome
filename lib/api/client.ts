@@ -620,6 +620,18 @@ export const browserSessionApi = {
     session_id: string; artifact_id: string; run_id: string | null; mime_type: 'image/png';
     size_bytes: number; checksum_sha256: string | null; created_at: string;
   }>('/api/v1/artifacts/browser-sessions/' + encodeURIComponent(sessionId) + '/preview'),
+  state: (sessionId: string) => moreAiCustomerApi<{
+    session: CustomerBrowserSession & {
+      effective_status: 'active' | 'close_requested' | 'closed' | 'expired';
+      closed_at: string | null; profile_retention_after: string | null; profile_deleted_at: string | null;
+    };
+    preview_request: CustomerBrowserPreviewRequest | null;
+    preview: {
+      artifact_id: string; run_id: string | null; mime_type: 'image/png';
+      size_bytes: number; checksum_sha256: string | null; created_at: string;
+    } | null;
+    events: Array<{ id: string; event_type: string; metadata: Record<string, unknown>; created_at: string }>;
+  }>('/api/v1/customer/browser-sessions/' + encodeURIComponent(sessionId) + '/state'),
   requestPreview: (sessionId: string) => moreAiCustomerApi<{
     request_id: string; session_id: string; scope: 'browser.preview';
     status: 'queued' | 'processing'; reused: boolean;
