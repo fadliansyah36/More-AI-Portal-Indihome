@@ -1571,3 +1571,17 @@ Final source baseline update: latest confirmed `main` HEAD before this documenta
 ## 2026-11-16 canonical provider/worker readiness snapshot
 
 Read-only Supabase counts show `llm_providers=0`, `llm_models=0`, `moreai_worker_capability_snapshots=0` (fresh within 90 seconds), `moreai_browser_sessions=0` active and `moreai_browser_capacity_leases=0` unexpired. No mock provider or worker was inserted. Media generation and Agent execution remain unavailable until real provider secrets/pricing/entitlements and an always-on worker are provisioned. See the current-state addendum in [Customer Integration Audit](./PHASE-09-CUSTOMER-INTEGRATION-AUDIT-20261116.md).
+
+
+## 2026-11-16 execution-order reconciliation (supersedes earlier stale notes)
+
+Source baseline: `main` HEAD `1c5d2a5b8fbacc3636351a821dec26cdbd54e0b8`. The current Phase 09D runtime-closure report is authoritative where earlier tracker paragraphs or historical audit sections conflict:
+
+- The fourteen forward-only Phase 09D migrations listed in `PHASE-09D-CUSTOMER-RUNTIME-CLOSURE-20261116.md` are applied to canonical Supabase. Earlier statements that these same migrations or the explicit server-only deny policy were pending are stale and superseded.
+- OpenFuse/ClamAV remains source/Compose-only. No authorized host provisioning, immutable ClamAV image digest, production secrets, allowlist, external worker network attachment, encrypted persistent volume, backup/restore attestation or container runtime was available/performed.
+- The 56 Motion entrypoints are catalogued, and the authenticated Customer batch action exists, but recursive ingestion has not been executed. The user-authenticated browser session is not available to this implementation context; no Customer data or skill package was fabricated.
+- Visual Skills and Scenario Skills recursive ingestion and per-file license/dependency/asset provenance remain open. Skill publication and execution stay fail-closed.
+- Real LLM/media provider credentials, model pricing, quota/entitlement/wallet policies and a fresh always-on worker heartbeat are absent in the latest read-only readiness snapshot. Do not create placeholder provider or worker rows; media/agent capabilities must remain unavailable until real provisioning.
+- Full Customer action-level integration/security acceptance remains open. No tests, build, lint, typecheck, browser/API/worker/provider execution, screenshots, staging or deployment were performed under the current instruction.
+
+Execution order remains: (1) authorized OpenFuse/ClamAV host and encrypted storage provisioning; (2) execute and evidence the 56 Motion recursive ingestion; (3) close SBOM/dependency/license/asset review; (4) complete Visual/Scenario ingestion and provenance; (5) provision real provider, pricing, entitlement/quota/wallet policy and always-on worker; (6) close the Customer dashboard source/security review. Phase 09 remains IN PROGRESS. Phase 10 and Phase 11 are not accepted/blocked and must not be marked complete without the separately authorized verification evidence required by `AGENTS.md`.
