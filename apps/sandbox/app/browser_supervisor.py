@@ -144,7 +144,7 @@ class BrowserSupervisor:
         response = await self.http.post(
             f"{self.api_url}/api/v1/customer/browser-sessions/internal/actions/{receipt_id}/finish",
             json={
-                "run_id": run_id, "user_id": user_id, "status": status,
+                "run_id": run_id, "user_id": user_id, "worker_id": self.worker_id, "status": status,
                 "session_id": session_id, "result": result, "error_code": error_code,
             },
             headers=self._internal_headers(),
@@ -256,7 +256,7 @@ class BrowserSupervisor:
         claim = await self.http.post(
             f"{self.api_url}/api/v1/customer/browser-sessions/internal/actions/claim",
             json={
-                "run_id": run_id, "user_id": user_id, "action_key": action_key,
+                "run_id": run_id, "user_id": user_id, "worker_id": self.worker_id, "action_key": action_key,
                 "request_hash": request_hash, "action_type": action,
                 "target_host": parsed.hostname.lower(),
             },
