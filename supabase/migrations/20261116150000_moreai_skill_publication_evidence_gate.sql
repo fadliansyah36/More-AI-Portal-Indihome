@@ -38,15 +38,22 @@ begin
   v_registry := coalesce(v_inventory->'registry_resolution','{}'::jsonb);
   v_findings := coalesce(v_report->'findings','[]'::jsonb);
 
-  if jsonb_typeof(v_findings) <> 'array' or jsonb_array_length(v_findings) <> 0 then
+  if jsonb_typeof(v_findings) <> 'array' then
+    raise exception 'skill_validation_findings_must_be_an_array' using errcode='23514';
+  end if;
+  if jsonb_array_length(v_findings) <> 0 then
     raise exception 'skill_validation_findings_must_be_resolved' using errcode='23514';
+  end if;
+  if p_license_status='approved' and jsonb_typeof(v_inventory->'license_files') <> 'array' then
+    raise exception 'skill_license_file_evidence_missing' using errcode='23514';
+  end if;
+  if p_license_status='approved' and jsonb_array_length(v_inventory->'license_files') = 0 then
+    raise exception 'skill_license_file_evidence_missing' using errcode='23514';
   end if;
 
   if p_license_status='approved' and (
     coalesce(v_package.license_evidence,'')=''
     or v_package.validation_status<>'validated'
-    or jsonb_typeof(v_inventory->'license_files') <> 'array'
-    or jsonb_array_length(v_inventory->'license_files') = 0
     or coalesce((v_inventory->>'unresolved_dependency_count')::integer, -1) <> 0
     or coalesce((v_registry->>'unresolved_count')::integer, -1) <> 0
     or coalesce((v_registry->>'registry_metadata_resolved_count')::integer, -1)
