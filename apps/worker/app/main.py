@@ -255,6 +255,7 @@ async def run_worker() -> None:
                 http=http,
                 api_url=os.getenv("MOREAI_INTERNAL_API_URL", os.getenv("MOREAI_API_URL", "http://api:8000")),
                 internal_token=os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", ""),
+                worker_id=settings.worker_id,
             )
             # Readiness is checked before the worker can claim runs. The worker
             # itself has no Docker socket and cannot launch host-side containers.
