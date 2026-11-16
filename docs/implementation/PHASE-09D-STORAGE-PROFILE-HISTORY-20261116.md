@@ -320,3 +320,66 @@ The migration history is not yet reconciled to a one-to-one, SQL-definition-back
 The catalog ACL query confirms that critical public application tables (`artifacts`, browser sessions/events/receipts, customer memories and Skills tables) have RLS enabled and ACL entries only for `postgres` and `service_role`; no anon/authenticated ACL entries were returned. Storage `objects`/`buckets` have anon/authenticated SQL table privileges but RLS is enabled. The `moreai-knowledge-private` bucket has an explicit server-only deny policy; `moreai-artifacts` has no observed policy row and thus remains default-deny under RLS for ordinary client roles unless another policy is discovered. API storage access verifies private-bucket status and uses server-only service-role credentials.
 
 No tests, migration apply, DDL, policy/grant changes, staging or deployment were performed.
+
+
+## Follow-up — action-level dashboard audit, Storage policy, migration ledger (2026-11-16)
+
+### Dashboard control audit (source-only; no runtime claims)
+
+The current customer UI source was reviewed at the handler/control level for Chat, Research, Create, Analyse, Tasks, Files, Personal Memory and Skills Library. Existing visual structure was preserved; no UI component was changed in this increment.
+
+| Surface / control | Action path | Error / unauthorized handling observed | Remaining caveat |
+|---|---|---|---|
+| Chat: send prompt / attachments | Create conversation → upload attachment → enqueue message → stream durable run; FastAPI customer APIs | Async handler catches request/stream failures; loading/run lifecycle state retained | Clipboard copy is a browser-local action without an inline failure state; verify stream reconnect/expired session UX in authorized E2E |
+| Chat: retry / cancel | FastAPI retry/cancel run APIs | Handler catches and surfaces run errors | Runtime owner isolation and idempotency not exercised |
+| Research: submit query | Handoff to authenticated Chat → FastAPI durable run | Explicit handoff availability check; run/artifact list and download errors surfaced | Research is a workflow prompt handoff, not a separate research service or isolated job domain |
+| Create: choose tool / generate | Capability-gated prompt handoff to Chat; image/file require known worker capability; video can fall back to text storyboard | Explicit fail-closed notices for unknown/unavailable image/file adapters and missing Chat handoff | No direct generation request from Create; actual generation depends on registered tool, provider, worker and artifact receipt |
+| Analyse: upload / index | FastAPI Knowledge upload; worker ingestion; selected ready document handed to Chat with document ID | Upload/list/pagination failures surfaced; analysis refuses non-ready document or absent Chat | Chat run is the analysis execution; knowledge ingestion state depends on worker availability |
+| Tasks: add task | Handoff to existing authenticated Chat → Agent Run; no local-only task record | Missing Chat shows error toast | The form creates a prompt/run, not an independent scheduler/task CRUD object |
+| Tasks: detail / cancel / retry / artifacts | FastAPI agent-run detail/steps/activity/progress/cancel/retry and artifact signed download | Run action/download errors surfaced via toast/state | Unauthorized and cross-owner outcomes require runtime security tests |
+| Files: upload / list / lifecycle / history / download | FastAPI workspace/artifact APIs; signed download; version history and soft-delete/restore | Most async actions catch errors and expose workspace/artifact error state | One workspace refresh helper throws to caller; verify all call sites preserve error UI; browser popup/download restrictions remain browser behavior |
+| Memory: consent / add / edit / delete / clear / episode delete | FastAPI customer memory APIs; explicit consent; owner-filtered mutations | Async handlers catch errors and render error state | Consent disable + episodic metadata cleanup can partially complete and return 503 by design; no live mutation performed |
+| Skills: import / pinned import / validate / ingest / install / permission request/revoke | FastAPI customer skills registry; owner package and install scope | Every inspected async mutation catches errors and clears busy state; execution remains gated | Dependency graph completeness, registry metadata and human license review remain blockers; browser alert used for ingestion receipt |
+
+The dashboard does not use browser-side PostgREST, Storage, RPC or Realtime for business data in the inspected API client boundary. Auth session tokens are sent to FastAPI. No UI visual change was needed based on this source audit, so no screenshot baseline/after comparison was created.
+
+### Storage moreai-artifacts live confirmation
+
+Read-only inspection of live project uunfgimtokhucegqbpce returned:
+
+- Bucket exists and is private: public=false.
+- File size limit: 150,000,000 bytes.
+- Allowed MIME types: text/plain, text/markdown, application/json, text/csv, application/pdf, image/png, image/jpeg, image/webp.
+- storage.objects has RLS enabled; table ACL includes anon/authenticated CRUD grants and service_role full privileges. The client roles' effective access therefore depends on Storage RLS policies, not SQL grants alone.
+- Existing Storage object policies contained an explicit deny for moreai-knowledge-private, but no bucket-specific policy for moreai-artifacts.
+- Artifact FastAPI code uses server-only service-role credentials, checks bucket privacy at request time, enforces owner-prefixed storage paths, validates content/checksum and inserts owner-scoped artifact metadata. No service-role key is sent to the browser in the inspected source.
+
+A new forward-only migration was added:
+supabase/migrations/20261116170000_moreai_artifacts_storage_server_only.sql.
+It asserts the bucket exists and is private, then adds an explicit deny policy for anon/authenticated on only moreai-artifacts. This is a source change only and has NOT been applied to Supabase. It intentionally does not revoke global Storage SQL grants or affect other buckets.
+
+### Migration ledger
+
+Added docs/implementation/supabase-migration-ledger-20261116.json, containing every repository migration path, Git blob SHA, byte size, filename version, normalized name, matched live versions, live-only rows and duplicate repository version IDs.
+
+Updated counts after adding the Storage policy migration:
+- 73 repository migration files; 100 live history rows.
+- 7 exact filename-version matches.
+- 60 same-name / different-version mappings requiring SQL postcondition reconciliation.
+- 6 repository migrations not found by name in live history (including four browser/Skills migrations, the outbox migration with a live historical predecessor, and the new artifact Storage policy).
+- 28 live-only historical migrations.
+- Duplicate repository version IDs: 20261111100000 and 20261114083000.
+
+The ledger does not claim SQL equivalence for same-name migrations. The live migration listing does not expose historical SQL bodies. Do not run supabase db push or reapply the 60 timestamp-mismatched files. The historical migration source/definition mapping and duplicate timestamp plan remain open.
+
+### Dependency graph and provenance status
+
+The Skills source inventory records SHA-256, Git blob SHA, byte size and role for dependency manifests/lockfiles and source files. Current parser has lockfile/version evidence and edges for npm v1/v2/v3, Poetry/uv structured dependency metadata, Cargo lock entries including source/version identity, and Composer require/require-dev. pnpm and Yarn lock parsers currently extract package/version/integrity evidence but do not yet provide a complete dependency-edge closure. Pipfile and several ecosystems likewise require richer transitive/source/marker resolution. Registry metadata support is limited to npm, PyPI and crates.io. This remains a provenance graph with explicit gaps, not a complete SBOM/transitive graph; publication stays fail-closed when unresolved evidence exists.
+
+### OpenFuse deployment
+
+The pinned profile-deletion patch and durable profile storage contract remain committed in the repository. No Railway/OpenFuse deployment connector or deployment credentials are available in this session, and no deployment host/volume access was exposed. The patch is not applied to a live OpenFuse service; persistent WORKER_DATA_DIR volume is not configured. Do not claim deployed profile deletion or durable volume retention.
+
+### Phase decision
+
+Phase 09 remains IN PROGRESS. No tests, lint, type checks, builds, screenshots, runtime calls, migrations, staging or deployment were performed, per current instruction. Phase 10/11 remain blocked.
