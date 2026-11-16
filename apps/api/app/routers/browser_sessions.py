@@ -375,13 +375,16 @@ async def acquire_browser_session(body: SessionAcquire, request: Request,
         expiry = datetime.fromisoformat(str(row["expires_at"]).replace("Z", "+00:00"))
         last = datetime.fromisoformat(str(row["last_used_at"]).replace("Z", "+00:00"))
         if expiry <= now or last + timedelta(minutes=IDLE_TTL_MINUTES) <= now:
-            await repo.update("moreai_browser_sessions", {"id": f"eq.{body.session_id}", "user_id": f"eq.{body.user_id}"}, {
-                "status": "expired", "encrypted_state": None,
-            })
-            await repo.insert("moreai_browser_session_events", {
-                "session_id": str(body.session_id), "user_id": str(body.user_id), "event_type": "expired", "metadata": {"reason": "ttl"},
-            })
-            raise HTTPException(410, "browser_session_expired")
+            changed = await repo.update("moreai_browser_sessions", {
+                "id": f"eq.{body.session_id}", "user_id": f"eq.{body.user_id}", "status": "eq.active",
+            }, {"status": "close_requested"})
+            if changed:
+                await repo.insert("moreai_browser_session_events", {
+                    "session_id": str(body.session_id), "user_id": str(body.user_id),
+                    "event_type": "close_requested",
+                    "metadata": {"source": "acquire_guard", "reason": "ttl_or_idle"},
+                })
+            raise HTTPException(410, "browser_session_expired_close_queued")
         # OpenFuse's isolated worker applies public-destination/DNS checks per request.
         # Keep the latest host as session metadata; cross-host navigation is allowed.
         session_id = str(body.session_id)
