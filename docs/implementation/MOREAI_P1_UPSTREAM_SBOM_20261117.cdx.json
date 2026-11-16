@@ -2,7 +2,7 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
   "serialNumber": "urn:uuid:9d4e2a4a-bbb1-4f34-a11b-7a1f4d4b0017",
-  "version": 2,
+  "version": 3,
   "metadata": {
     "timestamp": "2026-11-17T00:00:00Z",
     "tools": [
@@ -28,11 +28,11 @@
       },
       {
         "name": "dependencyGraph",
-        "value": "package component inventory extracted from lockfile records and direct manifests; full dependency edge graph not yet reconciled"
+        "value": "component inventory extracted from lockfile package records and direct manifests; full dependency edge graph not yet reconciled"
       },
       {
         "name": "licenseStatus",
-        "value": "partial; most pnpm lock packages do not declare license; exact registry metadata and SPDX NOASSERTION reconciliation outstanding"
+        "value": "partial; pnpm lockfiles do not declare license for most packages; exact registry license metadata and SPDX NOASSERTION reconciliation outstanding"
       },
       {
         "name": "reproducibility",
@@ -59841,6 +59841,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "dependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "^5.2.1"
         },
@@ -59866,6 +59870,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "dependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -59895,6 +59903,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "dependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "^0.7.1"
         },
@@ -59920,6 +59932,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "dependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -59949,6 +59965,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "dependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "^0.553.0"
         },
@@ -59974,6 +59994,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "dependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -60003,6 +60027,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "dependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "^15.4.9"
         },
@@ -60028,6 +60056,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "dependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -60057,6 +60089,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "dependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "^19.2.1"
         },
@@ -60082,6 +60118,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "dependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -60111,6 +60151,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "dependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "^3.3.1"
         },
@@ -60136,6 +60180,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "dependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -60165,6 +60213,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "devDependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "4.1.11"
         },
@@ -60190,6 +60242,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "devDependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -60219,6 +60275,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "devDependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "^20"
         },
@@ -60244,6 +60304,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "devDependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -60273,6 +60337,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "devDependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "^19"
         },
@@ -60298,6 +60366,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "devDependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -60327,6 +60399,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "devDependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "16.0.8"
         },
@@ -60352,6 +60428,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "devDependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -60381,6 +60461,10 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "devDependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "4.1.11"
         },
@@ -60406,6 +60490,10 @@
         {
           "name": "sourceManifest",
           "value": "package.json"
+        },
+        {
+          "name": "dependencyScope",
+          "value": "devDependencies"
         },
         {
           "name": "requestedVersionConstraint",
@@ -60435,12 +60523,272 @@
           "value": "package.json"
         },
         {
+          "name": "dependencyScope",
+          "value": "devDependencies"
+        },
+        {
           "name": "requestedVersionConstraint",
           "value": "5.9.3"
         },
         {
           "name": "resolutionStatus",
           "value": "UNRESOLVED_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fastapi",
+      "version": "0.115.12",
+      "purl": "pkg:pypi/fastapi@0.115.12",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI FastAPI"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "pyproject.toml"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "==0.115.12"
+        },
+        {
+          "name": "dependencyExtra",
+          "value": "base"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "DIRECT_PIN_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "httpx",
+      "version": "0.28.1",
+      "purl": "pkg:pypi/httpx@0.28.1",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI FastAPI"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "pyproject.toml"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "==0.28.1"
+        },
+        {
+          "name": "dependencyExtra",
+          "value": "base"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "DIRECT_PIN_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uvicorn",
+      "version": "0.34.0",
+      "purl": "pkg:pypi/uvicorn@0.34.0",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI FastAPI"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "pyproject.toml"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "==0.34.0"
+        },
+        {
+          "name": "dependencyExtra",
+          "value": "standard"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "DIRECT_PIN_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "python-multipart",
+      "version": "0.0.20",
+      "purl": "pkg:pypi/python-multipart@0.0.20",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI FastAPI"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "pyproject.toml"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "==0.0.20"
+        },
+        {
+          "name": "dependencyExtra",
+          "value": "base"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "DIRECT_PIN_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cryptography",
+      "version": "44.0.2",
+      "purl": "pkg:pypi/cryptography@44.0.2",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI FastAPI"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "pyproject.toml"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "==44.0.2"
+        },
+        {
+          "name": "dependencyExtra",
+          "value": "base"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "DIRECT_PIN_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pytest",
+      "version": "8.3.5",
+      "purl": "pkg:pypi/pytest@8.3.5",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI FastAPI"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "pyproject.toml"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "==8.3.5"
+        },
+        {
+          "name": "dependencyExtra",
+          "value": "base"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "DIRECT_PIN_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "httpx",
+      "version": "0.28.1",
+      "purl": "pkg:pypi/httpx@0.28.1",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Worker"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "pyproject.toml"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "==0.28.1"
+        },
+        {
+          "name": "dependencyExtra",
+          "value": "base"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "DIRECT_PIN_NO_LOCKFILE"
+        },
+        {
+          "name": "licenseReview",
+          "value": "NOT_ASSERTED"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pytest",
+      "version": "8.3.5",
+      "purl": "pkg:pypi/pytest@8.3.5",
+      "properties": [
+        {
+          "name": "sourceRepository",
+          "value": "MoreAI Worker"
+        },
+        {
+          "name": "sourceManifest",
+          "value": "pyproject.toml"
+        },
+        {
+          "name": "requestedVersionConstraint",
+          "value": "==8.3.5"
+        },
+        {
+          "name": "dependencyExtra",
+          "value": "base"
+        },
+        {
+          "name": "resolutionStatus",
+          "value": "DIRECT_PIN_NO_LOCKFILE"
         },
         {
           "name": "licenseReview",
