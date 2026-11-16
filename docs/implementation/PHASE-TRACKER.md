@@ -2,7 +2,7 @@
 
 Updated: 2026-11-16
 
-Implementation is proceeding directly on `main`. Fourteen forward-only Phase 09D migrations were applied to the canonical Supabase project. A further explicit deny-policy migration is committed in source and pending application. No tests, build, lint, typecheck, browser/API/worker/provider verification, staging or application deployment were run.
+Implementation is proceeding directly on `main`. Current source baseline before this documentation reconciliation: `a1586fa07ca64ced1fcd67cacf65d4d1fb45d4d5`. Read-only Supabase migration history currently contains 114 versions, including all fourteen Phase 09D migrations through `20261116084745`; the explicit server-only deny-policy migration `20261116083654` is already applied (the earlier pending statement below is stale). No tests, build, lint, typecheck, browser/API/worker/provider verification, staging or application deployment were run in this continuation.
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -1585,3 +1585,16 @@ Source baseline: `main` HEAD `1c5d2a5b8fbacc3636351a821dec26cdbd54e0b8`. The cur
 - Full Customer action-level integration/security acceptance remains open. No tests, build, lint, typecheck, browser/API/worker/provider execution, screenshots, staging or deployment were performed under the current instruction.
 
 Execution order remains: (1) authorized OpenFuse/ClamAV host and encrypted storage provisioning; (2) execute and evidence the 56 Motion recursive ingestion; (3) close SBOM/dependency/license/asset review; (4) complete Visual/Scenario ingestion and provenance; (5) provision real provider, pricing, entitlement/quota/wallet policy and always-on worker; (6) close the Customer dashboard source/security review. Phase 09 remains IN PROGRESS. Phase 10 and Phase 11 are not accepted/blocked and must not be marked complete without the separately authorized verification evidence required by `AGENTS.md`.
+
+
+## 2026-11-16 latest source and Supabase reconciliation (main)
+
+- Main HEAD observed before this documentation-only commit: `a1586fa07ca64ced1fcd67cacf65d4d1fb45d4d5`.
+- Supabase project `uunfgimtokhucegqbpce`: read-only migration history returns 114 applied versions. The latest 14 Phase 09D versions are `20261116083451`, `20261116083455`, `20261116083458`, `20261116083502`, `20261116083506`, `20261116083510`, `20261116083514`, `20261116083517`, `20261116083521`, `20261116083527`, `20261116083654`, `20261116083856`, `20261116083934`, and `20261116084745`. This confirms the explicit server-only deny-policy migration is applied; older prose describing it as pending is superseded.
+- A fresh read-only readiness query again returned zero rows for `llm_providers`, `llm_models`, `moreai_worker_capability_snapshots`, `moreai_browser_sessions`, and `moreai_browser_capacity_leases`. No real provider/model or worker heartbeat exists in this snapshot; do not seed placeholders.
+- Motion source inventory confirms 56 pinned entrypoints across 19 pack repositories. The authenticated sequential batch action exists but has not been executed. Eighteen packs have root MIT licenses; `generative-illustration-skills` remains `NOASSERTION` and must stay unapproved. Recursive dependency/SBOM closure, nested license and asset review remain open.
+- Visual Skills and Scenario Skills remain catalog/import candidates; recursive ingestion and per-file provenance/review are not evidenced as complete.
+- OpenFuse/ClamAV is still source/Compose-only. No authorized host, immutable scanner image digest, secret injection, private network attachment, encrypted persistent volume/backup attestation or running service has been supplied/verified.
+- No UI source was modified in this continuation. No tests/build/lint/typecheck/browser/API/worker/provider runtime, staging or deployment was run. The Phase 00 workflow row records a historical run, not verification of this continuation.
+
+Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains BLOCKED. The next operational work still follows the product owner's stated order: authorized OpenFuse/ClamAV host provisioning; authenticated Motion batch ingestion and evidence review; Visual/Scenario recursive ingestion; real provider/secrets/pricing/entitlement/quota/wallet and always-on worker provisioning; then full Customer action/security closure.
