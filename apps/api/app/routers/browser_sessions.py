@@ -174,10 +174,25 @@ async def list_owned_browser_profile_ids(
 ):
     """Return canonical profile ownership keys; worker must fail closed if this call fails."""
     _worker_auth(request, x_moreai_worker_token)
-    rows = await repository(request).select("moreai_browser_sessions", {
-        "select": "id", "limit": "1000",
-    })
-    return {"items": [str(row["id"]) for row in rows if row.get("id")]}
+    repo = repository(request)
+    total = await repo.count("moreai_browser_sessions", {})
+    # Bound the response and explicitly signal incompleteness. The worker must
+    # never run destructive reconciliation from a partial ownership inventory.
+    if total > 10000:
+        return {"items": [], "complete": False, "total": total}
+    page_size = 500
+    rows: list[dict[str, Any]] = []
+    for offset in range(0, total, page_size):
+        page = await repo.select("moreai_browser_sessions", {
+            "select": "id", "order": "id.asc",
+            "limit": str(page_size), "offset": str(offset),
+        })
+        if len(page) != min(page_size, total - offset):
+            raise HTTPException(503, "browser_profile_ownership_inventory_incomplete")
+        rows.extend(page)
+    if len(rows) != total:
+        raise HTTPException(503, "browser_profile_ownership_inventory_incomplete")
+    return {"items": [str(row["id"]) for row in rows if row.get("id")], "complete": True, "total": total}
 
 
 @router.get("/internal/close-requests")
