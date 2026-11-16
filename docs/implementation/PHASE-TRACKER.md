@@ -1765,3 +1765,13 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - UI changes are limited to the existing Connections Center handler; no visual redesign, direct Supabase access, credential, schema or data changes.
 - Source inspection only. No tests/build/lint/typecheck, API/browser/worker/OAuth/provider runtime, staging, deployment or Supabase mutation was run. Key recovery is component-lifetime only; reload-safe recovery remains a documented gap.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 continuation — Browser Session and Computer Workspace reconciliation
+
+- Source reconciliation report: [Browser Session, Computer Workspace and Customer surface reconciliation](./PHASE-09-BROWSER-COMPUTER-CUSTOMER-RECONCILIATION-20261116.md).
+- Confirmed existing owner-scoped Browser Session list/close/history contracts, worker-only token-protected acquire/state/close lifecycle, encrypted persisted profile state, TTL/capacity leases, action receipts and worker profile-retention cleanup. Customer history API/client exists but is not yet wired into Profile UI.
+- No Customer Human Takeover grant/reconnect endpoint or scoped grant transport is present in the inspected source. No interactive Computer Workspace customer session/stream contract is present; only owner-scoped action receipts are exposed. These are genuine capability gaps, not UI-only omissions.
+- Do not add takeover/terminal controls or claim capability until scoped grants, same-session reconnect/stream, revocation, audit and isolated supervisor readiness are implemented. Browser profile deletion/download scanning and worker deployment remain operationally gated.
+- No UI changes, tests, build, lint, typecheck, screenshots, runtime, Docker, staging, deployment, migration apply or Supabase mutation were performed.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
