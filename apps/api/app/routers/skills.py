@@ -363,13 +363,19 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 def flush_pnpm_node() -> None:
                     nonlocal current_locator, current_name, current_version, current_integrity, current_edge_group
                     if current_locator and current_name and current_version:
+                        prior = package_nodes.get(current_locator, {})
                         package_nodes[current_locator] = {
                             "name": current_name, "version": current_version,
-                            "integrity": current_integrity,
+                            "integrity": current_integrity or prior.get("integrity"),
                         }
                     current_edge_group = None
                 def parse_pnpm_locator(raw_key: str) -> tuple[str | None, str | None]:
-                    key = raw_key.strip().strip("'").strip('"').lstrip("/")
+                    original = raw_key.strip().strip("'").strip('"')
+                    key = original.lstrip("/")
+                    if original.startswith("/") and "@" not in key and "/" in key:
+                        package_name, ver = key.rsplit("/", 1)
+                        version_match = re.match(r"^([^(/]+)", ver)
+                        return package_name, version_match.group(1) if version_match else None
                     if key.startswith("@") and "/" in key:
                         scope, tail = key.split("/", 1)
                         if "@" not in tail:
