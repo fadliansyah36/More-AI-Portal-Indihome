@@ -838,9 +838,10 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                         edge["resolution_status"] = "yarn_berry_protocol_requires_protocol_aware_resolver"
                         dependency_edges.append(edge)
                         continue
-                    candidates = [node for (pkg, _), node in yarn_nodes.items() if pkg == edge["to"]]
+                    candidates = [(version, node) for (pkg, version), node in yarn_nodes.items() if pkg == edge["to"]]
                     if len(candidates) == 1:
-                        edge["to_locator"] = candidates[0]["locator"]
+                        edge["to_locator"] = candidates[0][1]["locator"]
+                        edge["to_version"] = candidates[0][0]
                     else:
                         edge["resolution_status"] = "ambiguous_or_unresolved_package_instance"
                     dependency_edges.append(edge)
@@ -893,8 +894,15 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                         continue
                     exact_version = edge.get("resolved_exact_version")
                     candidates = ruby_nodes.get((str(edge.get("to") or ""), str(exact_version or "")), [])
+                    source_versions = sorted({
+                        version for (name, version), locators in ruby_nodes.items()
+                        if name == str(edge.get("from") or "") and len(locators) == 1
+                    })
+                    if len(source_versions) == 1:
+                        edge["from_version"] = source_versions[0]
                     if exact_version and len(candidates) == 1:
                         edge["to_locator"] = candidates[0]
+                        edge["to_version"] = exact_version
                         edge["resolution_status"] = "exact_gem_lock_node"
                     else:
                         edge["resolution_status"] = "ruby_exact_source_or_platform_target_unresolved"
@@ -988,11 +996,28 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     exact = sum(1 for item in dependencies if item.get("exact_version"))
     resolved_statuses = {"lockfile_pinned", "locked_declaration_matched"}
     unresolved = sum(1 for item in dependencies if not item.get("exact_version") or item.get("status") not in resolved_statuses)
-    graph_blocking_manifests = [
+    # These manifest/lockfile formats are not yet resolved with complete,
+    # ecosystem-aware package-instance semantics. Keep them explicitly blocking
+    # instead of allowing a partial text inventory to satisfy publication gates.
+    graph_blocking_names = {
+        "pipfile.lock", "go.mod", "go.sum", "go.work",
+        "cargo.toml", "composer.json", "pnpm-lock.yaml", "yarn.lock",
+        "pyproject.toml",
+    }
+    graph_blocking_manifests = sorted({
         path for path in dependency_files
-        if PurePosixPath(path).name.lower() in {"pipfile.lock", "go.mod", "go.sum", "go.work"}
-    ]
-    unresolved_edges = sum(1 for edge in dependency_edges if not edge.get("to_locator"))
+        if PurePosixPath(path).name.lower() in graph_blocking_names
+    })
+    root_edge_sources = {"<workspace-importer>", "<workspace-root>"}
+    unresolved_edges = sum(
+        1 for edge in dependency_edges
+        if not edge.get("to_locator")
+        or not (edge.get("to_version") or edge.get("resolved_exact_version"))
+        or (
+            str(edge.get("from") or "") not in root_edge_sources
+            and not (edge.get("from_version") or edge.get("from_exact_version"))
+        )
+    )
     graph_complete = unresolved_edges == 0 and not graph_blocking_manifests
     return {
         "license_files": license_files,
