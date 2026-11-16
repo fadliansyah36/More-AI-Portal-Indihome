@@ -321,6 +321,37 @@ async def finish_browser_action_receipt(
     raise HTTPException(409, "browser_action_receipt_already_finalized")
 
 
+@router.get("/history")
+async def list_browser_session_history(
+    request: Request,
+    limit: int = 50,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    if not 1 <= limit <= 100:
+        raise HTTPException(422, "browser_session_history_limit_invalid")
+    repo = repository(request)
+    sessions = await repo.select("moreai_browser_sessions", {
+        "user_id": f"eq.{user['id']}",
+        "select": "id,run_id,last_run_id,origin_host,status,created_at,last_used_at,expires_at,closed_at",
+        "order": "last_used_at.desc,id.desc",
+        "limit": str(limit),
+    })
+    events = await repo.select("moreai_browser_session_events", {
+        "user_id": f"eq.{user['id']}",
+        "select": "id,session_id,event_type,metadata,created_at",
+        "order": "created_at.desc,id.desc",
+        "limit": str(min(limit * 10, 500)),
+    })
+    by_session: dict[str, list[dict[str, Any]]] = {}
+    for event in events:
+        key = str(event.get("session_id") or "")
+        if key:
+            by_session.setdefault(key, []).append(event)
+    for session in sessions:
+        session["events"] = by_session.get(str(session["id"]), [])
+    return {"items": sessions}
+
+
 @router.get("")
 async def list_browser_sessions(request: Request, user: dict[str, Any] = Depends(customer_principal)):
     rows = await repository(request).select("moreai_browser_sessions", {
