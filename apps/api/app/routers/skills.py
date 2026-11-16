@@ -1596,7 +1596,7 @@ async def import_pinned_skill_from_catalog(
     )
     response = await request.app.state.http.get(
         url,
-        headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
+        headers=_github_source_headers(request),
         timeout=15.0,
         follow_redirects=False,
     )
@@ -1694,7 +1694,7 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
         if len(seen) > MAX_SKILL_SOURCE_NODES:
             raise HTTPException(413, "skill_source_tree_node_limit_exceeded")
         url = f"https://api.github.com/repos/{parts[0]}/{parts[1]}/contents/{quote(relative, safe='/')}?ref={skill['source_commit']}"
-        response = await http.get(url, headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}, timeout=15.0, follow_redirects=False)
+        response = await http.get(url, headers=_github_source_headers(request), timeout=15.0, follow_redirects=False)
         if response.status_code != 200:
             _raise_github_source_error(response, "skill_source_fetch_failed")
         item = response.json()
