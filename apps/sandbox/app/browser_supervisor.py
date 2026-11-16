@@ -239,6 +239,51 @@ class BrowserSupervisor:
             )
             audited.raise_for_status()
 
+    async def capture_session_preview(
+        self, session_id: str, *, run_id: str, user_id: str,
+    ) -> dict:
+        """Capture the current OpenFuse page without navigation or human-input privileges."""
+        if not re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", session_id):
+            raise ValueError("browser_preview_session_id_invalid")
+        sessions = await self.http.get(
+            f"{self.service_url}/sessions",
+            headers=self._worker_headers(),
+            timeout=httpx.Timeout(12.0, connect=3.0),
+        )
+        sessions.raise_for_status()
+        payload = sessions.json()
+        if not isinstance(payload, list):
+            raise RuntimeError("openfuse_browser_sessions_response_invalid")
+        current = next((item for item in payload if isinstance(item, dict) and item.get("id") == session_id), None)
+        if not current or current.get("status") != "active":
+            raise RuntimeError("browser_preview_session_not_active")
+        screenshot = await self._session_request(session_id, "screenshot")
+        image_bytes = screenshot.content
+        if not image_bytes.startswith(b"\\x89PNG\\r\\n\\x1a\\n") or not 8 <= len(image_bytes) <= 2_000_000:
+            raise RuntimeError("openfuse_browser_screenshot_signature_or_size_invalid")
+        uploaded = await self.http.post(
+            f"{self.api_url}/api/v1/artifacts/internal/browser-screenshot",
+            content=image_bytes,
+            headers={
+                **self._internal_headers(),
+                "Content-Type": "image/png",
+                "X-Agent-Run-Id": run_id,
+                "X-Owner-User-Id": user_id,
+                "X-Browser-Session-Id": session_id,
+            },
+            timeout=httpx.Timeout(35.0, connect=5.0),
+        )
+        uploaded.raise_for_status()
+        artifact = uploaded.json()
+        if not isinstance(artifact, dict) or not isinstance(artifact.get("artifact_id"), str):
+            raise RuntimeError("browser_preview_artifact_persist_contract_invalid")
+        return {
+            "artifact_id": artifact["artifact_id"],
+            "mime_type": "image/png",
+            "size_bytes": len(image_bytes),
+            "checksum_sha256": artifact.get("checksum_sha256"),
+        }
+
     async def list_profiles(self) -> list[dict]:
         response = await self.http.get(
             f"{self.service_url}/sessions",
