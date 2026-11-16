@@ -268,6 +268,32 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                     else:
                         edge["resolution_status"] = "npm_v1_nearest_node_modules_target_unresolved"
                     dependency_edges.append(edge)
+                # package-lock v1 has no packages[""] root object. Reconstruct
+                # direct workspace-root edges from sibling package.json
+                # declarations and only bind to the exact top-level node_modules
+                # instance represented in the nested lock tree.
+                for manifest_path, declared_names in npm_declared.items():
+                    if PurePosixPath(manifest_path).parent != PurePosixPath(path).parent:
+                        continue
+                    for dependency_name in sorted(declared_names):
+                        target_locator = "node_modules/" + dependency_name
+                        target_node = npm_v1_nodes.get(target_locator)
+                        root_edge = {
+                            "ecosystem": "npm",
+                            "from": "<workspace-root>",
+                            "from_locator": str(PurePosixPath(manifest_path).parent),
+                            "to": dependency_name,
+                            "kind": "manifest_direct_dependency",
+                            "source_manifest": path,
+                            "declaration_manifest": manifest_path,
+                        }
+                        if target_node:
+                            root_edge["to_locator"] = target_locator
+                            root_edge["to_version"] = target_node["version"]
+                            root_edge["resolution_status"] = "npm_v1_top_level_lock_node"
+                        else:
+                            root_edge["resolution_status"] = "npm_v1_direct_workspace_target_unresolved"
+                        dependency_edges.append(root_edge)
                 npm_locked[path] = locked
         elif name == "requirements.txt":
             dependency_files.append(path)
