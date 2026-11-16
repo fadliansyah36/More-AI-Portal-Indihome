@@ -3,7 +3,7 @@
 Date: 2026-11-16  
 Branch: `main`  
 Source baseline: `bed0cebc7f05be5e3f70047636a334cb5959758a`  
-Current source head before this report refresh: `a75929f742b6484dce88f16177553dc313840510`
+Latest source commit before this report refresh: `697b572b3e774f68a372cb7bbfda8d7a24a61098`
 
 ## Source changes committed
 
@@ -18,6 +18,24 @@ Customer UI continuation: `9e0ba8f3623750b08a40f4af4bd75268a28f328c` adds a seco
 - The aggregate query against `moreai_skill_packages`, grouped by source repository, returned no rows. There is currently no database evidence that any Customer has imported or ingested Motion, Visual or Scenario packages.
 - The latest readiness query returned zero rows for `llm_providers`, `llm_models`, `moreai_worker_capability_snapshots`, `moreai_browser_sessions` and `moreai_browser_capacity_leases`.
 - Migration history contains 114 applied versions, including the 14 Phase 09D migrations through `20261116084745`. No migration was applied in this continuation.
+
+
+
+## Latest canonical Supabase readiness snapshot
+
+A fresh read-only query on project `uunfgimtokhucegqbpce` used the confirmed live columns `moreai_worker_capability_snapshots.last_seen_at` and `moreai_browser_capacity_leases.expires_at`. Result:
+
+| Object / readiness measure | Count |
+|---|---:|
+| `moreai_skill_packages` | 0 |
+| `moreai_skill_source_files` | 0 |
+| `llm_providers` | 0 |
+| `llm_models` | 0 |
+| Worker capability snapshots fresh within 90 seconds | 0 |
+| Active, unexpired browser sessions | 0 |
+| Unexpired browser capacity leases | 0 |
+
+Migration history remains 114 applied versions; this continuation made no Supabase schema/data writes. No host/network/worker runtime proof is present in the canonical state.
 
 ## Operational actions not performed
 
