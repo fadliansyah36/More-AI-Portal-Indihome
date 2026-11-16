@@ -120,3 +120,65 @@ revoke all on function public.moreai_customer_create_personal_memory(uuid, text,
   from public, anon, authenticated;
 grant execute on function public.moreai_customer_create_personal_memory(uuid, text, text, text, integer)
   to service_role;
+
+
+-- Disabling Memory consent is distinct from clearing user-authored memories:
+-- preserve personal memory items but atomically strip episodic summaries.
+create or replace function public.moreai_customer_disable_memory_consent_atomic(
+  p_user_id uuid,
+  p_consent_version text
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+declare
+  v_preference public.moreai_customer_memory_preferences%rowtype;
+  v_episodes_cleared bigint := 0;
+begin
+  if p_user_id is null
+     or p_consent_version is null
+     or length(p_consent_version) not between 1 and 40 then
+    raise exception 'memory_consent_arguments_invalid' using errcode = '22023';
+  end if;
+
+  insert into public.moreai_customer_memory_preferences (
+    user_id, enabled, consent_version, disabled_at, updated_at
+  ) values (
+    p_user_id, false, p_consent_version, now(), now()
+  )
+  on conflict (user_id) do update set
+    enabled = false,
+    consent_version = excluded.consent_version,
+    disabled_at = now(),
+    updated_at = now()
+  returning * into v_preference;
+
+  update public.conversation_messages
+     set metadata = metadata - array[
+       'memory_type',
+       'memory_scope',
+       'workspace_id',
+       'episode',
+       'episode_expires_at'
+     ]::text[]
+   where user_id = p_user_id
+     and metadata ->> 'memory_type' = 'episodic';
+  get diagnostics v_episodes_cleared = row_count;
+
+  return jsonb_build_object(
+    'enabled', v_preference.enabled,
+    'consent_version', v_preference.consent_version,
+    'consented_at', v_preference.consented_at,
+    'disabled_at', v_preference.disabled_at,
+    'updated_at', v_preference.updated_at,
+    'episodes_cleared', v_episodes_cleared
+  );
+end;
+$function$;
+
+revoke all on function public.moreai_customer_disable_memory_consent_atomic(uuid, text)
+  from public, anon, authenticated;
+grant execute on function public.moreai_customer_disable_memory_consent_atomic(uuid, text)
+  to service_role;
