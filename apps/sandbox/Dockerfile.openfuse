@@ -1,0 +1,32 @@
+FROM mcr.microsoft.com/playwright:v1.62.1-noble
+
+USER root
+ARG OPENFUSE_COMMIT=7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/openfuse
+RUN git init \
+    && git remote add origin https://github.com/CopilotKit/openfuse.git \
+    && git fetch --depth 1 origin ${OPENFUSE_COMMIT} \
+    && git checkout --detach FETCH_HEAD \
+    && test "$(git rev-parse HEAD)" = "${OPENFUSE_COMMIT}"
+
+COPY apps/sandbox/openfuse-patches/0001-openfuse-delete-profile.patch /tmp/0001-openfuse-delete-profile.patch
+RUN git apply --check /tmp/0001-openfuse-delete-profile.patch \
+    && git apply /tmp/0001-openfuse-delete-profile.patch
+
+# Replace only the worker egress proxy adapter. Upstream worker/browser/session
+# implementation remains pinned to OPENFUSE_COMMIT and retains its MIT license.
+COPY apps/sandbox/openfuse-overrides/proxy.ts /opt/openfuse/apps/worker/src/proxy.ts
+
+WORKDIR /opt/openfuse/apps/worker
+RUN npm ci --omit=dev --ignore-scripts \
+    && mkdir -p /data/browser-profiles \
+    && chown -R pwuser:pwuser /data /opt/openfuse
+
+USER pwuser
+ENV NODE_ENV=production WORKER_DATA_DIR=/data/browser-profiles WORKER_HOST=0.0.0.0
+EXPOSE 8790
+CMD ["node", "--experimental-strip-types", "src/index.ts"]

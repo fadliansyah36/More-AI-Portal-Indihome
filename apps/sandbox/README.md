@@ -31,15 +31,18 @@ The GitHub Actions workflow additionally builds the worker image and runs its `B
 
 ## Worker connection settings
 
-For a Docker deployment where the worker and browser supervisor share the same private Docker network:
+For the canonical Compose deployment, the pinned OpenFuse Node worker is exposed only on the private `browser_isolated` network:
 
 - `MOREAI_BROWSER_ENABLED=true`
-- `MOREAI_BROWSER_SERVICE_URL=http://browser-supervisor:8080`
+- `MOREAI_BROWSER_SERVICE_URL=http://browser-supervisor:8790`
+- `MOREAI_BROWSER_SERVICE_TOKEN=<same 32+ character WORKER_TOKEN>`
+- `MOREAI_CLAMAV_HOST=clamav`
+- `MOREAI_CLAMAV_PORT=3310`
 - `MOREAI_BROWSER_SERVICE_TOKEN=<same service token>`
 - `MOREAI_BROWSER_EGRESS_ENFORCED=true`
 - `MOREAI_BROWSER_PRIVATE_NETWORK_HTTP=true`
 
-The HTTP exception is deliberately exact: only hostname `browser-supervisor`, port `8080`, without credentials, query, or fragment. Never set this flag for a public or shared network.
+The HTTP exception is deliberately exact: only hostname `browser-supervisor`, port `8790`, without credentials, query, or fragment. Never set this flag for a public or shared network.
 
 For a deployment platform with private HTTPS service discovery, use its HTTPS service URL and leave `MOREAI_BROWSER_PRIVATE_NETWORK_HTTP=false`. Do not publish the supervisor to the public internet.
 
@@ -136,3 +139,21 @@ These limits are per supervisor process. A multi-replica deployment must route a
 ### Container-level tenant audit labels
 
 Every disposable runner container now receives one-way SHA-256 labels for the authenticated customer ID, Agent Run ID and request ID. Raw identifiers are not copied into Docker metadata. These labels support restricted daemon-side inventory/audit and incident correlation while the container is alive; the runner still receives no tenant credential and no network access. Labels are passed as fixed Docker CLI arguments and do not alter the canonical durable receipt or workspace state.
+
+
+## Canonical OpenFuse Compose topology
+
+- `apps/sandbox/Dockerfile.openfuse` builds the pinned upstream OpenFuse worker commit `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc`, applies the MoreAI profile-delete patch and the MoreAI private-egress proxy override.
+- The browser worker is attached only to `browser_isolated` (Docker `internal: true`) and stores profiles under the named `openfuse_browser_profiles` volume mounted at `/data/browser-profiles`. Worker restart preserves the profile metadata and Chromium profile directory; the same UUID is reopened by the MoreAI adapter.
+- The worker's loopback proxy forwards HTTPS CONNECT only to `browser-egress-proxy:3128`. Plain HTTP is denied. The egress proxy is the only browser network component attached to the public bridge and validates allowlisted domains, resolves public addresses and pins the upstream socket.
+- A ClamAV service is attached to the private network and public bridge only for signature updates. Set `MOREAI_CLAMAV_IMAGE` to an immutable digest-pinned image before Compose startup. The browser worker fails readiness when clamd is unavailable; download bytes are imported into private MoreAI artifacts only after a clean ClamAV verdict and signature/hash checks.
+- `openfuse_browser_profiles` and `clamav_db` are persistent named volumes. Protect the Docker host/volume with encrypted storage and restrict operator access; deleting the profile volume deletes saved login state.
+- No port is published to the host. The worker token and proxy token are server-side secrets only.
+
+Start from the repository root:
+
+```sh
+docker compose -f apps/sandbox/compose.browser.yml up --build -d
+```
+
+The stack definition is source-only until an authorized deployment host supplies digest-pinned ClamAV image, tokens, exact domain allowlist and persistent encrypted volume. Do not set the worker release gate before those host controls are in place.

@@ -1,19 +1,23 @@
-# Canonical isolated browser runtime. Run from repository root with:
-# docker compose -f apps/sandbox/compose.browser.yml up -d
+# Canonical OpenFuse browser runtime.
+# The browser worker has no external network interface; only the authenticated
+# MoreAI egress proxy bridges the isolated network to the public internet.
 services:
   browser-supervisor:
     build:
       context: .
-      dockerfile: Dockerfile.browser
+      dockerfile: apps/sandbox/Dockerfile.openfuse
     environment:
-      MOREAI_BROWSER_ALLOWED_DOMAINS: ${MOREAI_BROWSER_ALLOWED_DOMAINS:?set exact allowlisted domains}
-      MOREAI_BROWSER_SERVICE_TOKEN: ${MOREAI_BROWSER_SERVICE_TOKEN:?set 32+ character service token}
-      MOREAI_BROWSER_PROXY_URL: http://browser-egress-proxy:3128
+      WORKER_TOKEN: ${MOREAI_BROWSER_SERVICE_TOKEN:?set 32+ character worker token}
+      WORKER_DATA_DIR: /data/browser-profiles
+      WORKER_HOST: 0.0.0.0
+      MOREAI_BROWSER_UPSTREAM_PROXY_URL: http://browser-egress-proxy:3128
       MOREAI_BROWSER_PROXY_TOKEN: ${MOREAI_BROWSER_PROXY_TOKEN:?set 32+ character proxy token}
-      MOREAI_BROWSER_EGRESS_ENFORCED: "true"
+    volumes:
+      - openfuse_browser_profiles:/data/browser-profiles
     read_only: true
     tmpfs:
       - /tmp:size=256m,noexec,nosuid,nodev
+    shm_size: 1gb
     cap_drop: [ALL]
     security_opt:
       - no-new-privileges:true
@@ -22,14 +26,14 @@ services:
     cpus: 1.5
     restart: unless-stopped
     networks: [browser_isolated]
-    depends_on: [browser-egress-proxy]
-    # No published port: attach only the trusted worker to browser_isolated.
+    depends_on: [browser-egress-proxy, clamav]
+    # No published port. Trusted worker uses http://browser-supervisor:8790.
 
   browser-egress-proxy:
     build:
       context: .
-      dockerfile: Dockerfile.browser
-    command: ["python","-m","app.proxy_main"]
+      dockerfile: apps/sandbox/Dockerfile.browser
+    command: ["python", "-m", "app.proxy_main"]
     environment:
       MOREAI_BROWSER_ALLOWED_DOMAINS: ${MOREAI_BROWSER_ALLOWED_DOMAINS:?set exact allowlisted domains}
       MOREAI_BROWSER_PROXY_TOKEN: ${MOREAI_BROWSER_PROXY_TOKEN:?set 32+ character proxy token}
@@ -46,6 +50,18 @@ services:
     cpus: 0.5
     restart: unless-stopped
     networks: [browser_isolated, browser_egress]
+
+  clamav:
+    image: ${MOREAI_CLAMAV_IMAGE:?set an immutable digest-pinned ClamAV image}
+    restart: unless-stopped
+    volumes:
+      - clamav_db:/var/lib/clamav
+    networks: [browser_isolated, browser_egress]
+    # No published port. Only the browser worker can reach clamd on 3310.
+
+volumes:
+  openfuse_browser_profiles:
+  clamav_db:
 
 networks:
   browser_isolated:
