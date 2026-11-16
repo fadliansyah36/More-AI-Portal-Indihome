@@ -1366,7 +1366,22 @@ export type PinnedSkillCatalogItem = {
   license_id: string; license_url: string; imported: boolean;
 };
 
+export type CustomerSkillExecutionAudit = {
+  id: string; skill_package_id: string; skill_install_id: string; agent_run_id: string;
+  skill_version: string; skill_content_sha256: string; permission_snapshot: string[];
+  event_type: 'resolved' | 'rejected' | 'executed'; event_detail: Record<string, unknown>;
+  created_at: string;
+};
+
 export const customerSkillApi = {
+  audit: (options: { limit?: number; runId?: string; skillId?: string } = {}) => {
+    const query = new URLSearchParams({ limit: String(options.limit ?? 50) });
+    if (options.runId) query.set('run_id', options.runId);
+    if (options.skillId) query.set('skill_id', options.skillId);
+    return moreAiCustomerApi<{ items: CustomerSkillExecutionAudit[]; count: number }>(
+      '/api/v1/customer/skills/audit?' + query.toString(),
+    );
+  },
   list: () => moreAiCustomerApi<{ items: CustomerSkillPackage[]; count: number }>('/api/v1/customer/skills'),
   catalog: () => moreAiCustomerApi<{ items: PinnedSkillCatalogItem[]; count: number; source_status: string }>(
     '/api/v1/customer/skills/catalog',
