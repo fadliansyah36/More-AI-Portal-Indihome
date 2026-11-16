@@ -169,7 +169,7 @@ async def persist_browser_screenshot(
     repo = repository(request)
     runs = await repo.select("agent_runs", {
         "id": f"eq.{run_id}", "user_id": f"eq.{owner_user_id}",
-        "status": "in.(running,completed)", "select": "id", "limit": "1",
+        "status": "in.(running,succeeded)", "select": "id", "limit": "1",
     })
     if not runs:
         raise HTTPException(403, "browser_screenshot_run_owner_mismatch")
