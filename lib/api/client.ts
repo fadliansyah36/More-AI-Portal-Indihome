@@ -757,6 +757,9 @@ export const customerApi = {
     '/api/v1/customer/browser-sessions/actions?limit=' + encodeURIComponent(String(limit)),
   ),
   browserSessions: () => moreAiCustomerApi<{ items: CustomerBrowserSession[] }>('/api/v1/customer/browser-sessions'),
+  revokeBrowserTakeoverGrantsOnLogout: () => moreAiCustomerApi<{ revoked: number }>(
+    '/api/v1/customer/browser-sessions/takeover-grants/revoke-all', { method: 'POST' },
+  ),
   browserSessionHistory: (limit = 50) => moreAiCustomerApi<{ items: Array<CustomerBrowserSession & { closed_at: string | null; profile_retention_after: string | null; profile_deleted_at: string | null; events: Array<{ id: string; session_id: string; event_type: string; metadata: Record<string, unknown>; created_at: string }> }> }>(
     '/api/v1/customer/browser-sessions/history?limit=' + encodeURIComponent(String(limit)),
   ),
