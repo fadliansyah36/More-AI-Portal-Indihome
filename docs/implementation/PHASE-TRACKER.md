@@ -1868,3 +1868,11 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - Follow-up `e95785ab2dd975b08fc7aeec532443592cc80bfe` restores the latest takeover command after reload using existing owner-scoped session events + command status API, and revokes any unconsumed grant after an ambiguous submission failure. Source-only; no tests/runtime/staging/deployment or Supabase mutation. Phase 09 remains IN PROGRESS.
 
 - Human Takeover contract correction: `fbf03b0bde78b16492c535ba4d723adfce43079b` maps database `id` to API `command_id` so owner-scoped command status matches `CustomerBrowserTakeoverCommand` and the UI's reconnect/polling contract. Source-only, not runtime-verified.
+
+
+## 2026-11-16 Customer Dashboard continuation
+
+- EduTech progress summary overfetch reduced: `d27d92705fd2952e227fcb08819346b998cc1e0e` asks for one row while using the server-side owner-scoped total count.
+- Workspace immutable file version history pagination completed at source level: API client `b7cdb52b5f9dc5689300d0b1d5cc295b85b5844d`; Files UI keyset “load older versions” `0758c9d8c64e5d05651ea4ef185ca548452d1f15`.
+- Existing backend keyset cursor and `X-Next-Cursor` response are reused. No schema/database changes or new persistence.
+- No tests, lint, typecheck, build, runtime, staging, deployment, or Supabase mutation. Phase 09 remains IN PROGRESS.
