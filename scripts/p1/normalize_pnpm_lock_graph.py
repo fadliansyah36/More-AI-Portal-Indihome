@@ -88,13 +88,20 @@ def build_rows(lock: dict[str, Any], source: str) -> tuple[list[dict[str, str]],
     edges: list[dict[str, str]] = []
     def add_edge(parent_type: str, parent: str, dep_name: str, raw_value: Any, relation: str) -> None:
         resolved = dependency_version(raw_value)
-        exact_key = f"{dep_name}@{resolved}" if resolved else ""
+        target_name = dep_name
+        target_version = resolved
+        is_alias = False
+        alias_match = re.match(r"^(@[^/]+/[^@]+|[^@]+)@(.+)$", resolved) if resolved else None
+        if alias_match:
+            target_name, target_version = alias_match.group(1), alias_match.group(2)
+            is_alias = target_name != dep_name
+        exact_key = f"{target_name}@{target_version}" if target_version else ""
         if exact_key and exact_key in package_keys:
             matches = ["/" + exact_key]
         else:
-            base_version = resolved.split("(", 1)[0] if resolved else ""
-            matches = packages.get((dep_name, base_version), []) if base_version else []
-        state = "RESOLVED_EXACT" if len(matches) == 1 else ("AMBIGUOUS_PEER_CONTEXT" if len(matches) > 1 else "UNRESOLVED_OR_NON_REGISTRY")
+            base_version = target_version.split("(", 1)[0] if target_version else ""
+            matches = packages.get((target_name, base_version), []) if base_version else []
+        state = ("RESOLVED_ALIAS" if is_alias else "RESOLVED_EXACT") if len(matches) == 1 else ("AMBIGUOUS_PEER_CONTEXT" if len(matches) > 1 else "UNRESOLVED_OR_NON_REGISTRY")
         edges.append({
             "source": source, "parent_type": parent_type, "parent": parent,
             "dependency_name": dep_name, "raw_resolution": json.dumps(raw_value, sort_keys=True),
@@ -109,12 +116,32 @@ def build_rows(lock: dict[str, Any], source: str) -> tuple[list[dict[str, str]],
             for name, value in (data.get(group) or {}).items():
                 add_edge("importer", str(importer), str(name), value, group)
 
+    for package_key, data in lock["packages"].items():
+        if not isinstance(data, dict):
+            continue
+        peer_meta = data.get("peerDependenciesMeta") or {}
+        for name, version_range in (data.get("peerDependencies") or {}).items():
+            optional = bool((peer_meta.get(name) or {}).get("optional", False))
+            edges.append({
+                "source": source, "parent_type": "package", "parent": str(package_key),
+                "dependency_name": str(name), "raw_resolution": str(version_range),
+                "resolved_package_key": "", "resolution_status": "OPTIONAL_PEER_CONSTRAINT" if optional else "PEER_RANGE_CONSTRAINT",
+                "candidate_count": "0", "relation": "peerDependencies",
+            })
+
     for snapshot_key, data in lock["snapshots"].items():
         if not isinstance(data, dict):
             continue
         for group in ("dependencies", "optionalDependencies"):
             for name, value in (data.get(group) or {}).items():
                 add_edge("snapshot", str(snapshot_key), str(name), value, group)
+        for name in data.get("transitivePeerDependencies") or []:
+            edges.append({
+                "source": source, "parent_type": "snapshot", "parent": str(snapshot_key),
+                "dependency_name": str(name), "raw_resolution": "",
+                "resolved_package_key": "", "resolution_status": "TRANSITIVE_PEER_CONTEXT",
+                "candidate_count": "0", "relation": "transitivePeerDependencies",
+            })
     return package_rows, edges
 
 
