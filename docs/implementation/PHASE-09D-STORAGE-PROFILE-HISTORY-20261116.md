@@ -532,12 +532,13 @@ No tests, parser execution, build, lint, type-check, runtime, browser, staging, 
 
 ### Migration source directory de-duplication
 
-The active `supabase/migrations` directory now contains exactly five unapplied Phase 09D migrations:
+At the time of the original directory de-duplication note, the active `supabase/migrations` directory contained five unapplied Phase 09D migrations. The retry-lease migration was subsequently added, so the current pending set is six:
 1. Browser close-event constraint.
 2. Skills publication evidence gate.
 3. Browser profile retention columns/events/index.
 4. Browser profile retention claim/ack RPCs.
 5. Artifacts Storage server-only policy.
+6. Browser profile retention retry lease and replacement claim/ack RPCs.
 
 Four migration definitions whose names already exist in live history under different versions were moved to `docs/implementation/sql-reconciliation-reference/` so they cannot be replayed by the normal migration runner while exact SQL equivalence is reviewed. This includes notifications/private artifacts, outbox lease fencing, Edutech assessment derived progress and Edutech path summary. The source SQL bodies are preserved unchanged. Their live version mappings are based on migration names and current metadata, not proof of historical SQL-body identity; retain them as unresolved until a trusted historical definition or complete postcondition comparison is available.
 
@@ -615,3 +616,37 @@ Do not run the worker retention loop against the live database before these migr
 ### Verification boundary
 
 No tests, builds, lint, type checks, browser/runtime calls, staging, migration application, or deployment were performed. This continuation consists of source review, a new forward-only migration, and read-only live metadata/function inspection. Phase 09 remains IN PROGRESS; Phase 10 and Phase 11 remain blocked.
+
+
+## Continuation — migration postcondition and resolver boundary clarification (2026-11-16)
+
+### Six-migration dependency and postcondition matrix
+
+| Migration | Required live postcondition | Depends on |
+|---|---|---|
+| `20261116100000` close-event constraint | Event check permits `close_requested` in addition to existing lifecycle events | Existing browser session event table |
+| `20261116150000` Skills evidence gate | `moreai_review_skill_package` rejects non-empty findings, incomplete graph, unresolved edges, and unresolved registry metadata; execution remains service-role-only | Existing Skills package, registry audit and review function |
+| `20261116153000` profile retention | Retention deadline/deleted/notified columns, event vocabulary and partial retention index exist | Browser sessions and event tables |
+| `20261116160000` retention RPCs | Claim and acknowledgement functions exist with service-role-only execute grants and atomic event writes | Retention columns and event vocabulary |
+| `20261116170000` artifact Storage policy | Private `moreai-artifacts` bucket exists and explicit deny policy applies to anon/authenticated roles for that bucket | Existing private bucket and Storage objects |
+| `20261116180000` retry lease | Claim timestamp/index exist; claim RPC permits expired five-minute lease retry; acknowledgement clears claim timestamp | Retention columns, initial RPC definitions |
+
+### Required post-apply verification (not executed)
+
+The following checks are the minimum acceptance evidence after an authorized migration window. They are documentation only and have not been run in this continuation:
+
+- Inspect `information_schema.columns` for all four profile-retention columns on `public.moreai_browser_sessions`.
+- Inspect `pg_constraint` and `pg_get_constraintdef` for the browser-session event constraint; require `close_requested`, `profile_retention_eligible`, and `profile_deleted`.
+- Inspect `pg_get_functiondef` for `moreai_review_skill_package`, `moreai_claim_browser_profile_retention`, and `moreai_ack_browser_profile_deleted`; verify final retry-lease definition, graph checks, and event/ack atomicity.
+- Inspect `pg_proc.proacl` (or effective privilege checks) for service-role-only execution and absence of anon/authenticated execute grants on the retention/review RPCs.
+- Inspect `storage.buckets` and `pg_policies` for the private artifact bucket and explicit deny policy. Do not infer that policy from another private bucket.
+- Compare the migration ledger and object postconditions before any attempt to reconcile historical version rows. Matching names or timestamps alone do not establish SQL equivalence.
+
+### Dependency resolver boundary
+
+- Pipfile.lock currently inventories pinned default/develop package versions and hashes, but does not emit parent-child package-instance edges. It remains graph-blocking until its lock semantics and selected environment are represented.
+- Go `go.sum` is a checksum database for module versions, not a selected module build graph. `go.mod` alone cannot prove selected versions in the presence of MVS, workspaces, replace/exclude directives, toolchain and build tags. The parser intentionally does not synthesize dependency edges from checksum rows.
+- pnpm peer-context, importer exact descriptor joins, Yarn Berry protocol/workspace joins, and Python marker/extras/group target selection remain unresolved. These cases continue to block publication.
+- A complete package inventory is not a complete dependency graph; no package is promoted based solely on name/version coincidence.
+
+No SQL was applied and no runtime verification was performed. The six migrations remain pending.
