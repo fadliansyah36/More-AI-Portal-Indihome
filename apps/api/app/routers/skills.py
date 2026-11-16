@@ -4,6 +4,8 @@ import re
 import asyncio
 import json
 import tomllib
+from pathlib import PurePosixPath
+from urllib.parse import quote
 from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
@@ -264,12 +266,127 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                     add_dependency("composer", package.get("name"), package.get("version"), path, status="lockfile_pinned")
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "composer", "status": "parse_error"})
-        elif name in {"pnpm-lock.yaml", "yarn.lock"}:
+        elif name == "pnpm-lock.yaml":
             dependency_files.append(path)
-            dependencies.append({"manifest": path, "ecosystem": "npm", "status": "lockfile_detected_parser_unsupported"})
+            # Parse package snapshots without a YAML dependency. pnpm v6/v9 lock
+            # entries encode exact package versions in the package/snapshot key.
+            current_name = None
+            current_version = None
+            current_integrity = None
+            def flush_pnpm() -> None:
+                if current_name and current_version:
+                    add_dependency("npm", current_name, current_version, path,
+                                   status="lockfile_pinned" if current_integrity else "lockfile_pinned_integrity_missing",
+                                   integrity=current_integrity)
+            try:
+                for line in text.splitlines():
+                    match = re.match(r"^  ['\"]?(/?@?[^:\s'\"]+?)@([^:\s'\"]+?)['\"]?:\s*$", line)
+                    if match:
+                        flush_pnpm()
+                        raw_name, current_version = match.group(1).lstrip("/"), match.group(2)
+                        if raw_name.startswith("@") and "/" in raw_name:
+                            current_name = raw_name
+                        else:
+                            current_name = raw_name
+                        current_integrity = None
+                        continue
+                    integrity_match = re.search(r"\bintegrity:\s*['\"]?([^\s'\"]+)", line)
+                    if integrity_match:
+                        current_integrity = integrity_match.group(1)
+                flush_pnpm()
+                if not any(item.get("source_manifest") == path for item in dependencies):
+                    dependencies.append({"manifest": path, "ecosystem": "npm", "status": "pnpm_lockfile_no_package_entries"})
+            except Exception:
+                dependencies.append({"manifest": path, "ecosystem": "npm", "status": "parse_error"})
+        elif name == "yarn.lock":
+            dependency_files.append(path)
+            try:
+                current_descriptors: list[str] = []
+                current_version = None
+                current_integrity = None
+                def flush_yarn() -> None:
+                    if not current_version:
+                        return
+                    for descriptor in current_descriptors:
+                        descriptor = descriptor.strip().strip('"').strip("'")
+                        # Yarn descriptors are package@range; scoped names contain
+                        # an additional slash but only the first @ after scope is delimiter.
+                        delimiter = descriptor.rfind("@")
+                        if delimiter <= 0:
+                            continue
+                        package_name = descriptor[:delimiter]
+                        add_dependency("npm", package_name, current_version, path,
+                                       status="lockfile_pinned" if current_integrity else "lockfile_pinned_integrity_missing",
+                                       integrity=current_integrity)
+                for line in text.splitlines():
+                    if line and not line[0].isspace() and line.rstrip().endswith(":"):
+                        flush_yarn()
+                        header = line.rstrip()[:-1]
+                        current_descriptors = [part.strip() for part in header.split(",")]
+                        current_version = None
+                        current_integrity = None
+                    else:
+                        version_match = re.match(r"^\s+version\s+['\"]?([^\s'\"]+)", line)
+                        if version_match:
+                            current_version = version_match.group(1)
+                        integrity_match = re.match(r"^\s+integrity\s+(.+)$", line)
+                        if integrity_match:
+                            current_integrity = integrity_match.group(1).strip().strip('"')
+                flush_yarn()
+                if not any(item.get("source_manifest") == path for item in dependencies):
+                    dependencies.append({"manifest": path, "ecosystem": "npm", "status": "yarn_lockfile_no_package_entries"})
+            except Exception:
+                dependencies.append({"manifest": path, "ecosystem": "npm", "status": "parse_error"})
         elif name in {"gemfile", "gemfile.lock"}:
             dependency_files.append(path)
-            dependencies.append({"manifest": path, "ecosystem": "rubygems", "status": "lockfile_parser_unsupported"})
+            if name == "gemfile":
+                dependencies.append({"manifest": path, "ecosystem": "rubygems", "status": "manifest_declared_requires_lockfile"})
+                continue
+            try:
+                in_specs = False
+                for line in text.splitlines():
+                    if line.strip() == "specs:":
+                        in_specs = True
+                        continue
+                    if in_specs and line and not line.startswith("    ") and not line.startswith("  "):
+                        in_specs = False
+                    if in_specs:
+                        match = re.match(r"^    ([A-Za-z0-9_.-]+) \(([^)]+)\)", line)
+                        if match:
+                            add_dependency("rubygems", match.group(1), match.group(2), path, status="lockfile_pinned")
+                if not any(item.get("source_manifest") == path for item in dependencies):
+                    dependencies.append({"manifest": path, "ecosystem": "rubygems", "status": "gemfile_lock_no_specs"})
+            except Exception:
+                dependencies.append({"manifest": path, "ecosystem": "rubygems", "status": "parse_error"})
+        elif name == "go.mod":
+            dependency_files.append(path)
+            try:
+                in_require = False
+                for line in text.splitlines():
+                    stripped = line.strip()
+                    if stripped.startswith("require ("):
+                        in_require = True
+                        continue
+                    if in_require and stripped == ")":
+                        in_require = False
+                        continue
+                    if stripped.startswith("require "):
+                        stripped = stripped[len("require "):]
+                    elif not in_require:
+                        continue
+                    match = re.match(r"^([^\s]+)\s+(v[0-9][^\s]+)", stripped)
+                    if match:
+                        dependencies.append({"ecosystem": "go", "name": match.group(1), "requested": match.group(2),
+                                             "exact_version": None, "source_manifest": path,
+                                             "status": "manifest_declared_requires_go_sum"})
+            except Exception:
+                dependencies.append({"manifest": path, "ecosystem": "go", "status": "parse_error"})
+        elif name == "go.sum":
+            dependency_files.append(path)
+            for line in text.splitlines():
+                fields = line.split()
+                if len(fields) == 3 and not fields[1].endswith("/go.mod"):
+                    add_dependency("go", fields[0], fields[1], path, status="lockfile_pinned", integrity=fields[2])
 
     for manifest_path, declared in npm_declared.items():
         lock_candidates = [
