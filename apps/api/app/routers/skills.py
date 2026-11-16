@@ -1351,6 +1351,31 @@ async def request_skill_permissions(skill_id: UUID, body: SkillPermissionRequest
     return updated[0]
 
 
+@router.get("/audit")
+async def list_customer_skill_execution_audit(
+    request: Request,
+    limit: int = 50,
+    run_id: UUID | None = None,
+    skill_id: UUID | None = None,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Return owner-scoped, immutable Skill resolution/execution receipts."""
+    if not 1 <= limit <= 100:
+        raise HTTPException(422, "skill_audit_limit_invalid")
+    filters: dict[str, str] = {
+        "owner_user_id": f"eq.{user['id']}",
+        "select": "id,skill_package_id,skill_install_id,agent_run_id,skill_version,skill_content_sha256,permission_snapshot,event_type,event_detail,created_at",
+        "order": "created_at.desc,id.desc",
+        "limit": str(limit),
+    }
+    if run_id:
+        filters["agent_run_id"] = f"eq.{run_id}"
+    if skill_id:
+        filters["skill_package_id"] = f"eq.{skill_id}"
+    rows = await repository(request).select("moreai_skill_execution_audit", filters)
+    return {"items": rows, "count": len(rows)}
+
+
 @router.post("/{skill_id}/permissions/revoke")
 async def revoke_skill_permissions(
     skill_id: UUID, request: Request,
