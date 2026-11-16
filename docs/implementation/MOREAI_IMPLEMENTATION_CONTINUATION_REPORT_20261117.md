@@ -94,3 +94,12 @@ Current phase tracker remains authoritative:
 6. Continue mandatory Phase 04/05/06/07/08/09 in dependency order. Phase 09 must close before Phase 10. Phase 10/11 remain unaccepted while verification is prohibited.
 
 This report records source-governance and architecture-documentation progress only; it does not claim the Customer Dashboard is fully integrated or production-operational.
+
+## 6. Follow-up integrity work (same date)
+
+- Added `MOREAI_P1_SKILL_ENTRYPOINT_SHA256_20261117.csv` with 67 exact entrypoint records: 10 representative Scenario entrypoints, 55 eligible Motion entrypoints and 2 Visual entrypoints. Each row stores source repository/commit, path, Git blob SHA, raw byte count and raw SHA-256. These 67 rows are not a complete hash inventory of the 230 product skill entrypoints; Scenario coverage is representative only, and supporting references/scripts/engines/assets remain outstanding.
+- The 34-row raw SHA-256 evidence set remains separate; do not merge Git blob SHA with raw SHA-256.
+- A scratch lockfile/SBOM coordinate delta was removed after static YAML extraction proved unreliable for an exact reconciliation. No package-coordinate delta is claimed from that attempt. The BOM's 2,026 NOASSERTION and prior 1,793 OpenFuse coordinate baseline remain unreconciled; regenerate the comparison using a verified parser and preserve package, importer, snapshot and source provenance.
+- No source skill payload was copied/adapted as part of this follow-up. No license, dependency or asset gate was closed by the 67-entrypoint hash manifest.
+
+Additional commits: `1e1c203f55d844afdd4d063730d166ccfb857fa7` (selected entrypoint SHA-256 manifest) and `a28019cf9992d5fa105ba844678b4d134ea06c4d` (content/dependency continuation note). A later scratch-file cleanup is recorded in Git history; it is not an evidence artifact.
