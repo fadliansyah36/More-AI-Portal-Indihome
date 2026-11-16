@@ -1393,20 +1393,21 @@ async def update_customer_memory_consent(
 ):
     principal = await require_customer_context(request, user)
     repo = repository(request)
-    result = await repo.rpc("moreai_customer_set_memory_consent", {
-        "p_user_id": principal["id"],
-        "p_enabled": body.enabled,
-        "p_consent_version": body.consent_version,
-    })
+    if body.enabled:
+        result = await repo.rpc("moreai_customer_set_memory_consent", {
+            "p_user_id": principal["id"],
+            "p_enabled": True,
+            "p_consent_version": body.consent_version,
+        })
+    else:
+        result = await repo.rpc("moreai_customer_disable_memory_consent_atomic", {
+            "p_user_id": principal["id"],
+            "p_consent_version": body.consent_version,
+        })
     if isinstance(result, list):
         result = result[0] if result else None
     if not isinstance(result, dict):
         raise HTTPException(502, "Memory consent state was not persisted")
-    if not body.enabled:
-        try:
-            await _purge_customer_episodic_metadata(repo, principal["id"])
-        except Exception as exc:
-            raise HTTPException(503, "Memory consent was disabled, but episodic metadata cleanup is pending; retry the clear-memory action") from exc
     return {
         "enabled": bool(result.get("enabled", False)),
         "consent_version": result.get("consent_version"),
