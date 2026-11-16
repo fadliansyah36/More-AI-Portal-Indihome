@@ -167,6 +167,19 @@ async def mark_expired_browser_sessions_for_close(
     return {"items": queued}
 
 
+@router.get("/internal/owned-profile-ids")
+async def list_owned_browser_profile_ids(
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    """Return canonical profile ownership keys; worker must fail closed if this call fails."""
+    _worker_auth(request, x_moreai_worker_token)
+    rows = await repository(request).select("moreai_browser_sessions", {
+        "select": "id", "limit": "1000",
+    })
+    return {"items": [str(row["id"]) for row in rows if row.get("id")]}
+
+
 @router.get("/internal/close-requests")
 async def list_browser_session_close_requests(
     request: Request,
