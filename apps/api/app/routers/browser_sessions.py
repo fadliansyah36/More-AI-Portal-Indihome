@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 from uuid import UUID, uuid4
@@ -97,6 +99,15 @@ class SessionStateUpdate(BaseModel):
     run_id: UUID
     user_id: UUID
     storage_state: dict[str, Any]
+
+
+class BrowserTakeoverGrantCreate(BaseModel):
+    ttl_seconds: int = Field(default=90, ge=30, le=120)
+
+
+class BrowserTakeoverGrantConsume(BaseModel):
+    token: str = Field(min_length=32, max_length=256)
+    worker_id: str = Field(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
 
 
 @router.get("/actions")
@@ -405,6 +416,75 @@ async def list_browser_sessions(request: Request, user: dict[str, Any] = Depends
         "order": "last_used_at.desc", "limit": "50",
     })
     return {"items": rows}
+
+
+@router.post("/{session_id}/takeover-grants")
+async def create_browser_takeover_grant(
+    session_id: UUID,
+    body: BrowserTakeoverGrantCreate,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    repo = repository(request)
+    sessions = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "status": "eq.active", "expires_at": "gt." + datetime.now(timezone.utc).isoformat(),
+        "select": "id,user_id,expires_at", "limit": "1",
+    })
+    if not sessions:
+        raise HTTPException(404, "browser_session_not_active_or_not_owned")
+    token = secrets.token_urlsafe(48)
+    digest = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=body.ttl_seconds)
+    row = await repo.insert("moreai_browser_takeover_grants", {
+        "session_id": str(session_id), "user_id": str(user["id"]),
+        "token_sha256": digest, "scopes": ["browser.input"],
+        "expires_at": expires_at.isoformat(),
+    })
+    await repo.insert("moreai_browser_session_events", {
+        "session_id": str(session_id), "user_id": str(user["id"]),
+        "event_type": "takeover_grant_created",
+        "metadata": {"grant_id": row["id"], "expires_at": expires_at.isoformat(), "scopes": ["browser.input"]},
+    })
+    # The bearer secret is returned once; only its SHA-256 digest is persisted.
+    return {"grant_id": row["id"], "token": token, "session_id": str(session_id),
+            "scopes": ["browser.input"], "expires_at": expires_at.isoformat()}
+
+
+@router.delete("/{session_id}/takeover-grants")
+async def revoke_browser_takeover_grants(
+    session_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    sessions = await repository(request).select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "select": "id", "limit": "1",
+    })
+    if not sessions:
+        raise HTTPException(404, "browser_session_not_found")
+    count = await repository(request).rpc("moreai_revoke_browser_takeover_grants", {
+        "p_session_id": str(session_id), "p_user_id": str(user["id"]),
+    })
+    if not isinstance(count, int):
+        raise HTTPException(503, "browser_takeover_revoke_contract_invalid")
+    return {"session_id": str(session_id), "revoked": count}
+
+
+@router.post("/internal/takeover-grants/consume")
+async def consume_browser_takeover_grant(
+    body: BrowserTakeoverGrantConsume,
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    digest = hashlib.sha256(body.token.encode("utf-8")).hexdigest()
+    result = await repository(request).rpc("moreai_consume_browser_takeover_grant", {
+        "p_token_sha256": digest, "p_worker_id": body.worker_id,
+    })
+    if not isinstance(result, dict) or result.get("status") != "consumed":
+        raise HTTPException(409, "browser_takeover_grant_invalid_expired_or_consumed")
+    return result
 
 
 @router.post("/{session_id}/close")
