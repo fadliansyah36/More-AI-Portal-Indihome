@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Play, Copy, Check, Terminal, Code2, FolderGit2, Save, Download, Loader2 } from 'lucide-react';
 import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact } from '@/lib/api/client';
 
@@ -39,7 +39,7 @@ print(greet("World"))`
   const [computerReceiptsLoading, setComputerReceiptsLoading] = useState(false);
   const [computerReceiptsError, setComputerReceiptsError] = useState<string|null>(null);
 
-  const loadComputerReceipts = async () => {
+  const loadComputerReceipts = useCallback(async () => {
     setComputerReceiptsLoading(true);
     setComputerReceiptsError(null);
     try {
@@ -50,11 +50,11 @@ print(greet("World"))`
     } finally {
       setComputerReceiptsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadComputerReceipts();
-  }, []);
+  }, [loadComputerReceipts]);
 
   useEffect(() => {
     let active = true;
