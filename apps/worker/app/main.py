@@ -262,6 +262,71 @@ async def _browser_takeover_command_loop(
             pass
 
 
+async def _browser_preview_request_loop(
+    browser: BrowserSupervisor,
+    http: httpx.AsyncClient,
+    api_url: str,
+    internal_token: str,
+    worker_id: str,
+    stop: asyncio.Event,
+) -> None:
+    """Execute durable browser.preview requests without granting browser.input."""
+    headers = {
+        "X-MoreAI-Worker-Token": internal_token,
+        "X-MoreAI-Worker-Id": worker_id,
+    }
+    while not stop.is_set():
+        try:
+            response = await http.get(
+                f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/preview-requests/claim",
+                headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+            )
+            response.raise_for_status()
+            payload = response.json()
+            items = payload.get("items") if isinstance(payload, dict) else None
+            if not isinstance(items, list):
+                raise RuntimeError("browser_preview_claim_contract_invalid")
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                request_id, session_id = item.get("request_id"), item.get("session_id")
+                run_id, user_id, scope = item.get("run_id"), item.get("user_id"), item.get("scope")
+                if not all(isinstance(value, str) for value in (request_id, session_id, run_id, user_id)) or scope != "browser.preview":
+                    logger.error("browser_preview_request_payload_invalid")
+                    continue
+                status, artifact_id, error_code = "failed", None, "browser_preview_failed"
+                try:
+                    result = await browser.capture_session_preview(
+                        session_id, run_id=run_id, user_id=user_id,
+                    )
+                    artifact_id = result["artifact_id"]
+                    status, error_code = "succeeded", None
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    error_code = type(exc).__name__.lower()[:100]
+                    logger.exception("browser_preview_request_failed request_id=%s", request_id)
+                try:
+                    finished = await http.post(
+                        f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/preview-requests/{request_id}/finish",
+                        json={"status": status, "artifact_id": artifact_id, "error_code": error_code},
+                        headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+                    )
+                    finished.raise_for_status()
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    logger.exception("browser_preview_request_finish_failed request_id=%s", request_id)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("browser_preview_request_poll_failed")
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=2.0)
+        except TimeoutError:
+            pass
+
+
 async def run_worker() -> None:
     if os.getenv("MOREAI_AGENT_RUNTIME_ENABLED", "false").lower() != "true":
         raise RuntimeError("worker_runtime_disabled_until_release_gate")
@@ -369,6 +434,19 @@ async def run_worker() -> None:
                         stop_browser_takeover,
                     ),
                     name="moreai-browser-human-takeover-commands",
+                )
+                if browser_client is not None else None
+            )
+            browser_preview_task = (
+                asyncio.create_task(
+                    _browser_preview_request_loop(
+                        browser_client, http,
+                        os.getenv("MOREAI_INTERNAL_API_URL", os.getenv("MOREAI_API_URL", "http://api:8000")),
+                        os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", ""),
+                        settings.worker_id,
+                        stop_browser_preview,
+                    ),
+                    name="moreai-browser-preview-requests",
                 )
                 if browser_client is not None else None
             )
@@ -536,6 +614,7 @@ async def run_worker() -> None:
                     capability_task, outbox_task,
                     *([browser_reconciliation_task] if browser_reconciliation_task is not None else []),
                     *([browser_takeover_task] if browser_takeover_task is not None else []),
+                    *([browser_preview_task] if browser_preview_task is not None else []),
                     return_exceptions=True,
                 )
 
