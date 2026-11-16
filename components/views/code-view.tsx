@@ -41,6 +41,7 @@ print(greet("World"))`
 
   const [browserSessions, setBrowserSessions] = useState<CustomerBrowserSession[]>([]);
   const [browserReceipts, setBrowserReceipts] = useState<CustomerBrowserActionReceipt[]>([]);
+  const [browserHistory, setBrowserHistory] = useState<Array<CustomerBrowserSession & { closed_at: string | null; events: Array<{ id: string; session_id: string; event_type: string; metadata: Record<string, unknown>; created_at: string }> }>>([]);
   const [browserLifecycleLoading, setBrowserLifecycleLoading] = useState(false);
   const [browserLifecycleError, setBrowserLifecycleError] = useState<string | null>(null);
   const [closingBrowserSession, setClosingBrowserSession] = useState<string | null>(null);
@@ -49,12 +50,14 @@ print(greet("World"))`
     setBrowserLifecycleLoading(true);
     setBrowserLifecycleError(null);
     try {
-      const [sessions, receipts] = await Promise.all([
+      const [sessions, receipts, history] = await Promise.all([
         customerApi.browserSessions(),
         customerApi.browserActionReceipts(30),
+        customerApi.browserSessionHistory(30),
       ]);
       setBrowserSessions(sessions.items);
       setBrowserReceipts(receipts.items);
+      setBrowserHistory(history.items);
     } catch (cause) {
       setBrowserLifecycleError(cause instanceof Error ? cause.message : 'Lifecycle Browser tidak dapat dimuat dari FastAPI.');
     } finally {
@@ -393,6 +396,19 @@ print(greet("World"))`
                   {session.status === 'active' && <button type="button" onClick={() => void requestBrowserSessionClose(session.id)} disabled={closingBrowserSession !== null} className="rounded-lg border border-rose-200 px-2.5 py-1.5 text-[10px] font-semibold text-rose-700 disabled:opacity-50">{closingBrowserSession === session.id ? 'Memproses…' : 'Tutup sesi'}</button>}
                 </div>
               </article>)}
+            </div>
+            <div className="border-t border-slate-100 pt-3">
+              <p className="mb-2 text-[11px] font-semibold text-slate-700">Riwayat sesi & event lifecycle</p>
+              {browserHistory.length === 0 && !browserLifecycleLoading ? <p className="text-[11px] text-slate-500">Belum ada histori sesi Browser.</p> : <div className="space-y-2">
+                {browserHistory.map((session) => <article key={'history-'+session.id} className="rounded-xl border border-slate-100 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-800">{session.origin_host}</p><p className="mt-1 text-[10px] text-slate-500">Sesi {session.id.slice(0, 8)} · {new Date(session.created_at).toLocaleString('id-ID')}</p></div>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-700">{session.status === 'closed' ? 'Ditutup' : session.status === 'expired' ? 'Kedaluwarsa' : session.status === 'close_requested' ? 'Menunggu ditutup' : 'Aktif'}</span>
+                  </div>
+                  {session.events.slice(0, 5).map((event) => <div key={event.id} className="mt-2 flex items-center justify-between gap-2 border-t border-slate-50 pt-2"><span className="text-[10px] text-slate-600">{event.event_type.replaceAll('_', ' ')}</span><span className="text-[10px] text-slate-400">{new Date(event.created_at).toLocaleString('id-ID')}</span></div>)}
+                  {session.closed_at && <p className="mt-2 text-[10px] text-slate-500">Ditutup {new Date(session.closed_at).toLocaleString('id-ID')}</p>}
+                </article>)}
+              </div>}
             </div>
             <div className="border-t border-slate-100 pt-3">
               <p className="mb-2 text-[11px] font-semibold text-slate-700">Action receipts Browser terbaru</p>
