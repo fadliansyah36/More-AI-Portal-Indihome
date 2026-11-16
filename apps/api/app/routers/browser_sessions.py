@@ -78,6 +78,8 @@ class SessionAcquire(BaseModel):
     user_id: UUID
     session_id: UUID | None = None
     origin_host: str = Field(min_length=1, max_length=253, pattern=r"^[A-Za-z0-9.-]+$")
+    action: Literal["navigate", "extract", "input", "screenshot", "close", "downloads"] = "navigate"
+    worker_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
 
 
 class SessionWorkerClose(BaseModel):
@@ -423,6 +425,7 @@ async def acquire_browser_session(body: SessionAcquire, request: Request,
     if not runs:
         raise HTTPException(403, "browser_session_run_owner_or_status_mismatch")
     now = datetime.now(timezone.utc)
+    created_new = False
     if body.session_id:
         rows = await repo.select("moreai_browser_sessions", {
             "id": f"eq.{body.session_id}", "user_id": f"eq.{body.user_id}",
@@ -452,6 +455,7 @@ async def acquire_browser_session(body: SessionAcquire, request: Request,
             "origin_host": body.origin_host, "status": "active", "encrypted_state": None,
             "expires_at": expiry.isoformat(), "last_used_at": now.isoformat(),
         })
+        created_new = True
         state = {}
         event = "created"
     await repo.update("moreai_browser_sessions", {"id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}", "status": "eq.active"}, {
@@ -461,7 +465,33 @@ async def acquire_browser_session(body: SessionAcquire, request: Request,
         "session_id": session_id, "user_id": str(body.user_id), "event_type": event,
         "metadata": {"run_id": str(body.run_id), "origin_host": body.origin_host},
     })
-    return {"session_id": session_id, "storage_state": state, "expires_at": expiry.isoformat()}
+    capacity: dict[str, Any] | None = None
+    if body.action not in {"close", "downloads"}:
+        capacity_result = await repo.rpc("moreai_acquire_browser_capacity_lease", {
+            "p_session_id": session_id,
+            "p_user_id": str(body.user_id),
+            "p_worker_id": body.worker_id,
+            "p_lease_seconds": 300,
+        })
+        if not isinstance(capacity_result, dict) or capacity_result.get("acquired") is not True:
+            if created_new:
+                try:
+                    await repo.rpc("moreai_request_browser_session_close", {
+                        "p_session_id": session_id, "p_user_id": str(body.user_id),
+                        "p_source": "acquire_guard", "p_reason": None,
+                    })
+                except HTTPException:
+                    pass
+            reason = capacity_result.get("reason") if isinstance(capacity_result, dict) else "capacity_lease_unavailable"
+            raise HTTPException(429, "browser_capacity_limit_reached:" + str(reason))
+        capacity = capacity_result
+    return {
+        "session_id": session_id,
+        "storage_state": state,
+        "expires_at": expiry.isoformat(),
+        "capacity_lease_token": capacity.get("lease_token") if capacity else None,
+        "capacity_lease_expires_at": capacity.get("expires_at") if capacity else None,
+    }
 
 
 @router.post("/internal/{session_id}/closed")

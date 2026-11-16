@@ -220,6 +220,8 @@ class BrowserSupervisor:
                     "run_id": run_id, "user_id": user_id,
                     "session_id": arguments.get("session_id"),
                     "origin_host": parsed.hostname.lower(),
+                    "action": action,
+                    "worker_id": socket.gethostname()[:128] or "browser-worker",
                 },
                 headers=self._internal_headers(),
                 timeout=httpx.Timeout(12.0, connect=3.0),
