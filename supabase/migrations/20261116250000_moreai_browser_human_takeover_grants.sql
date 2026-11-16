@@ -88,3 +88,33 @@ end;
 $$;
 revoke all on function public.moreai_revoke_browser_takeover_grants(uuid,uuid) from public, anon, authenticated;
 grant execute on function public.moreai_revoke_browser_takeover_grants(uuid,uuid) to service_role;
+
+-- Closing/expiring a browser session automatically invalidates every unconsumed grant.
+create or replace function public.moreai_revoke_takeover_grants_on_session_close()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare v_count integer;
+begin
+  if old.status = 'active' and new.status <> 'active' then
+    update public.moreai_browser_takeover_grants
+       set revoked_at = now()
+     where session_id = new.id and user_id = new.user_id
+       and consumed_at is null and revoked_at is null;
+    get diagnostics v_count = row_count;
+    if v_count > 0 then
+      insert into public.moreai_browser_session_events(session_id,user_id,event_type,metadata)
+      values (new.id,new.user_id,'takeover_grants_revoked',
+        jsonb_build_object('reason','session_status_changed','count',v_count));
+    end if;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.moreai_revoke_takeover_grants_on_session_close() from public, anon, authenticated;
+drop trigger if exists moreai_browser_session_revoke_takeover_grants on public.moreai_browser_sessions;
+create trigger moreai_browser_session_revoke_takeover_grants
+after update of status on public.moreai_browser_sessions
+for each row execute function public.moreai_revoke_takeover_grants_on_session_close();
