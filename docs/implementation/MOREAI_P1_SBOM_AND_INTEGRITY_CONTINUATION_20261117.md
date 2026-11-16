@@ -6,7 +6,7 @@ Status: **STATIC BOM INVENTORY GENERATED; DEPENDENCY/LICENSE CLOSURE OPEN**.
 
 File: `MOREAI_P1_UPSTREAM_SBOM_20261117.cdx.json`  
 Format: CycloneDX 1.6  
-Components: **2,032 distinct source+PURL records**.
+Components: **1,995 distinct source+PURL records after correcting 37 peer-dependency range declarations that had been incorrectly emitted as package components**.
 
 | Input | Inventory records |
 |---|---:|
@@ -17,14 +17,14 @@ Components: **2,032 distinct source+PURL records**.
 | OpenManusWeb `requirements.txt` | 24 |
 | MoreAI root `package.json` direct deps/devDeps | 23 |
 | MoreAI FastAPI + worker `pyproject.toml` direct dependencies | 9 |
-| Raw source records before source+PURL dedupe | 2,081 |
-| Final unique source+PURL records | **2,032** |
+| Raw source records before source+PURL dedupe | 2,044 after excluding 37 peer-only declarations from package nodes |
+| Final unique source+PURL records | **1,995** |
 
 The BOM is a static package-component inventory. It does not yet contain a fully reconciled dependency edge graph, vulnerability results, package registry license evidence, or proof of installation. No dependency was installed and no build/script was executed.
 
 ## Explicit license status
 
-- **2,026 components:** SPDX `NOASSERTION` because the corresponding manifest/lock entry did not declare a license.
+- **1,989 components:** SPDX `NOASSERTION` because the corresponding manifest/lock entry did not declare a license.
 - **6 components:** declared license fields were available from the OpenFuse worker npm package-lock.
 - The historical P1 OpenFuse audit noted 1,793 `package@version` `NOASSERTION` coordinates. That earlier count has not yet been reconciled one-to-one against this expanded 2,032-record scope; do not treat the two counts as equivalent.
 - Registry metadata/artifact review for exact versions, license expressions, notices and vulnerability advisories remains outstanding.
@@ -57,3 +57,16 @@ This is not yet a complete raw SHA-256 inventory for all 230 product skill entry
 7. Only then close P1 and accept the P2 ADR.
 
 No code, UI, database, migration, provider credential, test, staging or deployment changes were made.
+
+## Corrective exact lockfile/SBOM reconciliation — 2026-11-17
+
+A static key-level comparison was rerun against the pinned OpenFuse and Scenario pnpm v9 `packages:` sections, excluding `peerDependencies` range declarations and comparing exact package-name/version coordinates against the CycloneDX component records. The previous SBOM generator had incorrectly parsed 37 scoped peer dependency range keys (25 OpenFuse + 12 Scenario) as components with malformed PURLs/names and no resolved version. Those are not package@version records and were removed from `components`; the peer-range declarations are retained as a metadata property requiring separate resolution/compatibility review.
+
+| Source | Exact lockfile package coordinates | Corrected SBOM coordinates | Missing | Extra |
+|---|---:|---:|---:|---:|
+| OpenFuse pnpm | 1,452 | 1,452 | 0 | 0 |
+| Scenario Skills pnpm | 466 | 466 | 0 | 0 |
+
+Corrected CycloneDX component count: **1,995**; corrected `NOASSERTION`: **1,989**; declared-license components: **6**. This resolves the exact coordinate parity of those two pnpm package sections only. It does not complete dependency edges/snapshot graph, nested peer dependency resolution, other source manifests, exact-version registry licenses, vulnerability review, or P1 closure.
+
+The correction is committed in `fec0c32dd1531eb0bc26785eeac25965d0611e7d`. No dependency installation, build, package script or test was run.
