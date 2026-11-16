@@ -248,3 +248,47 @@ Canonical project `uunfgimtokhucegqbpce` was queried again using `pg_policies`, 
 ### Acceptance impact
 
 Phase 09 remains IN PROGRESS. Source provenance is stronger, but lockfile dialect/edge completeness, complete dashboard control-to-endpoint authorization mapping, browser service-role grants, artifact-bucket policy/grants, four pending migrations, and OpenFuse patch + persistent volume deployment are still open. No tests, builds, lint, type checks, runtime, staging or deployment were performed. Phase 10/11 remain blocked by the explicit no-test instruction and infrastructure prerequisites.
+
+
+## Follow-up — customer dashboard control/API and database privilege map (2026-11-16)
+
+### Customer UI → FastAPI mapping (source inspection)
+
+The customer dashboard remains on the existing Next.js shell. The following visible workflows have typed FastAPI integration seams; the list is a source map, not an end-to-end acceptance claim:
+
+| Customer surface | Frontend integration | FastAPI route family / persistence boundary | Authorization evidence in source |
+|---|---|---|---|
+| Chat | `components/views/chat-view.tsx`, `lib/api/client.ts` (`customerApi`, stream client, workspace/model/tool catalog) | `/api/v1/conversations`, `/api/v1/agent-runs`, `/api/v1/tools`, workspace and artifact APIs; durable enqueue/stream/events | Customer principal on customer endpoints; conversation/run queries are owner-filtered |
+| Research | `components/views/research-view.tsx` | Research query hands off to Chat → durable Agent Run; history/artifacts via artifact and run APIs | Same customer Chat/run authorization; no separate research execution backend claimed |
+| Create | `components/views/create-view.tsx` | `/api/v1/media/capabilities` and Chat durable run handoff | Capability endpoint is server-derived; unavailable provider remains unavailable (no fake success) |
+| Analyse | `components/views/analyse-view.tsx`, `lib/api/knowledge.ts` | `/api/v1/customer/knowledge` upload/list/detail/ingestion/retrieval | Customer principal, owner-filtered documents/chunks; Storage remains server-side |
+| Tasks | `components/views/tasks-view.tsx` | `/api/v1/agent-runs`, event stream, learning and artifact APIs | Owner-filtered run/artifact records; cancellation/retry are FastAPI mutations |
+| Files | `components/views/files-view.tsx` | `/api/v1/workspaces`, workspace file/version APIs and `/api/v1/artifacts` | Customer principal plus workspace ownership/membership and owner-scoped artifacts |
+| Memory | `components/views/personal-memory-settings.tsx` | `/api/v1/customer/memory` and consent/episode endpoints | Customer principal; every query/mutation filters authenticated user; explicit consent gate |
+| Skills | `components/views/skills-library-view.tsx` | `/api/v1/customer/skills` import/ingest/validate/install/permissions | Customer principal and owner-scoped package/install/source-file queries; execution remains disabled until reviewed/granted |
+
+The shared `lib/api/client.ts` obtains the Supabase Auth session and sends the bearer token to FastAPI. It does not add direct browser PostgREST, Storage, RPC or Realtime access. The UI source inspection did not justify a broad visual change; no customer UI component was changed in this increment.
+
+### Live PostgreSQL table ACL and RLS evidence
+
+A second read-only query inspected `pg_class.relacl`, `relrowsecurity` and `relforcerowsecurity` for the critical public tables:
+
+- `artifacts`, browser sessions/events/receipts, customer memories, and skill packages/source files/installs have RLS enabled and ACL entries only for `postgres` and `service_role`; no anon/authenticated table ACL was present in the returned catalog rows.
+- The listed public tables do not have FORCE RLS enabled. Service-role access is expected to bypass RLS; API code must therefore continue enforcing authenticated principal and owner/workspace filters.
+- Storage `objects` and `buckets` have table privileges for anon/authenticated, but RLS is enabled. Bucket `moreai-knowledge-private` has a server-only deny policy. No policy row for `moreai-artifacts` was observed; absent an applicable permissive policy, ordinary client roles are denied by RLS, but an explicit policy/grant review is still a release requirement.
+- Both buckets are private. The artifact API verifies bucket privacy at request time and uses server-side service-role credentials; credentials are not exposed in the browser client.
+- No ACL, grant, policy or schema changes were made. The privilege inspection is a catalog snapshot, not a runtime access test.
+
+### Dependency/provenance status
+
+The preceding source commit `4536c784c0be16942483a8492f0c1ed5adfca963` adds file-level hashes and Cargo endpoint versions/source. Exact version/package metadata and graph completeness remain bounded by parser support. No lockfile was downloaded from an external package registry and no malware scan or license/legal approval was performed. These are explicit blockers for publishing unreviewed third-party Skills.
+
+### Remaining Phase 09 work
+
+- Complete automated/static route-to-control matrix for every interactive control, including loading/error/empty/unauthorized paths, and inspect the remaining dashboard entry points for hidden legacy/demo actions.
+- Confirm all route dependencies call `customer_principal` or a stricter internal/admin principal and verify ownership filters for every query/mutation, not only primary list/detail handlers.
+- Add or reconcile a narrowly scoped server-only Storage policy for `moreai-artifacts` only after the complete migration and current storage policy inventory is reconciled. Do not weaken RLS or create a broad client policy.
+- Reconcile all repository migration files by exact version and SQL definition, then prepare a forward-only migration plan; do not apply migrations under the current no-live-change instruction.
+- Apply the pinned OpenFuse profile deletion patch and configure durable private `WORKER_DATA_DIR` storage only when deployment access and explicit deployment authorization are available.
+
+No tests, lint, type checks, builds, screenshots, runtime calls, migrations, staging or deployment were performed. Phase 09 remains IN PROGRESS; Phase 10/11 remain blocked.
