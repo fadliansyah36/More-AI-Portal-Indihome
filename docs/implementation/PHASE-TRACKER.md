@@ -1697,3 +1697,12 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Report: [Skill ingestion contract alignment and resumability](./PHASE-09-SKILL-INGESTION-RESUMABILITY-AND-SUPABASE-ALIGNMENT-20261116.md).
 - No Customer UI file was changed. No skill package/source records were inserted. No tests, lint, typecheck, build, browser/API/worker/provider runtime, customer batch or staging were run. The live postcondition check was read-only SQL metadata inspection only.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+## 2026-11-16 deployment gate after Customer Skills ingestion recovery change
+
+- Read-only Vercel production deployment history: frontend latest READY is `dpl_FJU1QCdDefhwBSSTXh8KzwYopJFZ` at source commit `fddb8e7b418de44bec13bbddda1a36758b3567cc`; FastAPI latest READY is `dpl_3osyzfU6os8UMV1zpmRRZ1zYowxo` at source commit `7628d110b1e7ce0b262ab38262ad2cd887a369a2`.
+- The FastAPI idempotent source-ingestion/recovery implementation `1f612973efa4797399556e19237c48ee935fe017` is committed on `main` but has no corresponding Vercel API deployment in the latest read-only history. The current API deployment therefore cannot yet be assumed to contain the batch-resume correction.
+- `MOREAI_GITHUB_TOKEN` remains absent from the read-only `more-ai-api` environment-name inventory. No secret value was read or changed. `MOREAI_AGENT_EXECUTION_ENABLED` remains `false`.
+- Latest Supabase read-only counts remain 0 skill package/source rows, 0 provider/model rows, 0 fresh worker heartbeat, 0 active browser sessions and 0 active browser leases. The two new ingestion migrations are applied and recorded in supabase-migration-ledger-20261116.json.
+- Do not start the 230-skill batch on the current API deployment. First complete secure token injection and the approved API source deployment, then use a genuine Customer session.
+- No manual deploy/promotion, tests, lint, typecheck, build, browser/API/worker/provider runtime or staging was initiated. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
