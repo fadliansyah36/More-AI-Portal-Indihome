@@ -1686,3 +1686,14 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - The read-only `more-ai-api` environment name inventory still does not contain `MOREAI_GITHUB_TOKEN`; `MOREAI_AGENT_EXECUTION_ENABLED` remains `false`. No secret values were read or changed.
 - Supabase read-only Skill package/source rows, provider/model registry rows, fresh worker heartbeats, and active browser capacity/session records remain at zero from the latest count snapshot.
 - No tests, lint, typecheck, browser/API runtime, worker/provider execution or staging was run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+## 2026-11-16 Customer Skills ingestion contract and recovery closure
+
+- Source commits on `main`: `fddb8e7b418de44bec13bbddda1a36758b3567cc` (64-file Supabase ingestion cap), `2b9c6b442c9c160046f1a1004ec1087912a58b4f` (keep validation pending until explicit validation), and `1f612973efa4797399556e19237c48ee935fe017` (idempotent FastAPI source-ingestion reconciliation).
+- Live FastAPI previously allowed 64 source files per skill while the canonical Supabase ingestion RPC still enforced 40. That would reject larger Scenario skill packages after source fetch. The forward-only migration aligns the RPC at 64 without changing the 512 KiB per-file or 5 MiB package byte caps, owner checks, immutable ingestion, SHA validation, path and duplicate checks, or service-role-only grants.
+- A second forward-only migration changes the post-ingest package state from `review_required` to `pending`. Validation is now the only operation that moves the package to `validated` or `review_required`, so an interrupted source-import step is not misclassified as already reviewed.
+- The FastAPI ingest endpoint now reconciles existing source rows against the pinned ingestion manifest or validated SPDX file inventory and checks root entrypoint provenance. Exact stored content returns idempotent success without overwriting; mismatches return 409.
+- Supabase canonical project `uunfgimtokhucegqbpce`: migrations `moreai_skill_source_file_count_alignment` (version `20261116113124`) and `moreai_skill_ingestion_pending_until_validation` (version `20261116113852`) were applied. Read-only function-definition and privilege inspection confirms 64-file guard, pending state, service_role EXECUTE, anon/authenticated denied.
+- Report: [Skill ingestion contract alignment and resumability](./PHASE-09-SKILL-INGESTION-RESUMABILITY-AND-SUPABASE-ALIGNMENT-20261116.md).
+- No Customer UI file was changed. No skill package/source records were inserted. No tests, lint, typecheck, build, browser/API/worker/provider runtime, customer batch or staging were run. The live postcondition check was read-only SQL metadata inspection only.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
