@@ -1698,7 +1698,7 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
     repo = repository(request)
     rows = await repo.select("moreai_skill_packages", {
         "id": f"eq.{skill_id}", "owner_user_id": f"eq.{user['id']}",
-        "select": "id,source_repository,source_commit,source_path,source_blob_sha,content_sha256",
+        "select": "id,source_repository,source_commit,source_path,source_blob_sha,content_sha256,validation_status,validation_report",
         "limit": "1",
     })
     if not rows:
@@ -1708,6 +1708,79 @@ async def ingest_pinned_skill_source(skill_id: UUID, request: Request, user: dic
     if len(parts) != 2 or skill["source_commit"] not in PINNED_SKILL_SOURCES.get((parts[0], parts[1]), set()):
         raise HTTPException(403, "skill_source_repository_or_commit_not_pinned")
     root_path = _safe_skill_path(str(skill["source_path"]))
+
+    # Resumable Customer batches may repeat this request after the source RPC
+    # committed but before the browser received the response or called validate.
+    # Source rows are immutable and owner-scoped; reconcile them with the original
+    # ingestion manifest or the validated SPDX file inventory before returning an
+    # idempotent success. Never overwrite or silently accept mismatched content.
+    existing_files = await repo.select("moreai_skill_source_files", {
+        "skill_package_id": f"eq.{skill_id}",
+        "owner_user_id": f"eq.{user['id']}",
+        "select": "relative_path,git_blob_sha,content_sha256,byte_size",
+        "order": "relative_path.asc",
+        "limit": str(MAX_SKILL_SOURCE_FILES),
+    })
+    if existing_files:
+        stored_report = skill.get("validation_report") if isinstance(skill.get("validation_report"), dict) else {}
+        expected_files: dict[str, dict[str, Any]] = {}
+        raw_files = stored_report.get("files")
+        if stored_report.get("scope") == "pinned_github_content_integrity" and isinstance(raw_files, list):
+            for item in raw_files:
+                if not isinstance(item, dict) or not isinstance(item.get("path"), str):
+                    continue
+                expected_files[item["path"]] = {
+                    "git_blob_sha": item.get("git_blob_sha"),
+                    "content_sha256": item.get("sha256"),
+                    "byte_size": item.get("bytes"),
+                }
+        else:
+            source_inventory = stored_report.get("source_inventory") if isinstance(stored_report.get("source_inventory"), dict) else {}
+            sbom = source_inventory.get("sbom") if isinstance(source_inventory.get("sbom"), dict) else {}
+            sbom_files = sbom.get("files")
+            if isinstance(sbom_files, list):
+                for item in sbom_files:
+                    if not isinstance(item, dict) or not isinstance(item.get("fileName"), str):
+                        continue
+                    relative = item["fileName"].removeprefix("./")
+                    checksums = item.get("checksums") if isinstance(item.get("checksums"), list) else []
+                    sha = checksums[0].get("checksumValue") if checksums and isinstance(checksums[0], dict) else None
+                    if relative:
+                        expected_files[relative] = {"content_sha256": sha}
+
+        stored_by_path = {
+            str(item.get("relative_path")): item
+            for item in existing_files
+            if isinstance(item, dict) and isinstance(item.get("relative_path"), str)
+        }
+        root_record = stored_by_path.get(root_path)
+        inventory_matches = bool(expected_files) and len(expected_files) == len(existing_files) == len(stored_by_path)
+        if inventory_matches:
+            for relative, expected in expected_files.items():
+                actual = stored_by_path.get(relative)
+                if not actual or actual.get("content_sha256") != expected.get("content_sha256"):
+                    inventory_matches = False
+                    break
+                if expected.get("git_blob_sha") and actual.get("git_blob_sha") != expected.get("git_blob_sha"):
+                    inventory_matches = False
+                    break
+                if expected.get("byte_size") is not None and int(actual.get("byte_size") or 0) != int(expected["byte_size"]):
+                    inventory_matches = False
+                    break
+        if (
+            not inventory_matches
+            or not root_record
+            or root_record.get("git_blob_sha") != skill["source_blob_sha"]
+            or root_record.get("content_sha256") != skill["content_sha256"]
+        ):
+            raise HTTPException(409, "skill_existing_source_inventory_mismatch")
+        return {
+            "skill_id": str(skill_id), "source_commit": skill["source_commit"],
+            "file_count": len(existing_files),
+            "total_bytes": sum(int(item.get("byte_size") or 0) for item in existing_files),
+            "integrity": "verified", "execution_enabled": False, "already_ingested": True,
+        }
+
     source_root = str(PurePosixPath(root_path).parent)
     queue = [root_path] + ([source_root] if source_root != "." else [])
     seen: set[str] = set()
