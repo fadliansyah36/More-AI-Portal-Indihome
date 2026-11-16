@@ -383,3 +383,38 @@ The pinned profile-deletion patch and durable profile storage contract remain co
 ### Phase decision
 
 Phase 09 remains IN PROGRESS. No tests, lint, type checks, builds, screenshots, runtime calls, migrations, staging or deployment were performed, per current instruction. Phase 10/11 remain blocked.
+
+
+## Follow-up — Vercel production update and frontend build blocker (2026-11-16)
+
+### Existing Vercel projects discovered
+
+The connected Vercel team More AI contains two projects linked to this repository:
+- Web: `more-ai-portal-indihome` (Next.js), project `prj_2ge37Xd5uBSUGhn3wPsaHfFcW1UV`.
+- API: `more-ai-api` (FastAPI), project `prj_L6i6j0ERPcdpZNM1c53hcdPaP9Nn`.
+
+Latest observed API production deployment was READY and built commit `755d5ac76294f15248198fd2c6149b27ff6dc3f4`. Latest observed web production deployment was ERROR at commit `a4af295b38b9db6f6eefc9d55a0182ad468d455f`.
+
+### Root cause found and source fix committed
+
+Vercel build events for the web deployment show Next.js compilation succeeded, then TypeScript validation failed at `lib/api/client.ts:584` with:
+`Type error: Duplicate identifier 'CustomerBrowserSession'.`
+
+The file contained two exported declarations of `CustomerBrowserSession`. The earlier declaration already contains the complete lifecycle union (`active | close_requested | closed | expired`). The redundant later declaration was removed without changing UI or API behavior.
+
+Source fix commit:
+`e5284c408007b7ef1a55fae91424fc539d2b55b9`
+Message: `fix(web): remove duplicate browser session type`.
+
+### Production deployment attempt
+
+An explicit production deployment was requested for the existing web project, branch `main`, pinned to commit `e5284c408007b7ef1a55fae91424fc539d2b55b9`. Vercel rejected the deployment API request with HTTP 402:
+`api-deployments-free-per-day` — resource limit exceeded (more than 100 deployments); retry after 86400 seconds.
+
+No project settings, plan, billing, security or deployment protection settings were changed. No alternative project or preview deployment was created. Vercel deployment remains blocked by the team's platform quota. A CLI fallback could not be executed from this session because there is no verified local Vercel CLI/authenticated project workspace available.
+
+The API project was already READY on the prior commit; no additional API deployment was necessary for this frontend-only type fix. The web project must be redeployed by its existing Git integration when Vercel quota/webhook permits, or after the account owner resolves the deployment quota. The fix is committed on main but is not yet live.
+
+### Verification boundary
+
+No manual test, lint, type-check, build, staging or browser test was run by the assistant. The only build evidence is the previously captured Vercel production build log, which identified the duplicate identifier. The next production build will itself run Vercel's configured build pipeline; that is platform deployment behavior, not a separate staging/test environment.
