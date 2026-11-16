@@ -368,3 +368,38 @@ FastAPI derives `p_user_id` from the authenticated customer principal; the brows
 ### Verification limits
 
 No SQL was executed to create/replace objects, no migration was applied, and no API/browser test, build, lint, type-check, staging or deployment was run. The function source was reviewed against the existing schema/function definitions, but PostgreSQL execution, concurrency behavior and API response compatibility remain unverified. Phase 09 remains **IN PROGRESS**.
+
+
+## Continuation — production model registry and worker readiness audit (2026-11-16)
+
+### Read-only production database evidence
+
+On canonical Supabase project `uunfgimtokhucegqbpce`, a read-only aggregate query returned:
+- `llm_providers`: 0 rows; 0 enabled providers.
+- `llm_models`: 0 rows; 0 enabled models; 0 enabled model/provider pairs.
+- `moreai_worker_capability_snapshots`: no rows (no worker heartbeat records were present in this snapshot).
+
+A read-only registry listing also returned an empty set. No provider API key, secret, secret reference value or credential payload was selected or read.
+
+### Catalog behavior mapped to source
+
+- `GET /api/v1/models/capabilities` in `apps/api/app/routers/catalog.py` queries only enabled `llm_providers` and enabled `llm_models`, joining models to an enabled provider. Empty registry therefore correctly returns `count: 0` and `items: []`; it must not synthesize model entries.
+- The same router derives live agent availability, tool registration and media capability availability from healthy `moreai_worker_capability_snapshots` with a 90-second heartbeat freshness window. Empty snapshots mean no live worker capability is advertised.
+- The agent catalogue may still describe source-registered runtime types, but `runtime_available` and `active_workers` remain false/zero when there is no healthy worker heartbeat. This is intentionally not equivalent to an active runtime.
+
+### Worker deployment/readiness boundary
+
+Source configuration reviewed:
+- `docker-compose.runtime.yml` places the worker behind the optional Compose profile `worker`; it is not part of the default API-only service set.
+- The same Compose file sets `MOREAI_AGENT_EXECUTION_ENABLED: "false"` for API and `MOREAI_SANDBOX_ENABLED: "false"`, `MOREAI_SANDBOX_RELEASE_GATE_PASSED: "false"` for worker.
+- `apps/worker/app/main.py` refuses startup unless `MOREAI_AGENT_RUNTIME_ENABLED=true`, canonical Supabase access is configured, business-approved billing/quota/entitlement environment values exist, and the LLM provider readiness gates pass. A healthy capability heartbeat is required for `/ready`.
+- `apps/worker/README.md` states that the worker must be an always-on container service, not a Vercel Function. It requires enabled chat/planning model routes, matching worker-side provider secrets, approved credit conversion and wallet currency, quota/entitlement configuration, and a successful heartbeat. Browser capability additionally requires the private OpenFuse service/token/egress configuration and persistent profile storage.
+- No active provider configuration, provider secret, billing policy value, worker host or live worker deployment has been confirmed in this audit. No credentials were created or guessed.
+
+### Product decision
+
+The zero-model response is consistent with live database state, not a frontend rendering bug. To populate a genuine model catalogue and activate execution, the product owner must provision a real provider/model through the authorized server-side configuration workflow, inject its secret into the persistent worker secret manager, configure pricing/routing/credit/quota/entitlement policy, deploy the always-on worker, and confirm its readiness heartbeat. OpenFuse remains a separate private worker dependency for browser capabilities. No fake provider rows or synthetic heartbeat were inserted.
+
+This audit did not perform a provider call, worker start, API runtime check, test, build, lint, type-check, staging, migration apply or deployment. The production inventory is a read-only point-in-time observation and may change after the audit.
+
+Phase 09 remains **IN PROGRESS**. The next blockers are production FastAPI CORS/API deployment configuration, real provider/model registry setup, a persistent ready worker, and the OpenFuse private service/storage rollout.
