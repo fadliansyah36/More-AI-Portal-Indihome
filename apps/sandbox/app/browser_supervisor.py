@@ -189,6 +189,39 @@ class BrowserSupervisor:
         response.raise_for_status()
         return response
 
+    async def takeover_input(
+        self, session_id: str, grant_token: str, input_payload: dict,
+    ) -> dict:
+        """Consume a customer-scoped one-time grant before forwarding human input to OpenFuse."""
+        if not re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", session_id):
+            raise ValueError("browser_takeover_session_id_invalid")
+        if not isinstance(grant_token, str) or not 32 <= len(grant_token) <= 256:
+            raise ValueError("browser_takeover_grant_token_invalid")
+        if not isinstance(input_payload, dict) or len(json.dumps(input_payload).encode()) > 16_384:
+            raise ValueError("browser_takeover_input_invalid")
+        # FastAPI atomically consumes the token and checks session ownership,
+        # status, expiry, and one-time use before any browser side effect.
+        consumed = await self.http.post(
+            f"{self.api_url}/api/v1/customer/browser-sessions/internal/takeover-grants/consume",
+            json={"token": grant_token, "worker_id": self.worker_id},
+            headers=self._internal_headers(),
+            timeout=httpx.Timeout(12.0, connect=3.0),
+        )
+        consumed.raise_for_status()
+        grant = consumed.json()
+        if (
+            not isinstance(grant, dict)
+            or grant.get("status") != "consumed"
+            or grant.get("session_id") != session_id
+            or "browser.input" not in grant.get("scopes", [])
+        ):
+            raise RuntimeError("browser_takeover_grant_scope_or_session_mismatch")
+        response = await self._session_request(session_id, "input", body=input_payload)
+        result = response.json()
+        if not isinstance(result, dict) or result.get("id") != session_id:
+            raise RuntimeError("browser_takeover_input_response_invalid")
+        return result
+
     async def list_profiles(self) -> list[dict]:
         response = await self.http.get(
             f"{self.service_url}/sessions",
