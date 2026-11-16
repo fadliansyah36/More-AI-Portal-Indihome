@@ -41,7 +41,7 @@ print(greet("World"))`
 
   const [browserSessions, setBrowserSessions] = useState<CustomerBrowserSession[]>([]);
   const [browserReceipts, setBrowserReceipts] = useState<CustomerBrowserActionReceipt[]>([]);
-  const [browserHistory, setBrowserHistory] = useState<Array<CustomerBrowserSession & { closed_at: string | null; events: Array<{ id: string; session_id: string; event_type: string; metadata: Record<string, unknown>; created_at: string }> }>>([]);
+  const [browserHistory, setBrowserHistory] = useState<Array<CustomerBrowserSession & { closed_at: string | null; profile_retention_after: string | null; profile_deleted_at: string | null; events: Array<{ id: string; session_id: string; event_type: string; metadata: Record<string, unknown>; created_at: string }> }>>([]);
   const [browserLifecycleLoading, setBrowserLifecycleLoading] = useState(false);
   const [browserLifecycleError, setBrowserLifecycleError] = useState<string | null>(null);
   const [closingBrowserSession, setClosingBrowserSession] = useState<string | null>(null);
@@ -407,6 +407,7 @@ print(greet("World"))`
                   </div>
                   {session.events.slice(0, 5).map((event) => <div key={event.id} className="mt-2 flex items-center justify-between gap-2 border-t border-slate-50 pt-2"><span className="text-[10px] text-slate-600">{event.event_type.replaceAll('_', ' ')}</span><span className="text-[10px] text-slate-400">{new Date(event.created_at).toLocaleString('id-ID')}</span></div>)}
                   {session.closed_at && <p className="mt-2 text-[10px] text-slate-500">Ditutup {new Date(session.closed_at).toLocaleString('id-ID')}</p>}
+                  {session.profile_deleted_at ? <p className="mt-2 text-[10px] text-slate-500">Profile browser dihapus {new Date(session.profile_deleted_at).toLocaleString('id-ID')}</p> : session.profile_retention_after && <p className="mt-2 text-[10px] text-slate-500">Profile disimpan hingga {new Date(session.profile_retention_after).toLocaleString('id-ID')}</p>}
                 </article>)}
               </div>}
             </div>
