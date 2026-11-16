@@ -259,7 +259,9 @@ async def run_worker() -> None:
             # Readiness is checked before the worker can claim runs. The worker
             # itself has no Docker socket and cannot launch host-side containers.
             await sandbox_tools.check_ready()
-        registry = build_agent_registry(rpc, http, sandbox_tools=sandbox_tools)
+        registry = build_agent_registry(
+            rpc, http, sandbox_tools=sandbox_tools, browser_tools=browser_client,
+        )
         capability_snapshot = registry.capability_snapshot()
         capability_snapshot["llm_provider_readiness"] = llm_readiness
         dispatcher = RegisteredAgentDispatcher(
