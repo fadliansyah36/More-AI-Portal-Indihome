@@ -1,19 +1,17 @@
 diff --git a/apps/worker/src/browser.ts b/apps/worker/src/browser.ts
-index 0000000..0000000 100644
 --- a/apps/worker/src/browser.ts
 +++ b/apps/worker/src/browser.ts
-@@
+@@ -303,6 +303,23 @@
+     create: (id: string, url: string) =>
+       serial("create", () => serial(id, () => createSession(id, url))),
+     navigate: (id: string, url: string) => serial(id, () => navigate(id, url)),
      closeSession: (id: string) => serial(id, () => closeSession(id)),
 +    deleteProfile: (id: string) =>
 +      serial(id, async () => {
 +        validateSessionId(id);
 +        const instance = running.get(id);
 +        if (instance) {
-+          throw new WorkerError(
-+            "SESSION_ACTIVE",
-+            "An active browser profile cannot be deleted.",
-+            409,
-+          );
++          throw new WorkerError("SESSION_ACTIVE", "An active browser profile cannot be deleted.", 409);
 +        }
 +        if (!sessions.has(id)) {
 +          await rm(directory(id), { recursive: true, force: true });
@@ -25,23 +23,21 @@ index 0000000..0000000 100644
 +      }),
      screenshot: (id: string) =>
        serial(id, () => active(id).page.screenshot({ type: "png", timeout: 10_000 })),
+     read: (id: string) =>
 diff --git a/apps/worker/src/server.ts b/apps/worker/src/server.ts
-index 0000000..0000000 100644
 --- a/apps/worker/src/server.ts
 +++ b/apps/worker/src/server.ts
-@@
+@@ -73,7 +73,7 @@
+       }
+       const match =
 -        /^\/sessions\/([^/]+)\/(navigate|close|screenshot|read|input|downloads)(?:\/([^/]+))?$/.exec(
 +        /^\/sessions\/([^/]+)\/(navigate|close|screenshot|read|input|downloads|delete-profile)(?:\/([^/]+))?$/.exec(
            pathname,
          );
-@@
-       else if (action === "downloads" && request.method === "GET") {
-         if (!downloadId) json(200, await browser.downloads(id));
-         else {
-@@
+@@ -90,6 +90,8 @@
+           });
            response.end(result.bytes);
          }
-       }
-+      else if (action === "delete-profile" && !downloadId && request.method === "DELETE")
++      } else if (action === "delete-profile" && !downloadId && request.method === "DELETE")
 +        json(200, await browser.deleteProfile(id));
-       else throw new WorkerError("NOT_FOUND", "Worker endpoint not found.", 404);
+       } else throw new WorkerError("NOT_FOUND", "Worker endpoint not found.", 404);
