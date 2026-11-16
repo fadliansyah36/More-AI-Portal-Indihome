@@ -127,6 +127,34 @@ class BrowserSupervisor:
         response.raise_for_status()
         return response
 
+    async def list_profiles(self) -> list[dict]:
+        response = await self.http.get(
+            f"{self.service_url}/sessions",
+            headers=self._worker_headers(),
+            timeout=httpx.Timeout(12.0, connect=3.0),
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list) or any(
+            not isinstance(item, dict) or not isinstance(item.get("id"), str)
+            for item in payload
+        ):
+            raise RuntimeError("openfuse_browser_profiles_response_invalid")
+        return payload
+
+    async def delete_profile(self, profile_id: str) -> dict:
+        # Requires the separately maintained pinned OpenFuse profile-delete patch.
+        response = await self.http.delete(
+            f"{self.service_url}/sessions/{quote(profile_id, safe='')}/delete-profile",
+            headers=self._worker_headers(),
+            timeout=httpx.Timeout(20.0, connect=3.0),
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict) or payload.get("id") != profile_id or payload.get("status") != "deleted":
+            raise RuntimeError("openfuse_browser_profile_delete_contract_invalid")
+        return payload
+
     async def close_session(self, session_id: str) -> None:
         sessions = await self.http.get(
             f"{self.service_url}/sessions",
