@@ -272,20 +272,36 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                             package_version = package.get("version")
                             add_dependency("pypi", package_name, package_version, path, status="lockfile_pinned")
                         package_name = package.get("name")
+                        package_version = str(package.get("version") or "")
+                        package_source = package.get("source") if isinstance(package.get("source"), dict) else {}
                         package_dependencies = package.get("dependencies")
                         if isinstance(package_dependencies, dict):
-                            dependency_edges.extend({
-                                "ecosystem": "pypi", "from": str(package_name),
-                                "to": str(dep_name), "kind": "dependency",
-                                "requested": str(dep_spec),
-                            } for dep_name, dep_spec in package_dependencies.items())
+                            for dep_name, dep_spec in package_dependencies.items():
+                                dependency_edges.append({
+                                    "ecosystem":"pypi", "from":str(package_name),
+                                    "from_version":package_version,
+                                    "from_source_type":str(package_source.get("type") or "registry"),
+                                    "from_source_url":str(package_source.get("url") or ""),
+                                    "from_source_reference":str(package_source.get("reference") or ""),
+                                    "to":str(dep_name), "kind":"dependency",
+                                    "requested":str(dep_spec), "source_manifest":path,
+                                    "resolution_status":"target_instance_join_required",
+                                })
                         elif isinstance(package_dependencies, list):
                             for dependency in package_dependencies:
                                 if isinstance(dependency, dict) and isinstance(dependency.get("name"), str):
                                     dependency_edges.append({
-                                        "ecosystem": "pypi", "from": str(package_name),
-                                        "to": dependency["name"], "kind": "dependency",
-                                        "requested": str(dependency.get("specifier") or dependency.get("version") or ""),
+                                        "ecosystem":"pypi", "from":str(package_name),
+                                        "from_version":package_version,
+                                        "from_source_type":str(package_source.get("type") or "registry"),
+                                        "from_source_url":str(package_source.get("url") or ""),
+                                        "from_source_reference":str(package_source.get("reference") or ""),
+                                        "to":dependency["name"], "kind":"dependency",
+                                        "requested":str(dependency.get("specifier") or dependency.get("version") or ""),
+                                        "marker":str(dependency.get("marker") or ""),
+                                        "extra":str(dependency.get("extra") or ""),
+                                        "source_manifest":path,
+                                        "resolution_status":"target_instance_join_required",
                                     })
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "pypi", "status": "parse_error"})
