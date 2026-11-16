@@ -199,8 +199,6 @@ class BrowserSupervisor:
             raise ValueError("browser_takeover_grant_token_invalid")
         if not isinstance(input_payload, dict) or len(json.dumps(input_payload).encode()) > 16_384:
             raise ValueError("browser_takeover_input_invalid")
-        # FastAPI atomically consumes the token and checks session ownership,
-        # status, expiry, and one-time use before any browser side effect.
         consumed = await self.http.post(
             f"{self.api_url}/api/v1/customer/browser-sessions/internal/takeover-grants/consume",
             json={"token": grant_token, "worker_id": self.worker_id},
@@ -214,13 +212,32 @@ class BrowserSupervisor:
             or grant.get("status") != "consumed"
             or grant.get("session_id") != session_id
             or "browser.input" not in grant.get("scopes", [])
+            or not isinstance(grant.get("grant_id"), str)
+            or not isinstance(grant.get("user_id"), str)
         ):
             raise RuntimeError("browser_takeover_grant_scope_or_session_mismatch")
-        response = await self._session_request(session_id, "input", body=input_payload)
-        result = response.json()
-        if not isinstance(result, dict) or result.get("id") != session_id:
-            raise RuntimeError("browser_takeover_input_response_invalid")
-        return result
+        status, error_code = "failed", None
+        try:
+            response = await self._session_request(session_id, "input", body=input_payload)
+            result = response.json()
+            if not isinstance(result, dict) or result.get("id") != session_id:
+                raise RuntimeError("browser_takeover_input_response_invalid")
+            status = "succeeded"
+            return result
+        except Exception as exc:
+            error_code = type(exc).__name__.lower()[:100]
+            raise
+        finally:
+            audited = await self.http.post(
+                f"{self.api_url}/api/v1/customer/browser-sessions/internal/takeover-grants/{quote(grant['grant_id'], safe='')}/input-result",
+                json={
+                    "session_id": session_id, "user_id": grant["user_id"],
+                    "worker_id": self.worker_id, "status": status, "error_code": error_code,
+                },
+                headers=self._internal_headers(),
+                timeout=httpx.Timeout(12.0, connect=3.0),
+            )
+            audited.raise_for_status()
 
     async def list_profiles(self) -> list[dict]:
         response = await self.http.get(
