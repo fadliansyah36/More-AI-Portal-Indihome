@@ -103,6 +103,18 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     dependency_files: list[str] = []
     manifest_files: list[str] = []
     dependencies: list[dict[str, Any]] = []
+    npm_declared: dict[str, set[str]] = {}
+    npm_locked: dict[str, set[str]] = {}
+
+    def add_dependency(ecosystem: str, name: Any, version: Any, path: str, *, status: str, integrity: Any = None) -> None:
+        if not isinstance(name, str) or not name.strip() or not isinstance(version, str) or not version.strip():
+            return
+        dependencies.append({
+            "ecosystem": ecosystem, "name": name.strip(),
+            "exact_version": version.strip(), "source_manifest": path,
+            "status": status, "integrity": integrity if isinstance(integrity, str) else None,
+        })
+
     for item in files:
         path = str(item.get("relative_path") or "")
         name = PurePosixPath(path).name.lower()
@@ -119,60 +131,167 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
         if name in {"package.json", "package-lock.json", "npm-shrinkwrap.json"}:
             dependency_files.append(path)
             try:
-                manifest = json.loads(text)
+                parsed = json.loads(text)
+                if not isinstance(parsed, dict):
+                    raise ValueError("manifest_root_not_object")
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "npm", "status": "parse_error"})
                 continue
             if name == "package.json":
+                declared: set[str] = set()
                 for group in ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies"):
-                    for package, spec in (manifest.get(group) or {}).items():
-                        exact = isinstance(spec, str) and bool(re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?", spec))
-                        dependencies.append({"ecosystem":"npm","name":package,"requested":spec,"exact_version":spec if exact else None,"source_manifest":path,"status":"exact" if exact else "range_or_unpinned"})
-            else:
-                for package, details in (manifest.get("packages") or {}).items():
-                    if not package or package == "" or not isinstance(details, dict) or not details.get("version"):
+                    values = parsed.get(group) or {}
+                    if not isinstance(values, dict):
+                        dependencies.append({"manifest": path, "ecosystem": "npm", "status": "invalid_dependency_group"})
                         continue
-                    dependencies.append({"ecosystem":"npm","name":package.rsplit("node_modules/",1)[-1],"version":details["version"],"exact_version":details["version"],"integrity":details.get("integrity"),"source_manifest":path,"status":"lockfile_pinned"})
+                    for package, spec in values.items():
+                        if isinstance(package, str):
+                            declared.add(package)
+                        dependencies.append({
+                            "ecosystem": "npm", "name": package, "requested": spec,
+                            "exact_version": None, "source_manifest": path,
+                            "status": "manifest_declared_requires_lockfile",
+                        })
+                npm_declared[path] = declared
+            else:
+                locked: set[str] = set()
+                package_entries = parsed.get("packages")
+                if isinstance(package_entries, dict):
+                    for package_path, details in package_entries.items():
+                        if not package_path or not isinstance(details, dict):
+                            continue
+                        marker = "node_modules/"
+                        if marker not in package_path:
+                            continue
+                        package_name = package_path.rsplit(marker, 1)[-1]
+                        if package_name.startswith("@") and "/" not in package_name:
+                            continue
+                        version = details.get("version")
+                        if isinstance(version, str):
+                            locked.add(package_name)
+                            add_dependency("npm", package_name, version, path, status="lockfile_pinned", integrity=details.get("integrity"))
+                # npm lockfile v1 stores transitive entries recursively under dependencies.
+                def visit_v1(entries: Any) -> None:
+                    if not isinstance(entries, dict):
+                        return
+                    for package_name, details in entries.items():
+                        if not isinstance(details, dict):
+                            continue
+                        version = details.get("version")
+                        if isinstance(version, str):
+                            locked.add(package_name)
+                            add_dependency("npm", package_name, version, path, status="lockfile_pinned", integrity=details.get("integrity"))
+                        visit_v1(details.get("dependencies"))
+                visit_v1(parsed.get("dependencies"))
+                npm_locked[path] = locked
         elif name == "requirements.txt":
             dependency_files.append(path)
             for line in text.splitlines():
-                raw = line.split("#",1)[0].strip()
-                if not raw or raw.startswith(("-r ", "--", "git+", "http:","https:")):
+                raw = line.split("#", 1)[0].strip()
+                if not raw:
                     continue
-                match = re.match(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)(?:\s*;.*)?$",raw)
-                dependencies.append({"ecosystem":"pypi","name":match.group(1) if match else re.split(r"[<>=!~;\s]", raw, maxsplit=1)[0],"requested":raw,"exact_version":match.group(2) if match else None,"source_manifest":path,"status":"exact" if match else "range_or_unpinned"})
+                if raw.startswith(("-r ", "--", "git+", "http:", "https:")):
+                    dependencies.append({"manifest": path, "ecosystem": "pypi", "requested": raw, "status": "external_or_nested_requirement_requires_review"})
+                    continue
+                match = re.match(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)(?:\\s*;.*)?$", raw)
+                dependencies.append({
+                    "ecosystem": "pypi",
+                    "name": match.group(1) if match else re.split(r"[<>=!~;\\s]", raw, maxsplit=1)[0],
+                    "requested": raw, "exact_version": None, "source_manifest": path,
+                    "status": "manifest_declared_requires_lockfile",
+                })
         elif name == "pyproject.toml":
             dependency_files.append(path)
             try:
                 parsed = tomllib.loads(text)
-                declared = parsed.get("project",{}).get("dependencies",[])
+                declared = parsed.get("project", {}).get("dependencies", [])
+                poetry = parsed.get("tool", {}).get("poetry", {})
+                declared = list(declared) if isinstance(declared, list) else []
+                poetry_deps = poetry.get("dependencies", {}) if isinstance(poetry, dict) else {}
+                if isinstance(poetry_deps, dict):
+                    declared.extend(f"{key}{value}" for key, value in poetry_deps.items() if key.lower() != "python")
                 for raw in declared:
-                    match = re.match(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)$",raw)
-                    dependencies.append({"ecosystem":"pypi","name":match.group(1) if match else raw,"requested":raw,"exact_version":match.group(2) if match else None,"source_manifest":path,"status":"exact" if match else "range_or_unpinned"})
+                    name_match = re.match(r"^([A-Za-z0-9_.-]+)", str(raw))
+                    dependencies.append({
+                        "ecosystem": "pypi", "name": name_match.group(1) if name_match else str(raw),
+                        "requested": raw, "exact_version": None, "source_manifest": path,
+                        "status": "manifest_declared_requires_lockfile",
+                    })
             except Exception:
-                dependencies.append({"manifest":path,"ecosystem":"pypi","status":"parse_error"})
-        elif name in {"cargo.lock","go.mod","composer.lock","pnpm-lock.yaml","yarn.lock"}:
+                dependencies.append({"manifest": path, "ecosystem": "pypi", "status": "parse_error"})
+        elif name in {"poetry.lock", "uv.lock"}:
             dependency_files.append(path)
-            if name == "go.mod":
-                for match in re.finditer(r"(?m)^\s*([^\s]+)\s+(v\d+\.\d+\.\d+[^\s]*)\s*$",text):
-                    dependencies.append({"ecosystem":"go","name":match.group(1),"exact_version":match.group(2),"source_manifest":path,"status":"lockfile_pinned"})
-            elif name == "cargo.lock":
-                try:
-                    parsed = tomllib.loads(text)
-                    for package in parsed.get("package",[]):
-                        dependencies.append({"ecosystem":"cargo","name":package.get("name"),"exact_version":package.get("version"),"source_manifest":path,"status":"lockfile_pinned"})
-                except Exception:
-                    dependencies.append({"manifest":path,"ecosystem":"cargo","status":"parse_error"})
-            elif name == "composer.lock":
-                try:
-                    parsed = json.loads(text)
-                    for package in parsed.get("packages",[]):
-                        dependencies.append({"ecosystem":"composer","name":package.get("name"),"exact_version":package.get("version"),"source_manifest":path,"status":"lockfile_pinned"})
-                except Exception:
-                    dependencies.append({"manifest":path,"ecosystem":"composer","status":"parse_error"})
-            else:
-                dependencies.append({"manifest":path,"ecosystem":"npm","status":"lockfile_detected_manual_parser_review_required"})
+            try:
+                parsed = tomllib.loads(text)
+                entries = parsed.get("package", []) if name == "poetry.lock" else parsed.get("package", [])
+                if not isinstance(entries, list):
+                    raise ValueError("lockfile_package_list_missing")
+                for package in entries:
+                    if isinstance(package, dict):
+                        add_dependency("pypi", package.get("name"), package.get("version"), path, status="lockfile_pinned")
+            except Exception:
+                dependencies.append({"manifest": path, "ecosystem": "pypi", "status": "parse_error"})
+        elif name == "pipfile.lock":
+            dependency_files.append(path)
+            try:
+                parsed = json.loads(text)
+                for group in ("default", "develop"):
+                    for package, details in (parsed.get(group) or {}).items():
+                        if isinstance(details, dict):
+                            version = details.get("version")
+                            if isinstance(version, str) and version.startswith("=="):
+                                add_dependency("pypi", package, version[2:], path, status="lockfile_pinned", integrity=";".join(details.get("hashes") or []))
+                            else:
+                                dependencies.append({"manifest": path, "ecosystem": "pypi", "name": package, "status": "lockfile_version_missing"})
+            except Exception:
+                dependencies.append({"manifest": path, "ecosystem": "pypi", "status": "parse_error"})
+        elif name == "cargo.lock":
+            dependency_files.append(path)
+            try:
+                parsed = tomllib.loads(text)
+                for package in parsed.get("package", []):
+                    add_dependency("cargo", package.get("name"), package.get("version"), path, status="lockfile_pinned")
+            except Exception:
+                dependencies.append({"manifest": path, "ecosystem": "cargo", "status": "parse_error"})
+        elif name == "go.mod":
+            dependency_files.append(path)
+            dependencies.append({"manifest": path, "ecosystem": "go", "status": "go_mod_requires_go_sum_and_registry_review"})
+        elif name == "composer.lock":
+            dependency_files.append(path)
+            try:
+                parsed = json.loads(text)
+                for package in parsed.get("packages", []) + parsed.get("packages-dev", []):
+                    add_dependency("composer", package.get("name"), package.get("version"), path, status="lockfile_pinned")
+            except Exception:
+                dependencies.append({"manifest": path, "ecosystem": "composer", "status": "parse_error"})
+        elif name in {"pnpm-lock.yaml", "yarn.lock"}:
+            dependency_files.append(path)
+            dependencies.append({"manifest": path, "ecosystem": "npm", "status": "lockfile_detected_parser_unsupported"})
+        elif name in {"gemfile", "gemfile.lock"}:
+            dependency_files.append(path)
+            dependencies.append({"manifest": path, "ecosystem": "rubygems", "status": "lockfile_parser_unsupported"})
+
+    for manifest_path, declared in npm_declared.items():
+        lock_candidates = [
+            candidate for candidate in npm_locked
+            if PurePosixPath(candidate).parent == PurePosixPath(manifest_path).parent
+        ]
+        if not lock_candidates:
+            dependencies.append({
+                "manifest": manifest_path, "ecosystem": "npm",
+                "status": "npm_lockfile_missing", "unresolved_direct_dependencies": sorted(declared),
+            })
+            continue
+        locked = set().union(*(npm_locked[candidate] for candidate in lock_candidates))
+        missing = sorted(declared - locked)
+        if missing:
+            dependencies.append({
+                "manifest": manifest_path, "ecosystem": "npm",
+                "status": "npm_lockfile_incomplete", "unresolved_direct_dependencies": missing,
+            })
+
     exact = sum(1 for item in dependencies if item.get("exact_version"))
+    unresolved = sum(1 for item in dependencies if not item.get("exact_version") or item.get("status") not in {"lockfile_pinned"})
     return {
         "license_files": license_files,
         "manifest_files": sorted(set(manifest_files)),
@@ -180,12 +299,12 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
         "dependencies": dependencies,
         "dependency_count": len(dependencies),
         "exact_version_count": exact,
-        "unresolved_dependency_count": len(dependencies)-exact,
+        "unresolved_dependency_count": unresolved,
+        "dependency_lockfiles_present": any(PurePosixPath(path).name.lower() in {"package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "yarn.lock", "requirements.lock", "poetry.lock", "uv.lock", "pipfile.lock", "cargo.lock", "composer.lock"} for path in dependency_files),
         "license_evidence_status": "source_license_files_present" if license_files else "source_license_files_missing",
         "notice_files_present": any(PurePosixPath(item["path"]).name.lower().startswith("notice") for item in license_files),
-        "warning": "Exact versions are parsed from source lockfiles/manifests only. Registry license metadata, transitive provenance, vulnerability and rights checks remain separate review gates.",
+        "warning": "Only supported lockfiles are resolved. Direct manifests, unsupported lockfile formats, nested dependency references and unresolved lockfile completeness remain fail-closed review findings.",
     }
-
 
 
 SPDX_COMMON_IDS = {
