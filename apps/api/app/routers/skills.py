@@ -715,9 +715,23 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                             "to": edge_match.group(1), "kind": "runtime_dependency",
                             "requested": requested,
                             "resolved_exact_version": requested[2:].strip() if requested.startswith("= ") else None,
-                            "to_locator": (edge_match.group(1) + "@" + requested[2:].strip()) if requested.startswith("= ") else None,
                             "source_manifest": path,
                         })
+                ruby_nodes: dict[tuple[str, str], list[str]] = {}
+                for package_record in dependencies:
+                    if package_record.get("ecosystem") == "rubygems" and package_record.get("source_manifest") == path and package_record.get("status") == "lockfile_pinned":
+                        key = (str(package_record.get("name") or ""), str(package_record.get("exact_version") or ""))
+                        ruby_nodes.setdefault(key, []).append(key[0] + "@" + key[1])
+                for edge in dependency_edges:
+                    if edge.get("ecosystem") != "rubygems" or edge.get("source_manifest") != path:
+                        continue
+                    exact_version = edge.get("resolved_exact_version")
+                    candidates = ruby_nodes.get((str(edge.get("to") or ""), str(exact_version or "")), [])
+                    if exact_version and len(candidates) == 1:
+                        edge["to_locator"] = candidates[0]
+                        edge["resolution_status"] = "exact_gem_lock_node"
+                    else:
+                        edge["resolution_status"] = "ruby_exact_source_or_platform_target_unresolved"
                 if not any(item.get("source_manifest") == path for item in dependencies):
                     dependencies.append({"manifest": path, "ecosystem": "rubygems", "status": "gemfile_lock_no_specs"})
             except Exception:
