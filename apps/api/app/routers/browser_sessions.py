@@ -684,7 +684,7 @@ async def request_browser_session_preview(
         raise HTTPException(409, "browser_preview_run_context_missing")
     runs = await repo.select("agent_runs", {
         "id": f"eq.{run_id}", "user_id": f"eq.{user['id']}",
-        "status": "in.(running,completed)", "select": "id", "limit": "1",
+        "status": "in.(running,succeeded)", "select": "id", "limit": "1",
     })
     if not runs:
         raise HTTPException(409, "browser_preview_run_context_unavailable")
