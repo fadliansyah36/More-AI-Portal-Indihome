@@ -40,4 +40,4 @@ diff --git a/apps/worker/src/server.ts b/apps/worker/src/server.ts
          }
 +      } else if (action === "delete-profile" && !downloadId && request.method === "DELETE")
 +        json(200, await browser.deleteProfile(id));
-       } else throw new WorkerError("NOT_FOUND", "Worker endpoint not found.", 404);
+       else throw new WorkerError("NOT_FOUND", "Worker endpoint not found.", 404);
