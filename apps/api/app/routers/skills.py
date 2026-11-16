@@ -105,6 +105,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     dependency_files: list[str] = []
     manifest_files: list[str] = []
     dependencies: list[dict[str, Any]] = []
+    dependency_edges: list[dict[str, str]] = []
     npm_declared: dict[str, set[str]] = {}
     npm_locked: dict[str, set[str]] = {}
 
@@ -172,6 +173,10 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                         if isinstance(version, str):
                             locked.add(package_name)
                             add_dependency("npm", package_name, version, path, status="lockfile_pinned", integrity=details.get("integrity"))
+                            for group in ("dependencies", "optionalDependencies", "peerDependencies"):
+                                declared_edges = details.get(group)
+                                if isinstance(declared_edges, dict):
+                                    dependency_edges.extend({"ecosystem": "npm", "from": package_name, "to": dep, "kind": group} for dep in declared_edges if isinstance(dep, str))
                 # npm lockfile v1 stores transitive entries recursively under dependencies.
                 def visit_v1(entries: Any) -> None:
                     if not isinstance(entries, dict):
@@ -183,6 +188,9 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                         if isinstance(version, str):
                             locked.add(package_name)
                             add_dependency("npm", package_name, version, path, status="lockfile_pinned", integrity=details.get("integrity"))
+                            declared_edges = details.get("requires")
+                            if isinstance(declared_edges, dict):
+                                dependency_edges.extend({"ecosystem": "npm", "from": package_name, "to": dep, "kind": "requires"} for dep in declared_edges if isinstance(dep, str))
                         visit_v1(details.get("dependencies"))
                 visit_v1(parsed.get("dependencies"))
                 npm_locked[path] = locked
@@ -263,6 +271,9 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 parsed = tomllib.loads(text)
                 for package in parsed.get("package", []):
                     add_dependency("cargo", package.get("name"), package.get("version"), path, status="lockfile_pinned")
+                    for dependency in package.get("dependencies", []) if isinstance(package.get("dependencies"), list) else []:
+                        if isinstance(dependency, str):
+                            dependency_edges.append({"ecosystem": "cargo", "from": str(package.get("name")), "to": dependency.split(" ", 1)[0], "kind": "dependency"})
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "cargo", "status": "parse_error"})
         elif name == "go.mod":
@@ -274,6 +285,10 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 parsed = json.loads(text)
                 for package in parsed.get("packages", []) + parsed.get("packages-dev", []):
                     add_dependency("composer", package.get("name"), package.get("version"), path, status="lockfile_pinned")
+                    for group in ("require", "require-dev"):
+                        required = package.get(group)
+                        if isinstance(required, dict):
+                            dependency_edges.extend({"ecosystem": "composer", "from": str(package.get("name")), "to": dep, "kind": group} for dep in required if isinstance(dep, str) and not dep.startswith("php"))
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "composer", "status": "parse_error"})
         elif name == "pnpm-lock.yaml":
@@ -444,13 +459,15 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
         "manifest_files": sorted(set(manifest_files)),
         "dependency_manifests": sorted(set(dependency_files)),
         "dependencies": dependencies,
+        "dependency_edges": dependency_edges,
+        "dependency_edge_count": len(dependency_edges),
         "dependency_count": len(dependencies),
         "exact_version_count": exact,
         "unresolved_dependency_count": unresolved,
         "dependency_lockfiles_present": any(PurePosixPath(path).name.lower() in {"package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "yarn.lock", "requirements.lock", "poetry.lock", "uv.lock", "pipfile.lock", "cargo.lock", "composer.lock"} for path in dependency_files),
         "license_evidence_status": "source_license_files_present" if license_files else "source_license_files_missing",
         "notice_files_present": any(PurePosixPath(item["path"]).name.lower().startswith("notice") for item in license_files),
-        "warning": "Only supported lockfiles are resolved. Direct manifests, unsupported lockfile formats, nested dependency references and unresolved lockfile completeness remain fail-closed review findings.",
+        "warning": "Dependency edges are extracted only where the source lockfile encodes them. Missing edges, unsupported lockfile syntax, and unresolved package identity remain review findings; package inventory alone is not a complete build graph.",
     }
 
 
