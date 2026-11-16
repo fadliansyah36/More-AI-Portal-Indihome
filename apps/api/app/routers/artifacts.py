@@ -105,7 +105,7 @@ async def persist_browser_download(
     if not hmac.compare_digest(digest, declared_sha256.lower()): raise HTTPException(422, "browser_download_checksum_mismatch")
     valid = {
         "application/pdf": content.startswith(b"%PDF-"),
-        "image/png": content.startswith(b"\x89PNG\\r\\n\x1a\\n"),
+        "image/png": content.startswith(b"\x89PNG\r\n\x1a\n"),
         "image/jpeg": content.startswith(b"\xff\xd8\xff"),
         "image/webp": content.startswith(b"RIFF") and content[8:12] == b"WEBP",
         "application/zip": content.startswith((b"PK\x03\x04", b"PK\x05\x06")),

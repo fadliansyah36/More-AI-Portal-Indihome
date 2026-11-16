@@ -98,10 +98,10 @@ class BrowserSupervisor:
             raise RuntimeError("browser_download_scanner_not_configured")
         reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=5.0)
         try:
-            writer.write(b"zPING\\0")
+            writer.write(b"zPING\0")
             await writer.drain()
             verdict = await asyncio.wait_for(reader.read(128), timeout=5.0)
-            if verdict.rstrip(b"\\0\\r\\n") != b"PONG":
+            if verdict.rstrip(b"\0\r\n") != b"PONG":
                 raise RuntimeError("browser_download_scanner_not_ready")
         finally:
             writer.close()
@@ -119,7 +119,7 @@ class BrowserSupervisor:
             asyncio.open_connection(host, port), timeout=5.0,
         )
         try:
-            writer.write(b"zINSTREAM\\0")
+            writer.write(b"zINSTREAM\0")
             await writer.drain()
             for offset in range(0, len(content), 65536):
                 chunk = content[offset:offset + 65536]
@@ -128,7 +128,7 @@ class BrowserSupervisor:
             writer.write(struct.pack("!I", 0))
             await writer.drain()
             verdict = await asyncio.wait_for(reader.read(4096), timeout=25.0)
-            if not verdict.rstrip(b"\\0\\r\\n").endswith(b"OK"):
+            if not verdict.rstrip(b"\0\r\n").endswith(b"OK"):
                 raise RuntimeError("browser_download_malware_scan_rejected")
         finally:
             writer.close()
