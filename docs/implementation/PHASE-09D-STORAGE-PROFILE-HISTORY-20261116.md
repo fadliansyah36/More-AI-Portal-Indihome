@@ -418,3 +418,25 @@ The API project was already READY on the prior commit; no additional API deploym
 ### Verification boundary
 
 No manual test, lint, type-check, build, staging or browser test was run by the assistant. The only build evidence is the previously captured Vercel production build log, which identified the duplicate identifier. The next production build will itself run Vercel's configured build pipeline; that is platform deployment behavior, not a separate staging/test environment.
+
+
+## Follow-up — dependency provenance parser increment (2026-11-16)
+
+### Source change
+
+Updated `apps/api/app/routers/skills.py`:
+- Ruby `Gemfile.lock` parser now records resolved gem nodes and dependency edges from the nested `specs:` graph. Edges preserve the requested constraint and only populate `resolved_exact_version` when the lockfile dependency itself provides an exact `= x.y` constraint. Non-exact constraints are not guessed.
+- Go `go.mod` now emits explicit unresolved evidence for `replace`, `exclude`, `retract`, `toolchain` and `godebug` directives. These can change module graph interpretation or build context and must not be silently ignored by a provenance inventory.
+- The Go parser still does not claim full module graph closure: `go.sum` supplies checksum/version evidence, not parent-to-child dependency edges. A reproducible graph requires module-aware resolution (including replacements, workspaces, platform/build tags and selected module versions); unsupported cases remain fail-closed.
+
+Commits:
+- `31726c9c2085ec1e7a71e81b17ee54c56819f19e` — add Ruby lockfile transitive edge inventory and Go directive findings.
+- `2fcdb561308cc877c5299cfd890ce5d4d0a31dca` — correct parser regex escaping.
+
+### Remaining graph limitations
+
+This increment improves evidence but does not establish complete transitive closure across all ecosystems. pnpm/Yarn lockfile parsing still needs structured importer/snapshot and descriptor-to-resolved-package mapping; Pipfile lock lacks reliable parent edges and source identity; Python markers/extras and workspace groups need environment-aware resolution; Cargo source identities and aliases need exact package locator joins; Go requires module graph resolution; Composer and npm require package-instance locators rather than name-only edges when multiple versions coexist. Publication remains fail-closed on unresolved evidence. No dependency installer or upstream skill code execution was enabled.
+
+### Verification boundary
+
+No tests, build, lint, type-check, staging or runtime verification was run. Changes were reviewed by source inspection only. No migration or Supabase mutation was performed.
