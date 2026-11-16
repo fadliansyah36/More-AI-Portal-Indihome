@@ -353,6 +353,48 @@ async def upload_artifact(
         raise
 
 
+@router.get("/browser-sessions/{session_id}/preview")
+async def get_latest_browser_session_preview(
+    session_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Resolve the newest persisted OpenFuse screenshot for an owned active browser session."""
+    repo = repository(request)
+    sessions = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}",
+        "user_id": f"eq.{user['id']}",
+        "status": "eq.active",
+        "select": "id",
+        "limit": "1",
+    })
+    if not sessions:
+        raise HTTPException(404, "browser_session_not_found_or_inactive")
+    rows = await repo.select("artifacts", {
+        "user_id": f"eq.{user['id']}",
+        "metadata->>source": "eq.openfuse_browser_screenshot",
+        "metadata->>session_id": f"eq.{session_id}",
+        "mime_type": "eq.image/png",
+        "select": "id,run_id,mime_type,size_bytes,checksum_sha256,created_at",
+        "order": "created_at.desc,id.desc",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "browser_session_preview_not_available")
+    preview = rows[0]
+    if not isinstance(preview.get("size_bytes"), int) or not 8 <= preview["size_bytes"] <= MAX_ARTIFACT_BYTES:
+        raise HTTPException(503, "browser_session_preview_metadata_invalid")
+    return {
+        "session_id": str(session_id),
+        "artifact_id": preview["id"],
+        "run_id": preview.get("run_id"),
+        "mime_type": preview["mime_type"],
+        "size_bytes": preview["size_bytes"],
+        "checksum_sha256": preview.get("checksum_sha256"),
+        "created_at": preview["created_at"],
+    }
+
+
 @router.post("/{artifact_id}/signed-download", response_model=CustomerArtifactDownloadResponse)
 async def create_artifact_download(
     artifact_id: UUID,
