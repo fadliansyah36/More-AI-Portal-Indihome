@@ -132,3 +132,7 @@ Admission control is enforced atomically under a process-local lock:
 - Limits are enforced before starting a container and rechecked under the lock to prevent concurrent admission races.
 
 These limits are per supervisor process. A multi-replica deployment must route a customer's executions consistently to one supervisor shard or add a shared admission coordinator before claiming a global cross-replica quota. Durable action receipts remain in FastAPI/Supabase; the in-memory map is not a durable job queue. This is source hardening, not proof of a deployed per-customer desktop supervisor.
+
+### Container-level tenant audit labels
+
+Every disposable runner container now receives one-way SHA-256 labels for the authenticated customer ID, Agent Run ID and request ID. Raw identifiers are not copied into Docker metadata. These labels support restricted daemon-side inventory/audit and incident correlation while the container is alive; the runner still receives no tenant credential and no network access. Labels are passed as fixed Docker CLI arguments and do not alter the canonical durable receipt or workspace state.
