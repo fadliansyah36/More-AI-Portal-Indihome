@@ -201,36 +201,12 @@ async def list_browser_profile_cleanup_requests(
     request: Request,
     x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
 ):
-    """Return closed profiles whose explicit retention deadline has elapsed."""
+    """Atomically claim newly eligible profile-retention events."""
     _worker_auth(request, x_moreai_worker_token)
-    repo = repository(request)
-    now = datetime.now(timezone.utc)
-    rows = await repo.select("moreai_browser_sessions", {
-        "status": "in.(closed,expired)",
-        "profile_retention_after": f"lte.{now.isoformat()}",
-        "profile_deleted_at": "is.null",
-        "select": "id,user_id,profile_retention_after,profile_retention_notified_at",
-        "order": "profile_retention_after.asc,id.asc",
-        "limit": "100",
-    })
-    items = []
-    for row in rows:
-        if row.get("profile_retention_notified_at") is None:
-            changed = await repo.update("moreai_browser_sessions", {
-                "id": f"eq.{row['id']}", "user_id": f"eq.{row['user_id']}",
-                "profile_deleted_at": "is.null", "profile_retention_notified_at": "is.null",
-            }, {"profile_retention_notified_at": now.isoformat()})
-            if changed:
-                await repo.insert("moreai_browser_session_events", {
-                    "session_id": str(row["id"]), "user_id": str(row["user_id"]),
-                    "event_type": "profile_retention_eligible",
-                    "metadata": {"retention_after": row.get("profile_retention_after"), "retention_days": 30},
-                })
-        items.append({
-            "session_id": str(row["id"]), "user_id": str(row["user_id"]),
-            "retention_after": row.get("profile_retention_after"),
-        })
-    return {"items": items, "retention_days": 30}
+    result = await repository(request).rpc("moreai_claim_browser_profile_retention", {"p_limit": 100})
+    if not isinstance(result, dict) or not isinstance(result.get("items"), list):
+        raise HTTPException(503, "browser_profile_retention_claim_contract_invalid")
+    return result
 
 
 @router.post("/internal/{session_id}/profile-deleted")
@@ -241,27 +217,12 @@ async def acknowledge_browser_profile_deleted(
     x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
 ):
     _worker_auth(request, x_moreai_worker_token)
-    repo = repository(request)
-    now = datetime.now(timezone.utc)
-    rows = await repo.update("moreai_browser_sessions", {
-        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
-        "status": "in.(closed,expired)", "profile_deleted_at": "is.null",
-        "profile_retention_after": f"lte.{now.isoformat()}",
-    }, {"profile_deleted_at": now.isoformat()})
-    if rows:
-        await repo.insert("moreai_browser_session_events", {
-            "session_id": str(session_id), "user_id": str(body.user_id),
-            "event_type": "profile_deleted",
-            "metadata": {"source": "worker", "retention_policy_days": 30},
-        })
-        return {"session_id": str(session_id), "status": "profile_deleted"}
-    current = await repo.select("moreai_browser_sessions", {
-        "id": f"eq.{session_id}", "user_id": f"eq.{body.user_id}",
-        "select": "id,status,profile_deleted_at", "limit": "1",
+    result = await repository(request).rpc("moreai_ack_browser_profile_deleted", {
+        "p_session_id": str(session_id), "p_user_id": str(body.user_id),
     })
-    if current and current[0].get("profile_deleted_at"):
-        return {"session_id": str(session_id), "status": "profile_deleted", "replayed": True}
-    raise HTTPException(409, "browser_profile_retention_gate_not_satisfied")
+    if not isinstance(result, dict) or result.get("status") != "profile_deleted":
+        raise HTTPException(409, "browser_profile_deletion_acknowledgement_invalid")
+    return result
 
 
 @router.get("/internal/close-requests")
