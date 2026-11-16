@@ -663,6 +663,118 @@ async def consume_browser_takeover_grant(
     return result
 
 
+@router.post("/{session_id}/preview-requests", status_code=202)
+async def request_browser_session_preview(
+    session_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Queue a screenshot refresh under the distinct browser.preview capability."""
+    repo = repository(request)
+    sessions = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "status": "eq.active", "expires_at": "gt." + datetime.now(timezone.utc).isoformat(),
+        "select": "id,run_id,last_run_id", "limit": "1",
+    })
+    if not sessions:
+        raise HTTPException(404, "browser_session_not_active_or_not_owned")
+    session = sessions[0]
+    run_id = session.get("last_run_id") or session.get("run_id")
+    if not run_id:
+        raise HTTPException(409, "browser_preview_run_context_missing")
+    runs = await repo.select("agent_runs", {
+        "id": f"eq.{run_id}", "user_id": f"eq.{user['id']}",
+        "status": "in.(running,completed)", "select": "id", "limit": "1",
+    })
+    if not runs:
+        raise HTTPException(409, "browser_preview_run_context_unavailable")
+    recent = await repo.select("moreai_browser_preview_requests", {
+        "session_id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "status": "in.(queued,processing)",
+        "select": "id,status,created_at", "order": "created_at.desc", "limit": "1",
+    })
+    if recent:
+        return {"request_id": recent[0]["id"], "session_id": str(session_id),
+                "scope": "browser.preview", "status": recent[0]["status"], "reused": True}
+    row = await repo.insert("moreai_browser_preview_requests", {
+        "session_id": str(session_id), "user_id": str(user["id"]),
+        "run_id": str(run_id), "scope": "browser.preview", "status": "queued",
+    })
+    await repo.insert("moreai_browser_session_events", {
+        "session_id": str(session_id), "user_id": str(user["id"]),
+        "event_type": "preview_requested",
+        "metadata": {"request_id": row["id"], "scope": "browser.preview"},
+    })
+    return {"request_id": row["id"], "session_id": str(session_id),
+            "scope": "browser.preview", "status": "queued", "reused": False}
+
+
+@router.get("/preview-requests/{request_id}")
+async def get_browser_preview_request(
+    request_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    rows = await repository(request).select("moreai_browser_preview_requests", {
+        "id": f"eq.{request_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,session_id,scope,status,artifact_id,error_code,created_at,claimed_at,finished_at",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "browser_preview_request_not_found")
+    return rows[0]
+
+
+@router.get("/internal/preview-requests/claim")
+async def claim_browser_preview_requests(
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+    x_moreai_worker_id: str | None = Header(default=None, alias="X-MoreAI-Worker-Id"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    if not x_moreai_worker_id or not __import__("re").fullmatch(r"[A-Za-z0-9._:-]{8,128}", x_moreai_worker_id):
+        raise HTTPException(422, "worker_id_invalid")
+    rows = await repository(request).rpc("moreai_claim_browser_preview_requests", {
+        "p_worker_id": x_moreai_worker_id, "p_limit": 5,
+    })
+    if not isinstance(rows, list):
+        raise HTTPException(503, "browser_preview_claim_contract_invalid")
+    return {"items": [
+        {"request_id": str(row["id"]), "session_id": str(row["session_id"]),
+         "run_id": str(row["run_id"]), "user_id": str(row["user_id"]),
+         "scope": row["scope"]}
+        for row in rows if isinstance(row, dict)
+    ]}
+
+
+class BrowserPreviewRequestFinish(BaseModel):
+    status: Literal["succeeded", "failed"]
+    artifact_id: UUID | None = None
+    error_code: str | None = Field(default=None, max_length=100)
+
+
+@router.post("/internal/preview-requests/{request_id}/finish")
+async def finish_browser_preview_request(
+    request_id: UUID,
+    body: BrowserPreviewRequestFinish,
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+    x_moreai_worker_id: str | None = Header(default=None, alias="X-MoreAI-Worker-Id"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    if not x_moreai_worker_id:
+        raise HTTPException(422, "worker_id_required")
+    result = await repository(request).rpc("moreai_finish_browser_preview_request", {
+        "p_request_id": str(request_id), "p_worker_id": x_moreai_worker_id,
+        "p_status": body.status,
+        "p_artifact_id": str(body.artifact_id) if body.artifact_id else None,
+        "p_error_code": body.error_code,
+    })
+    if not isinstance(result, dict) or result.get("status") != body.status:
+        raise HTTPException(409, "browser_preview_finish_contract_invalid")
+    return result
+
+
 @router.post("/{session_id}/close")
 async def close_browser_session(session_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
     result = await repository(request).rpc("moreai_request_browser_session_close", {
