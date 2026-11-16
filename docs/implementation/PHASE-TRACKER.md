@@ -1826,3 +1826,14 @@ Phase 09 remains **IN PROGRESS**. Added distinct `browser.preview` durable reque
 
 
 Source review follow-up: initialized the preview worker shutdown event (`2207c4b592678534996f3304de3ae3a12c22ad7f`) and aligned durable Agent Run eligibility with canonical terminal status `succeeded` (`3fb90e782ead1700ba7d29283345eda07d154d12`). Report updated in `55dc765ece4aad6361169cfe73fd72aa2ee308de`. Phase 09 remains IN PROGRESS; dashboard preview renderer and reconnect controls remain unimplemented due to the AGENTS.md screenshot gate. No tests, staging, deployment or live Supabase changes.
+
+
+### 2026-11-16 — Browser preview reconnect continuation
+
+- Corrected Agent Run status predicates in preview enqueue and screenshot artifact persistence to canonical `running|succeeded`: `6b3298ba2363564bbc9efacf656cf5f14de3fb58`, `8c094be2c0c1688142d369870369311558b59b11`.
+- Added owner-scoped session reconnect state endpoint including effective expiry status, latest preview command and matching artifact metadata: `ea78fcfd595cd6dd994425f979789316d72cb44e`.
+- Added typed client reconnect contract: `ff36332b19ef5b19f4ca9fbaf0aaff19bdb02a85`.
+- Added customer-side preview/reconnect polling hook with FastAPI signed download only: `4eaf616e4ed3c3b3e0acff51d3f9db7a95eeffb2`.
+- Report: `01fd3560052a22786b2f9646ea2ac9b3dc0c7ad2`.
+
+Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; renderer and visible refresh/reconnect controls remain pending due to AGENTS.md protected UI screenshot gate. No tests/build/lint/typecheck/runtime verification; migration unapplied; no staging or deployment.
