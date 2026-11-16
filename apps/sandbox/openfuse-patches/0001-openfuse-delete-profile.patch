@@ -1,7 +1,7 @@
 diff --git a/apps/worker/src/browser.ts b/apps/worker/src/browser.ts
 --- a/apps/worker/src/browser.ts
 +++ b/apps/worker/src/browser.ts
-@@ -303,7 +303,22 @@
+@@ -303,7 +303,23 @@
      create: (id: string, url: string) =>
        serial("create", () => serial(id, () => createSession(id, url))),
      navigate: (id: string, url: string) => serial(id, () => navigate(id, url)),
@@ -18,6 +18,7 @@ diff --git a/apps/worker/src/browser.ts b/apps/worker/src/browser.ts
 +          return { id, status: "deleted", already_absent: true };
 +        }
 +        await rm(directory(id), { recursive: true, force: true });
++        await rm(join("/tmp", `openfuse-downloads-${id}`), { recursive: true, force: true });
 +        sessions.delete(id);
 +        return { id, status: "deleted", already_absent: false };
 +      }),
