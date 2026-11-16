@@ -90,3 +90,16 @@ Read-only schema inspection confirms both RPCs exist and the routing function in
 3. Deploy worker as an always-on container and restore heartbeat/readiness.
 4. Continue source-to-screen action closure across Customer Dashboard surfaces, keeping payment, captive gateway, OTP, support and other unavailable vendor integrations fail-closed.
 5. After 09C, complete OpenFuse Browser/Computer parity through the isolated supervisor and customer approval controls.
+
+## 2026-11-16 source hardening increment
+
+A route-candidate edge case was identified during source review: readiness required at least one candidate with an injected secret, but the router could still retain another candidate whose secret was absent. During failover that unconfigured fallback could be selected and sent to the provider adapter with an empty credential.
+
+Changed `engine/llm/router.py`:
+- Secret environment-variable references must match the strict `MOREAI_PROVIDER_[A-Z0-9_]{1,100}` identifier pattern.
+- Route candidates without a non-empty worker-side secret value are excluded before candidate ordering and failover.
+- This keeps runtime candidate selection consistent with the worker's secret-readiness boundary; no credential values are logged or returned.
+
+Commit: `324908cc72d441da3d7c3a1deaff787a31790bd9` — `fix(llm): exclude routes without valid worker secrets`.
+
+This remains source-level hardening only. It does not provision secrets, create provider/model/pricing rows, activate routing, call provider APIs, or establish worker operational readiness. No tests, build, lint, typecheck, API/worker execution, staging or deployment were run.
