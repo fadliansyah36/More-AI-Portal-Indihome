@@ -375,6 +375,7 @@ class DurableOpenManusRuntime:
             working_checkpoints=states,
             procedural_skills=resolved_skills,
         )
+        states = memory_bundle.working_checkpoints
         skill_contexts = MemoryContextCoordinator.render_procedural_context(
             memory_bundle.procedural_skills,
         )
