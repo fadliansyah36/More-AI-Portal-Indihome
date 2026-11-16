@@ -154,3 +154,12 @@ Phase 09 source integration is substantially reconciled, but the following remai
 - Computer Workspace action history is available for Bash/Python through the isolated execution supervisor. Results are idempotency-bound to Agent Run/tool-call identity and workspace owner.
 - Computer workspace files persist in Supabase; execution containers are disposable and network-disabled. Persistent Linux/E2B desktop is not accepted.
 - No functional/browser/runtime tests or screenshot QA performed under owner instruction. All UI and runtime acceptance remains NOT VERIFIED until actual worker host is connected and manually reviewed.
+
+## 2026-11-16 continuation — Browser session terminal-state UI parity
+
+- Profile Settings and Hasil Pekerjaan now distinguish all persisted Browser session states: active, close requested, closed and expired.
+- The close action is rendered only for `active` sessions. `close_requested` displays the pending worker acknowledgement state; `closed` and `expired` are terminal/read-only.
+- This prevents customers from submitting redundant close requests for sessions that the backend already considers terminal, and prevents terminal sessions from being mislabeled as waiting for closure.
+- Existing layout, spacing, typography, colors, routes and navigation remain unchanged; only the session status projection and action eligibility were corrected.
+- Source commits: `e0eaeeaaa2b14bf209ac993ccce3175ff96b507f` (Profile Settings) and `72d92729ef58538e2a54366334b8b84781a1fc1a` (Hasil Pekerjaan).
+- No tests, build, lint, typecheck, browser/API/worker execution, provider calls, staging or deployment were run. This is a source-level correction, not runtime acceptance.
