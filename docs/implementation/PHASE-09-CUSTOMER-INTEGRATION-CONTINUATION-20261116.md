@@ -180,3 +180,11 @@ Important remaining integration:
 - The new migration is committed only; it has NOT been applied to Supabase. Worker/API host configuration and browser service availability are not confirmed. Therefore this is a code-level transport implementation, not a claim of live production interaction.
 - No tests, lint, typecheck, build, runtime, screenshots, staging, deployment, Docker or Supabase mutation were performed.
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## Customer AI Skills audit timeline wiring
+
+- Commit `02f700b62873b52ad6bec7105e4c2b308f78ed9b` connects the existing Skills Library screen to the owner-scoped `customerSkillApi.audit()` endpoint already backed by `moreai_skill_execution_audit`.
+- The existing screen now renders the last 50 durable Skill resolver/rejection/execution receipts, including immutable Skill version/content hash, Agent Run reference, permission snapshot, timestamp and rejection reason when present. Loading, empty and API error states use the existing card, typography, border and red/neutral status styles.
+- No new table, mock data, direct Supabase browser access, automatic publication, permission grant or Skill execution was introduced.
+- Source change only; no tests, lint, typecheck, build, runtime, staging, deployment or Supabase mutation were performed.
