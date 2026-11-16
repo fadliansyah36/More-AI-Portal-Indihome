@@ -29,6 +29,11 @@ Source correction:
 - No Customer page, CSS, component style or navigation was modified by this correction.
 - No build/test was rerun after the correction, per the explicit no-testing instruction. The source correction is therefore not yet a verified deployment fix.
 
+
+### Deployment state after the TypeScript source correction
+
+A subsequent read-only deployment-history lookup did not show a Vercel deployment for commit `446f479613ad5889d53276863a7cbf1ffe468fcc`. The latest observed frontend production deployment therefore remains `dpl_6Rfyo76GNvtQ82CMdLuuVSu5Un5Z` in ERROR at commit `ed8a8b2305a6d5b3cb4be771361feb93c186b8ac`; the latest observed API production deployment remains READY at that older commit. Do not claim that the TypeScript correction is deployed or that production frontend is repaired. No deployment was triggered by this execution.
+
 ## FastAPI deployment and source lag
 
 The latest API deployment observed is READY at commit `ed8a8b2305a6d5b3cb4be771361feb93c186b8ac`. It predates the latest main source head `446f479613ad5889d53276863a7cbf1ffe468fcc`; deployment readiness only confirms Vercel completed the API build/deploy for its own commit and does not confirm runtime integration, worker readiness or active Skills ingestion.
