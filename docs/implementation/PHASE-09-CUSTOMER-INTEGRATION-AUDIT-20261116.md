@@ -111,3 +111,18 @@ Additional source commits after the initial audit:
 - `22c5d37e8aeb0fd542969b222743c0dcf0b741d0`: Ruby exact constraints only resolve when a unique locked gem node exists; a fabricated locator is no longer enough to make the graph appear complete.
 
 These changes are source-only and intentionally unverified. npm v1 direct workspace-root edges are not yet represented as explicit graph edges, even though direct manifest names are checked against lockfile package inventory. That remains an SBOM graph completeness item and must not be silently represented as fully closed.
+
+
+## Continuation — Python dependency declaration evidence (2026-11-16)
+
+Updated `apps/api/app/routers/skills.py` on `main`:
+- Python `pyproject.toml` inventory now includes PEP 621 project dependencies, optional dependency groups/extras, PEP 735 dependency groups when present, Poetry dependencies and Poetry dependency groups.
+- PEP 508 marker text and requested extras are retained as evidence instead of being flattened into a single dependency string. Poetry table-form declarations retain source selectors (git/url/path/rev/tag/branch), markers and extras when exposed by the manifest.
+- These declarations are explicitly marked as requiring environment-aware lock resolution. This is an evidence-preservation improvement, not proof that markers, extras, optional groups, platform selection or lock target package instances have been resolved.
+- Pipfile.lock parent-child dependency edges remain unsupported; Go still lacks a module-aware selected-version graph; pnpm peer-context joins and Yarn Berry workspace/portal/patch/git/alias protocol resolution remain open. npm v1 root/workspace declaration edges still need a precise root locator join. The graph must remain incomplete for affected manifests and publication must remain fail-closed.
+
+Commits:
+- `b14b2e1ee6739a6190173f89e12355f41c27c6dc` — inventory Python extras and dependency groups.
+- `f4bff561f85ede135d21055b03fb6117222f4f8f` — correct marker separator parsing.
+
+No test, parser execution, build, lint, type-check, staging, browser/runtime verification, migration application, or deployment was performed. This source change is unverified by execution. No UI files or live Supabase objects were changed.
