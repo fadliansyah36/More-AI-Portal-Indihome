@@ -119,6 +119,34 @@ async def _browser_session_close_reconciliation_loop(
                     raise
                 except Exception:
                     logger.exception("browser_session_close_reconciliation_failed session_id=%s", session_id)
+            # Orphan profile deletion is an independent, fail-closed reconciliation.
+            # It requires the pinned OpenFuse delete-profile extension; unsupported
+            # workers must not prevent ordinary session close processing.
+            try:
+                ownership = await http.get(
+                    f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/owned-profile-ids",
+                    headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+                )
+                ownership.raise_for_status()
+                owner_payload = ownership.json()
+                owned = owner_payload.get("items") if isinstance(owner_payload, dict) else None
+                if not isinstance(owned, list) or any(not isinstance(value, str) for value in owned):
+                    raise RuntimeError("browser_profile_ownership_contract_invalid")
+                profiles = await browser.list_profiles()
+                owned_set = set(owned)
+                for profile in profiles:
+                    profile_id = profile["id"]
+                    if profile_id not in owned_set:
+                        try:
+                            await browser.delete_profile(profile_id)
+                        except asyncio.CancelledError:
+                            raise
+                        except Exception:
+                            logger.exception("browser_orphan_profile_cleanup_failed profile_id=%s", profile_id)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.exception("browser_orphan_profile_reconciliation_unavailable")
         except asyncio.CancelledError:
             raise
         except Exception:
