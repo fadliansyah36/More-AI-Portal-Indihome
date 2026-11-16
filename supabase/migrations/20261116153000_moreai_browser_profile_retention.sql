@@ -1,7 +1,8 @@
 -- Retain closed browser profiles for 30 days, then delete the OpenFuse profile through the worker.
 alter table public.moreai_browser_sessions
   add column if not exists profile_retention_after timestamptz,
-  add column if not exists profile_deleted_at timestamptz;
+  add column if not exists profile_deleted_at timestamptz,
+  add column if not exists profile_retention_notified_at timestamptz;
 
 update public.moreai_browser_sessions
 set profile_retention_after = coalesce(closed_at, expires_at) + interval '30 days'
