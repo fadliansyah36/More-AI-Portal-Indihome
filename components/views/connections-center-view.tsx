@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CalendarDays, Mail, RefreshCw, ShieldCheck, Unplug, Link2, AlertCircle } from 'lucide-react';
 import { connectionsApi, type CustomerConnection } from '@/lib/api/client';
 
@@ -28,6 +28,18 @@ export function ConnectionsCenterView() {
   const [eventSummary, setEventSummary] = useState('');
   const [eventStart, setEventStart] = useState('');
   const [eventEnd, setEventEnd] = useState('');
+  // Reuse one idempotency key after an ambiguous network outcome. The key is
+  // scoped to the exact confirmed action payload and cleared only on success.
+  const actionKeys = useRef(new Map<string, string>());
+  const idempotencyKeyFor = (scope: string, payload: unknown) => {
+    const fingerprint = scope + ':' + JSON.stringify(payload);
+    let key = actionKeys.current.get(fingerprint);
+    if (!key) {
+      key = crypto.randomUUID();
+      actionKeys.current.set(fingerprint, key);
+    }
+    return { key, clear: () => actionKeys.current.delete(fingerprint) };
+  };
 
   const refresh = useCallback(async () => {
     setLoading(true); setError(null);
@@ -65,19 +77,40 @@ export function ConnectionsCenterView() {
     const recipients = mailTo.split(',').map(value => value.trim()).filter(Boolean);
     if (!recipients.length || !mailSubject.trim() || !mailBody.trim()) return;
     if (!window.confirm('Kirim email sekarang ke ' + recipients.join(', ') + '? Tindakan ini tidak dapat dibatalkan.')) return;
+    const action = idempotencyKeyFor('gmail.send:' + connection.id, {
+      to: recipients, subject: mailSubject.trim(), body: mailBody,
+    });
     setBusy(connection.id); setError(null);
-    try { await connectionsApi.sendGmail(connection.id, recipients, mailSubject.trim(), mailBody); setMailTo(''); setMailSubject(''); setMailBody(''); window.alert('Email diterima oleh Gmail API.'); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Pengiriman email gagal atau hasilnya belum diketahui. Periksa folder Sent sebelum mencoba kembali.'); }
-    finally { setBusy(null); }
+    try {
+      await connectionsApi.sendGmail(connection.id, recipients, mailSubject.trim(), mailBody, action.key);
+      action.clear();
+      setMailTo(''); setMailSubject(''); setMailBody('');
+      window.alert('Email diterima oleh Gmail API.');
+    } catch (cause) {
+      // Keep the same key so a user retry cannot create a second send if the
+      // provider accepted the first request but the response was lost.
+      setError(cause instanceof Error ? cause.message : 'Pengiriman email gagal atau hasilnya belum diketahui. Periksa folder Sent sebelum mencoba kembali.');
+    } finally { setBusy(null); }
   };
 
   const createEvent = async (connection: CustomerConnection) => {
     if (!eventSummary.trim() || !eventStart || !eventEnd) return;
     if (!window.confirm('Buat agenda Calendar "' + eventSummary + '" pada ' + eventStart + '?')) return;
+    const start = new Date(eventStart).toISOString();
+    const end = new Date(eventEnd).toISOString();
+    const action = idempotencyKeyFor('calendar.create:' + connection.id, {
+      summary: eventSummary.trim(), start, end, timezone: 'Asia/Jakarta',
+    });
     setBusy(connection.id); setError(null);
-    try { await connectionsApi.createCalendarEvent(connection.id, eventSummary.trim(), new Date(eventStart).toISOString(), new Date(eventEnd).toISOString()); setEventSummary(''); setEventStart(''); setEventEnd(''); await loadCalendar(connection); window.alert('Agenda berhasil dibuat di Google Calendar.'); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Pembuatan agenda gagal atau hasilnya belum diketahui.'); }
-    finally { setBusy(null); }
+    try {
+      await connectionsApi.createCalendarEvent(connection.id, eventSummary.trim(), start, end, '', action.key);
+      action.clear();
+      setEventSummary(''); setEventStart(''); setEventEnd('');
+      await loadCalendar(connection);
+      window.alert('Agenda berhasil dibuat di Google Calendar.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Pembuatan agenda gagal atau hasilnya belum diketahui.');
+    } finally { setBusy(null); }
   };
 
   const updateEvent = async (connection: CustomerConnection, item: CalendarItem) => {
@@ -87,7 +120,11 @@ export function ConnectionsCenterView() {
     if (!window.confirm('Simpan perubahan judul agenda "' + nextSummary.trim() + '"?')) return;
     setBusy(connection.id); setError(null);
     try {
-      await connectionsApi.updateCalendarEvent(connection.id, item.id, item.etag, nextSummary.trim());
+      const action = idempotencyKeyFor('calendar.update:' + connection.id + ':' + item.id, {
+        etag: item.etag, summary: nextSummary.trim(),
+      });
+      await connectionsApi.updateCalendarEvent(connection.id, item.id, item.etag, nextSummary.trim(), action.key);
+      action.clear();
       await loadCalendar(connection);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Perubahan agenda gagal atau hasilnya belum diketahui.'); }
     finally { setBusy(null); }
@@ -98,7 +135,9 @@ export function ConnectionsCenterView() {
     if (!window.confirm('Hapus agenda "' + (item.summary || '(Tanpa judul)') + '" dari Google Calendar? Tindakan ini tidak dapat dibatalkan.')) return;
     setBusy(connection.id); setError(null);
     try {
-      await connectionsApi.deleteCalendarEvent(connection.id, item.id, item.etag);
+      const action = idempotencyKeyFor('calendar.delete:' + connection.id + ':' + item.id, { etag: item.etag });
+      await connectionsApi.deleteCalendarEvent(connection.id, item.id, item.etag, action.key);
+      action.clear();
       setEvents(current => ({ ...current, [connection.id]: (current[connection.id] || []).filter(event => event.id !== item.id) }));
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Penghapusan agenda gagal atau hasilnya belum diketahui.'); }
     finally { setBusy(null); }
