@@ -486,3 +486,45 @@ Commits:
 Remaining graph limitations are unchanged and explicit: pnpm importer/snapshot descriptor resolution, Yarn descriptor-to-instance dependency mapping, Python marker/extras and source identity, Go module graph/workspace/replacement resolution, and exact target-node joins for ecosystems whose lockfiles encode only a requested package name. These parsers are not tested or executed in this workflow; publication remains fail-closed where unresolved evidence is reported.
 
 No UI file, database object, migration history, Storage policy or deployment was changed in this increment.
+
+
+## Continuation — package-instance graph and migration ledger repair (2026-11-16)
+
+### pnpm and Yarn graph implementation
+
+- pnpm parser now inventories package/snapshot locators with peer suffixes retained in the locator identity, normalized package name/version, and integrity evidence when present.
+- pnpm v6 path-style locators and v9 name@version locators are recognized. Snapshot dependency edges retain parent locator/version, target name, requested/resolved reference and dependency kind. Target locator is assigned only when package-instance resolution is unique; otherwise the edge records `ambiguous_or_unresolved_package_instance`.
+- pnpm importer dependency descriptors are retained as workspace-root edges with the resolved reference when the importer block provides one.
+- Yarn lock parser now preserves descriptor groups, version, resolution locator and integrity. Nested dependency declarations become parent-instance edges. A target locator is assigned only when the target package has a unique lockfile instance; multiple versions remain explicitly ambiguous.
+- These are bounded text parsers, not full YAML/Yarn parser implementations. YAML anchors/aliases, exotic quoting, pnpm peer-context edge resolution and Yarn patch/portal/workspace protocols remain unresolved evidence. No runtime parser execution or test was performed.
+
+### Migration filename version collision repair
+
+Two duplicate repository migration version identifiers were found before application. The files were assigned unique IDs without changing SQL bodies:
+- Notifications/private artifacts migration retains `20261111100000`.
+- Outbox lease fencing moved to `20261111100001`.
+- Edutech assessment derived progress retains `20261114083000`.
+- Edutech path summary view moved to `20261114083001`.
+
+The new IDs were confirmed absent from the live migration history snapshot. No already-applied live migration version was rewritten. The filename chronology is preserved adjacent to the original migrations; source content was copied unchanged.
+
+### Fresh read-only Supabase metadata reconciliation
+
+A new read-only inventory against canonical project `uunfgimtokhucegqbpce` confirms:
+- Live migration history still ends at `20261115101318`; the repository's six Phase 09D migrations dated 2026-11-16 remain absent from live history.
+- `moreai_browser_sessions` currently has no `profile_retention_after`, `profile_deleted_at`, or `profile_retention_notified_at` columns.
+- Live `moreai_browser_session_events_event_type_check` currently permits only `created`, `restored`, `state_saved`, `closed`, `expired`; `close_requested`, `profile_retention_eligible` and `profile_deleted` are not yet live.
+- `moreai-artifacts` and `moreai-knowledge-private` buckets both exist and are private. Current Storage policies show an explicit server-only deny policy only for `moreai-knowledge-private`; no policy row for `moreai-artifacts` was observed.
+- The committed artifact Storage migration checks that the bucket exists and is private, then creates a bucket-specific deny policy for anon/authenticated. It does not revoke global Storage grants or affect other buckets.
+
+The following six repository migrations remain unapplied and require reviewed forward-only sequencing:
+`20261116100000_moreai_browser_session_close_event_constraint`,
+`20261116150000_moreai_skill_publication_evidence_gate`,
+`20261116153000_moreai_browser_profile_retention`,
+`20261116160000_moreai_browser_profile_retention_rpcs`,
+`20261116170000_moreai_artifacts_storage_server_only`,
+plus the remaining pending migration count must be reconciled against the complete current repository tree before any push. No migration was applied.
+
+### Current source-only status
+
+No tests, parser execution, build, lint, type-check, runtime, browser, staging, migration application or deployment was performed. The pnpm/Yarn parser increment and migration version repair are source changes only. Exact historical SQL equivalence remains unavailable from the live migration ledger; current live postconditions are evidence, not proof that every historical migration body matches the repository file.
