@@ -83,3 +83,11 @@ The two child-pack manifests were re-parsed for every license-like path. Exactly
 - Scenario's nested Apache-2.0 notice must remain separately attributed; root MIT is not a blanket override.
 - Visual Skills CC BY 4.0 and NOTICE requirements remain mandatory for any adapted material; the 13 deferred provider-logo assets and three pending-provenance visuals remain excluded from approval.
 - No file has been promoted from preliminary disposition to final approval by this scan. P1 remains open.
+
+## Exact-version npm registry metadata pass — 2026-11-17
+
+The two pinned pnpm lockfiles contain 1,808 unique exact package coordinates. Exact-version npm registry metadata was retrieved for all 1,808; all requests returned HTTP 200. 1,797 returned a non-empty license field. Eleven returned no license field and remain NOASSERTION; one additional raw license string, `CC BY-SA 4.0`, is not an SPDX identifier/expression and remains manual-review-required.
+
+See `MOREAI_P1_REGISTRY_LICENSE_REVIEW_REQUIRED_20261117.csv` for the 12 records requiring further evidence and `MOREAI_P1_NORMALIZED_PNPM_GRAPH_AND_REGISTRY_LICENSES_20261117.md` for aggregate distributions.
+
+Registry metadata does not prove the package tarball's actual license notices, source-header rights, bundled media/font rights, or vulnerability posture. No package tarball was unpacked and no legal clearance is claimed. P1 remains OPEN.
