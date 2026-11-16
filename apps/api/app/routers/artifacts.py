@@ -89,6 +89,7 @@ async def persist_browser_download(
     run_id: UUID = Header(alias="X-Agent-Run-Id"),
     owner_user_id: UUID = Header(alias="X-Owner-User-Id"),
     filename: str = Header(alias="X-Filename", max_length=180),
+    session_id: UUID = Header(alias="X-Browser-Session-Id"),
     declared_mime: str = Header(alias="X-Declared-Mime", max_length=100),
     declared_sha256: str = Header(alias="X-Declared-SHA256", min_length=64, max_length=64),
     scanner_status: str = Header(alias="X-Scanner-Status"),
@@ -123,6 +124,11 @@ async def persist_browser_download(
     runs = await repo.select("agent_runs", {"id": f"eq.{run_id}", "user_id": f"eq.{owner_user_id}",
         "status": "in.(running,completed)", "select": "id", "limit": "1"})
     if not runs: raise HTTPException(403, "browser_download_run_owner_mismatch")
+    sessions = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{owner_user_id}",
+        "status": "eq.active", "select": "id", "limit": "1",
+    })
+    if not sessions: raise HTTPException(403, "browser_download_session_owner_mismatch")
     headers = _storage_headers(request)
     await _require_private_bucket(request, headers)
     artifact_id = str(uuid4())
@@ -136,7 +142,7 @@ async def persist_browser_download(
             "storage_path": storage_path, "mime_type": declared_mime, "size_bytes": len(content),
             "checksum_sha256": digest, "metadata": {"source": "openfuse_browser_download", "filename": filename,
             "scanner": "clamav", "scan_status": "clean", "scan_policy": "fail_closed",
-            "source_run_id": str(run_id), "mime_validation": "signature_and_content"}})
+            "source_run_id": str(run_id), "session_id": str(session_id), "mime_validation": "signature_and_content"}})
     except Exception:
         await request.app.state.http.delete(object_url, headers=headers, timeout=15.0)
         raise

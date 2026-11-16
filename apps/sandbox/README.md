@@ -157,3 +157,6 @@ docker compose -f apps/sandbox/compose.browser.yml up --build -d
 ```
 
 The stack definition is source-only until an authorized deployment host supplies digest-pinned ClamAV image, tokens, exact domain allowlist and persistent encrypted volume. Do not set the worker release gate before those host controls are in place.
+
+
+The OpenFuse worker adapter imports only PDFs that have passed the ClamAV `INSTREAM` scan. It then sends the bytes, SHA-256 digest, filename, session UUID and clean verdict to the authenticated FastAPI `/api/v1/artifacts/internal/browser-download` endpoint. FastAPI rechecks run ownership, session ownership/status, content signature, MIME, size, checksum and private bucket status before writing artifact metadata. Scanner or storage errors remain visible as per-file failures; no unscanned bytes are imported.

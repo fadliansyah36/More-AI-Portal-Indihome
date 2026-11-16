@@ -3,7 +3,10 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import os
+import re
 import socket
+import struct
 from urllib.parse import quote, urlsplit
 
 import httpx
@@ -73,7 +76,39 @@ class BrowserSupervisor:
         sessions.raise_for_status()
         if not isinstance(sessions.json(), list):
             raise RuntimeError("openfuse_browser_worker_sessions_contract_invalid")
-        return {"status": "ready", "egress_enforced": True, "session_api": "openfuse-v1"}
+        return {
+            "status": "ready",
+            "egress_enforced": True,
+            "session_api": "openfuse-v1",
+            "download_scanner": "clamav_required_at_import",
+        }
+
+    async def _clamav_scan(self, content: bytes) -> None:
+        host = os.getenv("MOREAI_CLAMAV_HOST", "")
+        try:
+            port = int(os.getenv("MOREAI_CLAMAV_PORT", "3310"))
+        except ValueError as exc:
+            raise RuntimeError("browser_download_scanner_configuration_invalid") from exc
+        if not host or not 1 <= port <= 65535:
+            raise RuntimeError("browser_download_scanner_not_configured")
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(host, port), timeout=5.0,
+        )
+        try:
+            writer.write(b"zINSTREAM\\0")
+            await writer.drain()
+            for offset in range(0, len(content), 65536):
+                chunk = content[offset:offset + 65536]
+                writer.write(struct.pack("!I", len(chunk)) + chunk)
+                await writer.drain()
+            writer.write(struct.pack("!I", 0))
+            await writer.drain()
+            verdict = await asyncio.wait_for(reader.read(4096), timeout=25.0)
+            if not verdict.rstrip(b"\\0\\r\\n").endswith(b"OK"):
+                raise RuntimeError("browser_download_malware_scan_rejected")
+        finally:
+            writer.close()
+            await writer.wait_closed()
 
     async def _finish_receipt(
         self, *, receipt_id: str, run_id: str, user_id: str,
@@ -258,17 +293,72 @@ class BrowserSupervisor:
             elif action == "downloads":
                 response = await self._session_request(session_id, "downloads")
                 payload = response.json()
-                if not isinstance(payload, dict):
+                if not isinstance(payload, dict) or not isinstance(payload.get("downloads", []), list):
                     raise RuntimeError("openfuse_browser_downloads_contract_invalid")
-                # OpenFuse worker accepts PDF signatures, but it does not provide a
-                # malware scan verdict. Only metadata/failures are exposed here;
-                # importing bytes into customer Files stays fail-closed.
+                # Download import is a side effect. Mark the receipt ambiguous if
+                # cancellation occurs after this point; never replay an import.
+                action_submitted = True
+                imported: list[dict] = []
+                failures = list(payload.get("failures", []))[:100]
+                for item in payload.get("downloads", [])[:20]:
+                    if not isinstance(item, dict):
+                        failures.append({"code": "download_metadata_invalid"})
+                        continue
+                    download_id = item.get("id")
+                    filename = item.get("name")
+                    if (
+                        not isinstance(download_id, str)
+                        or not re.fullmatch(r"[0-9a-fA-F-]{36}", download_id)
+                        or not isinstance(filename, str)
+                        or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._ -]{0,179}", filename)
+                        or item.get("mimeType") != "application/pdf"
+                    ):
+                        failures.append({"name": str(filename or "")[:80], "code": "download_metadata_invalid"})
+                        continue
+                    try:
+                        downloaded = await self._session_request(
+                            session_id, "downloads/" + quote(download_id, safe=""),
+                        )
+                        content = downloaded.content
+                        if not content or len(content) > 10_000_000 or not content.startswith(b"%PDF-"):
+                            raise ValueError("browser_download_signature_or_size_invalid")
+                        await self._clamav_scan(content)
+                        digest = hashlib.sha256(content).hexdigest()
+                        uploaded = await self.http.post(
+                            f"{self.api_url}/api/v1/artifacts/internal/browser-download",
+                            content=content,
+                            headers={
+                                **self._internal_headers(),
+                                "Content-Type": "application/pdf",
+                                "X-Agent-Run-Id": run_id,
+                                "X-Owner-User-Id": user_id,
+                                "X-Browser-Session-Id": session_id,
+                                "X-Filename": filename,
+                                "X-Declared-Mime": "application/pdf",
+                                "X-Declared-SHA256": digest,
+                                "X-Scanner-Status": "clean",
+                            },
+                            timeout=httpx.Timeout(45.0, connect=5.0),
+                        )
+                        uploaded.raise_for_status()
+                        artifact = uploaded.json()
+                        imported.append({
+                            "artifact_id": artifact.get("artifact_id"),
+                            "filename": artifact.get("filename"),
+                            "mime_type": artifact.get("mime_type"),
+                            "size_bytes": artifact.get("size_bytes"),
+                            "checksum_sha256": artifact.get("checksum_sha256"),
+                            "scan_status": artifact.get("scan_status"),
+                        })
+                    except Exception as exc:
+                        code = "malware_scan_or_storage_failed" if isinstance(exc, RuntimeError) else "download_import_failed"
+                        failures.append({"name": filename, "code": code})
                 result = {
                     "action": "downloads",
                     "session_id": session_id,
-                    "downloads": payload.get("downloads", []),
-                    "failures": payload.get("failures", []),
-                    "import_status": "blocked_until_malware_scanner_is_configured",
+                    "imports": imported,
+                    "failures": failures,
+                    "import_status": "imported" if imported else "no_clean_downloads_imported",
                 }
             else:
                 # Opening/reopening a persistent Chromium profile can itself navigate
