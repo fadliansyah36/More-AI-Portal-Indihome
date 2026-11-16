@@ -91,7 +91,7 @@ def build_rows(lock: dict[str, Any], source: str) -> tuple[list[dict[str, str]],
         target_name = dep_name
         target_version = resolved
         is_alias = False
-        alias_match = re.match(r"^(@[^/]+/[^@]+|[^@]+)@(.+)$", resolved) if resolved else None
+        alias_match = re.match(r"^(@[^/]+/[^@]+|[A-Za-z0-9._-]+)@(?=[0-9])(.+)$", resolved) if resolved else None
         if alias_match:
             target_name, target_version = alias_match.group(1), alias_match.group(2)
             is_alias = target_name != dep_name
