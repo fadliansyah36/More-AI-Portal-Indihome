@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: apps/sandbox/Dockerfile.openfuse
+      args:
+        OPENFUSE_BASE_IMAGE: ${MOREAI_OPENFUSE_BASE_IMAGE:?set a digest-pinned Playwright base image}
     environment:
       WORKER_TOKEN: ${MOREAI_BROWSER_SERVICE_TOKEN:?set 32+ character worker token}
       WORKER_DATA_DIR: /data/browser-profiles
