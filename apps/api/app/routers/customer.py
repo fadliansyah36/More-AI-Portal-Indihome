@@ -1458,22 +1458,13 @@ async def clear_customer_memory(
     principal = await require_customer_context(request, user)
     repo = repository(request)
     try:
-        preferences = await repo.select("moreai_customer_memory_preferences", {
-            "user_id": f"eq.{principal['id']}",
-            "select": "enabled,consent_version",
-            "limit": "1",
+        result = await repo.rpc("moreai_customer_clear_memory_atomic", {
+            "p_user_id": principal["id"],
         })
-        if preferences:
-            await repo.rpc("moreai_customer_set_memory_consent", {
-                "p_user_id": principal["id"],
-                "p_enabled": False,
-                "p_consent_version": preferences[0]["consent_version"],
-            })
-        await _purge_customer_episodic_metadata(repo, principal["id"])
-        await repo.delete("moreai_customer_memories", {
-            "user_id": f"eq.{principal['id']}",
-            "select": "id",
-        })
+        if isinstance(result, list):
+            result = result[0] if result else None
+        if not isinstance(result, dict) or result.get("completed") is not True:
+            raise RuntimeError("customer_memory_atomic_clear_not_confirmed")
     except Exception as exc:
         raise HTTPException(503, "Customer memory cleanup is incomplete; retry the operation") from exc
     return Response(status_code=204)
@@ -1488,20 +1479,18 @@ async def create_customer_memory(
     if not body.title.strip() or not body.content.strip():
         raise HTTPException(422, "Memory title and content cannot be blank")
     repo = repository(request)
-    preferences = await repo.select("moreai_customer_memory_preferences", {
-        "user_id": f"eq.{principal['id']}", "select": "enabled,consent_version", "limit": "1",
+    created = await repo.rpc("moreai_customer_create_personal_memory", {
+        "p_user_id": principal["id"],
+        "p_consent_version": CUSTOMER_MEMORY_CONSENT_VERSION,
+        "p_title": body.title.strip(),
+        "p_content": body.content.strip(),
+        "p_retention_days": body.retention_days,
     })
-    if not preferences or not preferences[0].get("enabled") or preferences[0].get("consent_version") != CUSTOMER_MEMORY_CONSENT_VERSION:
-        raise HTTPException(403, "Personal Memory requires current explicit consent")
-    now = datetime.now(timezone.utc)
-    return await repo.insert("moreai_customer_memories", {
-        "user_id": principal["id"],
-        "title": body.title.strip(),
-        "content": body.content.strip(),
-        "source_type": "user_created",
-        "scope": "personal",
-        "expires_at": (now + timedelta(days=body.retention_days)).isoformat(),
-    })
+    if isinstance(created, list):
+        created = created[0] if created else None
+    if not isinstance(created, dict) or not created.get("id"):
+        raise HTTPException(502, "Personal Memory record was not returned by the database")
+    return created
 
 
 @router.patch("/memory/{memory_id}", response_model=CustomerMemoryItemResponse)
