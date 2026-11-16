@@ -2,13 +2,13 @@
   "generated_at": "2026-11-16T08:52:00Z",
   "project_ref": "uunfgimtokhucegqbpce",
   "branch": "main",
-  "repo_head": "97422d549abcc7c66dc41dc24671d6a234b29984",
+  "repo_head": "3933fccb04b72e7063b24c6d14d948f3c4b93e29",
   "counts": {
-    "repository_migrations": 78,
+    "repository_migrations": 80,
     "exact_version_matches": 7,
-    "name_match_version_diff": 70,
+    "name_match_version_diff": 72,
     "not_in_live_by_name": 1,
-    "live_migrations": 114,
+    "live_migrations": 116,
     "live_only_migrations": 32,
     "duplicate_repository_version_ids": 0
   },
@@ -951,6 +951,30 @@
         "20261116083527"
       ],
       "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116230000_moreai_skill_source_file_count_alignment.sql",
+      "git_blob_sha": "ee43109d6abaed10f13025113790292b1f0062f5",
+      "size_bytes": 3693,
+      "filename": "20261116230000_moreai_skill_source_file_count_alignment.sql",
+      "filename_version": "20261116230000",
+      "name": "moreai_skill_source_file_count_alignment",
+      "live_versions": [
+        "20261116113124"
+      ],
+      "status": "name_match_version_diff"
+    },
+    {
+      "path": "supabase/migrations/20261116240000_moreai_skill_ingestion_pending_until_validation.sql",
+      "git_blob_sha": "67673dd51789d0a3d09c402bf44ac2898596a002",
+      "size_bytes": 3537,
+      "filename": "20261116240000_moreai_skill_ingestion_pending_until_validation.sql",
+      "filename_version": "20261116240000",
+      "name": "moreai_skill_ingestion_pending_until_validation",
+      "live_versions": [
+        "20261116113852"
+      ],
+      "status": "name_match_version_diff"
     }
   ],
   "live_only_migrations": [
@@ -1089,6 +1113,39 @@
     "Repository timestamp and live history versions are intentionally not rewritten; Supabase generated live versions are authoritative for applied history.",
     "Name match is not SQL equivalence for older historical migrations. Do not reapply timestamp-mismatched repository files or rewrite historical applied versions.",
     "Current main tree contains no duplicate repository migration filename versions.",
-    "Historical live-only migration rows remain and require provenance mapping; they are not blindly re-applied."
+    "Historical live-only migration rows remain and require provenance mapping; they are not blindly re-applied.",
+    "Post-snapshot addendum records the Skill source ingestion file-count alignment and pending-until-validation migrations; do not replay them, as both are already applied."
+  ],
+  "reconciliation_addenda": [
+    {
+      "reconciled_on": "2026-11-16",
+      "repo_head": "3933fccb04b72e7063b24c6d14d948f3c4b93e29",
+      "note": "Two forward-only Skill ingestion migrations were added after the original 08:52Z ledger snapshot and applied to canonical Supabase. Supabase generated versions differ from repository filename versions; names and live generated versions are listed below.",
+      "applied_migrations": [
+        {
+          "name": "moreai_skill_source_file_count_alignment",
+          "path": "supabase/migrations/20261116230000_moreai_skill_source_file_count_alignment.sql",
+          "filename_version": "20261116230000",
+          "live_versions": [
+            "20261116113124"
+          ],
+          "status": "name_match_version_diff",
+          "git_blob_sha": "ee43109d6abaed10f13025113790292b1f0062f5",
+          "size_bytes": 3693
+        },
+        {
+          "name": "moreai_skill_ingestion_pending_until_validation",
+          "path": "supabase/migrations/20261116240000_moreai_skill_ingestion_pending_until_validation.sql",
+          "filename_version": "20261116240000",
+          "live_versions": [
+            "20261116113852"
+          ],
+          "status": "name_match_version_diff",
+          "git_blob_sha": "67673dd51789d0a3d09c402bf44ac2898596a002",
+          "size_bytes": 3537
+        }
+      ],
+      "live_migration_count": 116
+    }
   ]
 }
