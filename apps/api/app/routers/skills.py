@@ -403,16 +403,34 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 continue
             try:
                 in_specs = False
+                current_gem: str | None = None
                 for line in text.splitlines():
                     if line.strip() == "specs:":
                         in_specs = True
+                        current_gem = None
                         continue
                     if in_specs and line and not line.startswith("    ") and not line.startswith("  "):
                         in_specs = False
-                    if in_specs:
-                        match = re.match(r"^    ([A-Za-z0-9_.-]+) \(([^)]+)\)", line)
-                        if match:
-                            add_dependency("rubygems", match.group(1), match.group(2), path, status="lockfile_pinned")
+                        current_gem = None
+                    if not in_specs:
+                        continue
+                    # Gemfile.lock encodes resolved gem dependencies as nested
+                    # rows below each four-space package declaration.
+                    package_match = re.match(r"^    ([A-Za-z0-9_.-]+) \\(([^)]+)\\)(?: .*)?$", line)
+                    if package_match:
+                        current_gem = package_match.group(1)
+                        add_dependency("rubygems", current_gem, package_match.group(2), path, status="lockfile_pinned")
+                        continue
+                    edge_match = re.match(r"^      ([A-Za-z0-9_.-]+)(?: \\(([^)]+)\\))?", line)
+                    if current_gem and edge_match:
+                        requested = edge_match.group(2) or ""
+                        dependency_edges.append({
+                            "ecosystem": "rubygems", "from": current_gem,
+                            "to": edge_match.group(1), "kind": "runtime_dependency",
+                            "requested": requested,
+                            "resolved_exact_version": requested[2:].strip() if requested.startswith("= ") else None,
+                            "source_manifest": path,
+                        })
                 if not any(item.get("source_manifest") == path for item in dependencies):
                     dependencies.append({"manifest": path, "ecosystem": "rubygems", "status": "gemfile_lock_no_specs"})
             except Exception:
@@ -423,6 +441,13 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 in_require = False
                 for line in text.splitlines():
                     stripped = line.strip()
+                    if re.match(r"^(replace|exclude|retract|toolchain|godebug)\\b", stripped):
+                        dependencies.append({
+                            "manifest": path, "ecosystem": "go",
+                            "status": "go_mod_directive_requires_module_graph_resolution",
+                            "directive": stripped.split(maxsplit=1)[0],
+                            "detail": stripped[:500],
+                        })
                     if stripped.startswith("require ("):
                         in_require = True
                         continue
