@@ -1607,3 +1607,13 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - A read-only aggregate query against `moreai_skill_packages` returned no rows. Motion, Visual and Scenario ingestion is therefore not evidenced as started in the canonical database.
 - OpenFuse/ClamAV is source-only and not provisioned on an authorized host. Real provider/model registries and worker capability snapshots remain empty. The 56 Motion batch has not run; Visual/Scenario require an additional bulk UI action and have not been ingested.
 - No UI component changed. No tests/build/lint/typecheck/runtime/browser/provider/staging/deployment were run. Phase 09 remains IN PROGRESS; Phase 10 is NOT ACCEPTED; Phase 11 is BLOCKED.
+
+
+## 2026-11-16 Visual and Scenario Skill batch continuation
+
+- Current source head before this tracker update: `24de208932e4698fb9c198e9643a8e6d2fdf8f2f`.
+- `components/views/skills-library-view.tsx` adds the missing Visual (2) + Scenario (172) batch action alongside the existing Motion (56) action. Both actions reuse the current Customer API client and existing button styling. Batch processing is sequential and reports failures; reruns skip packages already in `validated` or `review_required` state and continue with pending packages. Commits: `9e0ba8f3`, `c1102747`.
+- Visual/Scenario batch and Motion batch have not been executed: the canonical aggregate query on `moreai_skill_packages` returned no rows, and no authenticated Customer session is available in the current engineering context. No source packages are claimed ingested.
+- This one-view UI change is limited to the requested missing operation; no global CSS/token/layout changes. Before/after screenshots were not captured because no authenticated Customer browser session was available and real UI testing was prohibited; visual acceptance remains outstanding.
+- Full report: [Phase 09 Skill Registry continuation](./PHASE-09-SKILL-REGISTRY-CONTINUATION-20261116.md).
+- No tests/build/lint/typecheck/runtime/browser/provider/staging/deployment were run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
