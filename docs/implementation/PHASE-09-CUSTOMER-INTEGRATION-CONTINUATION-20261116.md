@@ -152,3 +152,31 @@ Boundary:
 - This exposes audit data to the existing Customer API layer; the Skills Library UI has not yet been changed to render the audit timeline.
 - Existing source catalog/batch implementation already covers 2 Visual, 172 Scenario and 56 Motion child-pack entrypoints; the Motion aggregator itself is a catalogue and has no executable SKILL.md. Actual batch ingestion and approval remain separate owner/reviewer actions. No customer package rows were fabricated.
 - No tests, build, lint, typecheck, screenshots, runtime, staging, deployment or Supabase mutation were performed. Phase 09 remains IN PROGRESS.
+
+
+## Implementation update — durable Human Takeover command transport
+
+Commits:
+- Durable encrypted command queue and atomic worker claim/finish RPCs: `fed6338177d243467686e4e587f26c346c9119b2`
+- Browser audit event vocabulary alignment: `3dfd1f7003de68e7a250c09d1f37d3a73d10f735`
+- FastAPI customer enqueue/status and worker claim/finish routes: `1c01c497c9b9a07a4256916bdfe1e29386623d4b`
+- Worker polling and OpenFuse execution: `197739643fff388de37f6002f9e413d3c972cbce`
+- Worker task shutdown handling: `c1c19ff9cd4c40d64463011f8faf62a411b05185`
+- Typed Customer API grant/submit/status/revoke methods: `60e6a5cd5a05d21df4f94f6f64bc4b637e1eac1f`
+- Queue lease-expiry and no-blind-replay hardening: `6edc5a746d0585c8648d37202f3f584d5faee4c0`
+
+Implemented on main:
+- Added a service-role-only durable command queue in the existing Supabase project. The grant token and bounded input payload are encrypted using the existing browser-session encryption key; the table stores no plaintext bearer token.
+- Customer FastAPI route verifies session ownership/status and grant digest/expiry before queueing one command per one-time grant.
+- Worker-only claim/finish routes require the internal worker token and worker identity. Claim uses an atomic `SKIP LOCKED` RPC and returns the decrypted command only over the authenticated worker API.
+- Worker polls the queue only when the OpenFuse BrowserSupervisor is enabled, invokes the existing one-time `takeover_input()` method, and records the durable command outcome. Existing grant consumption and per-session input audit remain in force.
+- Added owner-scoped command status retrieval and typed frontend methods.
+- Expired queued grants are marked expired. A command with an expired worker lease is marked failed with an explicit unknown-outcome code and is not blindly replayed, because the grant may already have been consumed and the browser action may have reached Chromium.
+- Added the `takeover_command_queued` event to the browser session event constraint while retaining existing close and takeover event vocabulary.
+
+Important remaining integration:
+- The existing dashboard still does not render a customer takeover control, input form, preview stream or reconnect experience. Typed API methods are ready, but UI edits are gated by AGENTS.md's before/after screenshot requirement; no baseline screenshot tool/evidence was available in this implementation context.
+- OpenFuse preview transport is not yet exposed through an owner-authorized FastAPI artifact/stream route.
+- The new migration is committed only; it has NOT been applied to Supabase. Worker/API host configuration and browser service availability are not confirmed. Therefore this is a code-level transport implementation, not a claim of live production interaction.
+- No tests, lint, typecheck, build, runtime, screenshots, staging, deployment, Docker or Supabase mutation were performed.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
