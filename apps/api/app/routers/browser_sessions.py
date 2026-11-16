@@ -594,7 +594,17 @@ async def get_browser_takeover_command(
     })
     if not rows:
         raise HTTPException(404, "browser_takeover_command_not_found")
-    return rows[0]
+    row = rows[0]
+    # Match the enqueue response and typed Customer API contract.
+    return {
+        "command_id": row["id"],
+        "session_id": row["session_id"],
+        "status": row["status"],
+        "error_code": row.get("error_code"),
+        "created_at": row["created_at"],
+        "claimed_at": row.get("claimed_at"),
+        "finished_at": row.get("finished_at"),
+    }
 
 
 @router.get("/internal/takeover-commands/claim")
