@@ -1,7 +1,7 @@
 diff --git a/apps/worker/src/browser.ts b/apps/worker/src/browser.ts
 --- a/apps/worker/src/browser.ts
 +++ b/apps/worker/src/browser.ts
-@@ -303,6 +303,23 @@
+@@ -303,7 +303,24 @@
      create: (id: string, url: string) =>
        serial("create", () => serial(id, () => createSession(id, url))),
      navigate: (id: string, url: string) => serial(id, () => navigate(id, url)),
@@ -34,7 +34,7 @@ diff --git a/apps/worker/src/server.ts b/apps/worker/src/server.ts
 +        /^\/sessions\/([^/]+)\/(navigate|close|screenshot|read|input|downloads|delete-profile)(?:\/([^/]+))?$/.exec(
            pathname,
          );
-@@ -90,6 +90,8 @@
+@@ -90,4 +90,6 @@
            });
            response.end(result.bytes);
          }
