@@ -295,3 +295,42 @@ Remaining audit/implementation gaps:
 - No actual tests/build/lint/type-check, SQL execution, staging, browser/runtime verification or deployment was performed.
 
 Phase 09 remains **IN PROGRESS**. UI files were not changed in this continuation; existing frontend visual system remains untouched.
+
+
+## Continuation — production customer API origin/CORS correction (2026-11-16)
+
+### Evidence from the reported customer screens
+
+The supplied production screenshots show the same transport-level error in:
+- AI Skills Library;
+- AI Agent Studio (catalogue reports zero active models because the catalogue request cannot complete);
+- the Chat conversation composer (workspace availability lookup fails and the screen falls back to private conversation).
+
+These surfaces use the shared typed browser API client in `lib/api/client.ts` and FastAPI as their business API. The repeated transport error is therefore consistent with a shared API-origin/CORS failure rather than three independent feature defects. The screenshots are user-observed evidence; they do not by themselves distinguish a missing CORS header from an incorrect API URL or unavailable API process.
+
+### Source-level cause found and correction committed
+
+At baseline `e7c4b67f7b95b8e7b65102e4e515814bd1e530f5`:
+- `apps/api/app/main.py` built `_cors_origins` solely from `MOREAI_CORS_ALLOWED_ORIGINS` and registered CORSMiddleware only when that list was non-empty.
+- `.env.example` contained only `http://localhost:3000` for that setting.
+- The customer production origin `https://moreai.web.id` was not a default allowed origin.
+- Mutating browser requests also compare the Origin header against this same list in the correlation middleware, so an omitted production origin affects both preflight/read access and the server-side mutation origin guard.
+
+Source changes on `main`:
+- `5ee9c7aeb6692c330d3b1fced60b6957e7ab376a` — `apps/api/app/main.py` now always includes the exact production origin `https://moreai.web.id` and merges in explicitly configured origins with duplicate removal. The existing explicit methods, headers, bearer-token behavior and non-credentialed CORS policy are preserved; no wildcard origin was introduced.
+- `ef025ba1d813719a7ad6d1b2c6c3dff41bd055cd` — `.env.example` now documents `https://moreai.web.id,http://localhost:3000`.
+
+This change covers the shared browser-to-FastAPI origin gate. It does not invent a frontend API URL, bypass FastAPI, or add direct browser access to Supabase business data.
+
+### Deployment and environment boundary
+
+- Vercel read-only project/deployment/environment inspection was attempted for the already-existing MoreAI web and API projects, but the connected Vercel account returned HTTP 403 `forbidden` for project/deployment reads. Domain configuration lookup also returned 403. No environment variable values or deployment state could therefore be verified.
+- `NEXT_PUBLIC_MOREAI_API_URL` in the deployed web build must still point to the actual public FastAPI deployment/alias. Its production value is not visible from the current authorized connector response; it has not been guessed or changed.
+- The FastAPI CORS source correction takes effect only when the API service runs a version containing the commit. No deployment was manually triggered and no live effect is claimed.
+- No UI route, component, design token, CSS, font, navigation or visual style was changed.
+
+### Verification boundary and decision
+
+No browser/API runtime test, preflight request, test suite, build, lint, type-check, staging, migration application or deployment was run, in accordance with the product-owner instruction. The CORS fix is committed source code but remains production-runtime unverified. The domain's API URL and Vercel deployment configuration remain operational blockers until read access is restored.
+
+Phase 09 remains **IN PROGRESS**. The next required work is to verify the existing Vercel production environment variable names (without exposing secret values), confirm the API project is mapped to the actual FastAPI service, and then continue the customer control-by-control integration audit and atomic Memory cleanup. Phase 10 and Phase 11 are not claimed.
