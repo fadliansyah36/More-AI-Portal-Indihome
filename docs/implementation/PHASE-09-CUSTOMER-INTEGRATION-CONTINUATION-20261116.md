@@ -201,3 +201,8 @@ Important remaining integration:
 - Phase 09 remains **IN PROGRESS**; Phase 10 remains **NOT ACCEPTED**; Phase 11 remains **BLOCKED**. Next: persist/recover recent takeover command status from the existing session event/command history contract where available, then continue Memory Coordinator lifecycle and full route-to-screen reconciliation.
 
 - Follow-up commit `e95785ab2dd975b08fc7aeec532443592cc80bfe` restores the newest queued Human Takeover command after page reload by reading the existing owner-scoped browser-session event projection and retrieving command status from FastAPI. Failed/ambiguous submission attempts revoke any still-unconsumed grant; no token is persisted. This is source-only and remains subject to unapplied migrations and unverified worker/OpenFuse runtime.
+
+
+## Contract correction — Human Takeover status response
+
+- Commit `fbf03b0bde78b16492c535ba4d723adfce43079b` aligns `GET /api/v1/customer/browser-sessions/takeover-input/{command_id}` with the existing typed client: the database `id` is now returned as `command_id`, with only the documented owner-scoped status fields. This fixes the response mismatch that would otherwise prevent the newly wired UI from reading command status/reconnect state. Source-only; no tests/runtime/migration apply/staging/deployment.
