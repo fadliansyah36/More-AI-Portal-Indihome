@@ -25,6 +25,7 @@ export function SkillsLibraryView() {
   const [catalogItems, setCatalogItems] = useState<PinnedSkillCatalogItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [bulkProgress, setBulkProgress] = useState<{ total: number; completed: number; failed: number; current: string; failures: string[] } | null>(null);
 
   const refresh = async () => {
     setLoading(true); setError(null);
@@ -63,6 +64,60 @@ export function SkillsLibraryView() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Import pinned skill gagal.');
     } finally { setBusy(null); }
+  };
+
+  const ingestAllMotion = async () => {
+    const motion = catalogItems.filter(item => item.source_repository.startsWith('iart-ai/'));
+    if (!motion.length) {
+      setError('Pinned Motion Skills belum dimuat atau katalog kosong.');
+      return;
+    }
+    setBusy('motion-bulk');
+    setError(null);
+    const failures: string[] = [];
+    let completed = 0;
+    try {
+      let packages = (await customerSkillApi.list()).items;
+      setItems(packages);
+      setBulkProgress({ total: motion.length, completed: 0, failed: 0, current: 'Menyiapkan katalog Motion…', failures: [] });
+      for (const source of motion) {
+        setBulkProgress({ total: motion.length, completed, failed: failures.length, current: source.name, failures: failures.slice(0, 5) });
+        try {
+          let skill = packages.find(item =>
+            item.source_repository === source.source_repository
+            && item.source_path === source.source_path
+            && item.source_commit === source.source_commit,
+          );
+          if (!skill) {
+            skill = await customerSkillApi.importPinned({
+              source_repository: source.source_repository,
+              source_commit: source.source_commit,
+              source_path: source.source_path,
+            });
+            packages = [...packages, skill];
+          }
+          // Recursive ingestion fetches the complete skill directory and local
+          // references with the existing path, blob-hash and size boundaries.
+          // Validation records SBOM/license findings but never publishes or installs.
+          await customerSkillApi.ingest(skill.id);
+          await customerSkillApi.validate(skill.id);
+        } catch (cause) {
+          failures.push(source.name + ': ' + (cause instanceof Error ? cause.message : 'ingest/validation gagal'));
+        }
+        completed += 1;
+        setBulkProgress({ total: motion.length, completed, failed: failures.length, current: source.name, failures: failures.slice(0, 5) });
+      }
+      await refresh();
+      await loadCatalog();
+      setBulkProgress({
+        total: motion.length, completed, failed: failures.length, current: 'Selesai',
+        failures: failures.slice(0, 5),
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Batch Motion Skills gagal dimulai.');
+    } finally {
+      setBusy(null);
+    }
   };
 
   const validate = async (id: string) => {
@@ -115,8 +170,15 @@ export function SkillsLibraryView() {
     {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"><AlertCircle className="mr-1 inline h-4 w-4"/>{error}</div>}
     {showCatalog && <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div><h2 className="text-sm font-bold text-slate-900">Pinned Visual & Scenario Skills</h2><p className="text-[10px] text-slate-500">Sumber commit tetap: 2 Visual Skills dan 172 Scenario product skills.</p></div>
-        <span className="text-[10px] font-semibold text-slate-500">{catalogItems.filter(item => item.imported).length}/{catalogItems.length} terdaftar</span>
+        <div><h2 className="text-sm font-bold text-slate-900">Pinned Visual, Scenario & Motion Skills</h2><p className="text-[10px] text-slate-500">Sumber commit tetap: 2 Visual Skills, 172 Scenario product skills, dan 56 Motion Skills dari 19 repository pack.</p></div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-semibold text-slate-500">{catalogItems.filter(item => item.imported).length}/{catalogItems.length} terdaftar</span>
+          <button type="button" disabled={busy !== null || catalogLoading || !catalogItems.some(item => item.source_repository.startsWith('iart-ai/'))}
+            onClick={() => void ingestAllMotion()}
+            className="rounded-xl bg-red-600 px-3 py-2 text-[10px] font-semibold text-white hover:bg-red-700 disabled:opacity-50">
+            {busy === 'motion-bulk' ? 'Memproses Motion…' : 'Ingest 56 Motion Skills'}
+          </button>
+        </div>
       </div>
       <div className="relative">
         <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400"/>
@@ -125,6 +187,19 @@ export function SkillsLibraryView() {
       <p className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-[10px] leading-relaxed text-amber-900">
         Import hanya mengambil entrypoint SKILL.md dan menghitung hash sumber. Status lisensi tetap unverified, publikasi private, permission kosong, dan eksekusi nonaktif sampai recursive ingestion, SBOM, pemeriksaan hak aset/NOTICE, review manusia, dan approval selesai.
       </p>
+      {bulkProgress && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[10px] leading-relaxed text-slate-700">
+          <div className="flex items-center justify-between gap-2 font-semibold">
+            <span>{bulkProgress.current}</span>
+            <span>{bulkProgress.completed}/{bulkProgress.total} · gagal {bulkProgress.failed}</span>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full rounded-full bg-red-600 transition-all" style={{ width: (bulkProgress.completed / Math.max(1, bulkProgress.total) * 100) + '%' }} />
+          </div>
+          <p className="mt-2 text-slate-500">Batch hanya mengimpor, melakukan recursive ingestion dan validasi. Skill tidak otomatis dipublikasikan, di-install, diberi permission, atau dieksekusi.</p>
+          {bulkProgress.failures.length > 0 && <ul className="mt-2 list-disc pl-4 text-amber-700">{bulkProgress.failures.map((failure,index) => <li key={index}>{failure}</li>)}</ul>}
+        </div>
+      )}
       {catalogLoading ? <div className="p-6 text-center text-xs text-slate-500">Memuat pinned source inventory…</div> : (
         <div className="max-h-[440px] space-y-2 overflow-y-auto pr-1">
           {catalogItems.filter(item => {
@@ -137,7 +212,7 @@ export function SkillsLibraryView() {
                 <p className="mt-0.5 break-all text-[10px] text-slate-500">{item.source_repository} · {item.source_path}</p>
                 <p className="mt-0.5 text-[10px] text-amber-700">{item.license_id} · review belum selesai · {item.source_commit.slice(0,12)}</p>
               </div>
-              <button type="button" disabled={item.imported || busy === item.source_path} onClick={() => void importPinned(item)}
+              <button type="button" disabled={item.imported || busy !== null} onClick={() => void importPinned(item)}
                 className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">
                 {item.imported ? 'Sudah terdaftar' : busy === item.source_path ? 'Mengimpor…' : 'Import private'}
               </button>
