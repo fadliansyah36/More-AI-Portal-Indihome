@@ -1855,3 +1855,12 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - `components/views/skills-library-view.tsx` commit `02f700b62873b52ad6bec7105e4c2b308f78ed9b`: connected the existing AI Skills Library to the already available owner-scoped Skills execution audit API. It renders the latest durable resolver/rejection/execution events, Skill version/hash, Agent Run, permission snapshot, timestamp and reason where available. Uses existing styles; no mock or direct browser-to-Supabase data access.
 - Report: `9a18984afeedc84ec5fd3f47c66409a69c707de3`.
 - No tests, lint, typecheck, build, runtime, screenshots, staging, deployment or Supabase mutation performed. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 continuation — Customer Human Takeover UI source wiring
+
+- Added `components/views/browser-session-takeover.tsx` and mounted it in existing Profile Settings browser-session cards. Commits: `1ee94506eca59df5731456563c59a09c319fe98a`, `ae3926b9b96d3676ecc4b650d4d8dfa2e7964a55`; schema-neutral input editor correction `2ae92fcc8775e959fe353b36f44564ef0e75a9ac`.
+- Uses existing typed FastAPI grant/submit/status/revoke contracts: issues a 90-second one-time grant, submits bounded JSON input to the encrypted durable command queue, and polls owner-scoped command status. No raw grant token is persisted; controls are disabled for non-active sessions.
+- Existing CSS/Tailwind, compact typography, red action and slate/white cards retained. No mock data or browser-to-Supabase business access.
+- Source-only. Human Takeover migrations remain unapplied; worker/API/OpenFuse runtime and exact deployed OpenFuse input payload semantics are unverified. No tests, lint, typecheck, build, runtime, screenshots, staging, deployment or Supabase mutation.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED. Next: Memory Coordinator lifecycle and Customer route-to-screen reconciliation.
