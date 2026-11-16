@@ -435,12 +435,14 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
                   <p className="text-xs font-semibold text-slate-800 truncate">{session.origin_host}</p>
                   <p className="text-[10px] text-slate-500 mt-1">Terakhir digunakan: {new Date(session.last_used_at).toLocaleString('id-ID')}</p>
                   <p className="text-[10px] text-slate-500">Berakhir: {new Date(session.expires_at).toLocaleString('id-ID')}</p>
+                  <p className={`text-[10px] font-semibold mt-1 ${session.status === 'active' ? 'text-emerald-700' : session.status === 'close_requested' ? 'text-amber-700' : 'text-slate-500'}`}>{session.status === 'active' ? 'Aktif' : session.status === 'close_requested' ? 'Menunggu penutupan' : session.status === 'closed' ? 'Sudah ditutup' : 'Kedaluwarsa'}</p>
                 </div>
-                <button type="button" onClick={() => void closeBrowserSession(session.id)}
-                  disabled={closingBrowserSessionId !== null || session.status === 'close_requested'}
+                {session.status === 'active' && <button type="button" onClick={() => void closeBrowserSession(session.id)}
+                  disabled={closingBrowserSessionId !== null}
                   className="shrink-0 rounded-xl border border-red-200 bg-white px-3 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
-                  {closingBrowserSessionId === session.id ? 'Mengirim…' : session.status === 'close_requested' ? 'Menunggu worker…' : 'Tutup sesi'}
-                </button>
+                  {closingBrowserSessionId === session.id ? 'Mengirim…' : 'Tutup sesi'}
+                </button>}
+                {session.status === 'close_requested' && <span className="shrink-0 text-[10px] font-semibold text-amber-700">Menunggu worker…</span>}
               </div>
             ))}
           </div>
