@@ -168,7 +168,18 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
             else:
                 locked: set[str] = set()
                 package_entries = parsed.get("packages")
+                npm_edge_start = len(dependency_edges)
+                npm_instances: dict[str, dict[str, str]] = {}
                 if isinstance(package_entries, dict):
+                    for package_path, details in package_entries.items():
+                        if not isinstance(package_path, str) or not package_path or not isinstance(details, dict):
+                            continue
+                        marker = "node_modules/"
+                        if marker not in package_path:
+                            continue
+                        package_name = package_path.rsplit(marker, 1)[-1]
+                        if isinstance(details.get("version"), str):
+                            npm_instances[package_path] = {"name":package_name,"version":details["version"]}
                     for package_path, details in package_entries.items():
                         if not package_path or not isinstance(details, dict):
                             continue
@@ -192,6 +203,26 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                                         "requested": str(requested_spec),
                                         "kind": group, "source_manifest": path,
                                     } for dep, requested_spec in declared_edges.items() if isinstance(dep, str))
+                    # Resolve npm v2/v3 dependency edges using Node's nearest node_modules lookup.
+                    for edge in dependency_edges[npm_edge_start:]:
+                        if edge.get("source_manifest") != path or edge.get("to_locator"):
+                            continue
+                        parent_path = str(edge.get("from_locator") or "")
+                        parent_dir = PurePosixPath(parent_path).parent
+                        ancestors = [parent_dir, *parent_dir.parents]
+                        resolved_path = None
+                        for ancestor in ancestors:
+                            candidate = str(ancestor / "node_modules" / str(edge.get("to")))
+                            if candidate == "node_modules":
+                                candidate = "node_modules/" + str(edge.get("to"))
+                            if candidate in npm_instances:
+                                resolved_path = candidate
+                                break
+                        if resolved_path:
+                            edge["to_locator"] = resolved_path
+                            edge["to_version"] = npm_instances[resolved_path]["version"]
+                        else:
+                            edge["resolution_status"] = "npm_nearest_node_modules_target_unresolved"
                 # npm lockfile v1 stores transitive entries recursively under dependencies.
                 def visit_v1(entries: Any) -> None:
                     if not isinstance(entries, dict):
