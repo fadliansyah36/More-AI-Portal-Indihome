@@ -247,7 +247,7 @@ Canonical project `uunfgimtokhucegqbpce` was queried again using `pg_policies`, 
 
 ### Acceptance impact
 
-Phase 09 remains IN PROGRESS. Source provenance is stronger, but lockfile dialect/edge completeness, complete dashboard control-to-endpoint authorization mapping, browser service-role grants, artifact-bucket policy/grants, four pending migrations, and OpenFuse patch + persistent volume deployment are still open. No tests, builds, lint, type checks, runtime, staging or deployment were performed. Phase 10/11 remain blocked by the explicit no-test instruction and infrastructure prerequisites.
+Phase 09 remains IN PROGRESS. Source provenance is stronger, but lockfile dialect/edge completeness, complete dashboard control-to-endpoint authorization mapping, browser service-role grants, artifact-bucket policy/grants, five genuinely pending Phase 09D migrations, and OpenFuse patch + persistent volume deployment are still open. No tests, builds, lint, type checks, runtime, staging or deployment were performed. Phase 10/11 remain blocked by the explicit no-test instruction and infrastructure prerequisites.
 
 
 ## Follow-up — customer dashboard control/API and database privilege map (2026-11-16)
@@ -313,7 +313,7 @@ A fresh comparison was made between all tracked `supabase/migrations/*.sql` file
 
 ### Migration gate
 
-The migration history is not yet reconciled to a one-to-one, SQL-definition-backed ledger. Before any push, create a reviewed manifest mapping every live version to a source migration or documented historical-only migration, resolve duplicate repository version IDs without rewriting applied history, compare the outbox predecessor SQL/state, and prepare a forward-only apply order for the four genuinely pending migrations. Current instruction still prohibits applying them.
+The migration history is not yet reconciled to a one-to-one, SQL-definition-backed ledger. Before any push, create a reviewed manifest mapping every live version to a source migration or documented historical-only migration, resolve duplicate repository version IDs without rewriting applied history, compare the outbox predecessor SQL/state, and prepare a forward-only apply order for the five genuinely pending Phase 09D migrations. Current instruction still prohibits applying them.
 
 ### Authorization evidence refinement
 
@@ -366,7 +366,7 @@ Updated counts after adding the Storage policy migration:
 - 73 repository migration files; 100 live history rows.
 - 7 exact filename-version matches.
 - 60 same-name / different-version mappings requiring SQL postcondition reconciliation.
-- 6 repository migrations not found by name in live history (including four browser/Skills migrations, the outbox migration with a live historical predecessor, and the new artifact Storage policy).
+- Earlier snapshot: 6 repository migrations not found by name in live history. This count was superseded by the later active-directory reconciliation; see the current five-migration apply set below.
 - 28 live-only historical migrations.
 - Duplicate repository version IDs: 20261111100000 and 20261114083000.
 
@@ -511,7 +511,7 @@ The new IDs were confirmed absent from the live migration history snapshot. No a
 ### Fresh read-only Supabase metadata reconciliation
 
 A new read-only inventory against canonical project `uunfgimtokhucegqbpce` confirms:
-- Live migration history still ends at `20261115101318`; the repository's six Phase 09D migrations dated 2026-11-16 remain absent from live history.
+- Live migration history still ends at `20261115101318`; the repository's five active Phase 09D migrations dated 2026-11-16 remain absent from live history.
 - `moreai_browser_sessions` currently has no `profile_retention_after`, `profile_deleted_at`, or `profile_retention_notified_at` columns.
 - Live `moreai_browser_session_events_event_type_check` currently permits only `created`, `restored`, `state_saved`, `closed`, `expired`; `close_requested`, `profile_retention_eligible` and `profile_deleted` are not yet live.
 - `moreai-artifacts` and `moreai-knowledge-private` buckets both exist and are private. Current Storage policies show an explicit server-only deny policy only for `moreai-knowledge-private`; no policy row for `moreai-artifacts` was observed.
