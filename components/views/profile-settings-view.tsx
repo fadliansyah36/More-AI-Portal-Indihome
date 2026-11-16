@@ -22,6 +22,7 @@ import { useToast } from '@/components/ui/toast-context';
 import { profileApi, customerApi, notificationApi, type CustomerBrowserSession, type CustomerBrowserActionReceipt, type CustomerComputerActionReceipt } from '@/lib/api/client';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { PersonalMemorySettings } from '@/components/views/personal-memory-settings';
+import { BrowserSessionPreview } from '@/components/views/browser-session-preview';
 
 interface ProfileSettingsViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -443,6 +444,9 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
                   {closingBrowserSessionId === session.id ? 'Mengirim…' : 'Tutup sesi'}
                 </button>}
                 {session.status === 'close_requested' && <span className="shrink-0 text-[10px] font-semibold text-amber-700">Menunggu worker…</span>}
+                <div className="w-full basis-full">
+                  <BrowserSessionPreview sessionId={session.id} sessionStatus={session.status} />
+                </div>
               </div>
             ))}
           </div>
