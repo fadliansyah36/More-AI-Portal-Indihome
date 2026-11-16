@@ -223,10 +223,10 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
                 if raw.startswith(("-r ", "--", "git+", "http:", "https:")):
                     dependencies.append({"manifest": path, "ecosystem": "pypi", "requested": raw, "status": "external_or_nested_requirement_requires_review"})
                     continue
-                match = re.match(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)(?:\\s*;.*)?$", raw)
+                match = re.match(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)(?:\s*;.*)?$", raw)
                 dependencies.append({
                     "ecosystem": "pypi",
-                    "name": match.group(1) if match else re.split(r"[<>=!~;\\s]", raw, maxsplit=1)[0],
+                    "name": match.group(1) if match else re.split(r"[<>=!~;\s]", raw, maxsplit=1)[0],
                     "requested": raw, "exact_version": None, "source_manifest": path,
                     "status": "manifest_declared_requires_lockfile",
                 })
