@@ -1876,3 +1876,10 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - Workspace immutable file version history pagination completed at source level: API client `b7cdb52b5f9dc5689300d0b1d5cc295b85b5844d`; Files UI keyset “load older versions” `0758c9d8c64e5d05651ea4ef185ca548452d1f15`.
 - Existing backend keyset cursor and `X-Next-Cursor` response are reused. No schema/database changes or new persistence.
 - No tests, lint, typecheck, build, runtime, staging, deployment, or Supabase mutation. Phase 09 remains IN PROGRESS.
+
+
+## 2026-11-16 Customer Notifications preferences
+
+- Customer Notifications preferences controls added: `890c1d63c307661c806f0950788267661fbc6e8b`.
+- Reuses existing FastAPI preference GET/PUT contracts and typed client. Exposes in-app and email toggles with loading, error, busy, and optimistic rollback states. Category settings are deliberately not surfaced until canonical categories are defined.
+- No schema/database changes; Phase 09 remains IN PROGRESS. No tests, lint, typecheck, build, runtime, staging, deployment, or Supabase mutation.
