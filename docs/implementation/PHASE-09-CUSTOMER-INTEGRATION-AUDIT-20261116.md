@@ -403,3 +403,13 @@ The zero-model response is consistent with live database state, not a frontend r
 This audit did not perform a provider call, worker start, API runtime check, test, build, lint, type-check, staging, migration apply or deployment. The production inventory is a read-only point-in-time observation and may change after the audit.
 
 Phase 09 remains **IN PROGRESS**. The next blockers are production FastAPI CORS/API deployment configuration, real provider/model registry setup, a persistent ready worker, and the OpenFuse private service/storage rollout.
+
+
+## Continuation — migration ledger and Vercel API entrypoint reconciliation (2026-11-16)
+
+- Read-only query against `supabase_migrations.schema_migrations` for these ten Phase 09 versions returned no rows: `20261116100000`, `20261116150000`, `20261116153000`, `20261116160000`, `20261116170000`, `20261116180000`, `20261116190000`, `20261116200000`, `20261116210000`, and `20261116220000`. They are therefore still pending in the live migration ledger at the time of inspection.
+- The repository contains `apps/api/api/index.py`, the Vercel Python Function entrypoint; it discovers the API workspace root, adds the repository/API roots to `sys.path`, and imports `app.main:app`. This confirms the Vercel adapter exists in source, but does not prove the connected API project is configured with the correct root directory, environment variables, or latest successful deployment.
+- Attempts to read the existing MoreAI Vercel projects and deployment lists returned HTTP 403 `forbidden` from the connected Vercel account. The production `NEXT_PUBLIC_MOREAI_API_URL`, project root configuration, and deployed commit could not be confirmed. No secret value was read or modified.
+- No migration was applied, no Vercel deployment was triggered, and no API/browser/runtime test was run.
+
+The ten migrations must be reviewed/reconciled against the existing historical migration lineage and then applied in dependency order under the approved production change process. The browser/API origin source change and Memory API source changes must not be described as live until their respective API deployment and database migrations are in place.
