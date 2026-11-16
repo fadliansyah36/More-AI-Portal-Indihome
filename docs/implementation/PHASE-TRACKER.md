@@ -1665,3 +1665,14 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - No Vercel deploy, promotion, rollback, build or runtime request was triggered during this continuation.
 - See [Vercel integration reconciliation](./PHASE-09-VERCEL-INTEGRATION-RECONCILIATION-20261116.md).
 - Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+## 2026-11-16 SBOM resolver fail-closed continuation
+
+- Source baseline: `96031a918c38d00c31eddba81208e5297da617c9`.
+- Source commits on `main`: `ad24baf339ebbf927bbce718ebb2bb542b15eaf7` tightens package-graph endpoint identity requirements and blocks manifest formats whose ecosystem-aware resolver is incomplete; `7628d110b1e7ce0b262ab38262ad2cd887a369a2` scopes direct declaration matching to the same manifest directory and explicitly supported sibling lockfiles only.
+- The graph no longer counts an edge complete solely because a target locator exists; the exact target version and, for package-origin edges, exact source version must also be present. Yarn/pnpm parsed edges now retain the resolved target version when an unambiguous package instance exists, but the formats remain graph blockers while complete workspace/importer/peer/protocol resolution is unfinished.
+- `Pipfile.lock`, Go module files, `Cargo.toml`, `composer.json`, `pnpm-lock.yaml`, `yarn.lock`, and `pyproject.toml` explicitly block dependency graph completion until their package-manager semantics and direct/transitive edge resolution are fully supported. A same-named package in a different nested directory can no longer satisfy a manifest declaration.
+- Report: [SBOM fail-closed reconciliation](./PHASE-09-SBOM-FAIL-CLOSED-CONTINUATION-20261116.md).
+- No UI files, Supabase schema/data, migrations, runtime credentials, API endpoint paths, or deployments changed. No tests, parser execution, lint, typecheck, build, browser/API/worker/provider execution or staging were run per instruction. Source edits are not runtime-verified.
+- Skill ingestion remains unstarted in canonical Supabase (last read-only aggregate: 0 packages / 0 source files). Host provisioning, encrypted worker storage, GitHub token, genuine Customer session, provider/billing config and worker heartbeat remain operational blockers.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
