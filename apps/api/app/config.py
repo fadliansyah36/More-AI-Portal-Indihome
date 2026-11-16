@@ -10,6 +10,7 @@ class Settings:
     agent_execution_enabled: bool
     artifacts_bucket: str
     browser_session_encryption_key: str | None
+    github_token: str | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -21,6 +22,9 @@ class Settings:
             agent_execution_enabled=os.getenv("MOREAI_AGENT_EXECUTION_ENABLED", "false").lower() == "true",
             artifacts_bucket=os.getenv("MOREAI_ARTIFACTS_BUCKET", "moreai-artifacts"),
             browser_session_encryption_key=os.getenv("MOREAI_BROWSER_SESSION_ENCRYPTION_KEY"),
+            # Server-only token for pinned skill source ingestion. Never expose
+            # this setting through public/client configuration.
+            github_token=os.getenv("MOREAI_GITHUB_TOKEN") or None,
         )
 
     @property
