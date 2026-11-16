@@ -1746,3 +1746,12 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - Repository branch `main` was observed at `e185488ed7469eef506fc34b4f86ea8d21222652` before the documentation continuation. The Motion reconciliation report was committed directly to `main` as `e1d66d70b8b32822b9dd404684ac4f7cb53da21e`.
 - No source package was imported, no Customer-owned Skill rows were seeded, and no code was executed. No tests, build, lint, typecheck, runtime verification, staging, migration apply, provider call, or deployment was performed.
 - Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED. Phase 11 remains BLOCKED. P1 source governance remains IN PROGRESS until all recursive child-pack inventories, exact dependency graphs, license/NOTICE/asset evidence, and per-file decisions are closed.
+
+
+## 2026-11-16 continuation — Memory and OpenFuse adapter hardening
+
+- `e2586b44915de8402739d6724761f5b1eb792b45`: optional consented Personal Memory retrieval failures are now isolated and recorded with a safe diagnostic event; durable conversation/checkpoint context can continue without optional memory-store availability.
+- `7fb9e3c857afc1b7f46a20abbc7c4785021941b1` and `dc66ae9203bb6f3de623c55ec2769f1b7f3ecabb`: worker startup now validates one BrowserSupervisor and shares that same instance with both OpenManus browser tool execution and the worker close/profile-retention reconciliation loop. Registry creation fails closed if browser runtime is enabled without the prevalidated adapter.
+- Report: [Memory and OpenFuse adapter integration hardening](./PHASE-09-MEMORY-OPENFUSE-ADAPTER-HARDENING-20261116.md).
+- Source-only. No tests, build, lint, typecheck, API/browser/worker runtime, Docker, provider, staging, migration apply or deployment was run. No UI, Supabase schema/data, secrets or provider configuration changed.
+- Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
