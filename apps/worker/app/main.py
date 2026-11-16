@@ -119,9 +119,43 @@ async def _browser_session_close_reconciliation_loop(
                     raise
                 except Exception:
                     logger.exception("browser_session_close_reconciliation_failed session_id=%s", session_id)
-            # Orphan profile deletion is an independent, fail-closed reconciliation.
-            # It requires the pinned OpenFuse delete-profile extension; unsupported
-            # workers must not prevent ordinary session close processing.
+            # Closed profiles are retained for 30 days. Delete only after FastAPI
+            # confirms the canonical retention deadline and ownership.
+            try:
+                retention = await http.get(
+                    f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/profile-cleanup-requests",
+                    headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+                )
+                retention.raise_for_status()
+                retention_payload = retention.json()
+                candidates = retention_payload.get("items") if isinstance(retention_payload, dict) else None
+                if not isinstance(candidates, list):
+                    raise RuntimeError("browser_profile_retention_requests_contract_invalid")
+                for candidate in candidates:
+                    if not isinstance(candidate, dict):
+                        continue
+                    profile_id, owner_id = candidate.get("session_id"), candidate.get("user_id")
+                    if not isinstance(profile_id, str) or not isinstance(owner_id, str):
+                        continue
+                    try:
+                        await browser.delete_profile(profile_id)
+                        acknowledged = await http.post(
+                            f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/{profile_id}/profile-deleted",
+                            json={"user_id": owner_id},
+                            headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+                        )
+                        acknowledged.raise_for_status()
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception:
+                        logger.exception("browser_profile_retention_delete_failed profile_id=%s", profile_id)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.exception("browser_profile_retention_reconciliation_unavailable")
+
+            # Orphan cleanup uses a complete canonical ownership snapshot. If
+            # count, pagination, or any API call is incomplete, deletion is skipped.
             try:
                 ownership = await http.get(
                     f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/owned-profile-ids",
