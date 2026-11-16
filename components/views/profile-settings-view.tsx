@@ -431,7 +431,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
         ) : (
           <div className="space-y-2">
             {browserSessions.map((session) => (
-              <div key={session.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3 flex items-center justify-between gap-3">
+              <div key={session.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-800 truncate">{session.origin_host}</p>
                   <p className="text-[10px] text-slate-500 mt-1">Terakhir digunakan: {new Date(session.last_used_at).toLocaleString('id-ID')}</p>
