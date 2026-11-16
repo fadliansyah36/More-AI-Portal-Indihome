@@ -59,12 +59,17 @@ async def list_skills(request: Request, user: dict[str, Any] = Depends(customer_
     packages = await repo.select("moreai_skill_packages", {
         "owner_user_id": f"eq.{owner}",
         "select": "id,slug,name,description,source_repository,source_ref,source_commit,source_path,source_blob_sha,content_sha256,version,license_id,license_url,license_status,manifest,requested_permissions,validation_status,validation_report,publication_status,created_at,updated_at",
-        "order": "updated_at.desc,id.desc", "limit": "100",
+        # A single customer may hold the complete pinned catalog (56 Motion,
+        # 172 Scenario and 2 Visual entrypoints), plus private/custom packages.
+        # Keep the complete pinned catalog visible to the sequential ingestion
+        # workflow so it can reconcile already-imported packages without
+        # attempting duplicate imports after the first 100 rows.
+        "order": "updated_at.desc,id.desc", "limit": "500",
     })
     installs = await repo.select("moreai_skill_installs", {
         "owner_user_id": f"eq.{owner}",
         "select": "id,skill_package_id,status,execution_enabled,permission_request,permission_status,created_at,updated_at",
-        "order": "updated_at.desc", "limit": "100",
+        "order": "updated_at.desc", "limit": "500",
     })
     by_skill = {str(row["skill_package_id"]): row for row in installs}
     return {"items": [{**row, "installation": by_skill.get(str(row["id"]))} for row in packages], "count": len(packages)}
