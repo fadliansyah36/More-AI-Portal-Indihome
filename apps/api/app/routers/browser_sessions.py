@@ -175,7 +175,8 @@ async def list_owned_browser_profile_ids(
     """Return canonical profile ownership keys; worker must fail closed if this call fails."""
     _worker_auth(request, x_moreai_worker_token)
     repo = repository(request)
-    total = await repo.count("moreai_browser_sessions", {})
+    ownership_filter = {"profile_deleted_at": "is.null"}
+    total = await repo.count("moreai_browser_sessions", ownership_filter)
     # Bound the response and explicitly signal incompleteness. The worker must
     # never run destructive reconciliation from a partial ownership inventory.
     if total > 10000:
@@ -184,7 +185,7 @@ async def list_owned_browser_profile_ids(
     rows: list[dict[str, Any]] = []
     for offset in range(0, total, page_size):
         page = await repo.select("moreai_browser_sessions", {
-            "select": "id", "order": "id.asc",
+            **ownership_filter, "select": "id", "order": "id.asc",
             "limit": str(page_size), "offset": str(offset),
         })
         if len(page) != min(page_size, total - offset):
