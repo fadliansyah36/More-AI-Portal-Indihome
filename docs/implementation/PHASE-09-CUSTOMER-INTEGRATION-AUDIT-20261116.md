@@ -101,3 +101,13 @@ Next:
 5. Complete Phase 09 evidence report without claiming Phase 10/11.
 
 Phase 10 (end-to-end integration verification) and Phase 11 (integration release gate) remain blocked by the explicit no-testing/no-staging instruction. No test, build, lint, type-check, runtime, screenshot, staging, migration apply or deployment was performed.
+
+
+## Follow-up package locator correction
+
+Additional source commits after the initial audit:
+- `a5d04a90eb419874455b856ea8d13dfa777d2455`: corrected npm v1 and v2/v3 nearest-ancestor lookup to begin at the package directory itself, then walk its ancestors. This matches Node's nested `node_modules` resolution order; starting at the parent directory skipped the package-local nested dependency directory.
+- `3fea6d9fc04707ad2d82d618dd0868f2754b0b9f`: Cargo target edges are joined against an exact name/version/source tuple in the lockfile rather than synthesizing a locator from an edge string.
+- `22c5d37e8aeb0fd542969b222743c0dcf0b741d0`: Ruby exact constraints only resolve when a unique locked gem node exists; a fabricated locator is no longer enough to make the graph appear complete.
+
+These changes are source-only and intentionally unverified. npm v1 direct workspace-root edges are not yet represented as explicit graph edges, even though direct manifest names are checked against lockfile package inventory. That remains an SBOM graph completeness item and must not be silently represented as fully closed.
