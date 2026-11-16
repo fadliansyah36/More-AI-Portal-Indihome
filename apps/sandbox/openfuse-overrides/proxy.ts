@@ -3,7 +3,6 @@ import {
   type ClientRequest,
   createServer,
   type IncomingMessage,
-  type OutgoingHttpHeaders,
   type RequestOptions,
   request,
 } from "node:http";

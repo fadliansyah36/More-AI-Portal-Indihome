@@ -160,3 +160,30 @@ The stack definition is source-only until an authorized deployment host supplies
 
 
 The OpenFuse worker adapter imports only PDFs that have passed the ClamAV `INSTREAM` scan. It then sends the bytes, SHA-256 digest, filename, session UUID and clean verdict to the authenticated FastAPI `/api/v1/artifacts/internal/browser-download` endpoint. FastAPI rechecks run ownership, session ownership/status, content signature, MIME, size, checksum and private bucket status before writing artifact metadata. Scanner or storage errors remain visible as per-file failures; no unscanned bytes are imported.
+
+
+### MoreAI worker network attachment
+
+The MoreAI worker container must join the named private network created by this stack while retaining its normal application network for Supabase/model API access. Add the following network attachment to the worker's deployment definition (do not publish either browser service port):
+
+```yaml
+services:
+  moreai-worker:
+    environment:
+      MOREAI_BROWSER_ENABLED: "true"
+      MOREAI_BROWSER_SERVICE_URL: http://browser-supervisor:8790
+      MOREAI_BROWSER_SERVICE_TOKEN: ${MOREAI_BROWSER_SERVICE_TOKEN}
+      MOREAI_BROWSER_PRIVATE_NETWORK_HTTP: "true"
+      MOREAI_BROWSER_EGRESS_ENFORCED: "true"
+      MOREAI_CLAMAV_HOST: clamav
+      MOREAI_CLAMAV_PORT: "3310"
+    networks:
+      - default
+      - browser_isolated
+networks:
+  browser_isolated:
+    external: true
+    name: moreai_browser_isolated
+```
+
+Also inject `MOREAI_WORKER_INTERNAL_TOKEN` and `MOREAI_INTERNAL_API_URL` through the existing secret manager. Never place any of these values in the customer browser. This attachment is required for the worker to reach the private OpenFuse worker and ClamAV service; it does not grant the browser container an external network route.

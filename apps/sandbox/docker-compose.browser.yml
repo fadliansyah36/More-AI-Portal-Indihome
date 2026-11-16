@@ -66,6 +66,7 @@ volumes:
 
 networks:
   browser_isolated:
+    name: moreai_browser_isolated
     internal: true
   browser_egress:
     driver: bridge
