@@ -125,7 +125,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
         text = item.get("text_content")
         if name in {"skill.md", "skill.yaml", "skill.yml", "skill.json", "manifest.json", "package.json", "pyproject.toml"}:
             manifest_files.append(path)
-        if name in {"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "yarn.lock", "requirements.txt", "requirements.lock", "pyproject.toml", "poetry.lock", "uv.lock", "pipfile", "pipfile.lock", "cargo.toml", "cargo.lock", "go.mod", "go.sum", "composer.json", "composer.lock", "gemfile", "gemfile.lock"}:
+        if name in {"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "yarn.lock", "requirements.txt", "requirements.lock", "pyproject.toml", "poetry.lock", "uv.lock", "pipfile", "pipfile.lock", "cargo.toml", "cargo.lock", "go.mod", "go.sum", "go.work", "composer.json", "composer.lock", "gemfile", "gemfile.lock"}:
             dependency_file_evidence.append({
                 "path": path,
                 "sha256": item.get("content_sha256"),
@@ -887,7 +887,15 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
             for line in text.splitlines():
                 fields = line.split()
                 if len(fields) == 3 and not fields[1].endswith("/go.mod"):
-                    add_dependency("go", fields[0], fields[1], path, status="lockfile_pinned", integrity=fields[2])
+                    add_dependency("go", fields[0], fields[1], path, status="checksum_record_not_selected_build_node", integrity=fields[2])
+        elif name == "go.work":
+            dependency_files.append(path)
+            # Workspace use/replace directives change the selected module graph.
+            # Do not infer workspace membership from a path-only text scan.
+            dependencies.append({
+                "manifest": path, "ecosystem": "go",
+                "status": "go_workspace_requires_module_aware_resolver",
+            })
 
     for manifest_path, declared in npm_declared.items():
         lock_candidates = [
@@ -932,7 +940,7 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
     unresolved = sum(1 for item in dependencies if not item.get("exact_version") or item.get("status") not in resolved_statuses)
     graph_blocking_manifests = [
         path for path in dependency_files
-        if PurePosixPath(path).name.lower() in {"pipfile.lock", "go.mod", "go.sum"}
+        if PurePosixPath(path).name.lower() in {"pipfile.lock", "go.mod", "go.sum", "go.work"}
     ]
     unresolved_edges = sum(1 for edge in dependency_edges if not edge.get("to_locator"))
     graph_complete = unresolved_edges == 0 and not graph_blocking_manifests
