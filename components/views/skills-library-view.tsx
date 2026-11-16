@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck, PackagePlus, RefreshCw, LockKeyhole, AlertCircle, Plus, X, Search } from 'lucide-react';
-import { customerSkillApi, type CustomerSkillPackage, type PinnedSkillCatalogItem } from '@/lib/api/client';
+import { customerSkillApi, type CustomerSkillExecutionAudit, type CustomerSkillPackage, type PinnedSkillCatalogItem } from '@/lib/api/client';
 
 const permissionOptions = ['network.read','workspace.read','workspace.write','browser.navigate','browser.download','search.web','files.read','files.write','calendar.read','calendar.write','gmail.read','gmail.send'];
 
@@ -26,6 +26,9 @@ export function SkillsLibraryView() {
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
   const [bulkProgress, setBulkProgress] = useState<{ total: number; completed: number; failed: number; current: string; failures: string[] } | null>(null);
+  const [auditItems, setAuditItems] = useState<CustomerSkillExecutionAudit[]>([]);
+  const [auditLoading, setAuditLoading] = useState(true);
+  const [auditError, setAuditError] = useState<string | null>(null);
 
   const refresh = async () => {
     setLoading(true); setError(null);
@@ -33,7 +36,13 @@ export function SkillsLibraryView() {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Skill Registry tidak dapat dimuat.'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { void refresh(); }, []);
+  const refreshAudit = async () => {
+    setAuditLoading(true); setAuditError(null);
+    try { setAuditItems((await customerSkillApi.audit({ limit: 50 })).items); }
+    catch (cause) { setAuditError(cause instanceof Error ? cause.message : 'Audit eksekusi Skill tidak dapat dimuat.'); }
+    finally { setAuditLoading(false); }
+  };
+  useEffect(() => { void refresh(); void refreshAudit(); }, []);
 
   const loadCatalog = async () => {
     setCatalogLoading(true); setError(null);
@@ -195,6 +204,26 @@ export function SkillsLibraryView() {
       Import hanya menyimpan metadata dan provenance, bukan mengunduh atau menjalankan kode. Eksekusi tetap nonaktif sampai validasi isi, pemeriksaan lisensi, publikasi, dan persetujuan permission selesai.
     </div>
     {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"><AlertCircle className="mr-1 inline h-4 w-4"/>{error}</div>}
+    <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div><h2 className="text-sm font-bold text-slate-900">Audit Eksekusi AI Skills</h2><p className="text-[10px] text-slate-500">Riwayat resolver, penolakan permission, dan eksekusi dari Agent Run.</p></div>
+        <button type="button" onClick={() => void refreshAudit()} disabled={auditLoading} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50"><RefreshCw className="h-3 w-3"/>Muat ulang</button>
+      </div>
+      {auditLoading ? <p className="py-3 text-xs text-slate-500">Memuat audit dari FastAPI…</p>
+        : auditError ? <p className="rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs text-rose-700">{auditError}</p>
+        : auditItems.length === 0 ? <p className="py-3 text-xs text-slate-500">Belum ada catatan audit Skill pada akun ini.</p>
+        : <div className="max-h-72 space-y-2 overflow-y-auto pr-1">{auditItems.map(item => {
+          const labels = { resolved: 'Skill dipilih oleh resolver', rejected: 'Eksekusi ditolak', executed: 'Eksekusi tercatat' } as const;
+          const tones = { resolved: 'bg-blue-50 text-blue-700', rejected: 'bg-rose-50 text-rose-700', executed: 'bg-emerald-50 text-emerald-700' } as const;
+          return <article key={item.id} className="rounded-xl border border-slate-100 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-semibold text-slate-800">{labels[item.event_type]}</span><span className={`rounded-full px-2 py-1 text-[9px] font-bold ${tones[item.event_type]}`}>{item.event_type}</span></div>
+            <p className="mt-1 text-[10px] text-slate-600">Versi {item.skill_version} · Run <span className="font-mono">{item.agent_run_id.slice(0, 12)}</span></p>
+            <p className="mt-1 break-all text-[9px] text-slate-400">SHA-256 {item.skill_content_sha256}</p>
+            <p className="mt-1 text-[9px] text-slate-400">{new Date(item.created_at).toLocaleString('id-ID')} · Permission snapshot: {item.permission_snapshot.length ? item.permission_snapshot.join(', ') : 'tidak ada'}</p>
+            {typeof item.event_detail.reason === 'string' && <p className="mt-1 text-[10px] text-rose-700">Alasan: {item.event_detail.reason}</p>}
+          </article>;
+        })}</div>}
+    </section>
     {showCatalog && <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div><h2 className="text-sm font-bold text-slate-900">Pinned Visual, Scenario & Motion Skills</h2><p className="text-[10px] text-slate-500">Sumber commit tetap: 2 Visual Skills, 172 Scenario product skills, dan 56 Motion Skills dari 19 repository pack.</p></div>
