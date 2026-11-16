@@ -1636,3 +1636,13 @@ Phase 09 remains IN PROGRESS. Phase 10 remains NOT ACCEPTED and Phase 11 remains
 - `infra/provision-openfuse-host.sh` requires an authorized Linux host, LUKS/dm-crypt-backed Docker data-root, exact DNS allowlist, digest-pinned images and strong service tokens before launching the single-replica OpenFuse/ClamAV stack. Commit `a75929f7`. **The script has not been executed; no host/runtime provisioning is claimed.**
 - No Customer skill batch has been executed; no actual GitHub token, Docker image digest, browser service token, proxy token, host allowlist or persistent host was supplied.
 - No tests/build/lint/typecheck/runtime/browser/provider/staging/deployment were run. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
+
+
+## 2026-11-16 canonical Skill and runtime readiness refresh
+
+- Latest read-only Supabase snapshot (canonical project `uunfgimtokhucegqbpce`) returned: Skill packages 0, Skill source files 0, LLM providers 0, LLM models 0, worker capability snapshots fresh within 90 seconds 0, active/unexpired browser sessions 0, and unexpired browser capacity leases 0. Live column names used were `last_seen_at` and `expires_at`. No records were seeded or changed.
+- Supabase migration history remains 114 applied versions; no migration or SQL write was made during this source continuation.
+- OpenFuse host setup source now includes a required digest-pinned Playwright image, ClamAV digest, private worker network overlay and LUKS-backed Docker data-root provisioning guard. It is still NOT PROVISIONED because no authorized host, image digests, service secrets or allowlist were supplied/run.
+- FastAPI skill source calls support a server-only GitHub read token and rate-limit retry response. The token is not yet provisioned. Motion/Visual/Scenario package imports remain NOT STARTED based on the empty canonical tables.
+- Detailed report: [Phase 09 Skill Registry continuation](./PHASE-09-SKILL-REGISTRY-CONTINUATION-20261116.md).
+- No tests/build/lint/typecheck/API/browser/worker/provider execution, staging or deployment was performed. Phase 09 remains IN PROGRESS; Phase 10 NOT ACCEPTED; Phase 11 BLOCKED.
