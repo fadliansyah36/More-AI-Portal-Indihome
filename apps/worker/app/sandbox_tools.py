@@ -16,7 +16,7 @@ class IsolatedSandboxToolAdapter:
 
     def __init__(
         self, *, service_url: str, service_token: str, http: httpx.AsyncClient,
-        api_url: str, internal_token: str,
+        api_url: str, internal_token: str, worker_id: str,
         allow_private_http: bool = False, workspace_tools=None,
     ):
         parsed = urlsplit(service_url)
@@ -43,6 +43,9 @@ class IsolatedSandboxToolAdapter:
         self.http = http
         self.api_url = api_url.rstrip("/")
         self.internal_token = internal_token
+        self.worker_id = worker_id
+        if not re.fullmatch(r"[A-Za-z0-9._:-]{8,128}", self.worker_id):
+            raise ValueError("sandbox_worker_id_invalid")
         self.workspace_tools = workspace_tools
 
     def _internal_headers(self) -> dict[str, str]:
@@ -73,7 +76,7 @@ class IsolatedSandboxToolAdapter:
         response = await self.http.post(
             f"{self.api_url}/api/v1/customer/computer/internal/actions/{receipt_id}/finish",
             json={
-                "run_id": run_id, "user_id": user_id, "status": status,
+                "run_id": run_id, "user_id": user_id, "worker_id": self.worker_id, "status": status,
                 "result": result, "error_code": error_code,
             },
             headers=self._internal_headers(),
@@ -128,7 +131,7 @@ class IsolatedSandboxToolAdapter:
             f"{self.api_url}/api/v1/customer/computer/internal/actions/claim",
             json={
                 "run_id": run_id, "user_id": user_id, "workspace_id": workspace_id,
-                "action_key": action_key, "request_hash": request_hash,
+                "worker_id": self.worker_id, "action_key": action_key, "request_hash": request_hash,
                 "action_type": language,
             },
             headers=self._internal_headers(),
