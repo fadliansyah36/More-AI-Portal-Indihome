@@ -55,6 +55,8 @@ begin
     coalesce(v_package.license_evidence,'')=''
     or v_package.validation_status<>'validated'
     or coalesce((v_inventory->>'unresolved_dependency_count')::integer, -1) <> 0
+    or coalesce((v_inventory->>'unresolved_dependency_edge_count')::integer, -1) <> 0
+    or coalesce((v_inventory->>'dependency_graph_complete')::boolean, false) is not true
     or coalesce((v_registry->>'unresolved_count')::integer, -1) <> 0
     or coalesce((v_registry->>'registry_metadata_resolved_count')::integer, -1)
        <> coalesce((v_registry->>'exact_version_count')::integer, -2)
