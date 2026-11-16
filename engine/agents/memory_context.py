@@ -118,9 +118,17 @@ class MemoryContextCoordinator:
         """
         personal: list[dict[str, str]] = []
         if self.personal_memory_store is not None:
-            personal = await self.personal_memory_store.load_for_context(
-                user_id=user_id, limit=20,
-            )
+            try:
+                personal = await self.personal_memory_store.load_for_context(
+                    user_id=user_id, limit=20,
+                )
+            except Exception as exc:
+                # Personal Memory is an optional, consented context source. A
+                # transient retrieval failure must not prevent the core Agent
+                # Run from using its durable conversation/checkpoint context.
+                await self._report_optional_failure(
+                    run_id, "agent.memory.personal_retrieval_failed", exc,
+                )
 
         semantic: list[dict[str, Any]] = []
         if self.knowledge_tools is not None:
