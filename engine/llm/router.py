@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
+import re
 from typing import Any, Protocol
 
 from engine.llm.errors import RetryableProviderError
@@ -107,7 +109,16 @@ class ModelRouter:
                 secret_env_name = config.get("secret_env_name")
                 if not isinstance(base_url, str) or not base_url.startswith("https://"):
                     continue
-                if not isinstance(secret_env_name, str) or not secret_env_name.startswith("MOREAI_PROVIDER_"):
+                if (
+                    not isinstance(secret_env_name, str)
+                    or re.fullmatch(r"MOREAI_PROVIDER_[A-Z0-9_]{1,100}", secret_env_name) is None
+                ):
+                    continue
+                # Do not expose a configured-but-unusable fallback to the runtime.
+                # A route without its worker-side secret must be removed before
+                # candidate ordering, otherwise failover can select an empty key.
+                secret_value = os.getenv(secret_env_name)
+                if not isinstance(secret_value, str) or not secret_value.strip():
                     continue
                 route = ResolvedModelRoute(
                     provider_key=provider["key"], model_key=model["key"],
