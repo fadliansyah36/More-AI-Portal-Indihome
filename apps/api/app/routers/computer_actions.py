@@ -25,6 +25,7 @@ class ComputerActionClaim(BaseModel):
     run_id: UUID
     user_id: UUID
     workspace_id: UUID
+    worker_id: str = Field(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
     action_key: str = Field(pattern=r"^[0-9a-f]{64}$")
     request_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
     action_type: Literal["bash", "python"]
@@ -33,6 +34,7 @@ class ComputerActionClaim(BaseModel):
 class ComputerActionFinish(BaseModel):
     run_id: UUID
     user_id: UUID
+    worker_id: str = Field(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
     status: Literal["succeeded", "failed", "unknown"]
     result: dict[str, Any] | None = None
     error_code: str | None = Field(default=None, max_length=100)
@@ -75,10 +77,12 @@ async def claim_computer_action_receipt(
     repo = repository(request)
     runs = await repo.select("agent_runs", {
         "id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
-        "status": "eq.running", "select": "id,workspace_id", "limit": "1",
+        "status": "eq.running", "lease_owner": f"eq.{body.worker_id}",
+        "lease_expires_at": "gt." + datetime.now(timezone.utc).isoformat(),
+        "select": "id,workspace_id,lease_owner,lease_expires_at", "limit": "1",
     })
     if not runs or str(runs[0].get("workspace_id") or "") != str(body.workspace_id):
-        raise HTTPException(403, "computer_action_run_workspace_owner_mismatch")
+        raise HTTPException(409, "computer_action_worker_lease_or_workspace_mismatch")
     existing = await repo.select("moreai_computer_action_receipts", {
         "run_id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
         "action_key": f"eq.{body.action_key}",
@@ -133,11 +137,12 @@ async def finish_computer_action_receipt(
     repo = repository(request)
     runs = await repo.select("agent_runs", {
         "id": f"eq.{body.run_id}", "user_id": f"eq.{body.user_id}",
-        "status": "in.(running,succeeded,failed,cancelled,expired)",
-        "select": "id", "limit": "1",
+        "status": "eq.running", "lease_owner": f"eq.{body.worker_id}",
+        "lease_expires_at": "gt." + datetime.now(timezone.utc).isoformat(),
+        "select": "id,lease_owner,lease_expires_at", "limit": "1",
     })
     if not runs:
-        raise HTTPException(403, "computer_action_run_owner_mismatch")
+        raise HTTPException(409, "computer_action_worker_lease_not_held")
     result = body.result or {}
     import json
     if len(json.dumps(result, separators=(",", ":"), ensure_ascii=True).encode()) > 160_000:
