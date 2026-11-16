@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Play, Copy, Check, Terminal, Code2, FolderGit2, Save, Download, Loader2 } from 'lucide-react';
-import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact } from '@/lib/api/client';
+import { artifactApi, customerApi, type CustomerAgentRun, type CustomerArtifact, type CustomerBrowserSession, type CustomerBrowserActionReceipt } from '@/lib/api/client';
 
 interface CodeViewProps { onNavigateToChat?: (prompt: string) => void; }
 
@@ -38,6 +38,48 @@ print(greet("World"))`
   }>>([]);
   const [computerReceiptsLoading, setComputerReceiptsLoading] = useState(false);
   const [computerReceiptsError, setComputerReceiptsError] = useState<string|null>(null);
+
+  const [browserSessions, setBrowserSessions] = useState<CustomerBrowserSession[]>([]);
+  const [browserReceipts, setBrowserReceipts] = useState<CustomerBrowserActionReceipt[]>([]);
+  const [browserLifecycleLoading, setBrowserLifecycleLoading] = useState(false);
+  const [browserLifecycleError, setBrowserLifecycleError] = useState<string | null>(null);
+  const [closingBrowserSession, setClosingBrowserSession] = useState<string | null>(null);
+
+  const loadBrowserLifecycle = useCallback(async () => {
+    setBrowserLifecycleLoading(true);
+    setBrowserLifecycleError(null);
+    try {
+      const [sessions, receipts] = await Promise.all([
+        customerApi.browserSessions(),
+        customerApi.browserActionReceipts(30),
+      ]);
+      setBrowserSessions(sessions.items);
+      setBrowserReceipts(receipts.items);
+    } catch (cause) {
+      setBrowserLifecycleError(cause instanceof Error ? cause.message : 'Lifecycle Browser tidak dapat dimuat dari FastAPI.');
+    } finally {
+      setBrowserLifecycleLoading(false);
+    }
+  }, []);
+
+  const requestBrowserSessionClose = async (sessionId: string) => {
+    if (closingBrowserSession) return;
+    setClosingBrowserSession(sessionId);
+    setBrowserLifecycleError(null);
+    try {
+      await customerApi.closeBrowserSession(sessionId);
+      await loadBrowserLifecycle();
+    } catch (cause) {
+      setBrowserLifecycleError(cause instanceof Error ? cause.message : 'Permintaan penutupan sesi Browser gagal.');
+    } finally {
+      setClosingBrowserSession(null);
+    }
+  };
+
+  useEffect(() => {
+    void loadBrowserLifecycle();
+  }, [loadBrowserLifecycle]);
+
 
   const loadComputerReceipts = useCallback(async () => {
     setComputerReceiptsLoading(true);
@@ -331,6 +373,37 @@ print(greet("World"))`
               </button>
             </div>
           </div>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div><h3 className="text-sm font-bold text-slate-900">Browser Sessions & Activity</h3><p className="mt-1 text-[11px] text-slate-500">Sesi OpenFuse, masa berlaku, permintaan penutupan, dan action receipts dari FastAPI.</p></div>
+              <button type="button" onClick={() => void loadBrowserLifecycle()} disabled={browserLifecycleLoading} className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">{browserLifecycleLoading ? 'Memuat…' : 'Segarkan'}</button>
+            </div>
+            {browserLifecycleError && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{browserLifecycleError}</p>}
+            {!browserLifecycleLoading && browserSessions.length === 0 && !browserLifecycleError && <p className="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-500">Tidak ada sesi Browser aktif atau menunggu penutupan pada akun ini.</p>}
+            <div className="space-y-2">
+              {browserSessions.map((session) => <article key={session.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 p-3">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-slate-800">{session.origin_host}</p>
+                  <p className="mt-1 text-[10px] text-slate-500">Dibuat {new Date(session.created_at).toLocaleString('id-ID')} · Terakhir aktif {new Date(session.last_used_at).toLocaleString('id-ID')}</p>
+                  <p className="mt-1 text-[10px] text-slate-500">Berakhir {new Date(session.expires_at).toLocaleString('id-ID')} · ID {session.id.slice(0, 8)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={'rounded-full px-2.5 py-1 text-[10px] font-semibold '+(session.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800')}>{session.status === 'active' ? 'Aktif' : 'Menunggu ditutup'}</span>
+                  {session.status === 'active' && <button type="button" onClick={() => void requestBrowserSessionClose(session.id)} disabled={closingBrowserSession !== null} className="rounded-lg border border-rose-200 px-2.5 py-1.5 text-[10px] font-semibold text-rose-700 disabled:opacity-50">{closingBrowserSession === session.id ? 'Memproses…' : 'Tutup sesi'}</button>}
+                </div>
+              </article>)}
+            </div>
+            <div className="border-t border-slate-100 pt-3">
+              <p className="mb-2 text-[11px] font-semibold text-slate-700">Action receipts Browser terbaru</p>
+              {browserReceipts.length === 0 && !browserLifecycleLoading ? <p className="text-[11px] text-slate-500">Belum ada aktivitas Browser yang tercatat.</p> : <div className="space-y-2">
+                {browserReceipts.map((receipt) => <article key={receipt.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 p-3">
+                  <div className="min-w-0"><p className="text-xs font-semibold text-slate-800">{receipt.action_type.toUpperCase()} · {receipt.target_host}</p><p className="mt-1 text-[10px] text-slate-500">{new Date(receipt.requested_at).toLocaleString('id-ID')} · Run {receipt.run_id.slice(0, 8)}{receipt.session_id ? ' · Sesi ' + receipt.session_id.slice(0, 8) : ''}</p>{receipt.error_code && <p className="mt-1 text-[10px] text-rose-700">{receipt.error_code}</p>}</div>
+                  <span className={'rounded-full px-2.5 py-1 text-[10px] font-semibold '+(receipt.status === 'succeeded' ? 'bg-emerald-50 text-emerald-700' : receipt.status === 'failed' ? 'bg-rose-50 text-rose-700' : receipt.status === 'executing' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-800')}>{receipt.status === 'succeeded' ? 'Berhasil' : receipt.status === 'failed' ? 'Gagal' : receipt.status === 'executing' ? 'Berjalan' : 'Tidak diketahui'}</span>
+                </article>)}
+              </div>}
+            </div>
+          </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
             <div className="flex items-center justify-between gap-3">
