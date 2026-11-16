@@ -132,3 +132,29 @@ No packages were installed. No scripts, builds, lint, type checks or tests were 
 P1 Source Governance remains **IN PROGRESS**. P2 ADR remains **DRAFT / NOT ACCEPTED**. Mandatory Phase 04, 06, 07, 08 and 09 remain in progress. Phase 09 remains a prerequisite to Phase 10. With real tests and staging prohibited, Phase 10 and Phase 11 cannot be marked accepted or passed.
 
 **Next action:** finish the file-level content/reference/license and exact package-license reconciliation, then hash every final copy/adapt file and close P1. Only then finalize/accept P2 and proceed through Phase 04–09.
+
+
+## Corrective lockfile section recount — 2026-11-17
+
+This addendum supersedes the earlier paragraph in section 3 that described 1,890 OpenFuse package entries / 2,532 snapshots and 533 Scenario package entries / 659 snapshots. Those figures were produced by an over-inclusive key parser and must not be used as lockfile section totals.
+
+Both pinned pnpm v9 lockfiles were fetched again from their exact immutable commits and recounted using only first-level mapping keys within the `packages:` and `snapshots:` sections. Integrity values were counted independently. No package installation or script execution was performed.
+
+| Pinned lockfile | Package-section keys | SHA integrity records | Snapshot-section keys | Snapshot dependency declaration lines* |
+|---|---:|---:|---:|---:|
+| OpenFuse `7771e2db03a4b25d8bc8ee32f7a5c0dddafe3bfc` | 1,455 | 1,452 | 2,341 | 3,978 |
+| Scenario Skills `94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9` | 467 | 466 | 693 | 730 |
+
+The package-key vs integrity-record delta is 3 for OpenFuse and 1 for Scenario. The integrity-record counts agree with the previously corrected SBOM exact package-coordinate counts (1,452 and 466 respectively). This is a useful reconciliation signal, but not a complete dependency graph acceptance: the remaining package keys must be classified explicitly, and snapshot dependency declarations still need normalized package-coordinate resolution including peer-context suffixes, optional dependencies, platform conditions, and workspace/importer scope.
+
+*The dependency declaration line totals are raw structural counts of child mapping lines in the snapshot section, not deduplicated graph-edge counts. They must not be represented as a resolved edge total or used to infer installability.
+
+### Corrected interpretation
+
+1. The earlier 1,890 / 533 package-entry figures and 2,532 / 659 snapshot figures are withdrawn as incorrect parser output.
+2. The currently supported exact package-coordinate counts for the two pnpm lockfiles remain OpenFuse 1,452 and Scenario 466, matching the corrected SBOM records previously documented.
+3. This recount does not resolve the historical 1,793 OpenFuse `NOASSERTION` baseline against the expanded full-source SBOM, nor does it establish exact-version registry license expressions.
+4. The 1,989 `NOASSERTION` figure in the expanded SBOM remains a license-evidence status, not a count of missing lockfile entries. Registry metadata and package artifact/NOTICE review remain open for every exact package version.
+5. Do not use the stale counts elsewhere in P1 reports as accepted evidence. Update dependent summaries when their next controlled revision is made.
+
+**P1 remains OPEN.** The next dependency-graph deliverable must be a normalized importer → snapshot → package-coordinate edge export with peer contexts retained, followed by authoritative exact-version license/NOTICE evidence. Unknown or inaccessible metadata remains `NOASSERTION`; it must never be inferred from package names.
