@@ -1337,7 +1337,16 @@ export type CustomerSkillPackage = {
   source_blob_sha: string; content_sha256: string; version: string; license_id: string;
   license_url: string | null; license_status: string; manifest: Record<string, unknown>;
   requested_permissions: string[]; validation_status: string;
-  validation_report: { findings?: string[]; scope?: string; checked_at?: string };
+  validation_report: {
+    findings?: string[]; scope?: string; checked_at?: string;
+    source_inventory?: {
+      dependency_count?: number; dependency_edge_count?: number;
+      exact_version_count?: number; unresolved_dependency_count?: number;
+      dependencies?: Array<{ ecosystem?: string; name?: string; exact_version?: string; status?: string; source_manifest?: string }>;
+      dependency_edges?: Array<{ ecosystem?: string; from?: string; from_locator?: string; from_version?: string; to?: string; to_locator?: string; to_version?: string; requested?: string; kind?: string; resolution_status?: string }>;
+      registry_resolution?: { exact_version_count?: number; registry_metadata_resolved_count?: number; unresolved_count?: number };
+    };
+  };
   publication_status: string; created_at: string; updated_at: string;
   installation: {
     id: string; status: string; execution_enabled: boolean;
