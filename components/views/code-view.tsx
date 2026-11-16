@@ -31,6 +31,30 @@ print(greet("World"))`
   const [projectsNextCursor, setProjectsNextCursor] = useState<string | null>(null);
   const [loadingMoreProjects, setLoadingMoreProjects] = useState(false);
   const [downloadingProject, setDownloadingProject] = useState<string | null>(null);
+  const [computerReceipts, setComputerReceipts] = useState<Array<{
+    id:string; run_id:string; workspace_id:string; action_type:'bash'|'python';
+    status:'executing'|'succeeded'|'failed'|'unknown'; error_code:string|null;
+    requested_at:string; finished_at:string|null;
+  }>>([]);
+  const [computerReceiptsLoading, setComputerReceiptsLoading] = useState(false);
+  const [computerReceiptsError, setComputerReceiptsError] = useState<string|null>(null);
+
+  const loadComputerReceipts = async () => {
+    setComputerReceiptsLoading(true);
+    setComputerReceiptsError(null);
+    try {
+      const result = await customerApi.computerActionReceipts(30);
+      setComputerReceipts(result.items);
+    } catch (cause) {
+      setComputerReceiptsError(cause instanceof Error ? cause.message : 'Riwayat eksekusi komputer tidak dapat dimuat.');
+    } finally {
+      setComputerReceiptsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadComputerReceipts();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -307,6 +331,21 @@ print(greet("World"))`
               </button>
             </div>
           </div>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div><h3 className="text-sm font-bold text-slate-900">Riwayat Eksekusi Computer</h3><p className="mt-1 text-[11px] text-slate-500">Receipt durable dari FastAPI dan Supabase untuk aksi Python/Bash pada Agent Run.</p></div>
+              <button type="button" onClick={() => void loadComputerReceipts()} disabled={computerReceiptsLoading} className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-semibold text-slate-700 disabled:opacity-50">{computerReceiptsLoading?'Memuat…':'Segarkan'}</button>
+            </div>
+            {computerReceiptsError&&<p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{computerReceiptsError}</p>}
+            {!computerReceiptsLoading&&computerReceipts.length===0&&!computerReceiptsError&&<p className="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-500">Belum ada receipt eksekusi Python/Bash pada akun ini.</p>}
+            <div className="space-y-2">
+              {computerReceipts.map(receipt=><article key={receipt.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 p-3">
+                <div className="min-w-0"><p className="text-xs font-semibold text-slate-800">{receipt.action_type.toUpperCase()} · Run {receipt.run_id.slice(0,8)}</p><p className="mt-1 text-[10px] text-slate-500">{new Date(receipt.requested_at).toLocaleString()} · Workspace {receipt.workspace_id.slice(0,8)}</p>{receipt.error_code&&<p className="mt-1 text-[10px] text-rose-700">{receipt.error_code}</p>}</div>
+                <span className={'rounded-full px-2.5 py-1 text-[10px] font-semibold '+(receipt.status==='succeeded'?'bg-emerald-50 text-emerald-700':receipt.status==='failed'?'bg-rose-50 text-rose-700':receipt.status==='executing'?'bg-blue-50 text-blue-700':'bg-amber-50 text-amber-800')}>{receipt.status==='succeeded'?'Berhasil':receipt.status==='failed'?'Gagal':receipt.status==='executing'?'Berjalan':'Tidak diketahui'}</span>
+              </article>)}
+            </div>
+          </section>
 
           {/* Hasil Output Terminal (Exact from Sheet 2) */}
           <div className="rounded-3xl bg-slate-900 border border-slate-800 p-4 text-white shadow-xs space-y-2">
