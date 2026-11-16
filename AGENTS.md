@@ -25,7 +25,7 @@ Agents MUST:
 - Build missing UI using the approved MoreAI × IndiHome reference image and Master PRD section 16.
 - Treat any UI-file change as exceptional and justify it in the implementation report.
 
-UI change gate: Before editing a UI file, identify the exact missing integration behavior and the smallest required code change. Record baseline screen/route. After the change, provide before/after screenshots and explain every visual difference. Revert unrelated visual differences. No broad restyling.
+UI change gate: Before editing a UI file, identify the exact missing integration behavior and make the smallest viable code change. Every frontend UI/UX addition or modification MUST follow the existing frontend's established CSS/Tailwind classes, typography and fonts, buttons, colors, component patterns, animation, loading, progress/process, responsive behavior and interaction model. Reuse existing components, tokens, utilities and visual conventions wherever possible. Do not introduce a competing design system, arbitrary palette, new global styles or unrelated restyling. Review the changed source against adjacent existing screens/components and preserve their established visual and interaction behavior.
 
 ## 3. Design authority and tokens
 - Design authority image: .aistudio/artifacts/brain/4d52674d-4fe2-4441-a5bf-48030e74c0e3/.tempmediaStorage/media_1794208413882_ecc68f24.jpg
@@ -59,7 +59,7 @@ Target structure, adapted with documented evidence:
 ## 5. Mandatory full-backend-copy and integration-first phase gate
 No additional PRD feature/domain implementation may begin until phases 00–11 below pass, or a written exception is approved by the product owner.
 
-0. Phase 00 — Repository Baseline & UI Freeze: inventory routes/components/API/schema/RLS/config; record build/test baseline and UI screenshots; identify protected paths.
+0. Phase 00 — Repository Baseline & UI Freeze: inventory routes/components/API/schema/RLS/config; record build/test baseline and identify protected paths.
 1. Phase 01 — Upstream Source Pin & Provenance: inspect license, exact commit SHA, full tree, dependencies and security risks; produce manifest, hashes, notices and a file-by-file classification (backend/runtime, frontend/UI, docs/examples/assets, build/config).
 2. Phase 02 — Monorepo Backend Workspace Foundation: add isolated API/worker/engine/package workspaces without breaking frontend paths; preserve upstream package/module boundaries where practical.
 3. Phase 03 — Complete Upstream Source Copy: copy the entire pinned upstream repository into vendor/openmanusweb (including backend, system, architecture, domain logic, agent/engine, tools, workflow, orchestration, LLM, API/server, configs, dependency/build files, docs, examples, assets and license notices). This is a mandatory full repository snapshot, not a selective code sample. Prove completeness with source-to-destination path, size and hash comparison. Keep upstream frontend/UI source in the archival snapshot for provenance if present, but do not mount, deploy, merge or use it as MoreAI's product frontend. Document any exclusions only for secrets, generated caches, VCS internals or legally/security-prohibited material, with exact path and reason.
@@ -70,7 +70,7 @@ No additional PRD feature/domain implementation may begin until phases 00–11 b
 8. Phase 08 — Complete LLM, Tool, Workflow & Orchestration Integration: connect the upstream LLM stack, model/provider clients, prompt/schema contracts, agent types, planner, flow/orchestration, tool registry and all supported tools. Add MoreAI gateway/routing/metering/entitlement controls without deleting upstream capability. Isolated tools require policy/approval.
 9. Phase 09 — Existing Frontend API Integration: connect current Next.js screens through typed API client and minimal adapters. Replace demo/fallback responses with real API behavior progressively without changing visual UI.
 10. Phase 10 — End-to-End Integration Verification: prove frontend → FastAPI → worker/engine → LLM/tool → Supabase persistence → events/status → frontend. Verify auth, RLS, tenant isolation, streaming, cancellation, retry, idempotency, artifacts, credits and partner session boundaries.
-11. Phase 11 — Integration Release Gate: CI/build/lint/type checks, migration validation, API contract tests, RLS/security tests, end-to-end smoke tests, UI regression screenshots and evidence report must pass.
+11. Phase 11 — Integration Release Gate: CI/build/lint/type checks, migration validation, API contract tests, RLS/security tests, end-to-end smoke tests, frontend source/style consistency review and evidence report must pass.
 
 After Phase 11, continue with post-integration product phases in Master PRD section 22. Do not skip or reorder dependencies without a documented reason and acceptance evidence.
 
@@ -121,7 +121,7 @@ After Phase 11, continue with post-integration product phases in Master PRD sect
 - Establish a baseline before modifications and run the same checks after each integration increment.
 - Required checks as applicable: Python lint/type/unit tests, frontend lint/type/build, API schema compatibility, migration apply/validation, RLS tests, worker tests, security tests, contract tests and browser E2E smoke tests.
 - Test 360, 390, 768, 1024 and 1440 px for affected existing journeys.
-- Capture screenshots for protected UI routes before/after any UI file change.
+- For every UI file change, inspect the relevant existing components and styles; confirm CSS/classes, font, button, color, animation, loading/progress and responsive patterns remain consistent. Document the exact files and visual conventions reused. Do not require screenshots as a prerequisite.
 - Verify loading, empty, error, retry, unauthorized, forbidden, timeout, cancellation and success states.
 - Do not deploy production until required checks and release gates pass. Do not deploy intermediate/incomplete work.
 
