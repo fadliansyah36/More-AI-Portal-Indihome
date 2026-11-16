@@ -109,6 +109,15 @@ class BrowserTakeoverGrantConsume(BaseModel):
     token: str = Field(min_length=32, max_length=256)
     worker_id: str = Field(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
 
+class BrowserTakeoverCommandCreate(BaseModel):
+    grant_token: str = Field(min_length=32, max_length=256)
+    input: dict[str, Any]
+
+class BrowserTakeoverCommandFinish(BaseModel):
+    status: Literal["succeeded", "failed"]
+    result: dict[str, Any] | None = None
+    error_code: str | None = Field(default=None, max_length=100)
+
 class BrowserTakeoverInputAudit(BaseModel):
     session_id: UUID
     user_id: UUID
@@ -518,6 +527,124 @@ async def revoke_browser_takeover_grants(
     if not isinstance(count, int):
         raise HTTPException(503, "browser_takeover_revoke_contract_invalid")
     return {"session_id": str(session_id), "revoked": count}
+
+
+@router.post("/{session_id}/takeover-input", status_code=202)
+async def enqueue_browser_takeover_input(
+    session_id: UUID,
+    body: BrowserTakeoverCommandCreate,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    """Persist one bounded human input command under an encrypted, one-time grant."""
+    payload_bytes = json.dumps(body.input, separators=(",", ":"), ensure_ascii=True).encode()
+    if not body.input or len(payload_bytes) > 16_384:
+        raise HTTPException(413, "browser_takeover_input_invalid")
+    now = datetime.now(timezone.utc)
+    repo = repository(request)
+    sessions = await repo.select("moreai_browser_sessions", {
+        "id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "status": "eq.active", "expires_at": "gt." + now.isoformat(),
+        "select": "id", "limit": "1",
+    })
+    if not sessions:
+        raise HTTPException(404, "browser_session_not_active_or_not_owned")
+    digest = hashlib.sha256(body.grant_token.encode("utf-8")).hexdigest()
+    grants = await repo.select("moreai_browser_takeover_grants", {
+        "session_id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
+        "token_sha256": f"eq.{digest}", "consumed_at": "is.null", "revoked_at": "is.null",
+        "expires_at": "gt." + now.isoformat(),
+        "select": "id,expires_at", "limit": "1",
+    })
+    if not grants:
+        raise HTTPException(409, "browser_takeover_grant_invalid_expired_or_consumed")
+    grant = grants[0]
+    encrypted = _encrypt(request, {
+        "grant_token": body.grant_token,
+        "input": body.input,
+    })
+    try:
+        command = await repo.insert("moreai_browser_takeover_commands", {
+            "session_id": str(session_id), "user_id": str(user["id"]),
+            "grant_id": grant["id"], "encrypted_command": encrypted,
+            "status": "queued",
+        })
+    except HTTPException as exc:
+        # One grant is intentionally bound to one command; callers must request a
+        # fresh grant after an ambiguous/rejected submission.
+        raise HTTPException(409, "browser_takeover_grant_already_submitted") from exc
+    await repo.insert("moreai_browser_session_events", {
+        "session_id": str(session_id), "user_id": str(user["id"]),
+        "event_type": "takeover_command_queued",
+        "metadata": {"command_id": command["id"], "grant_id": grant["id"], "input_bytes": len(payload_bytes)},
+    })
+    return {"command_id": command["id"], "session_id": str(session_id), "status": "queued"}
+
+
+@router.get("/takeover-input/{command_id}")
+async def get_browser_takeover_command(
+    command_id: UUID,
+    request: Request,
+    user: dict[str, Any] = Depends(customer_principal),
+):
+    rows = await repository(request).select("moreai_browser_takeover_commands", {
+        "id": f"eq.{command_id}", "user_id": f"eq.{user['id']}",
+        "select": "id,session_id,status,error_code,created_at,claimed_at,finished_at",
+        "limit": "1",
+    })
+    if not rows:
+        raise HTTPException(404, "browser_takeover_command_not_found")
+    return rows[0]
+
+
+@router.get("/internal/takeover-commands/claim")
+async def claim_browser_takeover_commands(
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+    x_moreai_worker_id: str | None = Header(default=None, alias="X-MoreAI-Worker-Id"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    if not x_moreai_worker_id or not __import__("re").fullmatch(r"[A-Za-z0-9._:-]{8,128}", x_moreai_worker_id):
+        raise HTTPException(422, "worker_id_invalid")
+    rows = await repository(request).rpc("moreai_claim_browser_takeover_commands", {
+        "p_worker_id": x_moreai_worker_id, "p_limit": 10,
+    })
+    if not isinstance(rows, list):
+        raise HTTPException(503, "browser_takeover_command_claim_contract_invalid")
+    items = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        command = _decrypt(request, row.get("encrypted_command"))
+        token, input_payload = command.get("grant_token"), command.get("input")
+        if not isinstance(token, str) or not isinstance(input_payload, dict):
+            raise HTTPException(503, "browser_takeover_command_payload_invalid")
+        items.append({
+            "command_id": str(row["id"]), "session_id": str(row["session_id"]),
+            "grant_token": token, "input": input_payload,
+        })
+    return {"items": items}
+
+
+@router.post("/internal/takeover-commands/{command_id}/finish")
+async def finish_browser_takeover_command(
+    command_id: UUID,
+    body: BrowserTakeoverCommandFinish,
+    request: Request,
+    x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
+    x_moreai_worker_id: str | None = Header(default=None, alias="X-MoreAI-Worker-Id"),
+):
+    _worker_auth(request, x_moreai_worker_token)
+    if not x_moreai_worker_id:
+        raise HTTPException(422, "worker_id_required")
+    result = await repository(request).rpc("moreai_finish_browser_takeover_command", {
+        "p_command_id": str(command_id), "p_worker_id": x_moreai_worker_id,
+        "p_status": body.status, "p_result": body.result,
+        "p_error_code": body.error_code,
+    })
+    if not isinstance(result, dict) or result.get("status") != body.status:
+        raise HTTPException(409, "browser_takeover_command_finish_contract_invalid")
+    return result
 
 
 @router.post("/internal/takeover-grants/consume")
