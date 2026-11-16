@@ -133,7 +133,7 @@ async def mark_expired_browser_sessions_for_close(
     request: Request,
     x_moreai_worker_token: str | None = Header(default=None, alias="X-MoreAI-Worker-Token"),
 ):
-    """Turn TTL/idle expiry into durable close work; the isolated worker owns Chromium cleanup."""
+    """Turn TTL/idle expiry into atomic, durable close work."""
     _worker_auth(request, x_moreai_worker_token)
     repo = repository(request)
     now = datetime.now(timezone.utc)
@@ -154,16 +154,12 @@ async def mark_expired_browser_sessions_for_close(
         reason = "ttl" if expires_at <= now else "idle" if last_used_at <= idle_before else None
         if reason is None:
             continue
-        changed = await repo.update("moreai_browser_sessions", {
-            "id": f"eq.{row['id']}", "user_id": f"eq.{row['user_id']}", "status": "eq.active",
-        }, {"status": "close_requested"})
-        if not changed:
-            continue
-        await repo.insert("moreai_browser_session_events", {
-            "session_id": str(row["id"]), "user_id": str(row["user_id"]),
-            "event_type": "close_requested", "metadata": {"source": "ttl_reconciler", "reason": reason},
+        result = await repo.rpc("moreai_request_browser_session_close", {
+            "p_session_id": str(row["id"]), "p_user_id": str(row["user_id"]),
+            "p_source": "ttl_reconciler", "p_reason": reason,
         })
-        queued.append({"session_id": str(row["id"]), "user_id": str(row["user_id"])})
+        if isinstance(result, dict) and result.get("status") == "close_requested":
+            queued.append({"session_id": str(row["id"]), "user_id": str(row["user_id"])})
     return {"items": queued}
 
 
@@ -406,23 +402,13 @@ async def list_browser_sessions(request: Request, user: dict[str, Any] = Depends
 
 @router.post("/{session_id}/close")
 async def close_browser_session(session_id: UUID, request: Request, user: dict[str, Any] = Depends(customer_principal)):
-    repo = repository(request)
-    rows = await repo.update("moreai_browser_sessions", {
-        "id": f"eq.{session_id}", "user_id": f"eq.{user['id']}", "status": "eq.active",
-    }, {"status": "close_requested"})
-    if rows:
-        await repo.insert("moreai_browser_session_events", {
-            "session_id": str(session_id), "user_id": user["id"],
-            "event_type": "close_requested", "metadata": {"source": "customer"},
-        })
-        return {"session_id": str(session_id), "status": "close_requested"}
-    current = await repo.select("moreai_browser_sessions", {
-        "id": f"eq.{session_id}", "user_id": f"eq.{user['id']}",
-        "select": "id,status", "limit": "1",
+    result = await repository(request).rpc("moreai_request_browser_session_close", {
+        "p_session_id": str(session_id), "p_user_id": str(user["id"]),
+        "p_source": "customer", "p_reason": None,
     })
-    if current and current[0].get("status") in {"close_requested", "closed"}:
-        return {"session_id": str(session_id), "status": current[0]["status"], "replayed": True}
-    raise HTTPException(404, "browser_session_not_found")
+    if not isinstance(result, dict) or result.get("status") not in {"close_requested", "closed"}:
+        raise HTTPException(503, "browser_session_close_request_contract_invalid")
+    return result
 
 
 @router.post("/internal/acquire")
@@ -448,15 +434,10 @@ async def acquire_browser_session(body: SessionAcquire, request: Request,
         expiry = datetime.fromisoformat(str(row["expires_at"]).replace("Z", "+00:00"))
         last = datetime.fromisoformat(str(row["last_used_at"]).replace("Z", "+00:00"))
         if expiry <= now or last + timedelta(minutes=IDLE_TTL_MINUTES) <= now:
-            changed = await repo.update("moreai_browser_sessions", {
-                "id": f"eq.{body.session_id}", "user_id": f"eq.{body.user_id}", "status": "eq.active",
-            }, {"status": "close_requested"})
-            if changed:
-                await repo.insert("moreai_browser_session_events", {
-                    "session_id": str(body.session_id), "user_id": str(body.user_id),
-                    "event_type": "close_requested",
-                    "metadata": {"source": "acquire_guard", "reason": "ttl_or_idle"},
-                })
+            await repo.rpc("moreai_request_browser_session_close", {
+                "p_session_id": str(body.session_id), "p_user_id": str(body.user_id),
+                "p_source": "acquire_guard", "p_reason": "ttl_or_idle",
+            })
             raise HTTPException(410, "browser_session_expired_close_queued")
         # OpenFuse's isolated worker applies public-destination/DNS checks per request.
         # Keep the latest host as session metadata; cross-host navigation is allowed.
