@@ -79,7 +79,11 @@ No browser direct database access was introduced. No client-side credentials or 
 
 ## Deployment
 
-Not deployed. No Vercel build, deploy, alias promotion, rollback or runtime change was initiated.
+No manual Vercel build, deploy, alias promotion or rollback was initiated by the assistant. The repository's existing Git integration automatically created production-target deployments after the source commits:
+- Frontend latest observed: READY, deployment `dpl_3nLvF2aMwaWgsEtJQLQkV8S3ztnR`, source commit `ad24baf339ebbf927bbce718ebb2bb542b15eaf7`.
+- FastAPI latest observed: READY, deployment `dpl_3osyzfU6os8UMV1zpmRRZ1zYowxo`, source commit `7628d110b1e7ce0b262ab38262ad2cd887a369a2`.
+
+The current main branch has subsequently advanced with documentation-only commits. READY reports successful deployment pipeline completion; they are not evidence of Customer runtime, worker, OpenFuse, provider, browser session or end-to-end behavior. No runtime probes or manual release actions were performed.
 
 ## Phase decision and next work
 
