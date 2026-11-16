@@ -23,6 +23,7 @@ import { profileApi, customerApi, notificationApi, type CustomerBrowserSession, 
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { PersonalMemorySettings } from '@/components/views/personal-memory-settings';
 import { BrowserSessionPreview } from '@/components/views/browser-session-preview';
+import { BrowserSessionTakeover } from '@/components/views/browser-session-takeover';
 
 interface ProfileSettingsViewProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -446,6 +447,9 @@ export const ProfileSettingsView: React.FC<ProfileSettingsViewProps> = ({
                 {session.status === 'close_requested' && <span className="shrink-0 text-[10px] font-semibold text-amber-700">Menunggu worker…</span>}
                 <div className="w-full basis-full">
                   <BrowserSessionPreview sessionId={session.id} sessionStatus={session.status} />
+                </div>
+                <div className="w-full basis-full">
+                  <BrowserSessionTakeover sessionId={session.id} sessionStatus={session.status} />
                 </div>
               </div>
             ))}
