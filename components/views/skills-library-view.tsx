@@ -101,6 +101,14 @@ export function SkillsLibraryView() {
             });
             packages = [...packages, skill];
           }
+          // A previously completed import/ingestion/validation is durable in
+          // the Customer registry. Skip it on reruns so interrupted batches
+          // resume from pending packages without repeating completed downloads.
+          if (skill.validation_status === 'validated' || skill.validation_status === 'review_required') {
+            completed += 1;
+            setBulkProgress({ total: sources.length, completed, failed: failures.length, current: source.name + ' · sudah tervalidasi', failures: failures.slice(0, 5) });
+            continue;
+          }
           // Ingestion is recursive and integrity-checked. Validation records
           // SBOM/license findings but never publishes, installs or grants access.
           await customerSkillApi.ingest(skill.id);
