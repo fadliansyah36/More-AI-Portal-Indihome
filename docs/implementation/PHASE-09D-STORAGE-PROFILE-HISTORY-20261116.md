@@ -1,7 +1,9 @@
 # Phase 09D — Storage state, profile lifecycle and customer history
 
 Date: 2026-11-16  
-Target branch: `main`
+Target branch: `main`  
+Baseline commit: `8b00ba16f46aaf81f29b7d68551f86fcc56a8870` (start of this continuation)  
+Target commit at report update: recorded in the final main-branch HEAD check.
 
 ## Pinned OpenFuse contract inspected
 
@@ -38,13 +40,16 @@ MoreAI therefore uses the canonical MoreAI session UUID as the OpenFuse profile 
   - Documents the persistent profile volume and deletion safety contract.
 - `supabase/migrations/20261116153000_moreai_browser_profile_retention.sql`
   - Adds 30-day profile retention deadlines, deletion acknowledgement timestamps, retention notification timestamps and lifecycle event vocabulary.
+- `supabase/migrations/20261116160000_moreai_browser_profile_retention_rpcs.sql`
+  - Makes retention-eligibility claims and profile-deletion acknowledgement/event writes atomic using service-role-only database functions.
 - `apps/api/app/routers/skills.py`
   - Tightened dependency evidence: direct package manifests no longer count as exact pins; npm, Poetry, uv, Pipfile, Cargo and Composer lockfiles are inventoried; unsupported lockfile formats and unresolved direct declarations fail validation closed.
+  - Direct declarations are matched to lockfile-resolved versions; npm package integrity hashes are required.
   - Validation requires registry metadata resolution and SPDX license assertions before a package can become validated.
 - `supabase/migrations/20261116150000_moreai_skill_publication_evidence_gate.sql`
   - Hardens the publication RPC: reviewer approval requires empty validation findings, source license evidence, a complete dependency inventory, and resolved registry metadata.
 - `apps/api/app/routers/admin.py`
-  - Exposes validation findings, SPDX SBOM, dependency resolution and source evidence to the Super Admin reviewer.
+  - Exposes validation findings, SPDX SBOM, dependency resolution and source evidence to the Super Admin reviewer. The existing Super Admin Skills Review UI already renders these validation and SBOM details; no new reviewer screen was required.
 
 ## Orphan cleanup and retention compatibility gate
 
@@ -52,7 +57,7 @@ The pinned upstream OpenFuse worker currently exposes list/create/close/navigate
 
 MoreAI's supervisor adapter and worker reconciliation now target that route. Until the patch is applied to the deployed OpenFuse worker, the endpoint returns an error and cleanup remains unavailable; no profile is falsely marked deleted.
 
-Closed profiles receive a 30-day retention deadline. FastAPI records a single `profile_retention_eligible` event when the deadline is first reached. The worker then requests deletion from OpenFuse and FastAPI records `profile_deleted` only after a successful deletion acknowledgement. The API ownership inventory excludes acknowledged deleted profiles. Orphan cleanup uses exact count plus pagination and refuses deletion if the inventory is partial or exceeds the 10,000-row safety bound.
+Closed profiles receive a 30-day retention deadline. FastAPI records a single `profile_retention_eligible` event when the deadline is first reached. The worker then requests deletion from OpenFuse and FastAPI records `profile_deleted` only after a successful deletion acknowledgement. Retention eligibility and deletion acknowledgement plus their event rows are committed atomically through service-role-only RPCs. The API ownership inventory excludes acknowledged deleted profiles. Orphan cleanup uses exact count plus pagination and refuses deletion if the inventory is partial or exceeds the 10,000-row safety bound.
 
 ## Persistent volume requirement
 
