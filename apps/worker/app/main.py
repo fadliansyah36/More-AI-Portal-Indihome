@@ -197,6 +197,71 @@ async def _browser_session_close_reconciliation_loop(
             pass
 
 
+async def _browser_takeover_command_loop(
+    browser: BrowserSupervisor,
+    http: httpx.AsyncClient,
+    api_url: str,
+    internal_token: str,
+    worker_id: str,
+    stop: asyncio.Event,
+) -> None:
+    """Claim encrypted customer commands and execute them only through OpenFuse."""
+    headers = {
+        "X-MoreAI-Worker-Token": internal_token,
+        "X-MoreAI-Worker-Id": worker_id,
+    }
+    while not stop.is_set():
+        try:
+            response = await http.get(
+                f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/takeover-commands/claim",
+                headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+            )
+            response.raise_for_status()
+            payload = response.json()
+            items = payload.get("items") if isinstance(payload, dict) else None
+            if not isinstance(items, list):
+                raise RuntimeError("browser_takeover_command_claim_contract_invalid")
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                command_id = item.get("command_id")
+                session_id = item.get("session_id")
+                grant_token = item.get("grant_token")
+                input_payload = item.get("input")
+                if not all(isinstance(value, str) for value in (command_id, session_id, grant_token)) or not isinstance(input_payload, dict):
+                    logger.error("browser_takeover_command_payload_invalid")
+                    continue
+                status, error_code, result = "failed", "takeover_input_failed", None
+                try:
+                    result = await browser.takeover_input(session_id, grant_token, input_payload)
+                    status, error_code = "succeeded", None
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    error_code = type(exc).__name__.lower()[:100]
+                    logger.exception("browser_takeover_command_execution_failed command_id=%s", command_id)
+                try:
+                    finished = await http.post(
+                        f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/takeover-commands/{command_id}/finish",
+                        json={"status": status, "result": result, "error_code": error_code},
+                        headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+                    )
+                    finished.raise_for_status()
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    # The command lease expires and the durable queue can recover.
+                    logger.exception("browser_takeover_command_finish_failed command_id=%s", command_id)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("browser_takeover_command_poll_failed")
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=1.5)
+        except TimeoutError:
+            pass
+
+
 async def run_worker() -> None:
     if os.getenv("MOREAI_AGENT_RUNTIME_ENABLED", "false").lower() != "true":
         raise RuntimeError("worker_runtime_disabled_until_release_gate")
@@ -281,6 +346,7 @@ async def run_worker() -> None:
         async with health_server:
             stop_outbox = asyncio.Event()
             stop_browser_reconciliation = asyncio.Event()
+            stop_browser_takeover = asyncio.Event()
             browser_reconciliation_task = (
                 asyncio.create_task(
                     _browser_session_close_reconciliation_loop(
@@ -290,6 +356,19 @@ async def run_worker() -> None:
                         stop_browser_reconciliation,
                     ),
                     name="moreai-browser-session-close-reconciliation",
+                )
+                if browser_client is not None else None
+            )
+            browser_takeover_task = (
+                asyncio.create_task(
+                    _browser_takeover_command_loop(
+                        browser_client, http,
+                        os.getenv("MOREAI_INTERNAL_API_URL", os.getenv("MOREAI_API_URL", "http://api:8000")),
+                        os.getenv("MOREAI_WORKER_INTERNAL_TOKEN", ""),
+                        settings.worker_id,
+                        stop_browser_takeover,
+                    ),
+                    name="moreai-browser-human-takeover-commands",
                 )
                 if browser_client is not None else None
             )
