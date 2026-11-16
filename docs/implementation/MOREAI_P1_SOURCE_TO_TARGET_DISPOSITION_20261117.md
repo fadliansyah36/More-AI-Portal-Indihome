@@ -17,3 +17,9 @@ Rules:
 - Missing root license on generative-illustration-skills remains a hard block; its paths are marked archive-only pending permission, not authorized for reuse.
 
 The CSV is the row-level source of truth for path, source commit, Git blob SHA, byte size, provisional decision, target and reason. SHA-256 raw-content hashes remain pending and must not be inferred from Git blob SHA.
+
+## Selected skill entrypoint inventory update — 2026-11-17
+
+A 229-entry eligible product-skill register is now committed. It contains 2 Visual Skills entrypoints, 172 Scenario Skills entrypoints and 55 eligible Motion Skills entrypoints. The remaining Motion pack, `generative-illustration-skills`, is excluded from this eligible register because its root license is missing.
+
+The register is preliminary source scope only. It does not supersede the preliminary 3,919-row disposition register and does not constitute final per-file legal, security or content approval. P1 remains OPEN until each selected skill folder and its recursively referenced files are reviewed, hashed and assigned a final disposition.
