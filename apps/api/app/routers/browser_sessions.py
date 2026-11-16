@@ -471,7 +471,7 @@ async def acquire_browser_session(body: SessionAcquire, request: Request,
             "p_session_id": session_id,
             "p_user_id": str(body.user_id),
             "p_worker_id": body.worker_id,
-            "p_lease_seconds": 300,
+            "p_lease_seconds": 660,
         })
         if not isinstance(capacity_result, dict) or capacity_result.get("acquired") is not True:
             if created_new:

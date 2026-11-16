@@ -20,6 +20,7 @@ RUN git apply --check /tmp/0001-openfuse-delete-profile.patch \
 # Replace only the worker egress proxy adapter. Upstream worker/browser/session
 # implementation remains pinned to OPENFUSE_COMMIT and retains its MIT license.
 COPY apps/sandbox/openfuse-overrides/proxy.ts /opt/openfuse/apps/worker/src/proxy.ts
+COPY apps/sandbox/openfuse-overrides/index.ts /opt/openfuse/apps/worker/src/index.ts
 
 WORKDIR /opt/openfuse/apps/worker
 RUN npm ci --omit=dev --ignore-scripts \

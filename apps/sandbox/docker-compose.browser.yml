@@ -10,6 +10,7 @@ services:
       WORKER_TOKEN: ${MOREAI_BROWSER_SERVICE_TOKEN:?set 32+ character worker token}
       WORKER_DATA_DIR: /data/browser-profiles
       WORKER_HOST: 0.0.0.0
+      WORKER_IDLE_TIMEOUT_MS: "600000"
       MOREAI_BROWSER_UPSTREAM_PROXY_URL: http://browser-egress-proxy:3128
       MOREAI_BROWSER_PROXY_TOKEN: ${MOREAI_BROWSER_PROXY_TOKEN:?set 32+ character proxy token}
     volumes:
