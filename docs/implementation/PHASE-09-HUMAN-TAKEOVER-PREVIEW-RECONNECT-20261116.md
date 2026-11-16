@@ -52,3 +52,11 @@ Still not complete:
 - No tests, build, lint, typecheck, runtime calls, screenshots, staging, deployment or Supabase mutation were performed.
 
 Phase 09 remains **IN PROGRESS**. Human Takeover is now **backend lifecycle implemented in source, UI/runtime integration pending**; it is not declared complete.
+
+
+### Source review corrections
+
+- Worker shutdown event initialization was added after source review found the preview task referenced an uninitialized stop event. Fix commit: `2207c4b592678534996f3304de3ae3a12c22ad7f`.
+- Preview queue eligibility now uses the canonical Agent Run terminal status `succeeded` (not `completed`), consistent with `apps/api/app/routers/agent_runs.py`. Migration correction commit: `3fb90e782ead1700ba7d29283345eda07d154d12`.
+
+These are source-level corrections only; no runtime verification was performed.
