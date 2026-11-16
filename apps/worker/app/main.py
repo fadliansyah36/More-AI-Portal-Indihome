@@ -84,6 +84,14 @@ async def _browser_session_close_reconciliation_loop(
     headers = {"X-MoreAI-Worker-Token": internal_token}
     while not stop.is_set():
         try:
+            expiry_response = await http.get(
+                f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/expire-requests",
+                headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
+            )
+            expiry_response.raise_for_status()
+            expiry_payload = expiry_response.json()
+            if not isinstance(expiry_payload, dict) or not isinstance(expiry_payload.get("items"), list):
+                raise RuntimeError("browser_session_expiry_requests_contract_invalid")
             response = await http.get(
                 f"{api_url.rstrip('/')}/api/v1/customer/browser-sessions/internal/close-requests",
                 headers=headers, timeout=httpx.Timeout(12.0, connect=3.0),
