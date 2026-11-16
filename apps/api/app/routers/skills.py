@@ -472,40 +472,91 @@ def _source_review_inventory(files: list[dict[str, Any]]) -> dict[str, Any]:
         elif name == "yarn.lock":
             dependency_files.append(path)
             try:
-                current_descriptors: list[str] = []
+                descriptors: list[str] = []
                 current_version = None
                 current_integrity = None
+                current_resolution = None
+                current_name = None
+                current_dependencies: list[tuple[str, str, str]] = []
+                yarn_nodes: dict[tuple[str, str], dict[str, Any]] = {}
+                yarn_edges: list[dict[str, Any]] = []
+                dependency_section = False
+                def yarn_descriptor_name(value: str) -> str | None:
+                    descriptor = value.strip().strip('"').strip("'")
+                    # Yarn classic: name@range; Berry: name@npm:range.
+                    if descriptor.startswith("@"):
+                        slash = descriptor.find("/")
+                        at = descriptor.find("@", slash + 1)
+                    else:
+                        at = descriptor.find("@")
+                    return descriptor[:at] if at > 0 else None
                 def flush_yarn() -> None:
-                    if not current_version:
-                        return
-                    for descriptor in current_descriptors:
-                        descriptor = descriptor.strip().strip('"').strip("'")
-                        # Yarn descriptors are package@range; scoped names contain
-                        # an additional slash but only the first @ after scope is delimiter.
-                        delimiter = descriptor.rfind("@")
-                        if delimiter <= 0:
-                            continue
-                        package_name = descriptor[:delimiter]
-                        add_dependency("npm", package_name, current_version, path,
-                                       status="lockfile_pinned" if current_integrity else "lockfile_pinned_integrity_missing",
-                                       integrity=current_integrity)
+                    nonlocal descriptors, current_version, current_integrity, current_resolution, current_name, current_dependencies
+                    if current_version and descriptors:
+                        for descriptor in descriptors:
+                            package_name = yarn_descriptor_name(descriptor)
+                            if not package_name:
+                                continue
+                            locator = current_resolution or descriptor
+                            node_key = (package_name, current_version)
+                            yarn_nodes[node_key] = {
+                                "locator": locator, "integrity": current_integrity,
+                            }
+                            add_dependency("npm", package_name, current_version, path,
+                                           status="lockfile_pinned" if current_integrity else "lockfile_pinned_integrity_missing",
+                                           integrity=current_integrity)
+                            for dep_name, requested, kind in current_dependencies:
+                                yarn_edges.append({
+                                    "ecosystem":"npm", "from":package_name,
+                                    "from_locator":locator, "from_version":current_version,
+                                    "to":dep_name, "requested":requested,
+                                    "kind":kind, "source_manifest":path,
+                                })
+                    descriptors = []
+                    current_version = current_integrity = current_resolution = current_name = None
+                    current_dependencies = []
                 for line in text.splitlines():
                     if line and not line[0].isspace() and line.rstrip().endswith(":"):
                         flush_yarn()
                         header = line.rstrip()[:-1]
-                        current_descriptors = [part.strip() for part in header.split(",")]
-                        current_version = None
-                        current_integrity = None
-                    else:
-                        version_match = re.match(r"^\s+version\s+['\"]?([^\s'\"]+)", line)
-                        if version_match:
-                            current_version = version_match.group(1)
-                        integrity_match = re.match(r"^\s+integrity\s+(.+)$", line)
-                        if integrity_match:
-                            current_integrity = integrity_match.group(1).strip().strip('"')
+                        descriptors = [part.strip().strip('"').strip("'") for part in header.split(",")]
+                        dependency_section = False
+                        continue
+                    version_match = re.match(r"^\s+version\s+['\"]?([^\s'\"]+)", line)
+                    if version_match:
+                        current_version = version_match.group(1)
+                        continue
+                    resolution_match = re.match(r"^\s+resolution:\s*['\"]?([^'\"]+)", line)
+                    if resolution_match:
+                        current_resolution = resolution_match.group(1)
+                        continue
+                    integrity_match = re.match(r"^\s+integrity\s+(.+)$", line)
+                    if integrity_match:
+                        current_integrity = integrity_match.group(1).strip().strip('"')
+                        continue
+                    if re.match(r"^\s{2}dependencies:\s*$", line):
+                        dependency_section = True
+                        continue
+                    if dependency_section:
+                        dependency_match = re.match(r"^\s{4}(['\"]?[^:'\"]+['\"]?):\s*['\"]?([^'\"]+)['\"]?\s*$", line)
+                        if dependency_match:
+                            current_dependencies.append((
+                                dependency_match.group(1).strip("'\""),
+                                dependency_match.group(2).strip(), "dependency",
+                            ))
+                            continue
+                        if line and not line.startswith("    "):
+                            dependency_section = False
                 flush_yarn()
-                if not any(item.get("source_manifest") == path for item in dependencies):
-                    dependencies.append({"manifest": path, "ecosystem": "npm", "status": "yarn_lockfile_no_package_entries"})
+                for edge in yarn_edges:
+                    candidates = [node for (pkg, _), node in yarn_nodes.items() if pkg == edge["to"]]
+                    if len(candidates) == 1:
+                        edge["to_locator"] = candidates[0]["locator"]
+                    else:
+                        edge["resolution_status"] = "ambiguous_or_unresolved_package_instance"
+                    dependency_edges.append(edge)
+                if not yarn_nodes:
+                    dependencies.append({"manifest":path,"ecosystem":"npm","status":"yarn_lockfile_no_package_entries"})
             except Exception:
                 dependencies.append({"manifest": path, "ecosystem": "npm", "status": "parse_error"})
         elif name in {"gemfile", "gemfile.lock"}:
