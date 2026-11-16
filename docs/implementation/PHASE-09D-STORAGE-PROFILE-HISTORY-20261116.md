@@ -440,3 +440,34 @@ This increment improves evidence but does not establish complete transitive clos
 ### Verification boundary
 
 No tests, build, lint, type-check, staging or runtime verification was run. Changes were reviewed by source inspection only. No migration or Supabase mutation was performed.
+
+
+## Follow-up — npm locator-aware dependency edges and migration collision review (2026-11-16)
+
+### npm graph evidence
+
+Updated the npm lockfile v2/v3 parser to retain the exact parent package locator (the lockfile `packages` key), parent version, dependency kind, requested dependency constraint, and source lockfile path on each extracted edge. This avoids collapsing every instance of a package name into one apparent parent node when nested or duplicate versions exist. The edge target remains a requested package name/constraint rather than a resolved target locator; target resolution is still required before claiming a fully closed graph.
+
+Commit: `7e1077a89520963e0eb8c5996a226bc577eea41a`.
+
+### Duplicate migration timestamp findings
+
+The current repository has two timestamp collisions:
+- `20261111100000`: `moreai_notifications_private_artifacts_immutable_audit` and `moreai_outbox_retry_lease_fencing`.
+- `20261114083000`: `moreai_edutech_assessment_derived_progress` and `moreai_edutech_path_summary_view`.
+
+The live history has same-name entries under different versions for all four:
+- notifications/private artifacts: `20261111083146`
+- outbox retry lease fencing: `20261111091638`
+- assessment derived progress: `20261115090226`
+- path summary view: `20261114070551`
+
+No migration filename was renamed and no applied history was rewritten. Since each colliding file has a same-name live history row but a different version, the safe next step is SQL-object postcondition comparison, not blindly assigning new timestamps or reapplying migrations. If source SQL and live object definitions cannot be compared, retain an explicit unresolved reconciliation state.
+
+### Storage policy readiness
+
+The server-only Storage policy migration remains a forward-only source artifact. It checks that `moreai-artifacts` exists and is private before installing a bucket-specific deny policy for `anon` and `authenticated`. It has not been applied. Before application, compare the existing policy name/definition and confirm the deployed FastAPI artifact paths, service-role boundary and private-bucket setting against live project metadata. No other bucket is affected by this migration.
+
+### Verification boundary
+
+No SQL migration was executed, no live Supabase object was changed, and no test/build/lint/type-check/runtime/staging operation was performed. This is source and metadata reconciliation only.
