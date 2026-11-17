@@ -172,3 +172,8 @@ Manual entrypoint review now covers **200/229 (87.3%)**. Eight additional Motion
 ## Review coverage update — 2026-11-17 (208/229)
 
 Manual entrypoint review now covers **208/229 (90.8%)**. Eight additional web animation/motion-design skills were reviewed; renderer/build command guidance remains isolated-worker-only. Remaining 21 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (224/229)
+
+Manual entrypoint review now covers **224/229 (97.8%)**. Manim requires Python package installation, ffmpeg and LaTeX; WebGL/Manim render workflows remain DEFER pending isolated renderer and dependency governance. Remaining five entrypoints are open.
