@@ -26,3 +26,9 @@ It does not run source code, install packages, activate providers, access Supaba
 
 ## Current execution status
 The utility is committed but has **not** been run. No test, build, staging, provider activation, migration, Supabase write or deployment was performed.
+
+## Static executable/configuration triage extension — 2026-11-17
+
+The audit utility now also writes `skill-executable-static-review.csv` for UTF-8 `executable-source` and `configuration-or-schema` payloads. It records bounded keyword-pattern flags for dynamic code, process spawning, network I/O, credential/environment access, filesystem mutation, destructive SQL, package installation and remote MCP/tool usage. Non-UTF8 files are recorded as skipped for text scanning, while their byte/hash evidence remains in the file audit.
+
+This is a read-only static triage step: it does not import, execute, compile, install, render or contact providers from the payload. Pattern matches are not vulnerability findings; no matches are not a safety certification. Every executable/configuration row retains `manual_review_required=YES`. The workflow runs the audit on GitHub Actions and commits the CSV/JSON evidence to `main`; it does not run the application or test suite, create staging, touch Supabase or deploy.
