@@ -152,3 +152,8 @@ Manual entrypoint review now covers **168/229 (73.4%)**. Eight video/UGC skills 
 ## Review coverage update — 2026-11-17 (176/229)
 
 Manual entrypoint review now covers **176/229 (76.9%)**. Scenario's general skill explicitly forbids agents from collecting/echoing API secrets; Motion caption token references are media timing structures, not credentials. Motion shell workflows remain isolated-worker-only. Remaining 53 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (184/229)
+
+Manual entrypoint review now covers **184/229 (80.3%)**. Eight Motion Skills command-driven renderer workflows were inspected; they remain isolated-worker-only. Remaining 45 entrypoints are open.
