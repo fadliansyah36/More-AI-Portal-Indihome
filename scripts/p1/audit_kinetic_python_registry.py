@@ -30,7 +30,7 @@ def parse_lock(path: Path, platform: str) -> list[dict]:
     current: dict | None = None
     via_mode = False
     for line in path.read_text(encoding="utf-8").splitlines():
-        match = re.match(r"^([A-Za-z0-9_.-]+)==([^\\s\\\\;]+)\\s*\\\\?$", line)
+        match = re.match(r"^([A-Za-z0-9_.-]+)==([^\s\\;]+)\s*\\?$", line)
         if match:
             current = {
                 "name": match.group(1).lower().replace("_", "-"),
@@ -49,15 +49,15 @@ def parse_lock(path: Path, platform: str) -> list[dict]:
             current["hashes"].append(hash_match.group(1))
             via_mode = False
             continue
-        if re.match(r"^\\s+# via\\s*$", line):
+        if re.match(r"^\s+# via\s*$", line):
             via_mode = True
             continue
-        via_match = re.match(r"^\\s+# via (.+)$", line)
+        via_match = re.match(r"^\s+# via (.+)$", line)
         if via_match:
             current["via"].append(via_match.group(1).strip())
             via_mode = False
             continue
-        continuation = re.match(r"^\\s+#\\s{2,}(.+)$", line)
+        continuation = re.match(r"^\s+#\s{2,}(.+)$", line)
         if continuation and via_mode:
             current["via"].append(continuation.group(1).strip())
             continue
@@ -96,7 +96,6 @@ def main() -> int:
     packages: dict[tuple[str, str], dict] = defaultdict(
         lambda: {"platforms": set(), "hashes": set(), "via": set(), "source_files": set()}
     )
-    package_rows = []
     for platform, lock_path in LOCKS.items():
         if not lock_path.is_file():
             print(f"Missing lockfile: {lock_path}", file=sys.stderr)
@@ -112,9 +111,9 @@ def main() -> int:
     args.output.mkdir(parents=True, exist_ok=True)
     fields = [
         "package", "version", "purl", "platforms", "license", "license_expression",
-        "license_classifiers", "registry_status", "lock_hash_count", "registry_file_count",
-        "matched_hash_count", "unmatched_hash_count", "hash_status", "project_urls",
-        "requires_dist", "source_lockfiles", "dependency_via",
+        "license_classifiers", "license_status", "registry_status", "lock_hash_count",
+        "registry_file_count", "matched_hash_count", "unmatched_hash_count", "hash_status",
+        "project_urls", "requires_dist", "source_lockfiles", "dependency_via",
     ]
     summary = {
         "source": "Scenario Kinetic Music Video platform-specific uv lockfiles",
@@ -190,6 +189,7 @@ def main() -> int:
                 "license": license_value,
                 "license_expression": license_expression,
                 "license_classifiers": ";".join(classifiers),
+                "license_status": license_status,
                 "registry_status": registry_status,
                 "lock_hash_count": len(locked_hashes),
                 "registry_file_count": len(release_files),
