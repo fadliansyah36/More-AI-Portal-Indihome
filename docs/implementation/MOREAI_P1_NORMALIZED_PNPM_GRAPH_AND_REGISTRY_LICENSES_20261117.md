@@ -66,3 +66,16 @@ A recursive selected-payload manifest scan identified two additional nested npm 
 The two npm lockfiles contribute six unique exact npm coordinates: `playwright@1.64.1`, `playwright-core@1.64.1`, `opentype.js@1.3.4`, `string.prototype.codepointat@0.2.1`, `tiny-inflate@1.0.3`, and `three@0.187.0`. Their package-lock entries include integrity values and declared license fields (Apache-2.0 for Playwright/Core; MIT for the remaining four). The lockfile metadata is not package tarball/NOTICE legal approval.
 
 The Kinetic Film Python requirements file pins `numpy==2.5.4` and `opencv-python-headless==5.0.0.93` but has no hash lock or resolved transitive graph. No pip/npm install was performed. The six npm PURLs and two PyPI PURLs must be deduplicated against the current CycloneDX BOM before its final component count is stated. The current 1,995 count remains valid only for its previously documented input set and is not a complete all-selected-payload SBOM yet. P1 remains OPEN.
+
+
+## Kinetic Music Video platform Python lock graph — 2026-11-17
+
+The selected payload's maintainer reference revealed two additional uv-generated Python lock files, omitted from the earlier SBOM input inventory:
+- `skills/scenario-kinetic-music-video/assets/python/linux-x86_64.txt`: 100 exact package records.
+- `skills/scenario-kinetic-music-video/assets/python/macos-arm64.txt`: 83 exact package records.
+
+A read-only parse generated 104 unique package@version coordinates across both platforms, 3,660 SHA-256 wheel hash entries and 306 dependency edges (reconstructed from the `# via` reverse dependency comments and direct requirements). Machine-readable evidence: `MOREAI_P1_KINETIC_MUSIC_VIDEO_PYTHON_LOCK_PACKAGES_20261117.csv` and `MOREAI_P1_KINETIC_MUSIC_VIDEO_PYTHON_LOCK_EDGES_20261117.csv`.
+
+The locks use exact versions, binary-only wheel resolution and per-artifact SHA-256 hashes. They do not contain SPDX license fields, so registry/artifact license evidence remains NOASSERTION pending review. Platform divergence includes `av` 18.1.0 vs 15.1.0, `onnxruntime` 1.31.0 vs 1.23.2, and Linux-only CUDA/NVIDIA/Triton packages. No Linux ARM64 lock is present. The maintainer notes that Demucs downloads a checkpoint checked only against a short hash prefix before unpickling, and Whisper model content verification is not confirmed; these model artifacts remain blocked until full content hashes/signatures and safe serialization are established.
+
+The 104 coordinates must be deduplicated against the CycloneDX BOM; they are not assumed to be 104 net-new components. The previous 1,995-component count is not a complete selected-skill BOM. No package or model was downloaded or installed by this audit. P1 remains OPEN.
