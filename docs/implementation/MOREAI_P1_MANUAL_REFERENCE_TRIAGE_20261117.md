@@ -174,3 +174,19 @@ Manual contextualization: “password” hits are names of environment variables
 ## Entrypoint review expansion — 64/229
 
 The read-only entrypoint review has expanded from 48 to **64/229 (27.9%)**. The latest 16 entries cover Godot and Roblox skill families. Secret/token keyword hits were contextualized as Roblox Open Cloud API-key prerequisites, token-bucket terminology and security guidance about passing secrets via CI environment variables; no literal key or secret value was observed. Shell/process guidance in Godot/Roblox tooling remains sandbox-only. No `eval()` or `new Function()` pattern was found in the 64-entrypoint sample. Remaining 165 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 72/229
+
+The manual sample now covers **72/229** entrypoints, including eight Roblox/Unity skills:
+
+- `skills/game-engines/roblox/scenario-roblox-vfx-audio/SKILL.md`
+- `skills/game-engines/unity/scenario-unity-2d/SKILL.md`
+- `skills/game-engines/unity/scenario-unity-animation/SKILL.md`
+- `skills/game-engines/unity/scenario-unity-architecture/SKILL.md`
+- `skills/game-engines/unity/scenario-unity-expert/SKILL.md`
+- `skills/game-engines/unity/scenario-unity-gameplay/SKILL.md`
+- `skills/game-engines/unity/scenario-unity-mobile/SKILL.md`
+- `skills/game-engines/unity/scenario-unity-performance/SKILL.md`
+
+Manual contextualization: “credential” appears in source provenance checklists; “token” appears as Unity cancellation-token/programming terminology or in an editor-license diagnostic phrase. No literal credential value was observed. Unity command/script guidance remains sandbox-only. No dynamic-code pattern was found in the 72-entrypoint sample. Remaining 157 entrypoints are unreviewed.
