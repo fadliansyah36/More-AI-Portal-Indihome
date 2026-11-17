@@ -46,3 +46,7 @@ Exact source-level findings:
 No package install, CI workflow, source script, engine, test, provider, Supabase operation, staging or deployment was run.
 
 **P1 remains OPEN.**
+
+
+## Count correction
+The scope/table contains **13 files**, not 12: 4 npm manifest/lock files, 1 Python requirements file, 3 CI/release workflow files, 2 Motion talking-head manifest/lock files, 2 Playable Ads JSON configs and 1 Patina example config. Of these, 4 are ARCHIVE_ONLY (two Roblox workflow templates, one Godot workflow template and one illustrative Patina config) and 9 remain DEFER. The operational ledgers were updated to reflect these decisions.
