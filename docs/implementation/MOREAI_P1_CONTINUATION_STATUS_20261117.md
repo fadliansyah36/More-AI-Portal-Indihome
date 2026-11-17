@@ -82,3 +82,8 @@ The manual entrypoint sample now covers **48/229 (21.0%)**. Eight Godot entrypoi
 ## Review coverage update — 2026-11-17 (64/229)
 
 Manual content review now covers **64/229 (27.9%)** entrypoints. Roblox API-key/token mentions were contextualized as documented prerequisites and CI security guidance; no literal secrets were observed. Godot/Roblox shell/process workflows remain sandbox-only. Remaining 165 entrypoints are not yet reviewed.
+
+
+## Review coverage update — 2026-11-17 (72/229)
+
+The manual entrypoint sample now covers **72/229 (31.4%)**. Eight additional Roblox/Unity entrypoints were inspected. Credential/token keyword hits were contextualized as provenance checklists, cancellation tokens or editor-license diagnostic wording; no literal secrets were observed. Remaining 157 entrypoints are not reviewed.
