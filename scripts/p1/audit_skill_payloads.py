@@ -81,7 +81,7 @@ STATIC_PATTERNS = {
     "process_spawn": re.compile(r"\b(?:subprocess\.(?:Popen|run|call|check_call|check_output)|os\.(?:system|popen|execv\w*)|child_process|execSync|spawnSync|spawn)\b", re.I),
     "network_io": re.compile(r"\b(?:fetch\s*\(|axios\.|requests\.(?:get|post|put|delete)|httpx\.|urllib\.request|WebSocket|socket\.connect|https?://)", re.I),
     "credential_or_environment": re.compile(r"\b(?:API[_-]?KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|os\.environ|getenv\s*\(|process\.env)\b", re.I),
-    "filesystem_mutation": re.compile(r""" \b(?:writeFile(?:Sync)?|unlink(?:Sync)?|rmdir(?:Sync)?|mkdir(?:Sync)?|shutil\.(?:rmtree|copy))\b|open\s*\([^,\n]+,\s*['"](?:w|a|x)""".strip(), re.I),
+    "filesystem_mutation": re.compile(r"""\b(?:writeFile(?:Sync)?|unlink(?:Sync)?|rmdir(?:Sync)?|mkdir(?:Sync)?|shutil\.(?:rmtree|copy))\b|open\s*\([^,\n]+,\s*['"](?:w|a|x)""", re.I),
     "database_destructive": re.compile(r"\b(?:DROP\s+TABLE|TRUNCATE\s+TABLE|DELETE\s+FROM)\b", re.I),
     "package_install": re.compile(r"\b(?:pip\s+install|npm\s+install|pnpm\s+add|yarn\s+add|uv\s+add|apt(?:-get)?\s+install|brew\s+install)\b", re.I),
     "remote_tool_or_mcp": re.compile(r"\b(?:MCP|tool_call|remote\s+tool)\b", re.I),
