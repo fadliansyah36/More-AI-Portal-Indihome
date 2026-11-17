@@ -292,3 +292,20 @@ The sample now covers **208/229 (90.8%)**. Eight additional Motion Skills entrie
 ## Entrypoint review expansion — 224/229
 
 The sample now covers **224/229 (97.8%)**. Eight additional skills span freelance client revisions/brief/pricing/delivery, WebGL particles/shaders/Three.js animation and Manim. The WebGL entries include local command/build guidance; Manim explicitly requires `pip install manim`, ffmpeg and a LaTeX distribution. No installation or rendering was run. Manim and WebGL render skills remain DEFER until isolated renderer worker, pinned dependency/license inventory, resource limits and artifact scanning are in place. The freelance workflow instructions are non-executable guidance. Remaining five entrypoints are not yet reviewed.
+
+
+## Entrypoint sweep complete — 229/229
+
+All **229/229 selected skill entrypoint files** have now been retrieved from their pinned commits and included in the read-only content sweep. The final five reviewed files are:
+
+- `iart-ai/javascript-animation-skills@060f7467a6e5ae5b57c90c9cb1b3508c13b88e49:skills/javascript-animation/SKILL.md`
+- `iart-ai/javascript-animation-skills@060f7467a6e5ae5b57c90c9cb1b3508c13b88e49:skills/soundtrack/SKILL.md`
+- `iart-ai/lower-thirds-skills@58d3623da95a2c97a4890a2d3f6d9d67e040b3d7:skills/lower-thirds/SKILL.md`
+- `iart-ai/b-roll-skills@bcd56742a8a99edaa699a6f7bc5a45922a8ec567:skills/talking-head-b-roll/SKILL.md`
+- `iart-ai/talking-head-skills@eac1f6b01467f6f95d8ab7602310ba0ff67ed91b:skills/talking-head/SKILL.md`
+
+The final five contain local renderer/shell command guidance; no credential, external network or dynamic-code keyword pattern was flagged in this batch. Commands remain isolated-renderer-only.
+
+Across the 229-entrypoint sweep, the simple static pattern scan did not flag `eval()`, `new Function()`, `exec()` or `compile()` in the entrypoint Markdown. This is not a malware scan, semantic code audit or security certification. Shell/process/install instructions, provider calls, remote MCP actions, signed-URL/credential handling and destructive operations remain governed by the specific DEFER gates recorded above.
+
+**Entrypoint sweep: COMPLETE (229/229).** This does not complete the referenced payload review: all 875 executable-source files, 69 configuration/schema files, 726 reference documents, 10 media/binary assets and 4 font assets still require the corresponding content/provenance/security review and final per-file disposition. The 14 asset files have separate preliminary dispositions; fonts remain deferred. P1 remains OPEN.
