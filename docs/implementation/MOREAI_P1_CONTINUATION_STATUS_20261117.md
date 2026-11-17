@@ -167,3 +167,8 @@ Manual entrypoint review now covers **192/229 (83.8%)**. Eight additional Motion
 ## Review coverage update — 2026-11-17 (200/229)
 
 Manual entrypoint review now covers **200/229 (87.3%)**. Eight additional Motion renderer skills were inspected; local command workflows remain isolated-worker-only. Remaining 29 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (208/229)
+
+Manual entrypoint review now covers **208/229 (90.8%)**. Eight additional web animation/motion-design skills were reviewed; renderer/build command guidance remains isolated-worker-only. Remaining 21 entrypoints are open.
