@@ -36,12 +36,21 @@ def norm(p):
         else: parts.append(x)
     return "/".join(parts)
 
-def refs(text):
-    pats=[r"\]\(([^)]+)\)",r"<(?:img|script|source|link)[^>]+(?:src|href)=['\"]([^'\"]+)['\"]",
-          r"(?:from|import)\s+['\"](\.{1,2}/[^'\"]+)['\"]",
-          r"(?:require|import)\s*\(\s*['\"](\.{1,2}/[^'\"]+)['\"]",
-          r"(?:src|href)\s*=\s*['\"](\.{1,2}/[^'\"]+)['\"]"]
-    return list(dict.fromkeys(m.group(1).strip() for p in pats for m in re.finditer(p,text,re.I)))
+def refs(text, path):
+    ext=PurePosixPath(path).suffix.lower()
+    pats=[]
+    if ext in {".md",".mdx",".rst",".txt"}:
+        pats.append(r"\]\(([^)]+)\)")
+    if ext in {".html",".htm",".md",".mdx"}:
+        pats.append(r"<(?:img|script|source|link)[^>]+(?:src|href)=['\"]([^'\"]+)['\"]")
+    if ext in {".js",".mjs",".jsx",".ts",".tsx"}:
+        pats += [r"(?:from|import)\s+['\"](\.{1,2}/[^'\"]+)['\"]",
+                 r"(?:require|import)\s*\(\s*['\"](\.{1,2}/[^'\"]+)['\"]",
+                 r"(?:src|href)\s*=\s*['\"](\.{1,2}/[^'\"]+)['\"]"]
+    if ext==".py":
+        pats.append(r"^\s*from\s+(\.{1,3}[\w.]*)\s+import\s+")
+    return list(dict.fromkeys(m.group(1).strip() for pat in pats for m in re.finditer(pat,text,re.I|re.M)))
+
 
 def resolve(current, ref, known):
     v=ref.strip().strip("<>").strip("'\"").split("#",1)[0].split("?",1)[0]
@@ -107,7 +116,7 @@ def main():
             try: text=raw.decode("utf-8")
             except UnicodeDecodeError: continue
             known=set(index.get((row["repository"],row["commit"]),{}))
-            for ref in refs(text):
+            for ref in refs(text,row['path']):
                 external=ref.lower().startswith(("http://","https://","mailto:")); resolved=None if external else resolve(row["path"],ref,known)
                 links.append({"repository":row["repository"],"commit":row["commit"],"from_path":row["path"],"reference":ref,"resolved_path":resolved or "","status":"EXTERNAL_REFERENCE" if external else ("RESOLVED_IN_PINNED_TREE" if resolved else "NOT_FOUND_IN_PINNED_TREE")})
                 if resolved:
