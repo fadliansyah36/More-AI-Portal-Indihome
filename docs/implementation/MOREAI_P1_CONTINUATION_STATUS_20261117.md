@@ -112,3 +112,8 @@ Manual entrypoint review now covers **104/229 (45.4%)**. A material external-cre
 ## Review coverage update — 2026-11-17 (112/229)
 
 Manual entrypoint review now covers **112/229 (48.9%)**. Eight additional provider/media-oriented Scenario skills were inspected. They reference external providers but no shell/process, dynamic-code or secret-keyword pattern was flagged; provider calls remain blocked pending server-side adapter, consent, metering and artifact governance. Remaining 117 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (120/229)
+
+Manual entrypoint review now covers **120/229 (52.4%)**. Eight additional image/video-oriented Scenario skills were inspected; external provider calls remain gated, and Kinetic Film scaffold commands remain sandbox-only. Remaining 109 entrypoints are open.
