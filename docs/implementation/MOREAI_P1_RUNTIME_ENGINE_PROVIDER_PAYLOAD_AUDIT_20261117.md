@@ -126,3 +126,14 @@ A selected-entrypoint register was generated from the pinned recursive source ma
 The 55 Motion entries exclude the unlicensed generative-illustration pack. The register records exact source repository, commit, path, Git blob SHA and expected byte size. This is an entrypoint inventory, not a content-level audit of every referenced file. Complete recursive references/scripts/assets review and raw SHA-256 of every selected payload file remain open.
 
 The pinned dependency graph and first-pass npm registry license metadata are documented in `MOREAI_P1_NORMALIZED_PNPM_GRAPH_AND_REGISTRY_LICENSES_20261117.md`. These findings do not authorize importing any skill or activating remote providers.
+
+
+## Selected skill payload closure — 2026-11-17
+
+The selected entrypoint register covers 229 eligible skills: 2 Visual Skills, 172 Scenario Skills and 55 Motion Skills. Their folders contain 1,923 unique files totaling 26,586,168 bytes. The row-level file inventory is MOREAI_P1_SELECTED_SKILL_PAYLOAD_MANIFEST_20261117.csv.
+
+Content-type counts: 229 SKILL.md entrypoints; 723 reference documents; 898 executable-source files; 67 configuration/schema files; 4 fonts; and 2 media/binary assets. Current proposed decisions are 952 adapt (entrypoints and reference docs) and 971 defer (executable source, configuration and binary assets). All rows remain PRELIMINARY_NOT_FINAL.
+
+A binary-safe recursive auditor has been added at scripts/p1/audit_skill_payloads.py. It computes SHA-256, Git blob SHA-1 and byte-size parity from exact pinned raw bytes; it follows local Markdown/HTML/script references and records external/unresolved links. The tool has not been run. No source code was executed.
+
+Root/nested license and notice path hashing is a completed, separate evidence pass: 25 paths, seven unique Git blob objects, 25 SHA-256 rows, 22 MIT, one CC BY 4.0, one attribution NOTICE and one nested Apache-2.0. See MOREAI_P1_LICENSE_NOTICE_SHA256_20261117.csv. This does not establish that every payload file is covered by those notices.
