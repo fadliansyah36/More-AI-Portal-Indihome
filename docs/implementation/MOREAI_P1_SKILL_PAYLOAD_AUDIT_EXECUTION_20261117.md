@@ -83,3 +83,12 @@ The workflow committed the generated evidence to `main` in commit `3b98f4a063c16
 The committed summary reports 229 selected entrypoints, 1,941 payload files, 1,941 SHA-256 results, zero hash review items and zero fetch failures. The evidence is now repository-persisted. No workflow artifact ZIP was retained (GitHub Actions reports zero artifacts); the CSV/JSON files are committed directly to the repository.
 
 The audit still does **not** close P1: content/license/security review and final per-file disposition remain open. The 148 parser “not found” candidates include 123 path-prefix directory matches; 25 remain unresolved/ambiguous for manual review. The static parser does not prove those references are safe or complete.
+
+
+## Manual reference triage continuation — 2026-11-17
+
+The 148 parser `NOT_FOUND_IN_PINNED_TREE` candidates in the committed reference CSV have now been manually triaged against the pinned recursive tree and affected source documents. The current row-level partition is 49 Markdown heading fragments (49/49 heading matches), 78 existing directory targets (78/78 path-prefix matches), and 21 contextual/runtime/generated references. The earlier coarse “25 unresolved” estimate is superseded for this committed CSV; see `MOREAI_P1_MANUAL_REFERENCE_TRIAGE_20261117.md` for all 21 contextual classifications and scaffold evidence.
+
+Kinetic Film and Kinetic Music Video references depend on generated project files: `new_film.sh` copies the selected example spec and engine into a project; Motion Video `scaffold.sh` copies the engine and creates `engine/timeline.js` from the pinned timeline template. These scripts were inspected as text only, never executed. The skills remain deferred until MoreAI has an explicit safe scaffold adapter.
+
+A static content review sample now covers 16/229 skill entrypoints. It identified shell/process guidance in Blender export/hair skills, which must be mediated by the approved isolated worker; no dynamic-code pattern or literal secret value was identified in this sample. This is not a full review of the 229 entrypoints or 1,941 payload files. P1 remains OPEN.
