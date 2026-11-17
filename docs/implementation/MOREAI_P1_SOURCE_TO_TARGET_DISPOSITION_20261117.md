@@ -23,3 +23,12 @@ The CSV is the row-level source of truth for path, source commit, Git blob SHA, 
 A 229-entry eligible product-skill register is now committed. It contains 2 Visual Skills entrypoints, 172 Scenario Skills entrypoints and 55 eligible Motion Skills entrypoints. The remaining Motion pack, `generative-illustration-skills`, is excluded from this eligible register because its root license is missing.
 
 The register is preliminary source scope only. It does not supersede the preliminary 3,919-row disposition register and does not constitute final per-file legal, security or content approval. P1 remains OPEN until each selected skill folder and its recursively referenced files are reviewed, hashed and assigned a final disposition.
+
+
+## Selected skill folder-level row register — 2026-11-17
+
+A dedicated row-level register has been added for the 229 eligible skill entrypoints and all files under their selected folders: MOREAI_P1_SELECTED_SKILL_PAYLOAD_MANIFEST_20261117.csv. It contains 1,923 unique payload paths / 26,586,168 bytes, each with exact source repository, commit, path, Git blob SHA, expected byte size, content class, preliminary disposition and review reason.
+
+Proposed disposition split: 952 adapt (SKILL.md and reference documents) and 971 defer (898 executable files, 67 config/schema files, 6 font/media assets). These are conservative proposals, not final decisions. The existing 3,919-row all-source-tree register remains the broader provenance inventory and still has PRELIMINARY_NOT_FINAL decisions.
+
+25 root/nested license/notice paths have separately verified raw SHA-256; the payload manifest SHA-256 fields remain pending. A binary-safe recursive auditor is committed but not run.
