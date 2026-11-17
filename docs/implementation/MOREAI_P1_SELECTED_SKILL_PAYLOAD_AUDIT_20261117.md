@@ -69,3 +69,9 @@ These hashes prove the identity of the notice bytes at the pinned revisions; the
 ## Gate decision
 
 **P1 remains OPEN.** Graph extraction and first-pass npm metadata are complete; 25 license/notice path hashes are verified; selected skill payload scope is now enumerated. The 1,923-file raw SHA-256 and content/reference audit has not yet been executed. P2 ADR remains draft/unaccepted. Phase 04–09 must not be represented as complete or advanced past the mandatory gate until P1 and P2 are accepted. Phase 10–11 remain unavailable under the user's no-real-testing/no-staging instruction.
+
+## Partial entrypoint raw SHA-256 evidence — 2026-11-17
+
+Raw bytes were retrieved and SHA-256 computed for the first 10 selected SKILL.md entrypoints (2 Visual Skills and 8 Scenario Skills). All 10 matched the expected byte sizes from their pinned tree manifests. Their hashes are recorded in MOREAI_P1_SELECTED_SKILL_ENTRYPOINT_SHA256_20261117.csv and joined back to their rows in MOREAI_P1_SELECTED_SKILL_PAYLOAD_MANIFEST_20261117.csv.
+
+This is only 10/229 entrypoints and does not complete the 1,923-file payload hash audit. The other 219 entrypoints and all referenced scripts/assets/configuration files remain pending. Do not infer payload-wide hash completion.
