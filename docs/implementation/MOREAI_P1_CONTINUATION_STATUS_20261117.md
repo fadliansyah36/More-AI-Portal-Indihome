@@ -92,3 +92,8 @@ The manual entrypoint sample now covers **72/229 (31.4%)**. Eight additional Rob
 ## Review coverage update — 2026-11-17 (80/229)
 
 The manual entrypoint sample now covers **80/229 (34.9%)**. Unity VFX and Unreal animation credential keyword hits were source-provenance checklist text, not secrets. DCC/engine shell workflows remain sandbox-only. Remaining 149 entrypoints are not reviewed.
+
+
+## Review coverage update — 2026-11-17 (88/229)
+
+The manual entrypoint sample now covers **88/229 (38.4%)**. Eight Unreal skills were inspected; credential hits were provenance checklist wording only, not secrets. Remaining 141 entrypoints and referenced executable/configuration payloads are open.
