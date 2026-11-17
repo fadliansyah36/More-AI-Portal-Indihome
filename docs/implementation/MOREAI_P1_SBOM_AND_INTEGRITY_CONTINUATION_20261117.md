@@ -87,3 +87,12 @@ Across the two lockfiles, 1,808 unique exact package coordinates were compared t
 Exact-version npm registry metadata was queried for all 1,808 coordinates; all returned HTTP 200. 1,797 package records contained a license field, while 11 did not and remain NOASSERTION. A token-level check against the SPDX license identifier list found one non-SPDX raw string, `CC BY-SA 4.0`, requiring manual evidence review. The 11 missing and one non-SPDX package are listed in `MOREAI_P1_REGISTRY_LICENSE_REVIEW_REQUIRED_20261117.csv`.
 
 These registry values are not legal approval. Package tarballs were not downloaded/unpacked; artifact notices, source headers, vulnerability advisories and bundled assets remain open. P1 remains OPEN.
+
+
+## Consolidated count reconciliation — 2026-11-17
+
+The current corrected CycloneDX inventory is **1,995 distinct source+PURL component records**, not the earlier 2,032 / 2,026-NOASSERTION figures repeated in a draft ADR and earlier expanded-BOM notes. The 2,032 figure is superseded by the corrected generator output after removing 37 peer-dependency range declarations that had been incorrectly emitted as package components. Current corrected license summary: **1,989 NOASSERTION + 6 components with declared license fields**. Do not combine historical counts across generator revisions.
+
+The exact lockfile package coordinate comparison is closed for the two pinned pnpm package sections: OpenFuse 1,452/1,452 and Scenario 466/466, with no missing/extra coordinates. The structurally extracted dependency declaration graph reports 3,464 OpenFuse and 644 Scenario declarations; after alias correction, all declarations are classified as exact, peer-context or npm alias, with no unresolved declaration. Across both lockfiles there are 1,808 unique exact coordinates, all present in the corrected BOM; 16 other npm PURLs remain pending attribution to their non-pnpm source manifests.
+
+Registry metadata was retrieved for all 1,808 exact npm coordinates (HTTP 200): 1,797 have a license field; 11 do not; one additional raw value `CC BY-SA 4.0` is not an SPDX expression and needs manual review. This is metadata evidence only, not legal clearance or package-tarball verification. Vulnerability advisories, package archive notices, source headers, bundled assets and the 24 ranged OpenManusWeb Python requirements remain unresolved. P1 remains OPEN.
