@@ -77,3 +77,8 @@ The manual entrypoint sample now covers **40/229 (17.5%)**. The latest eight ZBr
 ## Review coverage update — 2026-11-17 (48/229)
 
 The manual entrypoint sample now covers **48/229 (21.0%)**. Eight Godot entrypoints were reviewed. Password-related keyword hits were limited to documented release keystore environment-variable names and a warning not to store passwords in presets; no literal secret was observed. Shell/process guidance remains sandbox-only. Remaining 181 entrypoints and referenced payloads are still open.
+
+
+## Review coverage update — 2026-11-17 (64/229)
+
+Manual content review now covers **64/229 (27.9%)** entrypoints. Roblox API-key/token mentions were contextualized as documented prerequisites and CI security guidance; no literal secrets were observed. Godot/Roblox shell/process workflows remain sandbox-only. Remaining 165 entrypoints are not yet reviewed.
