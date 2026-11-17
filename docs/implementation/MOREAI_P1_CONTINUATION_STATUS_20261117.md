@@ -87,3 +87,8 @@ Manual content review now covers **64/229 (27.9%)** entrypoints. Roblox API-key/
 ## Review coverage update — 2026-11-17 (72/229)
 
 The manual entrypoint sample now covers **72/229 (31.4%)**. Eight additional Roblox/Unity entrypoints were inspected. Credential/token keyword hits were contextualized as provenance checklists, cancellation tokens or editor-license diagnostic wording; no literal secrets were observed. Remaining 157 entrypoints are not reviewed.
+
+
+## Review coverage update — 2026-11-17 (80/229)
+
+The manual entrypoint sample now covers **80/229 (34.9%)**. Unity VFX and Unreal animation credential keyword hits were source-provenance checklist text, not secrets. DCC/engine shell workflows remain sandbox-only. Remaining 149 entrypoints are not reviewed.
