@@ -75,3 +75,14 @@ These hashes prove the identity of the notice bytes at the pinned revisions; the
 Raw bytes were retrieved and SHA-256 computed for the first 10 selected SKILL.md entrypoints (2 Visual Skills and 8 Scenario Skills). All 10 matched the expected byte sizes from their pinned tree manifests. Their hashes are recorded in MOREAI_P1_SELECTED_SKILL_ENTRYPOINT_SHA256_20261117.csv and joined back to their rows in MOREAI_P1_SELECTED_SKILL_PAYLOAD_MANIFEST_20261117.csv.
 
 This is only 10/229 entrypoints and does not complete the 1,923-file payload hash audit. The other 219 entrypoints and all referenced scripts/assets/configuration files remain pending. Do not infer payload-wide hash completion.
+
+
+## Evidence correction addendum — 2026-11-17 (supersedes earlier pending-hash statements)
+
+The committed recursive payload execution report and evidence artifacts establish **1,941/1,941 selected payload files** with raw SHA-256, expected byte-size and Git blob SHA-1 matches, zero fetch failures, and repository-persisted per-file evidence. See `MOREAI_P1_SKILL_PAYLOAD_AUDIT_EXECUTION_20261117.md` and `p1-skill-payload-evidence/skill-payload-file-audit.csv`; evidence archival commit: `3b98f4a063c16f64cc9e0a23f1b7ddd02d214c1c`.
+
+Accordingly, the earlier statement above that the full selected payload raw SHA-256 pass had not been executed is superseded. Payload-wide hash integrity is complete for the 1,941-file selected manifest. This does not close the other gates: full content and rights review, exact-version license/tarball/NOTICE reconciliation, vulnerability advisory reconciliation, dependency-scope completeness, asset/font redistribution review, and final per-file disposition remain open.
+
+The current normalized pnpm evidence reports 1,808 exact npm coordinates with first-pass registry metadata: 1,797 license fields, 11 missing license fields and one non-SPDX `CC BY-SA 4.0` value requiring manual review. Nested Scenario npm/Python lockfiles and platform-specific Python locks were found after the 1,995-component BOM input set and must be reconciled before stating a final complete SBOM count. Vulnerability review is not evidenced as complete.
+
+P1 remains **OPEN**; P2 ADR remains **DRAFT / NOT ACCEPTED**. No skill payload is approved for production import or execution solely by virtue of hash verification.
