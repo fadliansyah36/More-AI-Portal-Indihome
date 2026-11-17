@@ -57,3 +57,12 @@ The 16 additional npm coordinates previously listed as unattributed are now reco
 The pinned nested lockfile contains one importer, two direct dependencies (`@fal-ai/client@1.10.1`, `@napi-rs/canvas@1.0.13`), 16 package-section keys, 16 integrity records and 13 explicit snapshot-section keys. The normalized 16-row edge register is `MOREAI_P1_MOTION_TALKING_HEAD_PNPM_EDGES_20261117.csv`: two importer edges, three transitive dependencies of the Fal client, and eleven platform-specific optional native canvas dependencies. The earlier inventory note stating 18 snapshot keys is superseded by this direct recount of the pinned lockfile.
 
 This closes source attribution for the 16 extra npm PURLs; it does **not** close exact-version license metadata, package tarball NOTICE/source-header review, native binary provenance, vulnerability review or SBOM legal acceptance. These 16 packages remain pending registry/artifact license review and no dependency was installed.
+
+
+## Newly discovered nested Scenario dependency manifests — 2026-11-17
+
+A recursive selected-payload manifest scan identified two additional nested npm lockfiles and one nested Python requirements file under Scenario Kinetic Film / Kinetic Music Video. They were not inputs to the previously normalized OpenFuse/Scenario root pnpm graph or the Motion talking-head graph. Exact source records and dependency edges are now captured in `MOREAI_P1_NESTED_LOCKFILE_AND_REQUIREMENTS_SUPPLEMENT_20261117.csv` and `MOREAI_P1_NESTED_LOCKFILE_DEPENDENCY_EDGES_20261117.csv`.
+
+The two npm lockfiles contribute six unique exact npm coordinates: `playwright@1.64.1`, `playwright-core@1.64.1`, `opentype.js@1.3.4`, `string.prototype.codepointat@0.2.1`, `tiny-inflate@1.0.3`, and `three@0.187.0`. Their package-lock entries include integrity values and declared license fields (Apache-2.0 for Playwright/Core; MIT for the remaining four). The lockfile metadata is not package tarball/NOTICE legal approval.
+
+The Kinetic Film Python requirements file pins `numpy==2.5.4` and `opencv-python-headless==5.0.0.93` but has no hash lock or resolved transitive graph. No pip/npm install was performed. The six npm PURLs and two PyPI PURLs must be deduplicated against the current CycloneDX BOM before its final component count is stated. The current 1,995 count remains valid only for its previously documented input set and is not a complete all-selected-payload SBOM yet. P1 remains OPEN.
