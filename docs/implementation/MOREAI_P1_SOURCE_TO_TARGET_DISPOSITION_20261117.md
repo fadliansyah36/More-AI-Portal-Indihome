@@ -32,3 +32,10 @@ A dedicated row-level register has been added for the 229 eligible skill entrypo
 Proposed disposition split: 952 adapt (SKILL.md and reference documents) and 971 defer (898 executable files, 67 config/schema files, 6 font/media assets). These are conservative proposals, not final decisions. The existing 3,919-row all-source-tree register remains the broader provenance inventory and still has PRELIMINARY_NOT_FINAL decisions.
 
 25 root/nested license/notice paths have separately verified raw SHA-256; the payload manifest SHA-256 fields remain pending. A binary-safe recursive auditor is committed but not run.
+
+
+## Manual reference triage status — 2026-11-17
+
+The committed 1,941-file recursive payload audit's 148 parser reference candidates are now triaged in `MOREAI_P1_MANUAL_REFERENCE_TRIAGE_20261117.md`: 49 heading fragments match existing headings, 78 targets resolve to existing directories, and 21 are contextual/generated/runtime/example references. This corrects the earlier coarse residual estimate of 25 for this exact CSV. No parser candidate in this set is approved for code execution or production import solely by this triage.
+
+The 229-entrypoint content review remains partial (16 reviewed); executable/configuration, font/binary provenance, package tarball notices, vulnerability evidence and final per-file decisions remain open. The 3,919-entry source register and 1,941-file selected payload register remain `PRELIMINARY_NOT_FINAL`; P1 has not been accepted.
