@@ -137,3 +137,8 @@ Manual entrypoint review now covers **144/229 (62.9%)**. Scenario Report explici
 ## Review coverage update — 2026-11-17 (152/229)
 
 Manual entrypoint review now covers **152/229 (66.4%)**. Eight additional Seedance/Seedream/3D and media workflow skills were reviewed; provider calls remain gated. Remaining 77 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (160/229)
+
+Manual entrypoint review now covers **160/229 (69.9%)**. Scenario Team Admin is deferred because it can change team membership/roles, project state, spend caps and API-key policy; it requires consent, approval, secret-vault and audit controls. Text Overlay dependency installation was not run. Remaining 69 entrypoints are open.
