@@ -96,3 +96,10 @@ The current corrected CycloneDX inventory is **1,995 distinct source+PURL compon
 The exact lockfile package coordinate comparison is closed for the two pinned pnpm package sections: OpenFuse 1,452/1,452 and Scenario 466/466, with no missing/extra coordinates. The structurally extracted dependency declaration graph reports 3,464 OpenFuse and 644 Scenario declarations; after alias correction, all declarations are classified as exact, peer-context or npm alias, with no unresolved declaration. Across both lockfiles there are 1,808 unique exact coordinates, all present in the corrected BOM; 16 other npm PURLs remain pending attribution to their non-pnpm source manifests.
 
 Registry metadata was retrieved for all 1,808 exact npm coordinates (HTTP 200): 1,797 have a license field; 11 do not; one additional raw value `CC BY-SA 4.0` is not an SPDX expression and needs manual review. This is metadata evidence only, not legal clearance or package-tarball verification. Vulnerability advisories, package archive notices, source headers, bundled assets and the 24 ranged OpenManusWeb Python requirements remain unresolved. P1 remains OPEN.
+
+
+## Additional npm PURL attribution correction — 2026-11-17
+
+The 16 extra npm PURLs previously marked pending attribution are now proven to originate from the pinned Motion Skills talking-head nested pnpm lockfile: `iart-ai/talking-head-skills@eac1f6b01467f6f95d8ab7602310ba0ff67ed91b/skills/talking-head/pnpm-lock.yaml`. A direct exact-coordinate comparison confirms 16/16 matches, zero missing and zero extras. See `MOREAI_P1_SBOM_EXTRA_NPM_COORDINATES_20261117.csv`, `MOREAI_P1_MOTION_TALKING_HEAD_PNPM_PACKAGES_20261117.csv` and `MOREAI_P1_MOTION_TALKING_HEAD_PNPM_EDGES_20261117.csv`.
+
+The nested lockfile recount is 1 importer, 16 package keys, 16 integrity records and 13 explicit snapshot keys (the earlier 18-snapshot count is superseded). Its graph export has 16 edges. Source attribution is closed; license/tarball/vulnerability review of these 16 exact packages remains open. The corrected CycloneDX total remains 1,995 components.
