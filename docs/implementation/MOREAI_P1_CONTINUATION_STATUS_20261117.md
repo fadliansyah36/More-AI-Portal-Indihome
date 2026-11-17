@@ -127,3 +127,8 @@ Manual entrypoint review now covers **128/229 (55.9%)**. Kinetic Music Video sca
 ## Review coverage update — 2026-11-17 (136/229)
 
 Manual entrypoint review now covers **136/229 (59.4%)**. Motion Loops and Playable Ads require Node/ffmpeg/Playwright or Python dependency installation per their instructions; no installation or command was run. Both remain DEFER pending dependency/license and isolated-renderer review. Remaining 93 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (144/229)
+
+Manual entrypoint review now covers **144/229 (62.9%)**. Scenario Report explicitly prohibits placing API keys, tokens or signed asset-download URLs in reports; signed URLs must remain ephemeral and redacted. Remaining 85 entrypoints are open.
