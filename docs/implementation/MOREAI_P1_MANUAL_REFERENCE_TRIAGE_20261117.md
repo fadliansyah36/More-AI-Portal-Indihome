@@ -253,3 +253,8 @@ The sample now covers **152/229 (66.4%)**. Eight additional Scenario skills cove
 The sample now covers **160/229 (69.9%)**. Eight additional skills cover SPARC3D, sprite animation, storyboards, task tracking, team administration, text overlay, textures and thumbnails.
 
 Important external-action finding: `scenario-team-admin` describes remote Scenario team/project administration through OAuth or team-scoped API keys, including member/role changes, project deletion, spend caps, model allowlists and API-key audit. It also states that some generated secrets are shown once in a portal and must not pass through the agent. No credential was present or used. This skill is **DEFER** until explicit customer consent, scoped OAuth/API-key vault, approval gates for destructive/financial actions, idempotency, audit receipts and secret redaction are implemented. `scenario-text-overlay` mentions `pip install chevron pillow`; no installation was run and dependency/license review remains required. Remaining 69 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 168/229
+
+The sample now covers **168/229 (73.4%)**. Eight additional skills cover UGC, Veo, video ads, video assembly, color grading, editing, video-to-motion and video workflows. All contain provider/media/network references but no shell/process, credential-keyword, installation or dynamic-code pattern was flagged in this batch. They remain gated on approved provider routing, explicit consent, usage accounting, safe media processing and artifact retention. Remaining 61 entrypoints are unreviewed.
