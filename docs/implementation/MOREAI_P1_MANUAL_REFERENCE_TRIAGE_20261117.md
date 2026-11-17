@@ -200,3 +200,8 @@ The entrypoint review sample now covers **80/229 (34.9%)**. The eight additional
 ## Entrypoint review expansion — 88/229
 
 The manual sample now covers **88/229 (38.4%)**, adding eight Unreal Engine skills (cinematics, expert, gameplay, lighting/rendering, materials, performance, pipeline automation and VFX). All credential keyword hits are source-provenance checklists; no credential value was observed. Shell/process workflows remain sandbox-only. No dynamic-code pattern was identified in the 88-entrypoint sample. Remaining 141 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 96/229
+
+The manual sample now covers **96/229 (41.9%)**. The latest eight files include Unreal world-building and Scenario 3D/world, Ace-Step, ad variants, admin analytics, asset analysis and audio. The admin-analytics credential/API-key terms describe which projects a credential can access and a usage metric; no secret value or credential material was observed. No shell/process or dynamic-code pattern was flagged in these eight files. Remaining 133 entrypoints are unreviewed.
