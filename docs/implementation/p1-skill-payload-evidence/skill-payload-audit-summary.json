@@ -1,0 +1,28 @@
+{
+  "selected_skill_entrypoints": 229,
+  "payload_files": 1941,
+  "sha256_verified": 1941,
+  "hash_review_required": 0,
+  "fetch_failed": 0,
+  "content_kinds": {
+    "skill-entrypoint": 229,
+    "reference-document": 726,
+    "executable-source": 875,
+    "configuration-or-schema": 69,
+    "other": 23,
+    "media-or-binary-asset": 10,
+    "font-asset": 4,
+    "test-example-fixture": 5
+  },
+  "proposed_dispositions": {
+    "adapt": 958,
+    "defer": 978,
+    "archive-only": 5
+  },
+  "reference_statuses": {
+    "EXTERNAL_REFERENCE": 879,
+    "RESOLVED_IN_PINNED_TREE": 1198,
+    "NOT_FOUND_IN_PINNED_TREE": 148
+  },
+  "warning": "Hash integrity is not license approval, malware clearance, provider approval or production suitability. No source is executed."
+}
