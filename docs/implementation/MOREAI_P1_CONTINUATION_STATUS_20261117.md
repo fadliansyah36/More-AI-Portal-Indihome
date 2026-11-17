@@ -193,3 +193,10 @@ P1 remains **OPEN**. Remaining work includes the 862 executable sources, 69 conf
 The manual executable-source review has advanced to **23/875**. Batch 02 inspected ten additional engine, desktop automation and motion files. All ten remain DEFER: Maya mayapy job runner, ZBrush batch job, Godot archive installer, Roblox live-server restart tool, Unity pipeline CLI/build hooks, and Motion talking-head/b-roll render/prepare/paid-generation commands. Specific risks and controls are recorded in `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_02_20261117.md`.
 
 The per-file operational disposition ledger was refreshed with the 10 new review-evidence references; its 1,941 rows remain 15 ARCHIVE_ONLY and 1,926 DEFER. No source is enabled for execution. Remaining executable source: **852/875**; configuration/schema: 69; reference docs: 726. P1 remains OPEN.
+
+
+## Complete source-tree disposition ledger — 2026-11-17
+
+The broader pinned source inventory now has a complete operational decision row for every path: `MOREAI_P1_FULL_SOURCE_TREE_OPERATIONAL_DISPOSITION_20261117.csv` — 3,919 unique repository/commit/path rows, 2,960 file blobs and 959 directory records. Decisions: 111 COPY (pristine OpenManusWeb archival snapshot only), 391 ARCHIVE_ONLY (tests/evidence/non-runtime assets and unlicensed Motion pack), 2,458 DEFER, 959 directory rows NOT_APPLICABLE. No unreviewed file is promoted to runtime.
+
+This resolves the missing/empty earlier CSV register issue, but it does not mean all 2,458 DEFER files have been manually reviewed. Selected payload manual executable review remains 23/875; 852 executable files, 69 config/schema files and 726 reference documents still require review. P1 remains OPEN.
