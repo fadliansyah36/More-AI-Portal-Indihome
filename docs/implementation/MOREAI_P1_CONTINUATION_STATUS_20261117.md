@@ -72,3 +72,8 @@ The read-only manual entrypoint sample has advanced from 24 to **32/229 (14.0%)*
 ## Review coverage update — 2026-11-17 (continued)
 
 The manual entrypoint sample now covers **40/229 (17.5%)**. The latest eight ZBrush/Godot entrypoints were read. The one credential keyword hit was a provenance checklist reference, not a literal secret. No dynamic-code pattern was identified in the 40-entrypoint sample. Remaining 189 entrypoints are not reviewed; no blanket safety clearance is implied.
+
+
+## Review coverage update — 2026-11-17 (48/229)
+
+The manual entrypoint sample now covers **48/229 (21.0%)**. Eight Godot entrypoints were reviewed. Password-related keyword hits were limited to documented release keystore environment-variable names and a warning not to store passwords in presets; no literal secret was observed. Shell/process guidance remains sandbox-only. Remaining 181 entrypoints and referenced payloads are still open.
