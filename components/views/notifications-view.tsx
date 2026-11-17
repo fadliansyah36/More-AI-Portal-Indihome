@@ -40,7 +40,12 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ onBack, on
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [paginationError, setPaginationError] = useState<string | null>(null);\n  const [preferences, setPreferences] = useState<CustomerNotificationPreferences | null>(null);\n  const [preferencesOpen, setPreferencesOpen] = useState(false);\n  const [preferencesLoading, setPreferencesLoading] = useState(false);\n  const [preferencesBusy, setPreferencesBusy] = useState(false);\n  const [preferencesError, setPreferencesError] = useState<string | null>(null);
+  const [paginationError, setPaginationError] = useState<string | null>(null);
+  const [preferences, setPreferences] = useState<CustomerNotificationPreferences | null>(null);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [preferencesLoading, setPreferencesLoading] = useState(false);
+  const [preferencesBusy, setPreferencesBusy] = useState(false);
+  const [preferencesError, setPreferencesError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
