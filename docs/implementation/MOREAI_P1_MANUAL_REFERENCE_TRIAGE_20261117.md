@@ -224,3 +224,8 @@ The manual sample now covers **112/229 (48.9%)**. The eight additional Scenario 
 ## Entrypoint review expansion — 120/229
 
 The sample now covers **120/229 (52.4%)**. Eight more Scenario skills cover Grok Imagine image/video, identity library, Ideogram, image editing/image, inspiration and Kinetic Film. External provider references in the image/video skills remain gated on server-side credential, consent, metering and artifact controls. Kinetic Film's shell scaffold is a project-generation dependency already documented in the reference triage; it is not approved for direct host execution. No literal secret or dynamic-code pattern was found in this eight-file batch. Remaining 109 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 128/229
+
+The manual sample now covers **128/229 (55.9%)**. Eight additional Scenario skills cover Kinetic Music Video, Kling, Luma image/video, MAI image, Meshy, MiniMax music and MiniMax video. Kinetic Music Video shell scaffolding is a generated project layout and remains blocked from direct host execution; see the scaffold evidence above. The provider-specific skills require approved server-side adapters, consent, usage metering, safe artifact persistence and data-retention review. No secret or dynamic-code pattern was found in this batch. Remaining 101 entrypoints are unreviewed.
