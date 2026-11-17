@@ -62,3 +62,8 @@ Execution policy: source review and documentation only; no new real tests, stagi
 - `7ff131c97c4f53504c54d247d2752f1563c94f05` — entrypoint sample expansion to 24/229.
 
 **Next work:** continue manual review of the remaining 205 entrypoints and their executable/configuration dependencies, attribute the 16 extra PURLs, inspect the 12 package license records and vulnerability evidence, then finalize all 1,941 file dispositions. Only after those gates can P1 be presented for acceptance and P2 finalized.
+
+
+## Review coverage update — 2026-11-17
+
+The read-only manual entrypoint sample has advanced from 24 to **32/229 (14.0%)**. The additional eight Maya/ZBrush files were inspected. “Credential” and “verify token” keyword hits were contextualized as source-provenance checklist or version-token text, not literal secrets. ZBrush `-script` execution and other DCC shell/process instructions remain sandbox-only. This does not close the remaining 197 entrypoints or the executable/configuration review.
