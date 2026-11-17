@@ -77,3 +77,27 @@ A static content review was performed on 16 entrypoints (2 Visual Skills and 14 
 - Product-owner acceptance is still required before P1 closure and P2 ADR acceptance.
 
 **Conclusion: the 148 parser reference candidates are triaged; P1 is not closed.**
+
+
+## Entrypoint sample register — exact 16 reviewed
+
+| Source | Entrypoint | Static review note |
+|---|---|---|
+| Visual Skills | `image/SKILL.md` | Prompt/workflow guidance; external reference URLs present |
+| Visual Skills | `video/SKILL.md` | Prompt/workflow guidance; external reference URLs present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-animation/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-blockout/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-expert/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-export/SKILL.md` | Contains explicit `blender -b ... -P bx_export.py` command guidance; sandbox-only |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-geometry-nodes/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-grease-pencil/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-hair/SKILL.md` | Python/script workflow guidance; sandbox-only |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-hard-surface/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-lighting-rendering/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-previs-storyboard/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-retopology/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-rigging/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-sculpting/SKILL.md` | Blender workflow; external references present |
+| Scenario Skills | `skills/dcc/blender/scenario-blender-texturing-shading/SKILL.md` | Mentions credential provenance in a reference checklist; no literal credential value observed; credential handling remains server-side and consent-gated |
+
+The static scan's URL/network keyword hits are not automatically findings of unsafe behavior; they include ordinary upstream documentation and source links. The two shell/process-oriented Blender workflows are not approved for direct customer/browser execution. The entrypoint sample remains 16/229, so no blanket safety approval is inferred.
