@@ -48,3 +48,12 @@ Registry metadata is not legal approval. No npm tarballs were downloaded or unpa
 6. Close P1 only after content, asset, vulnerability and hash evidence is complete and dispositions are accepted; P2 ADR remains DRAFT until then.
 
 **Status: P1 dependency graph and first-pass registry license metadata are materially advanced, but P1 is NOT CLOSED.** Phase 04–09 remain gated by AGENTS.md and P1/P2 acceptance. Phase 10–11 cannot be accepted under the no-real-testing/no-staging instruction.
+
+
+## Motion talking-head nested lockfile source attribution — 2026-11-17
+
+The 16 additional npm coordinates previously listed as unattributed are now reconciled exactly to the pinned Motion Skills child repository `iart-ai/talking-head-skills@eac1f6b01467f6f95d8ab7602310ba0ff67ed91b`, lockfile `skills/talking-head/pnpm-lock.yaml`. A direct key-level comparison found **16/16 exact package coordinates**, with no missing or extra coordinate. The source attribution is recorded in `MOREAI_P1_SBOM_EXTRA_NPM_COORDINATES_20261117.csv` and the exact package register is `MOREAI_P1_MOTION_TALKING_HEAD_PNPM_PACKAGES_20261117.csv`.
+
+The pinned nested lockfile contains one importer, two direct dependencies (`@fal-ai/client@1.10.1`, `@napi-rs/canvas@1.0.13`), 16 package-section keys, 16 integrity records and 13 explicit snapshot-section keys. The normalized 16-row edge register is `MOREAI_P1_MOTION_TALKING_HEAD_PNPM_EDGES_20261117.csv`: two importer edges, three transitive dependencies of the Fal client, and eleven platform-specific optional native canvas dependencies. The earlier inventory note stating 18 snapshot keys is superseded by this direct recount of the pinned lockfile.
+
+This closes source attribution for the 16 extra npm PURLs; it does **not** close exact-version license metadata, package tarball NOTICE/source-header review, native binary provenance, vulnerability review or SBOM legal acceptance. These 16 packages remain pending registry/artifact license review and no dependency was installed.
