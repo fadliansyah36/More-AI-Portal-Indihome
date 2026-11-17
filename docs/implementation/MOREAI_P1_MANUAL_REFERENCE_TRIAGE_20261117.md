@@ -205,3 +205,12 @@ The manual sample now covers **88/229 (38.4%)**, adding eight Unreal Engine skil
 ## Entrypoint review expansion — 96/229
 
 The manual sample now covers **96/229 (41.9%)**. The latest eight files include Unreal world-building and Scenario 3D/world, Ace-Step, ad variants, admin analytics, asset analysis and audio. The admin-analytics credential/API-key terms describe which projects a credential can access and a usage metric; no secret value or credential material was observed. No shell/process or dynamic-code pattern was flagged in these eight files. Remaining 133 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 104/229
+
+The manual entrypoint sample now covers **104/229 (45.4%)**. Eight additional Scenario skills include Blender 2D/Blender, Brand Kit, Caption Studio, ChatGPT Pet Create/Update, Comic Creator and Consistency.
+
+Important finding: `skills/scenario-blender/SKILL.md` documents a Scenario API key/secret and a local Blender MCP bearer token. The text instructs that the MCP token is distinct from the API key, held in memory, passed through `SCENARIO_BLENDER_TOKEN`, and not pasted into snippets; it also warns that a `--token` process argument exposes the token. No actual credential value was present and no credential/provider was activated. This skill is **DEFER** until MoreAI implements a reviewed server-side secret reference, customer consent, local/private MCP boundary and isolated tool execution; do not copy secrets into browser config or logs.
+
+`scenario-chatgpt-pet-create` mentions `pip install pillow numpy`; this is installation guidance only. No packages were installed. It remains subject to dependency pinning, license and isolated worker review. No dynamic-code pattern was found in this 104-entrypoint sample. Remaining 125 entrypoints are unreviewed.
