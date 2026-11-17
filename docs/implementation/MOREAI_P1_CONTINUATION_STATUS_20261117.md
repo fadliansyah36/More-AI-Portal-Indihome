@@ -122,3 +122,8 @@ Manual entrypoint review now covers **120/229 (52.4%)**. Eight additional image/
 ## Review coverage update — 2026-11-17 (128/229)
 
 Manual entrypoint review now covers **128/229 (55.9%)**. Kinetic Music Video scaffold remains sandbox-only; image/video/3D provider skills require approved adapters, consent, metering and artifact governance. Remaining 101 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (136/229)
+
+Manual entrypoint review now covers **136/229 (59.4%)**. Motion Loops and Playable Ads require Node/ffmpeg/Playwright or Python dependency installation per their instructions; no installation or command was run. Both remain DEFER pending dependency/license and isolated-renderer review. Remaining 93 entrypoints are open.
