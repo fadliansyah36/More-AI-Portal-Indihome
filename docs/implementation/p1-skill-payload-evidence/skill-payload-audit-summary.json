@@ -24,5 +24,15 @@
     "RESOLVED_IN_PINNED_TREE": 1198,
     "NOT_FOUND_IN_PINNED_TREE": 148
   },
+  "static_review_files": 944,
+  "static_review_pattern_flags": {
+    "filesystem_mutation": 171,
+    "remote_tool_or_mcp": 29,
+    "process_spawn": 155,
+    "dynamic_code": 65,
+    "credential_or_environment": 86,
+    "network_io": 59,
+    "package_install": 22
+  },
   "warning": "Hash integrity is not license approval, malware clearance, provider approval or production suitability. No source is executed."
 }
