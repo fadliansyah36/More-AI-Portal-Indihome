@@ -277,3 +277,8 @@ The sample now covers **184/229 (80.3%)**. Eight Motion Skills entrypoints were 
 ## Entrypoint review expansion — 192/229
 
 The sample now covers **192/229 (83.8%)**. Eight more Motion Skills entrypoints span ad creative/launch/testimonial video, animated infographic/chart/presentation video and diagram/explainer video. They use local shell/rendering instructions; one diagram-animation entry references external resources. No credential or dynamic-code keyword pattern was flagged. Renderer commands remain isolated-worker-only; external resources require allowlist/provenance review. Remaining 37 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 200/229
+
+The sample now covers **200/229 (87.3%)**. Eight Motion Skills entries span isometric, whiteboard, wrapped video, map animation, 60fps, accessible, ASCII and glassmorphism animation. All eight include local renderer/shell command guidance; no external network, credential or dynamic-code pattern was flagged. They remain isolated-worker-only. Remaining 29 entrypoints are unreviewed.
