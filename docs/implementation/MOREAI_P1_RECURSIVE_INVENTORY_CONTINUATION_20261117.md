@@ -73,3 +73,12 @@ This mapping is a starting hypothesis only; P2 ADR must reconcile every selected
 ## Execution constraints
 
 Read-only source inspection and documentation writes only. No packages installed, no scripts executed, no product code imported, no tests/build/lint/typecheck, no Supabase writes/migrations, no staging and no deployment. Existing mandatory AGENTS.md Phase 00–11 gate remains controlling; Phase 04, 06–09 are still in progress, Phase 10 is not accepted, Phase 11 is blocked. This report does not close P1 or authorize P3–P11 feature implementation.
+
+
+## Selected skill payload scope and file-level disposition — 2026-11-17
+
+The eligible selected-entrypoint register contains 229 skills (2 Visual, 172 Scenario, 55 Motion). Joining those folders against the pinned recursive tree manifests yields 1,923 unique files / 26,586,168 bytes.
+
+Payload classification: 229 skill entrypoints, 723 reference documents, 898 executable source files, 67 configuration/schema files, 4 fonts and 2 media/binary assets. The current file-level manifest is MOREAI_P1_SELECTED_SKILL_PAYLOAD_MANIFEST_20261117.csv. Proposed dispositions are adapt for 952 skill/reference documents and defer for 971 executable/config/binary files. Every row is preliminary, not legal or security approval.
+
+Raw SHA-256 is verified for 25 root/nested license/notice paths only. Per-file raw SHA-256 for the 1,923 payload files is pending. scripts/p1/audit_skill_payloads.py provides binary-safe recursive retrieval, SHA-256, Git blob parity, size and reference audit; it has not been executed.
