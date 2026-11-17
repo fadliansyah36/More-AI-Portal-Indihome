@@ -162,3 +162,10 @@ This draft can be accepted only after:
 No code, UI, migration, data or provider change is authorized by this draft. No tests, build, lint, typecheck, staging, deployment or live provider calls were performed.
 
 **Next action:** continue P1 closure, then finalize and accept P2 ADR. Afterward, complete mandatory Phase 04/05/06/07/08/09 in dependency order; Phase 09 must close before Phase 10. Phase 10/11 remain unaccepted until their required verification is explicitly authorized and evidenced.
+
+
+## Evidence correction addendum — 2026-11-17
+
+This addendum supersedes conflicting preliminary evidence counts in the body above. The current corrected CycloneDX inventory is **1,995** distinct source+PURL component records, with **1,989 NOASSERTION** and 6 declared-license records. The earlier 2,032 / 2,026-NOASSERTION figures were from a superseded draft inventory that incorrectly counted 37 peer-dependency range declarations as package components. Exact lockfile package coordinate parity is 1,452/1,452 OpenFuse and 466/466 Scenario; the separate normalized pnpm graph covers 1,808 unique exact coordinates. Exact-version npm registry metadata returned for all 1,808, with 1,797 license fields, 11 missing fields and one non-SPDX raw value requiring manual review.
+
+The selected-skill payload integrity evidence is now committed in `3b98f4a063c16f64cc9e0a23f1b7ddd02d214c1c`: 229 entrypoints, 1,941 recursively discovered payload files, 1,941 SHA-256 computations, 1,941 byte-size matches, 1,941 Git blob SHA matches, and zero fetch failures. This proves source integrity only. It does not close the content, licensing, security or final-disposition gates. The P2 ADR remains DRAFT / NOT ACCEPTED until P1 is accepted by the product owner.
