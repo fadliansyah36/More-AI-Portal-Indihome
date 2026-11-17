@@ -63,3 +63,10 @@ Operational decisions:
 This is a complete **operational disposition** ledger, not P1 acceptance or legal/security clearance. It supersedes the empty historical CSV path noted above and the earlier preliminary counts as the current row-level decision register. The selected-payload 1,941-row register remains the detailed companion ledger and contains the 23 manually reviewed executable-file references.
 
 P1 remains OPEN until the DEFER files receive manual review and final copy/adapt/exclude decisions, package license/vulnerability evidence is closed, and product-owner acceptance is recorded.
+
+
+## Configuration review disposition correction — 2026-11-17
+
+The 13-file configuration review assigned four additional ARCHIVE_ONLY decisions (Roblox production publish workflow, Roblox test CI workflow, Godot project CI workflow and Patina sample config). The current full source-tree ledger totals are now **111 COPY / 395 ARCHIVE_ONLY / 2,454 DEFER / 959 NOT_APPLICABLE directory rows**. The selected 1,941-payload companion ledger totals are **19 ARCHIVE_ONLY / 1,922 DEFER**. The full ledger is `MOREAI_P1_FULL_SOURCE_TREE_OPERATIONAL_DISPOSITION_20261117.csv` and the selected ledger is `MOREAI_P1_SELECTED_PAYLOAD_FINAL_OPERATIONAL_DISPOSITION_20261117.csv`.
+
+These remain operational dispositions only; all deferred files are excluded from runtime until individually reviewed and accepted. No production workflow was executed.
