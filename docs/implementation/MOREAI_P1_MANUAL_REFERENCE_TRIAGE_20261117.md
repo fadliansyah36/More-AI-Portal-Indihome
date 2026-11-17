@@ -169,3 +169,8 @@ The sample now covers **48/229** entrypoints. Eight additional Godot skills were
 - `skills/game-engines/godot/scenario-godot-rendering-lighting/SKILL.md`
 
 Manual contextualization: “password” hits are names of environment variables for release keystore configuration and documentation explicitly says not to put passwords in presets; no literal secret value was observed. Shell/process guidance remains sandbox-only. No dynamic-code pattern was found in the 48-entrypoint sample. Remaining 181 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 64/229
+
+The read-only entrypoint review has expanded from 48 to **64/229 (27.9%)**. The latest 16 entries cover Godot and Roblox skill families. Secret/token keyword hits were contextualized as Roblox Open Cloud API-key prerequisites, token-bucket terminology and security guidance about passing secrets via CI environment variables; no literal key or secret value was observed. Shell/process guidance in Godot/Roblox tooling remains sandbox-only. No `eval()` or `new Function()` pattern was found in the 64-entrypoint sample. Remaining 165 entrypoints are unreviewed.
