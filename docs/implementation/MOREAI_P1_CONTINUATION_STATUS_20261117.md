@@ -186,3 +186,10 @@ The selected-skill entrypoint sweep is now **COMPLETE: 229/229**. The final five
 - Binary/font review: 10 media/binary assets ARCHIVE_ONLY; 4 OFL font assets DEFER pending internal metadata and embedding/redistribution review.
 
 P1 remains **OPEN**. Remaining work includes the 862 executable sources, 69 configuration/schema files, 726 reference documents, exact npm tarball/license evidence for unresolved packages (including the Motion 16), vulnerability review, Python requirements provenance/version reconciliation, and product-owner acceptance. P2 remains draft; Phase 04–09 remain gated by AGENTS.md. No tests, builds, installs, provider calls, Supabase reads/writes, staging or deployment were performed.
+
+
+## Executable-source manual review update — Batch 02
+
+The manual executable-source review has advanced to **23/875**. Batch 02 inspected ten additional engine, desktop automation and motion files. All ten remain DEFER: Maya mayapy job runner, ZBrush batch job, Godot archive installer, Roblox live-server restart tool, Unity pipeline CLI/build hooks, and Motion talking-head/b-roll render/prepare/paid-generation commands. Specific risks and controls are recorded in `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_02_20261117.md`.
+
+The per-file operational disposition ledger was refreshed with the 10 new review-evidence references; its 1,941 rows remain 15 ARCHIVE_ONLY and 1,926 DEFER. No source is enabled for execution. Remaining executable source: **852/875**; configuration/schema: 69; reference docs: 726. P1 remains OPEN.
