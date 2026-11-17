@@ -236,3 +236,8 @@ The manual sample now covers **128/229 (55.9%)**. Eight additional Scenario skil
 The manual sample now covers **136/229 (59.4%)**. Eight additional skills cover model comparison/training, moderation, motion loops, multi-reference, orbit views, patina retexture and playable ads.
 
 Important dependency gate: `scenario-motion-loops` documents Node/ffmpeg/Playwright requirements and `npm install playwright` / browser installation commands; `scenario-playable-ads` documents Python packages, Playwright Chromium and ffmpeg installation. These are instructions only; no package/browser installation or command was run. Both skills remain **DEFER** until exact-version dependency/licensing review, isolated renderer worker, artifact scanning and egress policy are accepted. Playable Ads additionally depends on a network-provided MRAID runtime as recorded in the reference triage. Remaining 93 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 144/229
+
+The sample now covers **144/229 (62.9%)**. Eight additional skills cover product shots, quality gate, reel recast, refine loop, report, Reve, Rodin and Runway. The Scenario Report entrypoint explicitly classifies API keys, tokens and signed asset-download URLs as credentials and prohibits including them in reports; no actual secret value was present. This aligns with MoreAI's rule to keep signed URLs ephemeral and out of logs/LLM context. Provider-backed skills remain gated by server-side adapters, scoped credentials, metering and artifact policy. Remaining 85 entrypoints are unreviewed.
