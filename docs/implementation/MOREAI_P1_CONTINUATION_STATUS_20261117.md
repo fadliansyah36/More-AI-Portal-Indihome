@@ -174,3 +174,15 @@ Manual entrypoint review now covers **224/229 (97.8%)**. Manim requires Python p
 ## Review coverage update — 2026-11-17 (229/229 entrypoints)
 
 The selected-skill entrypoint sweep is now **COMPLETE: 229/229**. The final five Motion entrypoints were reviewed. The static scan did not flag `eval()`, `new Function()`, `exec()` or `compile()` patterns in the entrypoint Markdown; this is not a malware scan or security certification. Referenced executable source, config/schema, docs, assets, fonts and final per-file disposition remain open. P1 remains NOT CLOSED.
+
+
+## P1 manual payload review continuation — 2026-11-17
+
+- Selected skill entrypoints: **229/229 manually reviewed** (complete; static entrypoint review is not code execution or security certification).
+- Ambiguous reference parser candidates: **148/148 manually triaged** in `MOREAI_P1_MANUAL_REFERENCE_TRIAGE_20261117.md`: 49 heading fragments, 78 valid directory targets and 21 contextual/runtime/generated references. This supersedes the earlier coarse estimate of 25 unresolved candidates for the committed CSV.
+- Executable payload source: first manual batch **13/875** reviewed and recorded in `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_01_20261117.md`; all 13 are DEFER because of local arbitrary-code IPC, workstation process control, provider upload/download and renderer isolation requirements. Remaining 862 executable files remain DEFER pending individual review.
+- Per-file selected-payload operational register: `MOREAI_P1_SELECTED_PAYLOAD_FINAL_OPERATIONAL_DISPOSITION_20261117.csv` contains all **1,941/1,941** selected payload paths. Current conservative decisions: **15 ARCHIVE_ONLY** (10 media/binary and 5 test/example fixtures) and **1,926 DEFER** (including all not-yet-cleared entrypoints, references, executable code, configuration/schema and fonts). This is a final operational hold register, not approval to ingest or execute; no file has been promoted to COPY/ADAPT.
+- Exact npm source attribution: all 16 extra PURLs are now mapped 16/16 to the pinned Motion talking-head nested pnpm lockfile. Their package artifact/license and vulnerability review remains open.
+- Binary/font review: 10 media/binary assets ARCHIVE_ONLY; 4 OFL font assets DEFER pending internal metadata and embedding/redistribution review.
+
+P1 remains **OPEN**. Remaining work includes the 862 executable sources, 69 configuration/schema files, 726 reference documents, exact npm tarball/license evidence for unresolved packages (including the Motion 16), vulnerability review, Python requirements provenance/version reconciliation, and product-owner acceptance. P2 remains draft; Phase 04–09 remain gated by AGENTS.md. No tests, builds, installs, provider calls, Supabase reads/writes, staging or deployment were performed.
