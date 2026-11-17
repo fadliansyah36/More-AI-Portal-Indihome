@@ -246,3 +246,10 @@ The sample now covers **144/229 (62.9%)**. Eight additional skills cover product
 ## Entrypoint review expansion — 152/229
 
 The sample now covers **152/229 (66.4%)**. Eight additional Scenario skills cover Seedance drafts/music/storyboard, Seedance, Seedream, side-view game kit, skyboxes and Sonilo. These are provider/media workflow instructions with external references; no shell/process, install, credential-keyword or dynamic-code pattern was flagged in this batch. Provider use remains blocked until approved adapters, explicit consent, metering, retention and artifact controls are configured. Remaining 77 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 160/229
+
+The sample now covers **160/229 (69.9%)**. Eight additional skills cover SPARC3D, sprite animation, storyboards, task tracking, team administration, text overlay, textures and thumbnails.
+
+Important external-action finding: `scenario-team-admin` describes remote Scenario team/project administration through OAuth or team-scoped API keys, including member/role changes, project deletion, spend caps, model allowlists and API-key audit. It also states that some generated secrets are shown once in a portal and must not pass through the agent. No credential was present or used. This skill is **DEFER** until explicit customer consent, scoped OAuth/API-key vault, approval gates for destructive/financial actions, idempotency, audit receipts and secret redaction are implemented. `scenario-text-overlay` mentions `pip install chevron pillow`; no installation was run and dependency/license review remains required. Remaining 69 entrypoints are unreviewed.
