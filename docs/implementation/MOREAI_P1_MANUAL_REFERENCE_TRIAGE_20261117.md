@@ -229,3 +229,10 @@ The sample now covers **120/229 (52.4%)**. Eight more Scenario skills cover Grok
 ## Entrypoint review expansion — 128/229
 
 The manual sample now covers **128/229 (55.9%)**. Eight additional Scenario skills cover Kinetic Music Video, Kling, Luma image/video, MAI image, Meshy, MiniMax music and MiniMax video. Kinetic Music Video shell scaffolding is a generated project layout and remains blocked from direct host execution; see the scaffold evidence above. The provider-specific skills require approved server-side adapters, consent, usage metering, safe artifact persistence and data-retention review. No secret or dynamic-code pattern was found in this batch. Remaining 101 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 136/229
+
+The manual sample now covers **136/229 (59.4%)**. Eight additional skills cover model comparison/training, moderation, motion loops, multi-reference, orbit views, patina retexture and playable ads.
+
+Important dependency gate: `scenario-motion-loops` documents Node/ffmpeg/Playwright requirements and `npm install playwright` / browser installation commands; `scenario-playable-ads` documents Python packages, Playwright Chromium and ffmpeg installation. These are instructions only; no package/browser installation or command was run. Both skills remain **DEFER** until exact-version dependency/licensing review, isolated renderer worker, artifact scanning and egress policy are accepted. Playable Ads additionally depends on a network-provided MRAID runtime as recorded in the reference triage. Remaining 93 entrypoints are unreviewed.
