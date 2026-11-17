@@ -100,3 +100,17 @@ A raw-byte hash pass has now been completed for all 25 root/nested license and n
 Observed scope: 22 MIT notice paths (including the 18 eligible Motion pack LICENSE files), one Visual Skills CC BY 4.0 LICENSE, one Visual Skills attribution NOTICE, and one nested Scenario skill-creator Apache-2.0 LICENSE.txt. All 25 hash rows are marked verified.
 
 The 229 selected skill entrypoints map to 1,923 files. Raw SHA-256 for those payload files remains pending; the separate license-notice hash pass must not be misrepresented as payload-wide hash coverage. The recursive binary-safe auditor is committed but has not been run.
+
+
+## Selected Motion font notice review — 2026-11-17
+
+The four WOFF2 fonts included in the 1,941-file selected payload audit have matching adjacent `OFL.txt` files in the pinned Scenario Skills commit. Their declared notices are:
+
+| Font | Notice / copyright | Review status |
+|---|---|---|
+| Fredoka Bold | SIL OFL 1.1; The Fredoka Project Authors (2016) | Notice read; WOFF2 internal metadata pending |
+| Lilita One Regular | SIL OFL 1.1; Juan Montoreano (2011); Reserved Font Name “Lilita One” | Notice read; WOFF2 internal metadata and reserved-name treatment pending |
+| Orbitron ExtraBold | SIL OFL 1.1; The Orbitron Project Authors (2018) | Notice read; WOFF2 internal metadata pending |
+| Rajdhani Bold | SIL OFL 1.1; Indian Type Foundry (2014) | Notice read; WOFF2 internal metadata pending |
+
+These fonts must retain their own OFL notices and must not be treated as covered by Scenario's root MIT license. The binary/font disposition register is `MOREAI_P1_SELECTED_ASSET_DISPOSITION_20261117.csv`; all four font files remain DEFER until font metadata and redistribution/embedding details are verified. Ten media/binary files (including Scenario admin test screenshots and report fixture) are ARCHIVE_ONLY. Raw SHA-256 and Git blob checks for all 14 asset files are verified in `p1-skill-payload-evidence/skill-payload-file-audit.csv`.
