@@ -195,3 +195,8 @@ Manual contextualization: “credential” appears in source provenance checklis
 ## Entrypoint review expansion — 80/229
 
 The entrypoint review sample now covers **80/229 (34.9%)**. The eight additional files span Unity pipeline/rendering/shaders/UI/VFX/web/world-building and Unreal animation. Credential keyword hits are provenance checklists in the Unity VFX and Unreal animation references, not credential values. Shell/process guidance remains sandbox-only; no dynamic-code pattern was identified in the 80-entrypoint sample. Remaining 149 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 88/229
+
+The manual sample now covers **88/229 (38.4%)**, adding eight Unreal Engine skills (cinematics, expert, gameplay, lighting/rendering, materials, performance, pipeline automation and VFX). All credential keyword hits are source-provenance checklists; no credential value was observed. Shell/process workflows remain sandbox-only. No dynamic-code pattern was identified in the 88-entrypoint sample. Remaining 141 entrypoints are unreviewed.
