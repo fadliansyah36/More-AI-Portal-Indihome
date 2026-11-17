@@ -1,0 +1,54 @@
+name: P1 Skill Payload Integrity Evidence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/p1-skill-payload-integrity.yml"
+      - "scripts/p1/audit_skill_payloads.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: moreai-p1-skill-payload-integrity
+  cancel-in-progress: false
+
+jobs:
+  audit-and-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Recompute immutable payload evidence
+        run: |
+          python scripts/p1/audit_skill_payloads.py \
+            --selected-entrypoints docs/implementation/MOREAI_P1_SELECTED_SKILL_ENTRYPOINTS_20261117.csv \
+            --primary-manifest docs/implementation/MOREAI_P1_RECURSIVE_SOURCE_TREE_MANIFEST_20261117.csv \
+            --motion-manifest docs/implementation/MOREAI_P1_MOTION_SKILLS_19_PACKS_MANIFEST_20261117.csv \
+            --motion-manifest-part2 docs/implementation/MOREAI_P1_MOTION_SKILLS_19_PACKS_MANIFEST_PART2_20261117.csv \
+            --out-dir docs/implementation/p1-skill-payload-evidence
+
+      - name: Commit file-level evidence to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/implementation/p1-skill-payload-evidence
+          if git diff --cached --quiet; then
+            echo "Evidence is already current."
+            exit 0
+          fi
+          git commit -m "docs(p1): archive recursive skill payload integrity evidence"
+          git push origin HEAD:main
