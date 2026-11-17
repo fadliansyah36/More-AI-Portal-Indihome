@@ -97,3 +97,8 @@ The manual entrypoint sample now covers **80/229 (34.9%)**. Unity VFX and Unreal
 ## Review coverage update — 2026-11-17 (88/229)
 
 The manual entrypoint sample now covers **88/229 (38.4%)**. Eight Unreal skills were inspected; credential hits were provenance checklist wording only, not secrets. Remaining 141 entrypoints and referenced executable/configuration payloads are open.
+
+
+## Review coverage update — 2026-11-17 (96/229)
+
+The manual entrypoint sample now covers **96/229 (41.9%)**. The latest eight Scenario skills were inspected; admin-analytics credential/API-key mentions were documentation about access scope and usage metrics, not secret material. Remaining 133 entrypoints are open.
