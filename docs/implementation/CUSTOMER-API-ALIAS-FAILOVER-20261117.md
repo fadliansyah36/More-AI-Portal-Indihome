@@ -42,3 +42,14 @@ Correct the existing typed frontend API transport's safe-read fallback between t
 
 ## Next
 Continue the Customer API action-to-route reconciliation and resolve any contract mismatches in source. Then continue Phase 04/05/06/07/08 dependencies and complete Phase 09 source integration. Do not claim phase completion or deploy without the required evidence and release gates.
+
+
+## Customer SSE follow-up — 2026-11-17
+
+Implementation commit: `d5c54fb7a257b443f81561072490f5f19255fb6d`.
+
+- Reused the authenticated safe-read transport for Customer Server-Sent Events (SSE).
+- Initial stream requests and the post-401 refreshed-token retry now both use the verified API alias failover.
+- SSE remains GET-only. No mutation is retried against another host.
+- The durable Last-Event-ID cursor, cancellation signal, authorization refresh and terminal event handling remain unchanged.
+- No runtime request or stream was opened; this is source-only transport integration.
