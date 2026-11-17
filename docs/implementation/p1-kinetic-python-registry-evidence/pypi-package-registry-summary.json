@@ -1,4 +1,5 @@
 {
+  "locked_sha256_hash_occurrences": 3660,
   "locked_sha256_hashes": 1934,
   "notes": [
     "Read-only source lock and PyPI JSON metadata lookup; no distributions downloaded or installed.",
