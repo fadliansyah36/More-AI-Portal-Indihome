@@ -101,3 +101,21 @@ A static content review was performed on 16 entrypoints (2 Visual Skills and 14 
 | Scenario Skills | `skills/dcc/blender/scenario-blender-texturing-shading/SKILL.md` | Mentions credential provenance in a reference checklist; no literal credential value observed; credential handling remains server-side and consent-gated |
 
 The static scan's URL/network keyword hits are not automatically findings of unsafe behavior; they include ordinary upstream documentation and source links. The two shell/process-oriented Blender workflows are not approved for direct customer/browser execution. The entrypoint sample remains 16/229, so no blanket safety approval is inferred.
+
+
+## Entrypoint review expansion — 24/229
+
+The read-only content review has expanded from 16 to **24 of 229** selected entrypoints. The next eight reviewed files are:
+
+- `skills/dcc/blender/scenario-blender-uv-baking/SKILL.md`
+- `skills/dcc/maya/scenario-maya-animation/SKILL.md`
+- `skills/dcc/maya/scenario-maya-deformation/SKILL.md`
+- `skills/dcc/maya/scenario-maya-expert/SKILL.md`
+- `skills/dcc/maya/scenario-maya-fx/SKILL.md`
+- `skills/dcc/maya/scenario-maya-groom/SKILL.md`
+- `skills/dcc/maya/scenario-maya-lighting-rendering/SKILL.md`
+- `skills/dcc/maya/scenario-maya-lookdev/SKILL.md`
+
+Static keyword flags were manually contextualized for Maya animation and FX: the term “credential” appears in a reference checklist requiring source/credential/URL provenance, not as a literal secret or credential value. Shell/process flags in Maya deformation/expert/lighting/lookdev require sandbox-only review; they are not evidence of malicious behavior. The scan did not identify `eval()` or `new Function()` patterns in this 24-entrypoint sample. All DCC command/script guidance remains unavailable to the customer/browser process until the isolated worker boundary is approved and enforced.
+
+**Review coverage: 24/229 entrypoints (10.5%).** Remaining 205 entrypoints and all referenced executable/configuration files still require review; no blanket safety or license approval is inferred.
