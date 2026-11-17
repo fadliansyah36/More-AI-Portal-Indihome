@@ -272,3 +272,8 @@ The sample now covers **176/229 (76.9%)**. Six more Scenario entrypoints (Vidu, 
 ## Entrypoint review expansion — 184/229
 
 The sample now covers **184/229 (80.3%)**. Eight Motion Skills entrypoints were reviewed: TikTok lower-thirds/short-form video, text-message animation, YouTube audiogram/intro-outro and ecommerce photo slideshow/product demo/promo video. They contain local shell/renderer command guidance but no network, credential or dynamic-code keyword flag in this batch. All such rendering must remain inside the isolated, resource-limited renderer worker; no shell commands or renderers were executed. Remaining 45 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 192/229
+
+The sample now covers **192/229 (83.8%)**. Eight more Motion Skills entrypoints span ad creative/launch/testimonial video, animated infographic/chart/presentation video and diagram/explainer video. They use local shell/rendering instructions; one diagram-animation entry references external resources. No credential or dynamic-code keyword pattern was flagged. Renderer commands remain isolated-worker-only; external resources require allowlist/provenance review. Remaining 37 entrypoints are unreviewed.
