@@ -258,3 +258,12 @@ Important external-action finding: `scenario-team-admin` describes remote Scenar
 ## Entrypoint review expansion — 168/229
 
 The sample now covers **168/229 (73.4%)**. Eight additional skills cover UGC, Veo, video ads, video assembly, color grading, editing, video-to-motion and video workflows. All contain provider/media/network references but no shell/process, credential-keyword, installation or dynamic-code pattern was flagged in this batch. They remain gated on approved provider routing, explicit consent, usage accounting, safe media processing and artifact retention. Remaining 61 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 176/229
+
+The sample now covers **176/229 (76.9%)**. Six more Scenario entrypoints (Vidu, walkable room, Wan, workflow authoring/workflows and the general Scenario skill) plus two Motion Skills entrypoints (TikTok caption animation and countdown video) were reviewed.
+
+- The general Scenario skill documents API-key setup and explicitly says agents must not collect, encode or echo secrets. This is a positive handling instruction, not a credential value; actual key use remains server-side and consent-gated.
+- The Motion caption-animation skill uses a typed caption `Token` object for timestamps, not an auth token. It contains shell/process guidance and must run only in the isolated renderer worker.
+- Provider-backed 3D/video skills remain gated; no dynamic-code pattern was found in this batch. Remaining 53 entrypoints are unreviewed.
