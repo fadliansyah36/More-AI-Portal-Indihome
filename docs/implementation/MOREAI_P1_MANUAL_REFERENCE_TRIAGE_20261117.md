@@ -267,3 +267,8 @@ The sample now covers **176/229 (76.9%)**. Six more Scenario entrypoints (Vidu, 
 - The general Scenario skill documents API-key setup and explicitly says agents must not collect, encode or echo secrets. This is a positive handling instruction, not a credential value; actual key use remains server-side and consent-gated.
 - The Motion caption-animation skill uses a typed caption `Token` object for timestamps, not an auth token. It contains shell/process guidance and must run only in the isolated renderer worker.
 - Provider-backed 3D/video skills remain gated; no dynamic-code pattern was found in this batch. Remaining 53 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 184/229
+
+The sample now covers **184/229 (80.3%)**. Eight Motion Skills entrypoints were reviewed: TikTok lower-thirds/short-form video, text-message animation, YouTube audiogram/intro-outro and ecommerce photo slideshow/product demo/promo video. They contain local shell/renderer command guidance but no network, credential or dynamic-code keyword flag in this batch. All such rendering must remain inside the isolated, resource-limited renderer worker; no shell commands or renderers were executed. Remaining 45 entrypoints are unreviewed.
