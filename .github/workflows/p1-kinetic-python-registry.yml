@@ -1,0 +1,51 @@
+name: P1 Kinetic Python Registry Evidence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/p1/audit_kinetic_python_registry.py"
+      - ".github/workflows/p1-kinetic-python-registry.yml"
+      - "skills/scenario-kinetic-music-video/assets/python/linux-x86_64.txt"
+      - "skills/scenario-kinetic-music-video/assets/python/macos-arm64.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p1-kinetic-python-registry
+  cancel-in-progress: false
+
+jobs:
+  audit-and-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch exact-version PyPI metadata and compare wheel hashes
+        run: python scripts/p1/audit_kinetic_python_registry.py
+
+      - name: Commit read-only registry evidence to main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/implementation/p1-kinetic-python-registry-evidence/
+          if git diff --cached --quiet; then
+            echo "No registry evidence changes."
+          else
+            git commit -m "chore(p1): archive Kinetic Python registry metadata"
+            git push origin HEAD:main
+          fi
