@@ -121,7 +121,7 @@ export function BrowserSessionTakeover({ sessionId, sessionStatus }: Props) {
       {sessionStatus === 'active' ? (
         <form onSubmit={(event) => void submit(event)} className="space-y-2">
           <textarea value={payload} onChange={(event) => setPayload(event.target.value)}
-            rows={3} maxLength={16384} spellCheck={false} placeholder="{ \"field\": \"value\" }"
+            rows={3} maxLength={16384} spellCheck={false} placeholder={'{ "field": "value" }'}
             aria-label="Payload input OpenFuse dalam JSON"
             className="w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-[10px] text-slate-700 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10" />
           <div className="flex items-center justify-between gap-2">
