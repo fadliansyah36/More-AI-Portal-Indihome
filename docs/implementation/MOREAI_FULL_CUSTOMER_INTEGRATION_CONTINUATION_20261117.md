@@ -98,3 +98,15 @@ This document is an integration audit and continuation plan, not a Phase complet
 - Phase 04–09 remain IN PROGRESS / not accepted. Phase 09 still requires an exhaustive action-to-API integration closure; Phase 10/11 remain blocked by the user's no-real-testing/no-staging instruction.
 
 This addendum supersedes earlier statements in this document that selected-payload SHA-256 was incomplete; it does not close P1 or any integration phase.
+
+
+## 7. P1 continuation addendum — requested rows 623–772 completed at interim review level (2026-11-17)
+
+- Batch 020 reviewed rows 673–722 and was committed as `7209277665ba66535f27e69c119be4cf9fb7a67d`.
+- Batch 021 reviewed rows 723–772 and was committed as `b698e4a025785c9d6a7aeda23e91ab33ade9c224`.
+- Together with batch 019 (`5004ca2e724b242ca80f11cfebb1bce3614dcf62)), the user-requested 623–772 span is now **150/150 files statically reviewed**. All remain interim `DEFER`; this is not final disposition or import approval.
+- Batch 020 covered Roblox persistence, environment and expert toolkit code. Batch 021 covered Roblox Studio runner, gameplay, Luau and monetization code. These are platform-specific and should not be transplanted into MoreAI's FastAPI runtime, customer UI, wallet/ledger or canonical Supabase model.
+- The contiguous executable-source review frontier now reaches row 772 across batches 014–021, pending validation of earlier batch reports/ledger joins.
+- No application source, frontend UI, FastAPI router, worker, sandbox, schema or Supabase data was changed in these increments. Only P1 evidence reports and status corrections were committed.
+- Exact-version dependency license and vulnerability reconciliation, package tarball/NOTICE inspection, full selected-source content rights/security review, final file dispositions and P1/P2 acceptance remain open. The payload-wide 1,941/1,941 SHA-256 integrity result is complete and is no longer the outstanding hash blocker.
+- No tests, builds, real provider calls, Supabase writes/migrations, staging or deployment were run. Phase 04–09 remain unaccepted; Phase 10/11 remain blocked under the user's instruction.
