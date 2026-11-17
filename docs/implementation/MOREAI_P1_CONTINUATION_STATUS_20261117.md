@@ -107,3 +107,8 @@ The manual entrypoint sample now covers **96/229 (41.9%)**. The latest eight Sce
 ## Review coverage update — 2026-11-17 (104/229)
 
 Manual entrypoint review now covers **104/229 (45.4%)**. A material external-credential boundary was identified in Scenario Blender: the skill describes a Scenario API key/secret and local Blender MCP bearer token. No literal credential value was present and no provider was activated. This skill remains DEFER pending server-side secret references, explicit consent and isolated execution. A separate skill mentions `pip install pillow numpy`; no install was run. Remaining 125 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (112/229)
+
+Manual entrypoint review now covers **112/229 (48.9%)**. Eight additional provider/media-oriented Scenario skills were inspected. They reference external providers but no shell/process, dynamic-code or secret-keyword pattern was flagged; provider calls remain blocked pending server-side adapter, consent, metering and artifact governance. Remaining 117 entrypoints are open.
