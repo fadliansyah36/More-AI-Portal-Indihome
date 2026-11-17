@@ -46,9 +46,9 @@ The nested Python locks were absent from the previous BOM input list. They are n
 
 ## Coverage and disposition
 
-- Manual reference/maintainer documents reviewed in this batch: **10/726**.
-- Cumulative reference document manual review: **18/726**.
-- Remaining reference documents: **708/726**.
+- Manual reference/maintainer documents reviewed in this batch: **10/726** (10 unique paths; Veo was already covered in Batch 01 and is not counted again).
+- Cumulative reference document manual review: **17/726**.
+- Remaining reference documents: **709/726**.
 - All ten reviewed documents remain **DEFER**.
 - This review does not convert author-reported tests or synthetic demonstrations into MoreAI test evidence.
 
