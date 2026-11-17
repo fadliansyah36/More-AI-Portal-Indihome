@@ -48,3 +48,18 @@ The selected 1,941-file payload scope now has a separate row-level operational r
 The broader 3,919-entry all-source-tree register remains preliminary; the selected-payload register does not silently replace it. The historical CSV path `MOREAI_P1_SOURCE_TO_TARGET_DISPOSITION_20261117.csv` is empty in the current repository tree and must not be cited as an available row-level register. The next task is to regenerate a complete 3,919-entry source-tree ledger from the pinned recursive manifests and apply reviewed decisions without inferring legal approval from file type.
 
 P1 remains OPEN. No source was executed, installed, tested, staged, deployed or imported into Supabase.
+
+
+## Complete pinned source-tree operational ledger — 2026-11-17
+
+A complete row-level ledger has now been generated from the five primary pinned recursive source trees plus both Motion 19-pack manifests: `MOREAI_P1_FULL_SOURCE_TREE_OPERATIONAL_DISPOSITION_20261117.csv`. It contains **3,919 unique rows**, with no duplicate repository/commit/path key. The rows cover 2,960 file blobs and 959 directory records.
+
+Operational decisions:
+- **111 COPY** — the complete pinned OpenManusWeb source files to `vendor/openmanusweb/` only; this is the pristine archival snapshot, not a claim that every file is production-integrated. Existing manifest evidence remains 111/111 Git blob parity.
+- **391 ARCHIVE_ONLY** — upstream test/evidence fixtures, non-runtime binary/example assets and the unlicensed `generative-illustration-skills` pack. The unlicensed pack is not authorized for copying/adaptation; archive-only means preserve its provenance metadata, not reuse its content.
+- **2,458 DEFER** — all other source files remain held pending file-level content, provenance, license, security and target-module review. No source is promoted to active runtime by extension or automatic classification.
+- **959 NOT_APPLICABLE** — directory rows retained for tree completeness; they are not files.
+
+This is a complete **operational disposition** ledger, not P1 acceptance or legal/security clearance. It supersedes the empty historical CSV path noted above and the earlier preliminary counts as the current row-level decision register. The selected-payload 1,941-row register remains the detailed companion ledger and contains the 23 manually reviewed executable-file references.
+
+P1 remains OPEN until the DEFER files receive manual review and final copy/adapt/exclude decisions, package license/vulnerability evidence is closed, and product-owner acceptance is recorded.
