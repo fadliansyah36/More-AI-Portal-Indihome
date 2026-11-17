@@ -214,3 +214,8 @@ The manual entrypoint sample now covers **104/229 (45.4%)**. Eight additional Sc
 Important finding: `skills/scenario-blender/SKILL.md` documents a Scenario API key/secret and a local Blender MCP bearer token. The text instructs that the MCP token is distinct from the API key, held in memory, passed through `SCENARIO_BLENDER_TOKEN`, and not pasted into snippets; it also warns that a `--token` process argument exposes the token. No actual credential value was present and no credential/provider was activated. This skill is **DEFER** until MoreAI implements a reviewed server-side secret reference, customer consent, local/private MCP boundary and isolated tool execution; do not copy secrets into browser config or logs.
 
 `scenario-chatgpt-pet-create` mentions `pip install pillow numpy`; this is installation guidance only. No packages were installed. It remains subject to dependency pinning, license and isolated worker review. No dynamic-code pattern was found in this 104-entrypoint sample. Remaining 125 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 112/229
+
+The manual sample now covers **112/229 (48.9%)**. The eight additional Scenario skills cover ElevenLabs, fan-cam, format conversion, game assets, game UA ads, Gemini image/omni and GPT Image. The static scan found external-provider/network references but no shell/process, dynamic-code or secret-keyword pattern in these eight files. These capabilities still require approved server-side provider adapters, explicit credentials/consent, metering and artifact lifecycle; skill text alone does not activate them. Remaining 117 entrypoints are unreviewed.
