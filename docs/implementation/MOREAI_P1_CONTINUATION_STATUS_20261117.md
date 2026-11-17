@@ -162,3 +162,8 @@ Manual entrypoint review now covers **184/229 (80.3%)**. Eight Motion Skills com
 ## Review coverage update — 2026-11-17 (192/229)
 
 Manual entrypoint review now covers **192/229 (83.8%)**. Eight additional Motion Skills renderer workflows were inspected; they remain isolated-worker-only and external resources require allowlist/provenance review. Remaining 37 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (200/229)
+
+Manual entrypoint review now covers **200/229 (87.3%)**. Eight additional Motion renderer skills were inspected; local command workflows remain isolated-worker-only. Remaining 29 entrypoints are open.
