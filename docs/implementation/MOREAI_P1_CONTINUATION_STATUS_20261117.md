@@ -177,3 +177,8 @@ Manual entrypoint review now covers **208/229 (90.8%)**. Eight additional web an
 ## Review coverage update — 2026-11-17 (224/229)
 
 Manual entrypoint review now covers **224/229 (97.8%)**. Manim requires Python package installation, ffmpeg and LaTeX; WebGL/Manim render workflows remain DEFER pending isolated renderer and dependency governance. Remaining five entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (229/229 entrypoints)
+
+The selected-skill entrypoint sweep is now **COMPLETE: 229/229**. The final five Motion entrypoints were reviewed. The static scan did not flag `eval()`, `new Function()`, `exec()` or `compile()` patterns in the entrypoint Markdown; this is not a malware scan or security certification. Referenced executable source, config/schema, docs, assets, fonts and final per-file disposition remain open. P1 remains NOT CLOSED.
