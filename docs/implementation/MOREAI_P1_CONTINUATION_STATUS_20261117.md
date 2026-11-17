@@ -132,3 +132,8 @@ Manual entrypoint review now covers **136/229 (59.4%)**. Motion Loops and Playab
 ## Review coverage update — 2026-11-17 (144/229)
 
 Manual entrypoint review now covers **144/229 (62.9%)**. Scenario Report explicitly prohibits placing API keys, tokens or signed asset-download URLs in reports; signed URLs must remain ephemeral and redacted. Remaining 85 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (152/229)
+
+Manual entrypoint review now covers **152/229 (66.4%)**. Eight additional Seedance/Seedream/3D and media workflow skills were reviewed; provider calls remain gated. Remaining 77 entrypoints are open.
