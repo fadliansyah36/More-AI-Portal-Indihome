@@ -1,0 +1,31 @@
+{
+  "locked_sha256_hashes": 1934,
+  "notes": [
+    "Read-only source lock and PyPI JSON metadata lookup; no distributions downloaded or installed.",
+    "Registry metadata and hashes do not establish legal approval, source-header rights or vulnerability status.",
+    "No vulnerability database was queried by this workflow."
+  ],
+  "packages": 104,
+  "packages_with_all_locked_hashes_found": 104,
+  "packages_with_license_field": 97,
+  "packages_with_no_registry_release_files": 0,
+  "packages_with_unmatched_locked_hashes": 0,
+  "packages_without_license_field": 7,
+  "platform_package_records": 183,
+  "registry_failures": 0,
+  "registry_http_200": 104,
+  "source_commit": "94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9",
+  "source_repository": "scenario-labs/skills",
+  "source_rows": [
+    {
+      "package_records": 100,
+      "path": "skills/scenario-kinetic-music-video/assets/python/linux-x86_64.txt",
+      "platform": "linux-x86_64"
+    },
+    {
+      "package_records": 83,
+      "path": "skills/scenario-kinetic-music-video/assets/python/macos-arm64.txt",
+      "platform": "macos-arm64"
+    }
+  ]
+}
