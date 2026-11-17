@@ -50,19 +50,11 @@ Execution policy: source review and documentation only; no new real tests, stagi
 - No new Phase 04–09 product code or UI changes are authorized in this continuation while P1/P2 prerequisites remain unaccepted under `AGENTS.md`.
 - Phase 10/11 cannot be accepted in this work session under the user's no-real-testing/no-staging instruction.
 
-## Commits from this continuation
+## Commit trace
 
-- `e894d1d99717c19d4eec9c87598ff394055846e1` — manual reference triage.
-- `3c836b806c48a63ec508e04bfe8ad7b9c74f0ef9` — execution report reference reconciliation.
-- `6da4d3fba644dbfa2fe06d8f3425c99010b075e7` — source disposition status update.
-- `9d4cec2a10a15d4d13243a36ff4389eab1ed733b` — binary/font asset review.
-- `dccdcd385561f7069cbc25adc66839dca8146558` — 14-row asset disposition register.
-- `17b819746e35891ec77d06b94f10480bd052244e` — 24-entrypoint sample review register.
-- `b31cb64b428a518add5f408c0ad670016d9820db` — nested OFL font license addendum.
-- `7ff131c97c4f53504c54d247d2752f1563c94f05` — entrypoint sample expansion to 24/229.
+This status document is updated incrementally on `main`. The authoritative commit history is the repository history for this path and the linked evidence documents; no hand-maintained commit list is included here to avoid stale or mismatched SHA references.
 
-**Next work:** continue manual review of the remaining 205 entrypoints and their executable/configuration dependencies, attribute the 16 extra PURLs, inspect the 12 package license records and vulnerability evidence, then finalize all 1,941 file dispositions. Only after those gates can P1 be presented for acceptance and P2 finalized.
-
+**Next work:** the 229/229 entrypoint sweep is complete. Continue the 875 executable-source and 69 configuration/schema reviews; inspect 726 reference documents and 14 media/font assets; attribute the 16 extra npm PURLs; review 12 package license records and vulnerability evidence; reconcile OpenManusWeb Python requirements; then finalize all 1,941 file dispositions. Only after those gates can P1 be presented for product-owner acceptance and P2 finalized.
 
 ## Review coverage update — 2026-11-17
 
