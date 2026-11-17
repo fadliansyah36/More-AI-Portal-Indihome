@@ -110,3 +110,25 @@ This addendum supersedes earlier statements in this document that selected-paylo
 - No application source, frontend UI, FastAPI router, worker, sandbox, schema or Supabase data was changed in these increments. Only P1 evidence reports and status corrections were committed.
 - Exact-version dependency license and vulnerability reconciliation, package tarball/NOTICE inspection, full selected-source content rights/security review, final file dispositions and P1/P2 acceptance remain open. The payload-wide 1,941/1,941 SHA-256 integrity result is complete and is no longer the outstanding hash blocker.
 - No tests, builds, real provider calls, Supabase writes/migrations, staging or deployment were run. Phase 04–09 remain unaccepted; Phase 10/11 remain blocked under the user's instruction.
+
+
+## 8. Customer UI source spot-check — 2026-11-17
+
+A read-only source spot-check was made against the existing customer views to avoid adding duplicate UI:
+
+| Existing view | API-backed behavior observed in source |
+|---|---|
+| Home | Agent Run summary, wallet and entitlement reads through `customerApi` |
+| Analytics | Usage analytics through `customerApi.usageAnalytics` |
+| Research | Agent Run and artifact history, with cursor pagination |
+| Code | Browser sessions, browser/computer action receipts, run history and artifact history |
+| Benefit/Credit | Wallets, ledger, entitlements, quotas, usage and network sessions |
+| Agent Studio | Agent, tool and model catalogs; configuration CRUD; Skill Library integration |
+| Tasks | Durable Agent Run list/detail/steps/activity/progress, SSE, cancel and retry |
+| Workflow Progress | Run steps/activity/progress/events, SSE, approvals, cancel and retry |
+
+This confirms that several major dashboard areas already have typed FastAPI client seams in source. It does not prove every button/action is mapped correctly, that every legacy route is free of demo/fallback behavior, or that the configured FastAPI/worker runtime is live. Decorative mockup/illustration comments are not treated as business mock data.
+
+No new frontend component was added because the inspected customer views already contain the corresponding surfaces. Under AGENTS.md, adding duplicate UI without a proven missing PRD workflow would violate the UI preservation gate. Remaining Phase 09 work is an exhaustive route/action-to-API contract audit, including Chat/attachments, AI Content/media artifacts, EduTech enrollment/lesson/assessment, Files/Knowledge, Profile/Notifications, Connections, Benefits/Vouchers/Wallet/Quota, and all failure/empty/unauthorized/retry states.
+
+No UI, CSS, component, API, worker or Supabase source was changed in this spot-check. No tests/build/staging/deployment were run.
