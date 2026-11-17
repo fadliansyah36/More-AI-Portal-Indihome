@@ -91,3 +91,12 @@ The two pinned pnpm lockfiles contain 1,808 unique exact package coordinates. Ex
 See `MOREAI_P1_REGISTRY_LICENSE_REVIEW_REQUIRED_20261117.csv` for the 12 records requiring further evidence and `MOREAI_P1_NORMALIZED_PNPM_GRAPH_AND_REGISTRY_LICENSES_20261117.md` for aggregate distributions.
 
 Registry metadata does not prove the package tarball's actual license notices, source-header rights, bundled media/font rights, or vulnerability posture. No package tarball was unpacked and no legal clearance is claimed. P1 remains OPEN.
+
+
+## Raw SHA-256 of root and nested source notices — 2026-11-17
+
+A raw-byte hash pass has now been completed for all 25 root/nested license and notice paths in the pinned upstream trees. The paths resolve to seven unique Git blob objects; each row records raw byte size, Git blob SHA and raw SHA-256 in MOREAI_P1_LICENSE_NOTICE_SHA256_20261117.csv.
+
+Observed scope: 22 MIT notice paths (including the 18 eligible Motion pack LICENSE files), one Visual Skills CC BY 4.0 LICENSE, one Visual Skills attribution NOTICE, and one nested Scenario skill-creator Apache-2.0 LICENSE.txt. All 25 hash rows are marked verified.
+
+The 229 selected skill entrypoints map to 1,923 files. Raw SHA-256 for those payload files remains pending; the separate license-notice hash pass must not be misrepresented as payload-wide hash coverage. The recursive binary-safe auditor is committed but has not been run.
