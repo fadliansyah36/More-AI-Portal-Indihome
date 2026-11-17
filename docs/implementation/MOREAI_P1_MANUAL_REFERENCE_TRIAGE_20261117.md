@@ -137,3 +137,19 @@ The content review has expanded to **32/229** entrypoints. The eight additional 
 Manual contextualization: “verify token” in a version identifier is not a credential; “credential” in a source-provenance checklist is a documentation requirement, not a secret value. ZBrush automation includes a `ZBrush -script` process path and remains sandbox-only. Shell/process keyword flags in DCC instructions are expected tool-operation guidance, not evidence of malicious code. No `eval()` or `new Function()` pattern was found in this 32-entrypoint sample.
 
 **Review coverage: 32/229 entrypoints (14.0%).** Remaining 197 entrypoints and all referenced scripts/configuration continue to require review. No safety approval is inferred for the unreviewed content.
+
+
+## Entrypoint review expansion — 40/229
+
+The read-only entrypoint sample has advanced to **40/229**. The additional eight reviewed files are:
+
+- `skills/dcc/zbrush/scenario-zbrush-paint-render/SKILL.md`
+- `skills/dcc/zbrush/scenario-zbrush-pose-print/SKILL.md`
+- `skills/dcc/zbrush/scenario-zbrush-retopology-export/SKILL.md`
+- `skills/dcc/zbrush/scenario-zbrush-sculpting/SKILL.md`
+- `skills/dcc/zbrush/scenario-zbrush-stylized/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-2d/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-3d-world/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-animation/SKILL.md`
+
+The single credential keyword hit in ZBrush retopology/export is a source provenance checklist (“source with credential, URL and best…”), not a literal credential value. No dynamic-code pattern was found in this 40-entrypoint sample. The remaining 189 entrypoints and all executable/configuration references still require review.
