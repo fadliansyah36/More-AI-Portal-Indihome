@@ -190,3 +190,8 @@ The manual sample now covers **72/229** entrypoints, including eight Roblox/Unit
 - `skills/game-engines/unity/scenario-unity-performance/SKILL.md`
 
 Manual contextualization: “credential” appears in source provenance checklists; “token” appears as Unity cancellation-token/programming terminology or in an editor-license diagnostic phrase. No literal credential value was observed. Unity command/script guidance remains sandbox-only. No dynamic-code pattern was found in the 72-entrypoint sample. Remaining 157 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 80/229
+
+The entrypoint review sample now covers **80/229 (34.9%)**. The eight additional files span Unity pipeline/rendering/shaders/UI/VFX/web/world-building and Unreal animation. Credential keyword hits are provenance checklists in the Unity VFX and Unreal animation references, not credential values. Shell/process guidance remains sandbox-only; no dynamic-code pattern was identified in the 80-entrypoint sample. Remaining 149 entrypoints are unreviewed.
