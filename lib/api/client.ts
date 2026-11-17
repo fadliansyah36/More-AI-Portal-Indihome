@@ -5,7 +5,9 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_MOREAI_API_URL || '').replace(/\/$
 // and remain isolated by their server-side /customer and /partner route namespaces.
 const CUSTOMER_API_BASE_URL = (process.env.NEXT_PUBLIC_MOREAI_CUSTOMER_API_URL || API_BASE_URL).replace(/\/$/, '');
 const PARTNER_API_BASE_URL = (process.env.NEXT_PUBLIC_MOREAI_PARTNER_API_URL || API_BASE_URL).replace(/\/$/, '');
-const VERIFIED_API_FALLBACK_ORIGIN = 'https://more-ai-api.vercel.app';
+// Both hosts are verified aliases of the same FastAPI Vercel project.
+// Use the alternate alias only for idempotent reads after a transport failure.
+const VERIFIED_API_FALLBACK_ORIGIN = 'https://more-ai-api-more-ai.vercel.app';
 
 /** Retry only safe reads on the verified production alias; never replay mutations. */
 async function fetchMoreAiApi(
@@ -22,19 +24,20 @@ async function fetchMoreAiApi(
   try {
     return await fetch(baseUrl + path, requestInit);
   } catch (error) {
-    if (baseUrl !== 'https://more-ai-api-more-ai.vercel.app' || !['GET', 'HEAD'].includes(method)) {
-      if (error instanceof TypeError) {
-        throw new Error('Layanan API MoreAI tidak dapat dijangkau. Periksa koneksi, domain API, dan konfigurasi CORS.');
-      }
+    if (!['GET', 'HEAD'].includes(method) || !(error instanceof TypeError)) {
       throw error;
     }
+    // Never replay a mutation against another host: only safe reads may fail over.
+    // Avoid looping when the configured origin already is the secondary alias.
+    const fallbackOrigin = baseUrl === VERIFIED_API_FALLBACK_ORIGIN
+      ? 'https://more-ai-api.vercel.app'
+      : VERIFIED_API_FALLBACK_ORIGIN;
     try {
-      return await fetch(VERIFIED_API_FALLBACK_ORIGIN + path, requestInit);
+      return await fetch(fallbackOrigin + path, requestInit);
     } catch {
-      throw new Error('Layanan API MoreAI tidak dapat dijangkau melalui domain utama maupun alias cadangan. Periksa koneksi dan deployment FastAPI.');
+      throw new Error('Layanan API MoreAI tidak dapat dijangkau melalui kedua alias FastAPI. Periksa koneksi dan deployment API.');
     }
-  }
-}
+  }}
 
 
 async function moreAiApiAt<T>(baseUrl: string, path: string, init: RequestInit = {}): Promise<T> {
