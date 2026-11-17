@@ -66,3 +66,6 @@ The earlier parser applied Markdown link syntax to executable source and produce
 5. Only after P1 acceptance, finalize P2 ADR and proceed to Phase 04–09 in AGENTS.md order.
 
 **Status: P1 OPEN.** This report does not certify P1 acceptance or authorize Phase 04–09 implementation.
+
+## Evidence artifact persistence
+The full file-level hash CSV, reference CSV, and machine summary were generated in the isolated audit sandbox. They are **not yet committed to the Git repository**; the committed artifact at this point is this execution report plus the corrected audit utility. The file-level evidence must be exported and attached to the repository before P1 evidence archival is considered complete. Do not treat this report as a substitute for the per-file hash register.
