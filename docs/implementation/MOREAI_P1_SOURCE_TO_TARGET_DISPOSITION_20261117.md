@@ -39,3 +39,12 @@ Proposed disposition split: 952 adapt (SKILL.md and reference documents) and 971
 The committed 1,941-file recursive payload audit's 148 parser reference candidates are now triaged in `MOREAI_P1_MANUAL_REFERENCE_TRIAGE_20261117.md`: 49 heading fragments match existing headings, 78 targets resolve to existing directories, and 21 are contextual/generated/runtime/example references. This corrects the earlier coarse residual estimate of 25 for this exact CSV. No parser candidate in this set is approved for code execution or production import solely by this triage.
 
 The 229-entrypoint content review remains partial (16 reviewed); executable/configuration, font/binary provenance, package tarball notices, vulnerability evidence and final per-file decisions remain open. The 3,919-entry source register and 1,941-file selected payload register remain `PRELIMINARY_NOT_FINAL`; P1 has not been accepted.
+
+
+## Selected payload disposition supersession — 2026-11-17
+
+The selected 1,941-file payload scope now has a separate row-level operational register: `MOREAI_P1_SELECTED_PAYLOAD_FINAL_OPERATIONAL_DISPOSITION_20261117.csv`. This register supersedes the earlier 1,941-row selected-payload proposals described above. It records **15 ARCHIVE_ONLY** (10 media/binary + 5 test/example fixtures) and **1,926 DEFER**. The 23 manually reviewed executable files include review evidence and remain DEFER for isolated-runtime/provider/action-boundary reasons. All other files remain DEFER pending individual content, provenance, license, security and target-module review. No COPY/ADAPT promotion is approved yet.
+
+The broader 3,919-entry all-source-tree register remains preliminary; the selected-payload register does not silently replace it. The historical CSV path `MOREAI_P1_SOURCE_TO_TARGET_DISPOSITION_20261117.csv` is empty in the current repository tree and must not be cited as an available row-level register. The next task is to regenerate a complete 3,919-entry source-tree ledger from the pinned recursive manifests and apply reviewed decisions without inferring legal approval from file type.
+
+P1 remains OPEN. No source was executed, installed, tested, staged, deployed or imported into Supabase.
