@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Read-only PyPI registry metadata and locked-wheel hash audit for Kinetic Music Video.
 
-No package is downloaded, installed, imported, or executed. Only PyPI JSON metadata is fetched.
+The upstream lockfiles are fetched from an immutable Git commit. No package is
+downloaded, installed, imported, or executed; only source text and PyPI JSON metadata
+are fetched.
 """
 from __future__ import annotations
 
@@ -17,25 +19,50 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+SOURCE_COMMIT = "94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9"
+SOURCE_BASE = (
+    "https://raw.githubusercontent.com/scenario-labs/skills/"
+    f"{SOURCE_COMMIT}/skills/scenario-kinetic-music-video/assets/python/"
+)
 LOCKS = {
-    "linux-x86_64": ROOT / "skills/scenario-kinetic-music-video/assets/python/linux-x86_64.txt",
-    "macos-arm64": ROOT / "skills/scenario-kinetic-music-video/assets/python/macos-arm64.txt",
+    "linux-x86_64": "linux-x86_64.txt",
+    "macos-arm64": "macos-arm64.txt",
 }
-OUT = ROOT / "docs/implementation/p1-kinetic-python-registry-evidence"
+OUT = Path("docs/implementation/p1-kinetic-python-registry-evidence")
 
 
-def parse_lock(path: Path, platform: str) -> list[dict]:
+def fetch_text(url: str) -> tuple[str | None, str]:
+    request = urllib.request.Request(
+        url, headers={"User-Agent": "MoreAI-P1-Static-Dependency-Audit/1.0"}
+    )
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return response.read().decode("utf-8"), "HTTP_200"
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                return None, "HTTP_404"
+            if exc.code not in (429, 500, 502, 503, 504) or attempt == 3:
+                return None, f"HTTP_{exc.code}"
+        except (urllib.error.URLError, TimeoutError, UnicodeDecodeError) as exc:
+            if attempt == 3:
+                return None, f"FETCH_ERROR:{type(exc).__name__}"
+        time.sleep(1 + attempt * 2)
+    return None, "FETCH_ERROR"
+
+
+def parse_lock(text: str, platform: str, source_path: str) -> list[dict]:
     rows: list[dict] = []
     current: dict | None = None
     via_mode = False
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in text.splitlines():
         match = re.match(r"^([A-Za-z0-9_.-]+)==([^\s\\;]+)\s*\\?$", line)
         if match:
             current = {
                 "name": match.group(1).lower().replace("_", "-"),
                 "version": match.group(2),
                 "platform": platform,
+                "source_path": source_path,
                 "hashes": [],
                 "via": [],
             }
@@ -96,17 +123,22 @@ def main() -> int:
     packages: dict[tuple[str, str], dict] = defaultdict(
         lambda: {"platforms": set(), "hashes": set(), "via": set(), "source_files": set()}
     )
-    for platform, lock_path in LOCKS.items():
-        if not lock_path.is_file():
-            print(f"Missing lockfile: {lock_path}", file=sys.stderr)
+    source_rows = []
+    for platform, filename in LOCKS.items():
+        source_path = f"skills/scenario-kinetic-music-video/assets/python/{filename}"
+        text, status = fetch_text(SOURCE_BASE + filename)
+        if status != "HTTP_200" or text is None:
+            print(f"Source lock fetch failed: {source_path}: {status}", file=sys.stderr)
             return 2
-        for row in parse_lock(lock_path, platform):
+        rows = parse_lock(text, platform, source_path)
+        source_rows.append({"platform": platform, "path": source_path, "package_records": len(rows)})
+        for row in rows:
             key = (row["name"], row["version"])
             record = packages[key]
             record["platforms"].add(platform)
             record["hashes"].update(row["hashes"])
             record["via"].update(row["via"])
-            record["source_files"].add(lock_path.relative_to(ROOT).as_posix())
+            record["source_files"].add(source_path)
 
     args.output.mkdir(parents=True, exist_ok=True)
     fields = [
@@ -116,7 +148,9 @@ def main() -> int:
         "project_urls", "requires_dist", "source_lockfiles", "dependency_via",
     ]
     summary = {
-        "source": "Scenario Kinetic Music Video platform-specific uv lockfiles",
+        "source_repository": "scenario-labs/skills",
+        "source_commit": SOURCE_COMMIT,
+        "source_rows": source_rows,
         "packages": len(packages),
         "platform_package_records": 0,
         "locked_sha256_hashes": 0,
@@ -128,7 +162,7 @@ def main() -> int:
         "packages_with_unmatched_locked_hashes": 0,
         "packages_with_no_registry_release_files": 0,
         "notes": [
-            "Read-only PyPI JSON metadata lookup; no distributions downloaded or installed.",
+            "Read-only source lock and PyPI JSON metadata lookup; no distributions downloaded or installed.",
             "Registry metadata and hashes do not establish legal approval, source-header rights or vulnerability status.",
             "No vulnerability database was queried by this workflow.",
         ],
