@@ -241,3 +241,8 @@ Important dependency gate: `scenario-motion-loops` documents Node/ffmpeg/Playwri
 ## Entrypoint review expansion — 144/229
 
 The sample now covers **144/229 (62.9%)**. Eight additional skills cover product shots, quality gate, reel recast, refine loop, report, Reve, Rodin and Runway. The Scenario Report entrypoint explicitly classifies API keys, tokens and signed asset-download URLs as credentials and prohibits including them in reports; no actual secret value was present. This aligns with MoreAI's rule to keep signed URLs ephemeral and out of logs/LLM context. Provider-backed skills remain gated by server-side adapters, scoped credentials, metering and artifact policy. Remaining 85 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 152/229
+
+The sample now covers **152/229 (66.4%)**. Eight additional Scenario skills cover Seedance drafts/music/storyboard, Seedance, Seedream, side-view game kit, skyboxes and Sonilo. These are provider/media workflow instructions with external references; no shell/process, install, credential-keyword or dynamic-code pattern was flagged in this batch. Provider use remains blocked until approved adapters, explicit consent, metering, retention and artifact controls are configured. Remaining 77 entrypoints are unreviewed.
