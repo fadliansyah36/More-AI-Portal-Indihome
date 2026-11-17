@@ -137,3 +137,10 @@ Content-type counts: 229 SKILL.md entrypoints; 723 reference documents; 898 exec
 A binary-safe recursive auditor has been added at scripts/p1/audit_skill_payloads.py. It computes SHA-256, Git blob SHA-1 and byte-size parity from exact pinned raw bytes; it follows local Markdown/HTML/script references and records external/unresolved links. The tool has not been run. No source code was executed.
 
 Root/nested license and notice path hashing is a completed, separate evidence pass: 25 paths, seven unique Git blob objects, 25 SHA-256 rows, 22 MIT, one CC BY 4.0, one attribution NOTICE and one nested Apache-2.0. See MOREAI_P1_LICENSE_NOTICE_SHA256_20261117.csv. This does not establish that every payload file is covered by those notices.
+
+
+## Entry-point hash batch — 2026-11-17
+
+An initial raw-byte SHA-256 batch was completed for 10 selected skill entrypoints (2 Visual, 8 Scenario). All 10 match their pinned manifest byte sizes. SHA-256 rows are in MOREAI_P1_SELECTED_SKILL_ENTRYPOINT_SHA256_20261117.csv and attached to the corresponding payload manifest rows.
+
+Remaining entrypoint hashes: 219. All non-entrypoint payload file hashes remain pending the binary-safe recursive audit utility.
