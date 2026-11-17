@@ -147,3 +147,8 @@ Manual entrypoint review now covers **160/229 (69.9%)**. Scenario Team Admin is 
 ## Review coverage update — 2026-11-17 (168/229)
 
 Manual entrypoint review now covers **168/229 (73.4%)**. Eight video/UGC skills were inspected; no shell/process, credential-keyword, install or dynamic-code pattern was flagged. Provider execution remains gated. Remaining 61 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (176/229)
+
+Manual entrypoint review now covers **176/229 (76.9%)**. Scenario's general skill explicitly forbids agents from collecting/echoing API secrets; Motion caption token references are media timing structures, not credentials. Motion shell workflows remain isolated-worker-only. Remaining 53 entrypoints are open.
