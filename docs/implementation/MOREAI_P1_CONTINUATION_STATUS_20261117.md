@@ -67,3 +67,8 @@ Execution policy: source review and documentation only; no new real tests, stagi
 ## Review coverage update — 2026-11-17
 
 The read-only manual entrypoint sample has advanced from 24 to **32/229 (14.0%)**. The additional eight Maya/ZBrush files were inspected. “Credential” and “verify token” keyword hits were contextualized as source-provenance checklist or version-token text, not literal secrets. ZBrush `-script` execution and other DCC shell/process instructions remain sandbox-only. This does not close the remaining 197 entrypoints or the executable/configuration review.
+
+
+## Review coverage update — 2026-11-17 (continued)
+
+The manual entrypoint sample now covers **40/229 (17.5%)**. The latest eight ZBrush/Godot entrypoints were read. The one credential keyword hit was a provenance checklist reference, not a literal secret. No dynamic-code pattern was identified in the 40-entrypoint sample. Remaining 189 entrypoints are not reviewed; no blanket safety clearance is implied.
