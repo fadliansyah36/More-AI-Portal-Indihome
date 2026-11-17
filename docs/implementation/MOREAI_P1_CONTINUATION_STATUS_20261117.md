@@ -102,3 +102,8 @@ The manual entrypoint sample now covers **88/229 (38.4%)**. Eight Unreal skills 
 ## Review coverage update — 2026-11-17 (96/229)
 
 The manual entrypoint sample now covers **96/229 (41.9%)**. The latest eight Scenario skills were inspected; admin-analytics credential/API-key mentions were documentation about access scope and usage metrics, not secret material. Remaining 133 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (104/229)
+
+Manual entrypoint review now covers **104/229 (45.4%)**. A material external-credential boundary was identified in Scenario Blender: the skill describes a Scenario API key/secret and local Blender MCP bearer token. No literal credential value was present and no provider was activated. This skill remains DEFER pending server-side secret references, explicit consent and isolated execution. A separate skill mentions `pip install pillow numpy`; no install was run. Remaining 125 entrypoints are open.
