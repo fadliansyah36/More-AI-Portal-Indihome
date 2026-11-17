@@ -121,7 +121,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=OUT)
     args = parser.parse_args()
     packages: dict[tuple[str, str], dict] = defaultdict(
-        lambda: {"platforms": set(), "hashes": set(), "via": set(), "source_files": set()}
+        lambda: {"platforms": set(), "hashes": set(), "hash_occurrences": 0, "via": set(), "source_files": set()}
     )
     source_rows = []
     for platform, filename in LOCKS.items():
@@ -137,6 +137,7 @@ def main() -> int:
             record = packages[key]
             record["platforms"].add(platform)
             record["hashes"].update(row["hashes"])
+            record["hash_occurrences"] += len(row["hashes"])
             record["via"].update(row["via"])
             record["source_files"].add(source_path)
 
@@ -144,7 +145,7 @@ def main() -> int:
     fields = [
         "package", "version", "purl", "platforms", "license", "license_expression",
         "license_classifiers", "license_status", "registry_status", "lock_hash_count",
-        "registry_file_count", "matched_hash_count", "unmatched_hash_count", "hash_status",
+        "registry_file_count", "lock_hash_occurrence_count", "matched_hash_count", "unmatched_hash_count", "hash_status",
         "project_urls", "requires_dist", "source_lockfiles", "dependency_via",
     ]
     summary = {
@@ -154,6 +155,7 @@ def main() -> int:
         "packages": len(packages),
         "platform_package_records": 0,
         "locked_sha256_hashes": 0,
+        "locked_sha256_hash_occurrences": 0,
         "registry_http_200": 0,
         "registry_failures": 0,
         "packages_with_license_field": 0,
@@ -174,6 +176,7 @@ def main() -> int:
             summary["platform_package_records"] += len(record["platforms"])
             locked_hashes = record["hashes"]
             summary["locked_sha256_hashes"] += len(locked_hashes)
+            summary["locked_sha256_hash_occurrences"] += record["hash_occurrences"]
             metadata, registry_status = fetch_metadata(name, version)
             info = (metadata or {}).get("info", {})
             release_files = (metadata or {}).get("urls", []) or []
@@ -227,6 +230,7 @@ def main() -> int:
                 "registry_status": registry_status,
                 "lock_hash_count": len(locked_hashes),
                 "registry_file_count": len(release_files),
+                "lock_hash_occurrence_count": record["hash_occurrences"],
                 "matched_hash_count": len(matched),
                 "unmatched_hash_count": len(unmatched),
                 "hash_status": hash_status,
