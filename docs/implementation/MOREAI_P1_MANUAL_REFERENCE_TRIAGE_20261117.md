@@ -282,3 +282,8 @@ The sample now covers **192/229 (83.8%)**. Eight more Motion Skills entrypoints 
 ## Entrypoint review expansion — 200/229
 
 The sample now covers **200/229 (87.3%)**. Eight Motion Skills entries span isometric, whiteboard, wrapped video, map animation, 60fps, accessible, ASCII and glassmorphism animation. All eight include local renderer/shell command guidance; no external network, credential or dynamic-code pattern was flagged. They remain isolated-worker-only. Remaining 29 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 208/229
+
+The sample now covers **208/229 (90.8%)**. Eight additional Motion Skills entries span GSAP web, Lottie, micro-interaction, page transitions, SVG animation, After Effects, animation principles and beat-sync editing. The web-animation entries contain local shell/build command guidance; no external network, credential or dynamic-code pattern was flagged. The After Effects/animation principles/beat-sync entries are instruction-only in this scan. Build/render commands remain isolated-worker-only. Remaining 21 entrypoints are unreviewed.
