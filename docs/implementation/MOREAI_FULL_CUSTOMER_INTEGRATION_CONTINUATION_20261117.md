@@ -82,3 +82,19 @@ Continue in dependency order, without redesigning the existing customer UI:
 - No tests, builds, staging, provider calls or deployment were run.
 
 This document is an integration audit and continuation plan, not a Phase completion certificate.
+
+
+## 6. Continuation addendum — P1 batch 019 and evidence reconciliation (2026-11-17)
+
+- Re-read the current root `AGENTS.md` and confirmed the branch was `main` at baseline `5b39587e4060b9a3062e10f56ff11a94e0baca71`.
+- Committed the next P1 executable-source static review, batch 019, rows 623–672, in `5004ca2e724b242ca80f11cfebb1bce3614dcf62`. The 50 reviewed files are Roblox architecture fixtures, Roblox asset preparation and Roblox data/backend material. All remain interim `DEFER`; none is approved for import or execution.
+- The ledger states the batch 019 rows have Git blob SHA and byte-size matches and SHA-256 evidence. This is source-integrity evidence, not license/security approval.
+- **Correction to the earlier P1 status wording:** the committed recursive payload audit reports 1,941/1,941 selected payload files with raw SHA-256, byte-size and Git blob SHA matches, zero fetch failures, and repository-persisted CSV/JSON evidence (commit `3b98f4a063c16f64cc9e0a23f1b7ddd02d214c1c`). Therefore payload-wide raw SHA-256 is complete for that 1,941-file selected manifest. It is not the remaining blocker.
+- Exact-version license reconciliation is still incomplete: 1,808 exact npm coordinates have first-pass registry metadata; 11 have no license field and one has a non-SPDX `CC BY-SA 4.0` string requiring manual evidence. Package tarballs/notices and source headers were not inspected. Additional nested npm/Python lockfiles and platform Python locks must be deduplicated into the complete selected-skill SBOM before a final component count is stated.
+- Vulnerability advisory reconciliation is not evidenced as complete. No final per-file disposition or legal/security approval exists. The 3,919-row preliminary register remains preliminary; P2 ADR remains DRAFT / NOT ACCEPTED.
+- User-requested next P1 span 623–772 is being processed in three 50-file batches: 623–672 completed; 673–722 and 723–772 pending.
+- Source-tree inspection confirms existing code surfaces are present: 111 pristine OpenManus vendor files, 43 engine files, 25 FastAPI app files, 31 worker files, 30 sandbox files and 52 customer view components. Presence does not prove complete capability parity or operational readiness. Existing Skills Library, Personal Memory, Knowledge, Connections, browser preview/takeover and Agent Studio components should be reused; no duplicate customer UI was added.
+- This continuation made no customer application, API, worker, sandbox, schema or Supabase changes. It added only the P1 batch 019 evidence report. No tests, builds, real provider calls, Supabase writes/migrations, staging or deployment were run.
+- Phase 04–09 remain IN PROGRESS / not accepted. Phase 09 still requires an exhaustive action-to-API integration closure; Phase 10/11 remain blocked by the user's no-real-testing/no-staging instruction.
+
+This addendum supersedes earlier statements in this document that selected-payload SHA-256 was incomplete; it does not close P1 or any integration phase.
