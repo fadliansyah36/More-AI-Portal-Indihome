@@ -58,6 +58,7 @@ def classify(path):
     p=PurePosixPath(path); name=p.name.lower(); ext=p.suffix.lower()
     if name in {"license","license.txt","licence","licence.txt","copying","notice","notice.txt"}: return "license-notice","copy","Preserve notice verbatim; verify scope and attribution"
     if name=="skill.md": return "skill-entrypoint","adapt","Review safety, provenance and attribution"
+    if name in {".gitignore", ".luaurc", ".styluaignore"}: return "configuration-or-schema","adapt","Review build and runtime configuration"
     if ext in {".woff",".woff2",".ttf",".otf",".eot"}: return "font-asset","defer","Verify font redistribution and embedding rights"
     if ext in {".png",".jpg",".jpeg",".webp",".gif",".svg",".mp4",".mov",".webm",".mp3",".wav",".ogg",".glb",".gltf",".obj",".fbx",".blend",".zip",".pdf"}: return "media-or-binary-asset","defer","Inspect bytes, provenance, license and malware status"
     if ext in {".py",".js",".mjs",".jsx",".ts",".tsx",".sh",".bash",".c",".cpp",".h",".gd",".gdshader",".hlsl",".glsl",".luau",".lua",".cs",".compute",".uss",".tss"}: return "executable-source","adapt","Security review and architecture port; never execute directly from skill payload"
