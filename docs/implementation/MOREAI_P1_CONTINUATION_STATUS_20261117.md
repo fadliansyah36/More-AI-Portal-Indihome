@@ -200,3 +200,12 @@ The per-file operational disposition ledger was refreshed with the 10 new review
 The broader pinned source inventory now has a complete operational decision row for every path: `MOREAI_P1_FULL_SOURCE_TREE_OPERATIONAL_DISPOSITION_20261117.csv` — 3,919 unique repository/commit/path rows, 2,960 file blobs and 959 directory records. Decisions: 111 COPY (pristine OpenManusWeb archival snapshot only), 391 ARCHIVE_ONLY (tests/evidence/non-runtime assets and unlicensed Motion pack), 2,458 DEFER, 959 directory rows NOT_APPLICABLE. No unreviewed file is promoted to runtime.
 
 This resolves the missing/empty earlier CSV register issue, but it does not mean all 2,458 DEFER files have been manually reviewed. Selected payload manual executable review remains 23/875; 852 executable files, 69 config/schema files and 726 reference documents still require review. P1 remains OPEN.
+
+
+## Configuration and nested dependency review update — 2026-11-17
+
+Manual configuration review now covers **13/69** config/schema payload files. Four reviewed templates/examples are ARCHIVE_ONLY (Roblox live publish workflow, Roblox test CI workflow, Godot project CI workflow and Patina example config); nine reviewed package/manifest/intake files remain DEFER pending exact dependency, license, sandbox and input-validation gates. See `MOREAI_P1_CONFIGURATION_PAYLOAD_MANUAL_REVIEW_BATCH_01_20261117.md`.
+
+Two nested Scenario npm lockfiles and a nested Python requirements file were discovered in the selected payload scope but were not part of the earlier top-level SBOM graph. They are now recorded in `MOREAI_P1_NESTED_LOCKFILE_AND_REQUIREMENTS_SUPPLEMENT_20261117.csv` and `MOREAI_P1_NESTED_LOCKFILE_DEPENDENCY_EDGES_20261117.csv`: six unique npm coordinates (Playwright/Core, opentype.js, string.prototype.codepointat, tiny-inflate, three) and two exact Python pins (numpy 2.5.4, opencv-python-headless 5.0.0.93). These coordinates still require de-duplication against the CycloneDX BOM and exact-version registry/artifact license and vulnerability review. The previous 1,995-component count is corrected for its earlier input scope, but must not be represented as complete for every nested selected skill manifest until this supplement is reconciled.
+
+Disposition ledger correction: selected payload register now contains **19 ARCHIVE_ONLY / 1,922 DEFER**; full 3,919-row source ledger now contains **111 COPY / 395 ARCHIVE_ONLY / 2,454 DEFER / 959 directory NOT_APPLICABLE**. COPY remains limited to the pristine OpenManusWeb archival snapshot. P1 remains OPEN.
