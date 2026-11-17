@@ -76,6 +76,21 @@ def classify(path):
     if re.search(r"(^|/)(test|tests|fixtures|examples|example|demo|samples)(/|$)",path,re.I): return "test-example-fixture","archive-only","Retain provenance; not production runtime by default"
     return "other","defer","Manual content, purpose and rights review required"
 
+STATIC_PATTERNS = {
+    "dynamic_code": re.compile(r"\\b(?:eval|exec|compile)\\s*\\(|\\bnew\\s+Function\\s*\\(", re.I),
+    "process_spawn": re.compile(r"\\b(?:subprocess\\.(?:Popen|run|call|check_call|check_output)|os\\.(?:system|popen|execv\\w*)|child_process|execSync|spawnSync|spawn)\\b", re.I),
+    "network_io": re.compile(r"\\b(?:fetch\\s*\\(|axios\\.|requests\\.(?:get|post|put|delete)|httpx\\.|urllib\\.request|WebSocket|socket\\.connect|https?://)", re.I),
+    "credential_or_environment": re.compile(r"\\b(?:API[_-]?KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|os\\.environ|getenv\\s*\\(|process\\.env)\\b", re.I),
+    "filesystem_mutation": re.compile(r"\\b(?:writeFile(?:Sync)?|unlink(?:Sync)?|rmdir(?:Sync)?|mkdir(?:Sync)?|shutil\\.(?:rmtree|copy))\\b|open\\s*\\([^,\\n]+,\\s*['\\\"](?:w|a|x)", re.I),
+    "database_destructive": re.compile(r"\\b(?:DROP\\s+TABLE|TRUNCATE\\s+TABLE|DELETE\\s+FROM)\\b", re.I),
+    "package_install": re.compile(r"\\b(?:pip\\s+install|npm\\s+install|pnpm\\s+add|yarn\\s+add|uv\\s+add|apt(?:-get)?\\s+install|brew\\s+install)\\b", re.I),
+    "remote_tool_or_mcp": re.compile(r"\\b(?:MCP|tool_call|remote\\s+tool)\\b", re.I),
+}
+
+def static_flags(text):
+    return [name for name, pattern in STATIC_PATTERNS.items() if pattern.search(text)]
+
+
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--selected-entrypoints",type=Path,required=True)
@@ -98,7 +113,7 @@ def main():
         key=(s["repository"],s["commit"]); prefix=str(PurePosixPath(s["path"]).parent).rstrip("/")+"/"
         for path,meta in index.get(key,{}).items():
             if path.startswith(prefix): queue[(key[0],key[1],path)]={"source":s["source"],"repository":key[0],"commit":key[1],"path":path,"git_sha":meta.get("git_sha",""),"size":meta.get("size_bytes",""),"entrypoint":s["path"]}
-    seen=set(); files=[]; links=[]
+    seen=set(); files=[]; links=[]; static_reviews=[]
     while True:
         batch=[(k,v) for k,v in queue.items() if k not in seen]
         if not batch: break
@@ -114,7 +129,15 @@ def main():
             blob=git_blob_sha1(raw); size_ok=not row["size"].isdigit() or len(raw)==int(row["size"]); blob_ok=not row["git_sha"] or blob==row["git_sha"]
             files.append({**base,"fetch_status":"FETCHED","raw_bytes":str(len(raw)),"sha256":hashlib.sha256(raw).hexdigest(),"computed_git_blob_sha":blob,"git_blob_match":"YES" if blob_ok else "NO","size_match":"YES" if size_ok else "NO","sha256_status":"VERIFIED" if blob_ok and size_ok else "REVIEW_REQUIRED"})
             try: text=raw.decode("utf-8")
-            except UnicodeDecodeError: continue
+            except UnicodeDecodeError:
+                if kind in {"executable-source","configuration-or-schema"}:
+                    static_reviews.append({"repository":row["repository"],"commit":row["commit"],"skill_entrypoint":row["entrypoint"],"path":row["path"],"content_kind":kind,"raw_bytes":len(raw),"scan_status":"NON_UTF8_BINARY","pattern_flags":"","flag_count":0,"risk_tier":"MANUAL_REVIEW","manual_review_required":"YES","note":"Static text scan skipped; binary-safe hash evidence remains separate"})
+                continue
+            if kind in {"executable-source","configuration-or-schema"}:
+                flags=static_flags(text)
+                high={"dynamic_code","process_spawn","database_destructive"}
+                tier="HIGH_REVIEW" if any(x in high for x in flags) else ("REVIEW" if flags else "NO_PATTERN_FLAG")
+                static_reviews.append({"repository":row["repository"],"commit":row["commit"],"skill_entrypoint":row["entrypoint"],"path":row["path"],"content_kind":kind,"raw_bytes":len(raw),"scan_status":"SCANNED_UTF8","pattern_flags":";".join(flags),"flag_count":len(flags),"risk_tier":tier,"manual_review_required":"YES","note":"Pattern flags are triage signals, not vulnerability findings or safety clearance"})
             known=set(index.get((row["repository"],row["commit"]),{}))
             for ref in refs(text,row['path']):
                 external=ref.lower().startswith(("http://","https://","mailto:")); resolved=None if external else resolve(row["path"],ref,known)
@@ -129,9 +152,9 @@ def main():
         cols=list(dict.fromkeys(k for r in rows for k in r))
         with (a.out_dir/name).open("w",newline="",encoding="utf-8") as f:
             w=csv.DictWriter(f,fieldnames=cols); w.writeheader(); w.writerows(rows)
-    write("skill-payload-file-audit.csv",files); write("skill-reference-audit.csv",links)
+    write("skill-payload-file-audit.csv",files); write("skill-reference-audit.csv",links); write("skill-executable-static-review.csv",static_reviews)
     statuses=Counter(x["sha256_status"] for x in files)
-    summary={"selected_skill_entrypoints":len(selected),"payload_files":len(files),"sha256_verified":statuses["VERIFIED"],"hash_review_required":statuses["REVIEW_REQUIRED"],"fetch_failed":statuses["FETCH_FAILED"],"content_kinds":dict(Counter(x["content_kind"] for x in files)),"proposed_dispositions":dict(Counter(x["proposed_disposition"] for x in files)),"reference_statuses":dict(Counter(x["status"] for x in links)),"warning":"Hash integrity is not license approval, malware clearance, provider approval or production suitability. No source is executed."}
+    summary={"selected_skill_entrypoints":len(selected),"payload_files":len(files),"sha256_verified":statuses["VERIFIED"],"hash_review_required":statuses["REVIEW_REQUIRED"],"fetch_failed":statuses["FETCH_FAILED"],"content_kinds":dict(Counter(x["content_kind"] for x in files)),"proposed_dispositions":dict(Counter(x["proposed_disposition"] for x in files)),"reference_statuses":dict(Counter(x["status"] for x in links)),"static_review_files":len(static_reviews),"static_review_pattern_flags":dict(Counter(flag for x in static_reviews for flag in x.get("pattern_flags","").split(";") if flag)),"warning":"Hash integrity is not license approval, malware clearance, provider approval or production suitability. No source is executed."}
     (a.out_dir/"skill-payload-audit-summary.json").write_text(json.dumps(summary,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(summary,indent=2)); return 0
 
