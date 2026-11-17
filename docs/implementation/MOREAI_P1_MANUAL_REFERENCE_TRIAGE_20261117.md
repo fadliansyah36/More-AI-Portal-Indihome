@@ -153,3 +153,19 @@ The read-only entrypoint sample has advanced to **40/229**. The additional eight
 - `skills/game-engines/godot/scenario-godot-animation/SKILL.md`
 
 The single credential keyword hit in ZBrush retopology/export is a source provenance checklist (“source with credential, URL and best…”), not a literal credential value. No dynamic-code pattern was found in this 40-entrypoint sample. The remaining 189 entrypoints and all executable/configuration references still require review.
+
+
+## Entrypoint review expansion — 48/229
+
+The sample now covers **48/229** entrypoints. Eight additional Godot skills were reviewed:
+
+- `skills/game-engines/godot/scenario-godot-architecture/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-audio/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-expert/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-gameplay/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-multiplayer/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-performance-export/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-pipeline-automation/SKILL.md`
+- `skills/game-engines/godot/scenario-godot-rendering-lighting/SKILL.md`
+
+Manual contextualization: “password” hits are names of environment variables for release keystore configuration and documentation explicitly says not to put passwords in presets; no literal secret value was observed. Shell/process guidance remains sandbox-only. No dynamic-code pattern was found in the 48-entrypoint sample. Remaining 181 entrypoints are unreviewed.
