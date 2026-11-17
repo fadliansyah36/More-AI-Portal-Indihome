@@ -69,3 +69,17 @@ The earlier parser applied Markdown link syntax to executable source and produce
 
 ## Evidence artifact persistence
 The full file-level hash CSV, reference CSV, and machine summary were generated in the isolated audit sandbox. They are **not yet committed to the Git repository**; the committed artifact at this point is this execution report plus the corrected audit utility. The file-level evidence must be exported and attached to the repository before P1 evidence archival is considered complete. Do not treat this report as a substitute for the per-file hash register.
+
+
+## Repository archival correction — 2026-11-17
+
+This section supersedes the earlier “Evidence artifact persistence” paragraph above, which described the pre-workflow sandbox state. The GitHub Actions workflow `P1 Skill Payload Integrity Evidence` ran from push commit `0a8a2ead7371dcfdc31f5efa55793dea5dcce9f4`; run ID `44005811297`, job ID `133780781223`, conclusion `success`. The job steps “Recompute immutable payload evidence” and “Commit file-level evidence to main” both completed successfully.
+
+The workflow committed the generated evidence to `main` in commit `3b98f4a063c16f64cc9e0a23f1b7ddd02d214c1c`:
+- `docs/implementation/p1-skill-payload-evidence/skill-payload-audit-summary.json`
+- `docs/implementation/p1-skill-payload-evidence/skill-payload-file-audit.csv`
+- `docs/implementation/p1-skill-payload-evidence/skill-reference-audit.csv`
+
+The committed summary reports 229 selected entrypoints, 1,941 payload files, 1,941 SHA-256 results, zero hash review items and zero fetch failures. The evidence is now repository-persisted. No workflow artifact ZIP was retained (GitHub Actions reports zero artifacts); the CSV/JSON files are committed directly to the repository.
+
+The audit still does **not** close P1: content/license/security review and final per-file disposition remain open. The 148 parser “not found” candidates include 123 path-prefix directory matches; 25 remain unresolved/ambiguous for manual review. The static parser does not prove those references are safe or complete.
