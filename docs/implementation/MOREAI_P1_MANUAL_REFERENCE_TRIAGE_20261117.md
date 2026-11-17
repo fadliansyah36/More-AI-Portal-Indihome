@@ -119,3 +119,21 @@ The read-only content review has expanded from 16 to **24 of 229** selected entr
 Static keyword flags were manually contextualized for Maya animation and FX: the term “credential” appears in a reference checklist requiring source/credential/URL provenance, not as a literal secret or credential value. Shell/process flags in Maya deformation/expert/lighting/lookdev require sandbox-only review; they are not evidence of malicious behavior. The scan did not identify `eval()` or `new Function()` patterns in this 24-entrypoint sample. All DCC command/script guidance remains unavailable to the customer/browser process until the isolated worker boundary is approved and enforced.
 
 **Review coverage: 24/229 entrypoints (10.5%).** Remaining 205 entrypoints and all referenced executable/configuration files still require review; no blanket safety or license approval is inferred.
+
+
+## Entrypoint review expansion — 32/229
+
+The content review has expanded to **32/229** entrypoints. The eight additional files are:
+
+- `skills/dcc/maya/scenario-maya-modeling/SKILL.md`
+- `skills/dcc/maya/scenario-maya-pipeline-scripting/SKILL.md`
+- `skills/dcc/maya/scenario-maya-retopology-uv/SKILL.md`
+- `skills/dcc/maya/scenario-maya-rigging/SKILL.md`
+- `skills/dcc/zbrush/scenario-zbrush-automation/SKILL.md`
+- `skills/dcc/zbrush/scenario-zbrush-character-creature/SKILL.md`
+- `skills/dcc/zbrush/scenario-zbrush-expert/SKILL.md`
+- `skills/dcc/zbrush/scenario-zbrush-hard-surface/SKILL.md`
+
+Manual contextualization: “verify token” in a version identifier is not a credential; “credential” in a source-provenance checklist is a documentation requirement, not a secret value. ZBrush automation includes a `ZBrush -script` process path and remains sandbox-only. Shell/process keyword flags in DCC instructions are expected tool-operation guidance, not evidence of malicious code. No `eval()` or `new Function()` pattern was found in this 32-entrypoint sample.
+
+**Review coverage: 32/229 entrypoints (14.0%).** Remaining 197 entrypoints and all referenced scripts/configuration continue to require review. No safety approval is inferred for the unreviewed content.
