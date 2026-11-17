@@ -61,9 +61,9 @@ def classify(path):
     if name in {".gitignore", ".luaurc", ".styluaignore"}: return "configuration-or-schema","adapt","Review build and runtime configuration"
     if ext in {".woff",".woff2",".ttf",".otf",".eot"}: return "font-asset","defer","Verify font redistribution and embedding rights"
     if ext in {".png",".jpg",".jpeg",".webp",".gif",".svg",".mp4",".mov",".webm",".mp3",".wav",".ogg",".glb",".gltf",".obj",".fbx",".blend",".zip",".pdf"}: return "media-or-binary-asset","defer","Inspect bytes, provenance, license and malware status"
-    if ext in {".py",".js",".mjs",".jsx",".ts",".tsx",".sh",".bash",".c",".cpp",".h",".gd",".gdshader",".hlsl",".glsl",".luau",".lua",".cs",".compute",".uss",".tss"}: return "executable-source","adapt","Security review and architecture port; never execute directly from skill payload"
+    if ext in {".py",".js",".mjs",".jsx",".ts",".tsx",".sh",".bash",".c",".cpp",".h",".gd",".gdshader",".hlsl",".glsl",".luau",".lua",".cs",".compute",".uss",".tss"}: return "executable-source","defer","Security, relevance, sandbox and architecture review required before adaptation"
     if ext in {".md",".mdx",".txt",".rst"}: return "reference-document","adapt","Review citations, third-party content and prompt safety"
-    if ext in {".json",".yaml",".yml",".toml",".cfg",".ini",".xml",".asmdef",".gdextension"}: return "configuration-or-schema","adapt","Validate schema, dependencies and runtime assumptions"
+    if ext in {".json",".yaml",".yml",".toml",".cfg",".ini",".xml",".asmdef",".gdextension"}: return "configuration-or-schema","defer","Dependency, schema, secret and runtime review required before adaptation"
     if re.search(r"(^|/)(test|tests|fixtures|examples|example|demo|samples)(/|$)",path,re.I): return "test-example-fixture","archive-only","Retain provenance; not production runtime by default"
     return "other","defer","Manual content, purpose and rights review required"
 
