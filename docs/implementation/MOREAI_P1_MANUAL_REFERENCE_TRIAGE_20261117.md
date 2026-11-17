@@ -219,3 +219,8 @@ Important finding: `skills/scenario-blender/SKILL.md` documents a Scenario API k
 ## Entrypoint review expansion — 112/229
 
 The manual sample now covers **112/229 (48.9%)**. The eight additional Scenario skills cover ElevenLabs, fan-cam, format conversion, game assets, game UA ads, Gemini image/omni and GPT Image. The static scan found external-provider/network references but no shell/process, dynamic-code or secret-keyword pattern in these eight files. These capabilities still require approved server-side provider adapters, explicit credentials/consent, metering and artifact lifecycle; skill text alone does not activate them. Remaining 117 entrypoints are unreviewed.
+
+
+## Entrypoint review expansion — 120/229
+
+The sample now covers **120/229 (52.4%)**. Eight more Scenario skills cover Grok Imagine image/video, identity library, Ideogram, image editing/image, inspiration and Kinetic Film. External provider references in the image/video skills remain gated on server-side credential, consent, metering and artifact controls. Kinetic Film's shell scaffold is a project-generation dependency already documented in the reference triage; it is not approved for direct host execution. No literal secret or dynamic-code pattern was found in this eight-file batch. Remaining 109 entrypoints are unreviewed.
