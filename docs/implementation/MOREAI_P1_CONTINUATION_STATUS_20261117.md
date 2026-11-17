@@ -142,3 +142,8 @@ Manual entrypoint review now covers **152/229 (66.4%)**. Eight additional Seedan
 ## Review coverage update — 2026-11-17 (160/229)
 
 Manual entrypoint review now covers **160/229 (69.9%)**. Scenario Team Admin is deferred because it can change team membership/roles, project state, spend caps and API-key policy; it requires consent, approval, secret-vault and audit controls. Text Overlay dependency installation was not run. Remaining 69 entrypoints are open.
+
+
+## Review coverage update — 2026-11-17 (168/229)
+
+Manual entrypoint review now covers **168/229 (73.4%)**. Eight video/UGC skills were inspected; no shell/process, credential-keyword, install or dynamic-code pattern was flagged. Provider execution remains gated. Remaining 61 entrypoints are open.
