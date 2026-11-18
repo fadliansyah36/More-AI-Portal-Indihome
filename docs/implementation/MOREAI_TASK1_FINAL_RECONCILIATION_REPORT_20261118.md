@@ -170,3 +170,18 @@ Visual Skills (CC BY 4.0), Scenario Skills (MIT), and 19 pinned Motion packs (18
 
 ### Current gate
 **Task 1 remains REVIEW_REQUIRED / NOT COMPLETE.** Trusted expected schema and global expected-vs-observed object parity remain blocked by the absence of an immutable known-good schema-only dump and the prohibition on isolated offline replay. Migration history has no native checksum and is not execution proof. No migration apply, production database write, staging, testing, build, lint, typecheck or deployment was performed.
+
+
+## Static schema reconstruction continuation — 2026-11-18 (latest)
+
+The user's explicit decision to skip offline replay/testing is applied. No test, replay, staging, migration apply, production write or deployment was run.
+
+- Re-read root `AGENTS.md`, Master PRD (header Version 1.2 Draft) and the existing Task 1 evidence set. The PRD remains product/architecture authority; the static schema baseline is evidence-derived, not a PRD substitute.
+- Created `TASK1-STATIC-EXPECTED-SCHEMA-BASELINE-20261118.md` and `TASK1-STATIC-EXPECTED-OBJECT-BASELINE-20261118.csv`: 513 lexical DDL candidate events across 106 of 116 history versions, with migration ID, statement ordinal, operation/object class, object/target name, expected effect, statement SHA-256 and source path/blob references.
+- Created `TASK1-MIGRATION-SOURCE-INVENTORY-20261118.csv`: 121 active migration SQL files (116 IDs with history and five corrected browser sources absent from history), 34 historical SQL archive records and 7 preserved malformed/duplicate original SQL sources. Each record includes Git blob SHA-1, size and source/history classification.
+- Current all-schema observed catalog inventory remains the separate comparison side: 27 non-system schemas; 138 ordinary/partitioned tables; 1,400 columns; 709 constraints; 396 indexes; 328 functions; 19 triggers; 99 RLS policies; 4 sequences; 320 pg_type rows; 7 extensions; 24 role memberships; 27 default ACL entries; 5,456 dependency rows.
+- The existing scoped object matrix remains 12 objects: 7 MATCH, 3 EXPECTED_DIFFERENCE and 2 NOT_VERIFIABLE. The global categories (schemas, tables, columns, constraints, indexes, sequences, routines, triggers, views, policies, ACL/ownership, extensions, types and dependencies) are explicitly NOT_VERIFIABLE for complete semantic parity. The 513 rows are DDL events, not unique final object definitions; extraction is lexical/regex, not a PostgreSQL AST.
+- Updated the browser event CHECK analysis and malformed 16280000 report: source regression is corrected in the five active replacement sources; original malformed files remain preserved. The corrected sources are not applied. Updated drift matrix, decision register, object inventory, lineage report and phase tracker to remove stale regression statements.
+- Migration 20261115084819 remains source-identity recovered (619/619 ordered tokens at historical commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31`); exact deployed bytes remain unproven. Three history path references resolve to current-main paths and blob SHA-1, but execution receipts remain absent.
+
+**Latest decision:** static baseline **CREATED — SOURCE-TRACEABLE / EXECUTION-UNVALIDATED**. Task 1 remains **REVIEW_REQUIRED / NOT COMPLETE** because full semantic object graph, global expected-vs-observed parity and independent execution receipts cannot be honestly certified under the waived replay and absent schema dump. No live DB object was altered.
