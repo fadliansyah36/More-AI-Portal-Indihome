@@ -30,3 +30,9 @@ As-of: 2026-11-18. All Supabase evidence was read-only.
 ## Provenance limitation
 
 Migration history row + matching SQL source + current object effect provide execution provenance support, not execution provenance confirmation. History has no native checksum or independent deployment receipt. Do not infer exact executed bytes from history metadata alone.
+
+## Execution continuation addendum — 2026-11-18
+
+The original source identities `20261116250000`, `20261116260000`, `20261116270000`, `20261116280000`, and `20261116300000` are retained as archived source evidence only. Their corrected active source paths are `20261116162500`, `20261116162600`, `20261116162700`, `20261116162800`, and `20261116163000`. All five corrected sources remain absent from applied history and unapplied. The eight existing browser event types are preserved by corrected active SQL. The original 15090000 and 11110000 alias paths are archived and removed from active migrations.
+
+The 15084819 source is recovered at Git commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31` with 619/619 ordered SQL tokens matching the history statement. A 513-row regex DDL candidate map from 106 history versions is committed separately; it is not a complete SQL parser or execution receipt. The all-schema observed catalog snapshot is fingerprinted separately. History rows alone are not treated as proof of exact deployed bytes.
