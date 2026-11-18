@@ -56,6 +56,19 @@ DDL_TAGS = {
     "CreateOpFamilyStmt": ("OPERATOR_FAMILY", "CREATE"),
     "CreateConversionStmt": ("CONVERSION", "CREATE"),
     "CreateTransformStmt": ("TRANSFORM", "CREATE"),
+    "CreateEventTrigStmt": ("TRIGGER", "CREATE"),
+    "CreateCollationStmt": ("COLLATION", "CREATE"),
+    "CreateStatisticsStmt": ("STATISTICS", "CREATE"),
+    "CreateAccessMethodStmt": ("ACCESS_METHOD", "CREATE"),
+    "CreateOperatorStmt": ("OPERATOR", "CREATE"),
+    "AlterOperatorStmt": ("OPERATOR", "ALTER"),
+    "CreateForeignDataWrapperStmt": ("FOREIGN_DATA_WRAPPER", "CREATE"),
+    "AlterForeignDataWrapperStmt": ("FOREIGN_DATA_WRAPPER", "ALTER"),
+    "AlterForeignServerStmt": ("FOREIGN_SERVER", "ALTER"),
+    "AlterUserMappingStmt": ("USER_MAPPING", "ALTER"),
+    "AlterExtensionStmt": ("EXTENSION", "ALTER"),
+    "AlterDatabaseStmt": ("DATABASE", "ALTER"),
+    "AlterSystemStmt": ("SYSTEM_SETTING", "ALTER"),
 }
 
 LOCATION_KEYS = {"location", "stmt_location", "stmt_len", "token_location"}
@@ -168,7 +181,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
             ranges = _rangevars(payload[key])
             if ranges:
                 return ranges
-    for key in ("funcname", "schemaname", "extname", "rolename", "role"):
+    for key in ("funcname", "schemaname", "extname", "rolename", "role", "servername", "fdwname", "pubname", "subname", "amname", "opclassname", "opfamilyname", "conname", "collname", "trigname", "oprname", "defnames"):
         if key in payload:
             values = _strings(payload[key])
             if values:
