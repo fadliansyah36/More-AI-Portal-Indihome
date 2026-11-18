@@ -13,4 +13,4 @@ snapshot_file,git_blob_sha1,byte_size,history_record_count,source
 "batch-012.json","0c8528ce56bb5852a94b64091164393517f8f09e","34323","8","Supabase migration history SELECT snapshot; statement bytes are raw historical SQL; no execution attestation"
 "batch-013.json","2ba9a83edbf0110751ff610e1cdb3f0216f3baea","16027","8","Supabase migration history SELECT snapshot; statement bytes are raw historical SQL; no execution attestation"
 "batch-014.json","ccbd9814d37754e0a42b1beb84d9dac7863003fb","28677","8","Supabase migration history SELECT snapshot; statement bytes are raw historical SQL; no execution attestation"
-"batch-015.json","2d750a1b0cd47e2d9eec9cfd09f2e4e5ad888689","15375","8","Supabase migration history SELECT snapshot; statement bytes are raw historical SQL; no execution attestation"
+"batch-015.json","2d750a1b0cd47e2d9eec9cfd09f2e4e5ad888689","15375","4","Supabase migration history SELECT snapshot; statement bytes are raw historical SQL; no execution attestation"
