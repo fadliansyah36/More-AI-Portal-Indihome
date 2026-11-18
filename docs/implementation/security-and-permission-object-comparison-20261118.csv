@@ -1,0 +1,7 @@
+object_or_scope,expected_security_definition,observed_security_evidence,classification,risk,decision
+public.moreai_browser_takeover_grants,16250000 intends RLS enabled and client roles revoked; service_role grants,table absent,EXPECTED_DIFFERENCE,MEDIUM,No live permission drift while unapplied
+public.moreai_browser_takeover_commands,16280000 intends RLS enabled and client roles revoked plus deny policy,table absent,EXPECTED_DIFFERENCE,CRITICAL_SOURCE_BLOCKER,Malformed source; no object to compare
+public.moreai_browser_preview_requests,16300000 intends RLS enabled and client roles revoked plus deny policy,table absent,EXPECTED_DIFFERENCE,HIGH_SOURCE_REVIEW,No live permission drift while unapplied
+public.moreai_browser_session_events,applied migrations intend server-only access; expected policies/grants need full migration lineage,live table RLS enabled and server-only role grants from prior inventory,NOT_VERIFIABLE,MEDIUM,No full expected policy/owner/ACL definition comparison
+public SECURITY DEFINER functions,approved execution ACL and owner baseline required,prior inventory found 56 security definer functions; selected browser retention RPCs exist,NOT_VERIFIABLE,HIGH,No full per-function expected ACL/owner comparison
+public schema all objects,expected RLS/policy/grants/ownership,95 observed policies and catalog grant snapshot,NOT_VERIFIABLE,HIGH,Require immutable security baseline
