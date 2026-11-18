@@ -231,3 +231,8 @@ Executable-source manual review advanced to **55/875**. The new Maya batch ident
 ## Supabase migration parity gate — 2026-11-18
 
 Read-only migration parity audit found 116 applied history rows vs 85 current SQL migration files: 7 exact version+name matches; 72 repo files have a same-name/different-version mapping (77 applied rows due five duplicate logical names); 32 applied names have no current repo source; 6 current repo files are not applied by name. The history table stores SQL statement and rollback arrays but no checksum. Phase 05 is therefore **REVIEW_REQUIRED**, not COMPLETE. The 122-row matrix and report are in `MOREAI_SUPABASE_MIGRATION_PARITY_20261118.csv` and `MOREAI_SUPABASE_MIGRATION_PARITY_AUDIT_20261118.md`. No migration or database write was executed. Phase 04–09 acceptance remains blocked pending governance and migration reconciliation.
+
+
+### Applied migration statement archive evidence
+
+The 32 applied history rows with no current repository source each retain one SQL statement in `schema_migrations.statements`; `rollback` is NULL for those rows. This is potential source-recovery evidence, not a verified source archive. Before recovering, inspect for embedded credentials/environment-specific values, compare with surviving source/commits and hash the recovered SQL. Keep any recovered historical SQL outside the active Supabase migration directory; never replay it.
