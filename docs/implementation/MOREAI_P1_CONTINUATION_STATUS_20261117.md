@@ -302,3 +302,14 @@ P1 remains **IN_PROGRESS / NOT ACCEPTED**. P2 remains **DRAFT / NOT ACCEPTED**.
 - OSV attribution from OSV.dev and GitHub Advisory Database (CC-BY-4.0) is retained in the report. Vulnerable coordinates remain `BLOCK_IMPORT_UNTIL_TRIAGE`; no dependency versions or package manifests were changed.
 - The 32 unresolved/ranged PyPI BOM entries and 24 ranged/unpinned OpenManusWeb requirements remain outside exact-version query coverage. The SBOM and full vulnerability/license gates remain incomplete.
 - P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. Phase 04–09 remain gated; Phase 10/11 remain BLOCKED / NOT ACCEPTED. No packages were installed, no tests/builds/provider calls/database writes/migrations/staging/deployment were run.
+
+
+## Correction — unique PURL counts and MoreAI direct Python pins (2026-11-18)
+
+A follow-up parse of CycloneDX component properties corrected the OSV coverage denominator:
+- npm: 1,963 component rows = 1,940 exact-version rows and 23 unversioned MoreAI root `package.json` ranges. After PURL deduplication there are **1,824 unique exact npm PURLs**; all 1,824 were queried. The 116-row difference between exact component rows and unique PURLs is repeated PURL identity across component/source contexts, not missing query coverage.
+- PyPI: 32 BOM component rows = 24 ranged/unpinned OpenManusWeb rows plus 8 direct-pin rows representing 6 unique MoreAI API/Worker PURLs. Those six direct pins were queried in addition to 104 Kinetic Music Video and 2 Kinetic Film exact pins, giving **112 unique exact PyPI PURLs queried**.
+- Three MoreAI direct Python dependencies returned vulnerable: `python-multipart@0.0.20` (14 advisory associations; HIGH representative advisory, fixed 0.0.30), `cryptography@44.0.2` (10 associations; HIGH representative advisory, fixed 48.0.1 for PyPI wheels), and `pytest@8.3.5` (2 associations; MODERATE representative advisory, fixed 9.0.3). `fastapi@0.115.12`, `httpx@0.28.1` and `uvicorn@0.34.0` returned no matching advisory.
+- Corrected total: **1,936 unique exact PURLs queried** (1,824 npm + 112 PyPI), **49 vulnerable coordinates** (40 npm + 9 PyPI), **247 advisory associations**. This supersedes the prior 2,069/46/221 figures in the preceding addendum.
+- The Python vulnerable-coordinate register now includes the three direct dependency records. The full report's correction addendum documents the denominator and package details.
+- 23 npm root dependencies and 24 Python requirements remain unpinned/unresolved and outside exact-version query coverage. No dependency versions were changed; P1 remains IN_PROGRESS / NOT ACCEPTED.
