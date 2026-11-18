@@ -124,3 +124,47 @@ Task 2–5 remain NOT_STARTED/untouched. P1 Acceptance remains BLOCKED/NOT_ACCEP
 Documentation/evidence only under docs/implementation. No application source, SQL migration source, migration history, production configuration or database object was modified. No tests/builds were run (per instruction). No staging or deployment.
 
 Next execution remains Task 1 only: obtain an approved expected schema source; maintain event vocabulary and fix/re-review source files only after owner authorization; obtain deployment provenance evidence if full attestation is required. Do not start Task 2 automatically.
+
+
+## 11. Task 1 continuation addendum — baseline, owner decisions, execution provenance and object comparison (2026-11-18)
+
+### Resume matrix
+
+| Workstream | Valid evidence | Incomplete evidence | Source correction / owner decision | Comparison |
+|---|---|---|---|---|
+| Expected schema | Applied migration history, recovered 15084819 source, live catalog and scoped event lineage | No trusted full schema dump; 32 same-name sources missing; no native execution checksum | Owner-approved immutable dump or offline replay authorization required | Full object-level comparison blocked |
+| Five browser sources | Five source blobs and SQL content reviewed; live event CHECK and applied event lineage inspected | No creation commit recovered in linked search; no approval found | All five owner decisions required; four CHECK fixes proposed; 16280000 full SQL reconstruction required | Not applicable until corrected/approved source and baseline |
+| Execution provenance | History rows, Git blob mappings and selected live object effects | No independent deployment receipt; historical function overloads superseded | Owner/deployment artifact evidence needed for full confirmation | Scoped effects only |
+| Duplicate paths | 15090000/15100000 identical blob; 11100000 content maps to applied 091531 | Owner disposition absent | No rename/delete/overwrite | Exact source mapping documented |
+
+### Corrected browser migration identifier finding
+
+The five browser IDs are not valid timestamp components: 20261116250000, 20261116260000, 20261116270000, 20261116280000 and 20261116300000 encode hours 25, 26, 27, 28 and 30. This supersedes any earlier wording implying the identifiers were valid timestamp-style names. No replacement IDs were inferred. All five remain absent from migration history and owner decision is required.
+
+The 16280000 identifier is malformed as a timestamp-style ID, and its SQL body is independently malformed. The source contains an incomplete worker regex/IF, a SELECT fragment inside the unfinished condition, an orphan p_limit clause after a trigger, and duplicate claim/finish/revoke function/trigger definitions.
+
+### Browser event CHECK lineage and regression
+
+Applied source history: 15084424 creates five initial values; 16083451 adds close_requested; 16083458 adds profile_retention_eligible and profile_deleted; 16083502 writes both profile values. Live CHECK exactly matches the eight-value definition from 16083458. Four of the five unapplied sources narrow that applied vocabulary. This is a source regression, not current live drift. Correction diffs are proposals only; owner approval is absent.
+
+### Execution provenance
+
+15084819: SOURCE_CONFIRMED and HISTORY_RECORDED; preferred_model_id UUID nullable column, FK ON DELETE SET NULL and partial B-tree index were independently observed and match the historical source. The six-argument enqueue function from that source is not a current overload; live catalog exposes seven- and eight-argument overloads, indicating later function evolution. Full migration execution provenance remains PARTIAL because there is no native history checksum/deployment receipt.
+
+16083451/16083458/16083502: history and source SQL are recorded; event CHECK, retention columns and claim/ack RPCs are present live. This supports execution provenance but does not independently attest exact executed bytes. Five browser sources: history absent and target objects/functions absent.
+
+### Duplicate/misnamed path decisions
+
+Current main 15090000 and 15100000 share blob 86c53087... and content; both map to applied 15085314. The original 15084819 source is a historical Git object at commit cc5563e... and is not the current main file. Current 15090000 remains CONFIRMED_DUPLICATE + MISNAMED_SOURCE; no path change without owner approval. 11100000 durable outbox file remains an applied-content alias of history 091531.
+
+### Expected-vs-observed object-level comparison
+
+Scoped matrix contains 12 object rows after the preferred-model FK/index/function refinement: 6 MATCH, 3 EXPECTED_DIFFERENCE, 2 NOT_VERIFIABLE plus the remaining scoped comparison state as recorded in the matrix. The browser event CHECK, three retention columns, preferred_model_id column, FK and partial index match their source definitions. The six-argument enqueue function is not present as a current overload and requires later migration lineage mapping. Grants/commands/preview tables are absent while their sources are unapplied; this is EXPECTED_DIFFERENCE, not drift. Full schema and security parity remain NOT_VERIFIABLE.
+
+### Owner decision evidence
+
+GitHub issue/PR search for browser takeover and migration owner decisions returned no matching records in the linked repository search. This is not proof no approval exists elsewhere. All five owner decisions remain OWNER_DECISION_REQUIRED; no approval is inferred.
+
+### Task 1 status
+
+**REVIEW_REQUIRED**. Not READY_FOR_REVIEW and not ACCEPTED. The full expected schema baseline, owner decisions/source corrections, timestamp identity resolution, independent execution receipt, path disposition and full object-level/security comparison remain blockers. No migration apply, database write, staging, testing or deployment occurred. Task 2–5, P1 acceptance, P2 ADR and Phase 04–09 were not started.
