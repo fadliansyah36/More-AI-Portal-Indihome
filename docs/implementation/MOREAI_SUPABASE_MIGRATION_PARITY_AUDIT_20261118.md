@@ -73,7 +73,7 @@ There is no checksum column. The statements/rollback arrays may provide historic
 
 ## Risk and required action
 
-<badge color="danger">Migration push blocked</badge>
+**Migration push blocked**
 
 - Do not run `supabase db push`, reset, repair, or apply any of the six repo-only files until migration history is reconciled.
 - Do not mark Phase 05 accepted based only on the live schema table/policy snapshot.
