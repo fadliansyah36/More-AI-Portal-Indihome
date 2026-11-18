@@ -12,8 +12,12 @@ on:
       - "docs/implementation/observed-dependency-graph-20261118.json"
   workflow_dispatch:
 
+concurrency:
+  group: moreai-schema-ast-main
+  cancel-in-progress: true
+
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-expected-object-graph:
@@ -85,6 +89,24 @@ jobs:
                   f.write(f"- **{key}**: {value}\n")
               f.write("\nParse failures and unresolved object states are preserved in the graph as NOT_VERIFIABLE.\n")
           PY
+
+      - name: Persist generated semantic graph and reconciliation on main
+        if: success()
+        continue-on-error: true
+        run: |
+          mkdir -p docs/implementation/generated
+          cp artifacts/expected-object-graph.json docs/implementation/generated/expected-object-graph.json
+          cp artifacts/semantic-reconciliation.json docs/implementation/generated/semantic-reconciliation.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/implementation/generated/expected-object-graph.json docs/implementation/generated/semantic-reconciliation.json
+          if git diff --cached --quiet; then
+            echo "Generated semantic artifacts are unchanged."
+            exit 0
+          fi
+          git commit -m "docs: regenerate PostgreSQL AST graph and semantic reconciliation"
+          git pull --rebase origin main
+          git push origin HEAD:main
 
       - name: Upload expected-object graph artifact
         if: always()
