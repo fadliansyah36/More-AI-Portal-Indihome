@@ -86,7 +86,7 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
                 classification = "NOT_VERIFIABLE"
                 reason = "The DROP source event is not proven applied; live presence or absence is not classified as drift."
         elif not observed_item:
-            if expected_item.get("expected_state_status") == "SOURCE_CONFLICT_NOT_VERIFIABLE" or expected_item.get("object_class") in {"ACL", "DEFAULT_ACL", "ROLE_MEMBERSHIP", "OWNERSHIP", "OBJECT", "COMMENT", "ROLE"} or "unnamed:" in str(expected_item.get("object_name") or ""):
+            if expected_item.get("expected_state_status") == "SOURCE_CONFLICT_NOT_VERIFIABLE" or expected_item.get("object_class") in {"ACL", "DEFAULT_ACL", "ROLE_MEMBERSHIP", "OWNERSHIP", "OBJECT", "COMMENT", "ROLE"} or "unnamed:" in str(expected_item.get("object_name") or "") or ("signature-not-verifiable" in str(expected_item.get("object_name") or "")):
                 classification = "NOT_VERIFIABLE"
                 reason = "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
             elif latest_migration in applied and all_events_applied:
