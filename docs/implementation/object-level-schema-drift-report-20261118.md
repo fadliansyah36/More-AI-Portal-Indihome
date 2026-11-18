@@ -11,7 +11,7 @@ A full expected schema baseline is not available, so the full object-level compa
 
 ## Counts
 - Scoped object rows: 12.
-- MATCH: 6 (including preferred_model_id column, FK and partial index).
+- MATCH: 7 (including preferred_model_id column, FK and partial index).
 - EXPECTED_DIFFERENCE: 3.
 - NOT_VERIFIABLE: 2 (full public object set and superseded six-argument enqueue function).
 No global object counts can be calculated because the expected schema object set is incomplete.
