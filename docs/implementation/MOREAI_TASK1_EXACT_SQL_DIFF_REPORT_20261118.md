@@ -60,3 +60,8 @@ Read-only audit only. No DDL, migration apply, DB write, staging, tests or deplo
 - Source mismatch inventory: `docs/implementation/MOREAI_SUPABASE_MIGRATION_SQL_MISMATCH_REVIEW_20261118.csv`
 - Final classification matrix: `docs/implementation/MOREAI_TASK1_SQL_MISMATCH_RECONCILIATION_FINAL_20261118.csv`
 - Prior batch notes: `docs/implementation/MOREAI_TASK1_EXACT_SQL_DIFF_BATCH_NOTES_20261118.md`
+
+
+## Addendum — migration 20261115084819 source recovered (2026-11-18)
+
+The earlier status `SOURCE_IDENTITY_UNVERIFIED` for the current-main same-name pair is superseded by historical Git evidence. The source was recovered at commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31`, historical path `supabase/migrations/20261115090000_moreai_agent_model_preferences.sql`, Git blob `b7278df23425678a3009cb5c15f20e7c6cf53327`. A recursive SQL lexical tokenizer compared that historical Git source with history version `20261115084819`: 619/619 ordered tokens match. The current main file remains blob `86c53087c128b6a867bc462f4b3671ad716ea048`, identical to `20261115100000` and applied history `20261115085314`; it is not the 15084819 source. Thus the current-main pair remains a raw/source mismatch, but the historical source identity is now recovered. Overall provenance remains PARTIAL because there is no native history checksum/execution receipt and the filename version differs from the history version. See `migration-20261115084819-provenance-report.md`.
