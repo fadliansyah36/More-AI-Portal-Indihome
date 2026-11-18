@@ -395,6 +395,8 @@ def _history_archive_payloads(history_archive_dir: Path | None) -> list[dict[str
         raw = path.read_bytes()
         payload = json.loads(raw.decode("utf-8"))
         source = payload.get("source") if isinstance(payload, dict) else None
+        if not isinstance(source, dict) and isinstance(payload, dict) and isinstance(payload.get("version"), str):
+            source = {"version": payload.get("version"), "name": payload.get("name")}
         if not isinstance(source, dict) or not isinstance(source.get("version"), str):
             continue
         statements = payload.get("statements")
@@ -405,10 +407,10 @@ def _history_archive_payloads(history_archive_dir: Path | None) -> list[dict[str
             "statements": statements, "_source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
             "_source_path": path.relative_to(history_archive_dir).as_posix(),
             "_git_blob_sha1": _git_blob_sha1(raw),
-            "_archive_status": payload.get("archive_status"),
-            "_archive_provenance": payload.get("provenance"),
-            "_source_repository_path": (payload.get("provenance") or {}).get("source_repository_path"),
-            "_source_repository_git_blob_sha": (payload.get("provenance") or {}).get("source_repository_git_blob_sha"),
+            "_archive_status": payload.get("archive_status") or (payload.get("archive_metadata") or {}).get("archive_status"),
+            "_archive_provenance": payload.get("provenance") or payload.get("archive_metadata"),
+            "_source_repository_path": ((payload.get("provenance") or payload.get("archive_metadata") or {}).get("source_repository_path")),
+            "_source_repository_git_blob_sha": ((payload.get("provenance") or payload.get("archive_metadata") or {}).get("source_repository_git_blob_sha")),
         })
     return records
 
