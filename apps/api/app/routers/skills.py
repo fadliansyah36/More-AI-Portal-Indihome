@@ -18,7 +18,7 @@ from app.authorization import customer_principal
 from app.routers.conversations import repository
 
 router = APIRouter(prefix="/api/v1/customer/skills", tags=["customer-skills"])
-PERMISSION_KEYS = {"network.read", "workspace.read", "workspace.write", "browser.navigate", "browser.download", "search.web", "files.read", "files.write", "calendar.read", "calendar.write", "gmail.read", "gmail.send"}
+PERMISSION_KEYS = {"network.read", "workspace.read", "workspace.write", "browser.navigate", "browser.download", "search.web", "files.read", "files.write", "content.generate", "calendar.read", "calendar.write", "gmail.read", "gmail.send"}
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 SHA64 = re.compile(r"^[0-9a-f]{64}$")
 SLUG = re.compile(r"^[a-z0-9][a-z0-9._-]{1,119}$")
