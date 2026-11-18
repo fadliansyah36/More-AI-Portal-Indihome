@@ -1,23 +1,32 @@
-# Migration 20261116280000 — provenance and identity report
+# Migration 20261116280000 — provenance and identity report (superseded source)
 
-Path: supabase/migrations/20261116280000_moreai_browser_takeover_command_queue.sql
-Current main blob: dac0d2796ebef75570a7ca79ed10a13025579615
-Size: 11,052 bytes.
-History relationship: no row for 20261116280000 in Supabase migration history.
-GitHub search for the ID and command-queue phrase returned no creation commit or owner decision in the linked repository search. This is a search limitation, not proof that no commit exists.
+**Status: SUPERSEDED BY CORRECTED ACTIVE SOURCE.** This report documents the malformed original identity and its defects; it is not the implementation instruction for the current migration directory.
 
-## Identifier
+Original path: `docs/implementation/migration-source-archive/20261116280000_moreai_browser_takeover_command_queue.sql.original.sql`  
+Original blob SHA-1: `dac0d2796ebef75570a7ca79ed10a13025579615`  
+Original size: 11,052 bytes.  
+Supabase history: no row for malformed ID `20261116280000`.
 
-The 14-digit identifier parses as 2026-11-16 28:00:00. Hour 28 is invalid under the YYYYMMDDHHMMSS timestamp convention. It is therefore a malformed timestamp-style migration ID unless an owner-approved alternate numbering convention exists. The same pattern occurs in the other four browser source IDs (25, 26, 27, 30 hours). No replacement ID is inferred or assigned.
+The identifier parses as 2026-11-16 28:00:00 and is invalid as a `YYYYMMDDHHMMSS` timestamp-style migration ID. The original source is retained in the archive; it is not an active migration.
 
-## SQL source defects
+## Original SQL defects (historical evidence)
 
-- The first claim-function body begins an incomplete worker ID regex and runs directly into a SELECT fragment.
-- The or p_limit < 1 or p_limit > 25 then clause appears orphaned after the trigger definition.
-- The claim function body appears in fragments and the function is defined again later.
-- Finish and revoke-trigger function/trigger definitions are duplicated.
-- The event CHECK preserves close_requested but drops profile_retention_eligible and profile_deleted.
+- Claim-function body contained incomplete fragments.
+- An orphaned `or p_limit < 1 or p_limit > 25 then` fragment followed a trigger definition.
+- Claim, finish and revoke-trigger implementations were duplicated or fragmented.
+- The original event CHECK replacement removed previously supported profile-retention values.
 
-## Decision
+## Implemented correction
 
-Status: OWNER_DECISION_REQUIRED / SOURCE_REVIEW_COMPLETE / BLOCKED. Do not apply, rename or rewrite. Require owner-confirmed intended migration ID, source of origin/commit, corrected complete SQL file, exact before/after diff and renewed static review.
+The corrected active source is:
+
+- Path: `supabase/migrations/20261116162800_moreai_browser_takeover_command_queue.sql`
+- Replacement ID: `20261116162800`
+- Corrected Git blob SHA-1: `eaa688946b91215fec04d8382e2eff3eb3ada3b8`
+- Recovery manifest: `browser-migration-recovery-manifest-20261118.csv`
+
+The active file contains one complete claim function, one finish function and the associated trigger/revoke behavior; it preserves the existing eight browser event values and appends `takeover_command_queued`. Expired processing leases are terminalized as outcome-unknown and are not replayed. The original bytes remain archived.
+
+## Execution status
+
+The corrected active source has no Supabase migration-history row and is **NOT_APPLIED**. No production DDL or database write was executed. Source correction does not prove database effect or runtime behavior. This file is retained as historical provenance, not as a pending owner decision.
