@@ -150,7 +150,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
                     argument_types.append(".".join(type_names))
         if not argument_types and parameters:
             return [".".join(names) + "#signature-not-verifiable"]
-        return [".".join(names) + "(" + ",".join(argument_types) + ")"]
+        return [".".join(names) + "(" + ", ".join(argument_types) + ")"]
     if tag in {"CreateEnumStmt", "CreateDomainStmt", "CompositeTypeStmt", "CreateRangeStmt", "AlterTypeStmt", "AlterEnumStmt"}:
         values = _strings(payload.get("typeName") or payload.get("typevar"))
         if values:
