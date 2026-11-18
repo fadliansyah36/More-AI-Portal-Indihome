@@ -183,7 +183,7 @@ ALLOWED_SKILL_PERMISSIONS = frozenset({
     "network.read", "search.web",
     "workspace.read", "workspace.write",
     "browser.navigate", "browser.download",
-    "files.read", "files.write",
+    "files.read", "files.write", "content.generate",
     "gmail.read", "calendar.read", "gmail.send", "calendar.write",
 })
 
