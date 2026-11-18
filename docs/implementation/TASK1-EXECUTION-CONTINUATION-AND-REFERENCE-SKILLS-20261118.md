@@ -36,7 +36,7 @@ Decisions already implemented in the base commit:
 - All five original malformed source files are preserved byte-for-byte under `docs/implementation/migration-source-archive/`; their original Git blob SHAs are recorded in the prior recovery manifest.
 - Two duplicate/misnamed aliases were moved out of the active migration directory and retained under the historical source archive: `20261115090000_moreai_agent_model_preferences.sql` and `20261111110000_moreai_durable_run_event_outbox.sql`.
 
-The source/object dependency map is recorded in `TASK1-DEPENDENCY-MAPPING-20261118.csv`. These are repository-source corrections only. None of the five corrected browser migrations was applied to Supabase.
+The source/object dependency map is recorded in `TASK1-DEPENDENCY-MAPPING-20261118.csv`; the recorded-history DDL candidate map is `MOREAI-MIGRATION-TO-OBJECT-DDL-MAP-20261118.csv`. These are repository-source corrections only. None of the five corrected browser migrations was applied to Supabase.
 
 ### 1.2 Migration 20261115084819
 
@@ -55,6 +55,8 @@ The current-main `15090000` file was a different duplicate alias of `15100000` /
 The live `supabase_migrations.schema_migrations` history currently has 116 rows, latest version `20261116113852`. The table has no native checksum column. The three records `20261111030000`, `20261111033000` and `20261111040000` store path references rather than SQL text in their statement values. Reconstructed MD5/SHA-256 values are evidence hashes of retrieved source/history content, not historical deployment checksums.
 
 A history row proves that a migration record exists in the migration-history table. It does not independently prove successful execution, the exact deployed bytes, or the final object state. Observed object effects can support a mapping but are not a deployment receipt.
+A read-only extraction now maps direct DDL candidates from the stored migration statements: `MOREAI-MIGRATION-TO-OBJECT-DDL-MAP-20261118.csv` contains 513 regex-extracted DDL candidate rows across 106 of 116 history versions. Each row records migration version/name, statement ordinal, operation, object/target object where captured, and SHA-256 of the exact history statement. Recognized operations include CREATE/ALTER TABLE, CREATE INDEX, CREATE POLICY, CREATE FUNCTION, CREATE TRIGGER, DROP FUNCTION/TRIGGER, CREATE EXTENSION/SCHEMA/VIEW. Ten history versions have no match in this limited pattern set; that does not imply they have no effects. The extractor is lexical/regex-based, not a PostgreSQL AST or replay, and does not resolve dynamic SQL, all ALTER subcommands, GRANT/REVOKE, rename semantics, or dependencies embedded inside function bodies. It is a useful migration-to-object candidate map, not a final object-evolution proof.
+
 
 ## 2. Read-only observed object inventory
 
