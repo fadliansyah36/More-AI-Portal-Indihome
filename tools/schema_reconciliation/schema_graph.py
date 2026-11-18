@@ -5,6 +5,7 @@ import hashlib
 import json
 import re
 import sys
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -334,22 +335,106 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
     return events, source_record
 
 
-def build_graph(root: Path) -> dict[str, Any]:
+def _history_payloads(history_dir: Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for path in sorted(history_dir.glob("*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        migrations = payload.get("migrations") if isinstance(payload, dict) else None
+        if isinstance(migrations, list):
+            records.extend(item for item in migrations if isinstance(item, dict))
+    return records
+
+
+def parse_history_record(record: dict[str, Any], temp_root: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    version = str(record.get("version") or "UNKNOWN")
+    name = str(record.get("name") or "unnamed")
+    statements = record.get("statements")
+    if not isinstance(statements, list):
+        statements = [statements] if isinstance(statements, str) else []
+    events: list[dict[str, Any]] = []
+    sources: list[dict[str, Any]] = []
+    ordinal_offset = 0
+    for statement_index, statement in enumerate(statements, start=1):
+        if not isinstance(statement, str) or not statement.strip():
+            continue
+        source_bytes = statement.encode("utf-8")
+        source_sha256 = hashlib.sha256(source_bytes).hexdigest()
+        relative = "supabase_migrations.schema_migrations/" + version + "/" + name + "#statement:" + str(statement_index)
+        if re.match(r"^supabase/migrations/[A-Za-z0-9_./-]+\\.sql$", statement.strip()):
+            sources.append({
+                "migration_id": version, "source_path": relative,
+                "source_sha256": source_sha256, "git_blob_sha1": None,
+                "byte_size": len(source_bytes), "parse_status": "NOT_VERIFIABLE",
+                "source_kind": "HISTORY_PATH_REFERENCE", "history_reference": statement.strip(),
+                "statement_count": 0, "ddl_event_count": 0,
+            })
+            continue
+        safe_name = re.sub(r"[^A-Za-z0-9_-]", "_", name)[:80]
+        temp_path = temp_root / (version + "_" + safe_name + "_" + str(statement_index) + ".sql")
+        temp_path.write_bytes(source_bytes)
+        parsed_events, source_record = parse_source(temp_path, temp_root)
+        parsed_count = source_record.get("statement_count", 0)
+        for event in parsed_events:
+            event["source_path"] = relative
+            event["source_kind"] = "SUPABASE_HISTORY_STATEMENT"
+            event["git_blob_sha1"] = None
+            event["history_statement_index"] = statement_index
+            event["statement_ordinal"] = int(event.get("statement_ordinal", 0)) + ordinal_offset
+            events.append(event)
+        source_record["source_path"] = relative
+        source_record["source_kind"] = "SUPABASE_HISTORY_STATEMENT"
+        source_record["git_blob_sha1"] = None
+        source_record["history_statement_index"] = statement_index
+        sources.append(source_record)
+        ordinal_offset += int(parsed_count or 0)
+    return events, sources
+
+
+def build_graph(root: Path, history_dir: Path | None = None) -> dict[str, Any]:
     files = sorted(root.rglob("*.sql"), key=lambda p: p.relative_to(root).as_posix())
     events: list[dict[str, Any]] = []
     sources: list[dict[str, Any]] = []
     for path in files:
         file_events, source_record = parse_source(path, root)
+        source_record["source_kind"] = "ACTIVE_GIT_MIGRATION_FILE"
         events.extend(file_events)
         sources.append(source_record)
+    history_records = _history_payloads(history_dir) if history_dir and history_dir.is_dir() else []
+    if history_records:
+        with tempfile.TemporaryDirectory(prefix="moreai-migration-history-") as temp_dir:
+            temp_root = Path(temp_dir)
+            for record in history_records:
+                history_events, history_sources = parse_history_record(record, temp_root)
+                events.extend(history_events)
+                sources.extend(history_sources)
+
+    merged_events: dict[tuple[str, int, str, str], dict[str, Any]] = {}
+    for event in events:
+        identity = (event["migration_id"], event["statement_ordinal"], event["object_class"], str(event.get("object_name") or ""))
+        existing = merged_events.get(identity)
+        evidence = {
+            "source_kind": event.get("source_kind"), "source_path": event.get("source_path"),
+            "source_sha256": event.get("source_sha256"), "git_blob_sha1": event.get("git_blob_sha1"),
+            "ast_sha256": event.get("normalized_ast_sha256"),
+        }
+        if existing is None:
+            event["source_evidence"] = [evidence]
+            merged_events[identity] = event
+        else:
+            existing.setdefault("source_evidence", []).append(evidence)
+            if existing.get("normalized_ast_sha256") != event.get("normalized_ast_sha256"):
+                existing["semantic_status"] = "NOT_VERIFIABLE"
+                existing["source_conflict"] = True
+                existing.setdefault("conflicting_ast_sha256", []).append(event.get("normalized_ast_sha256"))
+    events = list(merged_events.values())
 
     object_events: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for event in events:
         name = event.get("object_name")
         if not isinstance(name, str) or not name:
-            key = f"NOT_VERIFIABLE:{event['migration_id']}:{event['statement_ordinal']}"
+            key = "NOT_VERIFIABLE:" + event["migration_id"] + ":" + str(event["statement_ordinal"])
         else:
-            key = f"{event['object_class']}:{name}"
+            key = event["object_class"] + ":" + name
         object_events[key].append(event)
 
     objects = []
@@ -358,73 +443,71 @@ def build_graph(root: Path) -> dict[str, Any]:
         latest = history[-1]
         last_operation = latest["operation"]
         state = "NOT_VERIFIABLE"
-        if latest["semantic_status"] == "AST_PARSED" and last_operation == "CREATE":
+        if latest.get("source_conflict"):
+            state = "SOURCE_CONFLICT_NOT_VERIFIABLE"
+        elif latest["semantic_status"] == "AST_PARSED" and last_operation == "CREATE":
             state = "CREATE_DEFINITION_AST_AVAILABLE"
         elif last_operation == "DROP":
             state = "DROPPED_IN_SOURCE_LINEAGE"
         elif last_operation in {"ALTER", "GRANT_OR_REVOKE", "RENAME", "ALTER_SCHEMA"}:
             state = "EVOLVED_STATE_REQUIRES_SEMANTIC_REDUCER"
         objects.append({
-            "object_key": key,
-            "object_class": latest["object_class"],
-            "object_name": latest.get("object_name"),
-            "event_count": len(history),
+            "object_key": key, "object_class": latest["object_class"],
+            "object_name": latest.get("object_name"), "event_count": len(history),
             "first_migration_id": history[0]["migration_id"],
             "last_migration_id": latest["migration_id"],
-            "latest_operation": last_operation,
-            "expected_state_status": state,
+            "latest_operation": last_operation, "expected_state_status": state,
             "latest_ast_sha256": latest["normalized_ast_sha256"],
-            "expected_definition": latest["normalized_ast"] if state == "CREATE_DEFINITION_AST_AVAILABLE" else None,
+            "expected_definition": latest.get("normalized_ast") if state == "CREATE_DEFINITION_AST_AVAILABLE" else None,
             "migration_lineage": [
                 {
-                    "migration_id": item["migration_id"],
-                    "source_path": item["source_path"],
-                    "source_sha256": item["source_sha256"],
-                    "git_blob_sha1": item["git_blob_sha1"],
-                    "statement_ordinal": item["statement_ordinal"],
-                    "operation": item["operation"],
+                    "migration_id": item["migration_id"], "source_path": item["source_path"],
+                    "source_sha256": item["source_sha256"], "git_blob_sha1": item.get("git_blob_sha1"),
+                    "statement_ordinal": item["statement_ordinal"], "operation": item["operation"],
                     "ast_sha256": item["normalized_ast_sha256"],
-                }
-                for item in history
+                    "source_evidence": item.get("source_evidence", []),
+                } for item in history
             ],
         })
 
     parse_failures = [source for source in sources if source["parse_status"] != "PARSED"]
+    active_sources = [source for source in sources if source.get("source_kind") == "ACTIVE_GIT_MIGRATION_FILE"]
+    history_sources = [source for source in sources if source.get("source_kind") != "ACTIVE_GIT_MIGRATION_FILE"]
     return {
         "format": "moreai.postgresql.expected-object-graph.v1",
         "parser": {"name": "pglast", "postgresql_grammar": "pglast-bundled-server-parser", "authority": "PostgreSQL parser AST"},
-        "source_root": str(root),
-        "source_file_count": len(sources),
-        "parsed_source_file_count": len(sources) - len(parse_failures),
+        "source_root": str(root), "history_source_count": len(history_sources),
+        "active_migration_file_count": len(active_sources),
+        "source_record_count": len(sources), "parsed_source_record_count": len(sources) - len(parse_failures),
         "parse_failure_count": len(parse_failures),
         "statement_count": sum(source["statement_count"] for source in sources),
-        "ddl_event_count": len(events),
-        "object_key_count": len(objects),
-        "sources": sources,
-        "events": events,
-        "objects": objects,
+        "ddl_event_count": len(events), "object_key_count": len(objects),
+        "sources": sources, "events": events, "objects": objects,
         "limitations": [
             "AST parsing proves grammar recognition, not migration execution.",
             "ALTER event folding into complete final definitions is not inferred; affected objects remain NOT_VERIFIABLE until a supported reducer exists.",
             "Function bodies and dynamic SQL are not treated as outer SQL AST; procedural bodies are explicitly marked opaque.",
             "Dependency candidates are AST RangeVar references, not a complete PostgreSQL dependency resolver.",
             "ACL, ownership, extension, policy and role effects require catalog-specific semantic folding before global MATCH can be assigned.",
+            "History path-reference statements have no SQL body and remain NOT_VERIFIABLE.",
         ],
     }
-
 
 def main() -> int:
     cli = argparse.ArgumentParser(description="Build a PostgreSQL AST-backed static expected-object event graph.")
     cli.add_argument("--migrations-dir", required=True, type=Path)
+    cli.add_argument("--history-dir", type=Path, default=None)
     cli.add_argument("--output", required=True, type=Path)
     args = cli.parse_args()
     if not args.migrations_dir.is_dir():
         raise SystemExit("migration_directory_not_found")
-    graph = build_graph(args.migrations_dir.resolve())
+    graph = build_graph(args.migrations_dir.resolve(), args.history_dir.resolve() if args.history_dir else None)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(graph, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
-        "source_file_count": graph["source_file_count"],
+        "active_migration_file_count": graph["active_migration_file_count"],
+        "history_source_count": graph["history_source_count"],
+        "source_record_count": graph["source_record_count"],
         "parsed_source_file_count": graph["parsed_source_file_count"],
         "parse_failure_count": graph["parse_failure_count"],
         "statement_count": graph["statement_count"],
