@@ -420,25 +420,15 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         sources.append(source_record)
     archive_files = sorted(archive_dir.rglob("*.sql"), key=lambda p: p.relative_to(archive_dir).as_posix()) if archive_dir and archive_dir.is_dir() else []
     for path in archive_files:
-        archive_events, archive_record = parse_source(path, archive_dir)
+        archive_file_events, archive_record = parse_source(path, archive_dir)
         archive_record["source_kind"] = "HISTORICAL_GIT_SOURCE_ARCHIVE"
         archive_record["source_path"] = path.relative_to(archive_dir).as_posix()
-        for event in archive_events:
-            event["source_kind"] = "HISTORICAL_GIT_SOURCE_ARCHIVE"
-            event["source_path"] = path.relative_to(archive_dir).as_posix()
-        for event in archive_events:
-            event["historical_archive_only"] = True
-        archive_events_all = archive_events
-        sources.append(archive_record)
-    archived_event_records = []
-    for path in archive_files:
-        archive_file_events, _ = parse_source(path, archive_dir)
         for event in archive_file_events:
             event["source_kind"] = "HISTORICAL_GIT_SOURCE_ARCHIVE"
             event["source_path"] = path.relative_to(archive_dir).as_posix()
             event["historical_archive_only"] = True
-        archived_event_records.extend(archive_file_events)
-    archive_events = archived_event_records
+        archive_events.extend(archive_file_events)
+        sources.append(archive_record)
     history_records = _history_payloads(history_dir) if history_dir and history_dir.is_dir() else []
     if history_records:
         with tempfile.TemporaryDirectory(prefix="moreai-migration-history-") as temp_dir:
