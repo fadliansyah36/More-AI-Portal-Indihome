@@ -44,10 +44,10 @@ def _validate_pinned_source_identity(source_repository: Any, source_commit: Any,
     if repository in BLOCKED_UNLICENSED_SKILL_SOURCES:
         raise PermissionError("skill_source_license_unresolved")
     pinned = PINNED_SKILL_SOURCE_COMMITS.get(repository)
-    if pinned is not None and commit not in pinned:
+    if pinned is None:
+        raise PermissionError("skill_source_repository_not_allowlisted")
+    if commit not in pinned:
         raise PermissionError("skill_source_commit_not_pinned")
-    if repository.startswith("iart-ai/") and pinned is None:
-        raise PermissionError("motion_skill_repository_not_allowlisted")
     if repository == "smixs/visual-skills" and path.strip("/") not in {"image/SKILL.md", "video/SKILL.md"}:
         raise PermissionError("visual_skill_entrypoint_not_allowlisted")
     if repository == "scenario-labs/skills" and not (
