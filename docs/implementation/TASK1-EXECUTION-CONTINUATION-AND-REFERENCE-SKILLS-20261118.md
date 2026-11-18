@@ -228,7 +228,7 @@ The following source integration is already implemented in `main`; it was verifi
 - Motion Skills: adds a production-workflow guard; does not assume Remotion, ffmpeg/ffprobe, fonts, codecs, render workers, external model APIs or credentials are provisioned.
 - Adapter identity is attached to the per-run skill snapshot and resolution audit detail. No new tools, provider credentials, database tables or Agent Runtime were introduced.
 
-Worker trust-boundary correction (commit 0a4f99a906b227d71ea59d0055e1173d5fe11816): the resolver now invokes `_validate_pinned_source_identity` for each owner-scoped package before loading its stored files. This enforces the exact repository/commit/entrypoint allowlist again at execution time, so a privileged or malformed registry row cannot bypass the API import gate. This change is source-only and was not runtime-tested in this run.
+Worker trust-boundary corrections (commits `0a4f99a906b227d71ea59d0055e1173d5fe11816` and `1f096d231292bf83ca84192c2352409e0fda5bfd`): the resolver now invokes `_validate_pinned_source_identity` for each owner-scoped package before loading stored files. The validator requires an exact allowlisted repository and commit and rejects unknown repositories, unpinned commits, unsupported entrypoint paths, and the unlicensed Motion pack. A privileged or malformed registry row therefore cannot widen the API import allowlist. These changes are source-only and were not runtime-tested in this run.
 
 This is a source-level adaptation and security boundary. It is not runtime acceptance; no packages were imported or executed in this continuation.
 
