@@ -59,5 +59,6 @@ SELECT jsonb_build_object(
   'acl_objects',(SELECT coalesce(jsonb_agg(item),'[]'::jsonb) FROM acl_rows),
   'default_acl_objects',(SELECT coalesce(jsonb_agg(item),'[]'::jsonb) FROM default_acl),
   'role_memberships',(SELECT coalesce(jsonb_agg(item),'[]'::jsonb) FROM memberships),
-  'routine_privileges',(SELECT coalesce(jsonb_agg(jsonb_build_object('schema',specific_schema,'specific_name',specific_name,'grantee',grantee,'grantor',grantor,'privilege',privilege_type,'grantable',is_grantable)),'[]'::jsonb) FROM information_schema.routine_privileges WHERE specific_schema !~ '^pg_' AND specific_schema<>'information_schema')
+  'routine_privileges',(SELECT coalesce(jsonb_agg(jsonb_build_object('schema',specific_schema,'specific_name',specific_name,'grantee',grantee,'grantor',grantor,'privilege',privilege_type,'grantable',is_grantable)),'[]'::jsonb) FROM information_schema.routine_privileges WHERE specific_schema !~ '^pg_' AND specific_schema<>'information_schema'),
+  'roles',(SELECT coalesce(jsonb_agg(jsonb_build_object('object_key','ROLE:'||rolname,'object_class','ROLE','name',rolname,'definition',jsonb_build_object('superuser',rolsuper,'inherit',rolinherit,'create_role',rolcreaterole,'create_db',rolcreatedb,'can_login',rolcanlogin,'replication',rolreplication,'bypass_rls',rolbypassrls,'connection_limit',rolconnlimit)) ORDER BY rolname),'[]'::jsonb) FROM pg_roles)
 ) AS observed_security_catalog;
