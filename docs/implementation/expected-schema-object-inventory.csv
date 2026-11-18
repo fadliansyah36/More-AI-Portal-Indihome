@@ -1,0 +1,17 @@
+object_category,observed_scope,observed_count,expected_definition_source,baseline_classification,verification_status,notes
+schemas,9 schemas total,9,none complete,BASELINE_UNVERIFIABLE,NOT_VERIFIABLE,public is app-owned; managed schemas are platform-owned
+base_tables,public,94,applied migration sources incomplete,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,Table names/aggregate count known; not full expected definitions
+columns,public tables/views,922,applied migration sources incomplete,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,Expected type/default/nullability/generated definitions not fully mapped
+constraints,public,562,partial migration evidence,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,224 CHECK; 185 FK; 94 PK; 59 UNIQUE; 0 EXCLUSION
+indexes,public,245,partial migration evidence,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,163 unique; 28 partial; 2 expression; 245 valid/ready
+functions_procedures,public,98,partial migration evidence,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,56 SECURITY DEFINER; expected overload/signatures/body not fully mapped
+triggers,public,5,partial migration evidence,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,Expected trigger bodies/timing/order not fully mapped
+views,public,1,partial migration evidence,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,learning_path_progress_summary; expected view SQL not reconstructed
+materialized_views,public,0,none,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,Observed absence does not prove intended absence
+sequences,public,0,none,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,Observed absence does not prove intended absence
+enum_domain_types,public,0,none,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,12 platform enums in auth/realtime/storage
+rls_policies,public,95,partial migration evidence,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,44 permissive deny; 37 restrictive deny; 14 owner/member scoped
+rls_enabled_forced,public base tables,94 enabled / 0 forced,partial migration evidence,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,Expected enabled/forced status not fully sourced
+grants_ownership,public,postgres 665 grants; service_role 653 grants,partial migration evidence,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,No full expected role/grant/owner baseline
+extensions,database,7,platform catalog only,BASELINE_UNVERIFIABLE,OBSERVED_ONLY,Versions observed in Task1 inventory; expected extension version policy unavailable
+dependencies,public/platform,not fully counted,partial migration evidence,BASELINE_UNVERIFIABLE,NOT_VERIFIABLE,Complete object dependency graph not reconstructed
