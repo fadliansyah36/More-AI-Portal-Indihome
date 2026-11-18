@@ -172,9 +172,9 @@ The evidence set now includes:
 - Live catalog definitions and the observed object fingerprints above.
 - The Master PRD v1.2 Draft and repository engineering instructions.
 
-**No single immutable, independently trusted expected-schema snapshot is present.** The PRD is not DDL-complete. The current catalog describes observed state, not expected state. Migration history has no native checksum and includes three path-reference statements. Historical SQL archive content is preserved but cannot establish the deployed byte stream by itself.
+**A source-traceable static expected-object event baseline has now been created** at `TASK1-STATIC-EXPECTED-SCHEMA-BASELINE-20261118.md` and `TASK1-STATIC-EXPECTED-OBJECT-BASELINE-20261118.csv`. It is derived from 513 DDL candidates across 106 history versions and references archived SQL statement hashes, migration source paths and Git blob identities. It is trusted as a reproducible source-lineage index, but is explicitly **EXECUTION_UNVALIDATED**: it is not a replayed schema dump and does not independently attest live deployment. The PRD is not DDL-complete; the live catalog remains the observed side only. Migration history has no native checksum and includes three path-reference statements.
 
-Accordingly, a deterministic expected schema can be reconstructed as a *migration-lineage/source baseline*, but a full expected-object graph and semantic expected-vs-observed result cannot be certified without either:
+Accordingly, the deterministic migration-lineage/source baseline is now committed. A full normalized expected-object graph and global semantic expected-vs-observed result still cannot be certified without either:
 1. an immutable, known-good, schema-only dump with environment identity, capture time and hash; or
 2. explicit permission to replay the complete pinned lineage offline in an isolated disposable database. The user has now explicitly chosen to skip this replay; this option is waived for the current continuation.
 
@@ -252,8 +252,21 @@ The customer Skill Registry package count was previously observed as zero in the
 - Migration history/source archive and mismatch mapping: **EVIDENCE RECOVERED; execution provenance PARTIAL**.
 - Read-only observed catalog inventory: **CAPTURED**.
 - Trusted expected schema baseline: **STATIC RECONSTRUCTION ONLY / UNVALIDATED — OFFLINE REPLAY AND TESTING WAIVED BY USER**.
-- Full object-level reconciliation: **PARTIAL — expected definitions unavailable**.
+- Full object-level reconciliation: **PARTIAL — 513 DDL candidate events mapped; global semantic parity NOT_VERIFIABLE; scoped comparisons retained**.
 - Visual/Scenario/Motion source catalog and unified registry/resolver path: **IMPLEMENTED IN SOURCE**.
 - Reference skill tenant import, publication and runtime activation: **NOT EXECUTED — production writes prohibited**.
 
 **Overall Task 1: REVIEW_REQUIRED / NOT COMPLETE.** Do not advance Phase 05 or claim global schema parity. Continue with static source-derived object lineage, identify every deterministically provable expected definition, classify unresolved objects/ACLs/dependencies as NOT_VERIFIABLE, and complete the migration execution provenance map where evidence exists. Do not claim replay validation or global schema parity. Reference skills can be imported and reviewed only in an explicitly authorized non-production or production write context; do not activate unsupported Scenario/Motion providers.
+
+
+## 8. Static schema reconstruction continuation — 2026-11-18
+
+- Read and followed root `AGENTS.md`; Master PRD file path `public/assets/aistudio/MoreAI_Master_PRD_v1.0_ID_2f5fa0c2.md` declares Version 1.2 Draft. Existing PRD and phase tracker remain the product authority; no UI or runtime source was modified for this schema task.
+- Committed `TASK1-STATIC-EXPECTED-SCHEMA-BASELINE-20261118.md` and `TASK1-STATIC-EXPECTED-OBJECT-BASELINE-20261118.csv`. The event baseline contains 513 lexical DDL candidates across 106 of 116 applied history versions, classified into schema/table/table evolution/index/RLS/function/trigger/view/extension classes. Each row retains migration version, statement ordinal, SHA-256, historical source reference, current source path/blob where available, expected effect and observed status.
+- Committed `TASK1-MIGRATION-SOURCE-INVENTORY-20261118.csv`: 121 active SQL source files, 34 historical JSON archive records and 7 preserved malformed/duplicate original SQL source files. 116 active migration IDs have history records; five corrected browser migrations are source-only/unapplied. Each row records Git blob SHA-1, size and provenance classification.
+- Current read-only all-schema observed snapshot is linked from `TASK1-OBSERVED-CATALOG-FINGERPRINTS-20261118.csv`: 27 schemas, 138 ordinary/partitioned tables, 1,400 columns, 709 constraints, 396 indexes, 328 functions, 19 triggers, 99 policies, 4 sequences, 320 pg_type rows, 7 extensions, 24 role memberships, 27 default ACL entries and 5,456 dependency rows.
+- Object-category semantic reconciliation is documented in the static baseline report. Scoped verified matches remain limited to the 12-row register (7 MATCH, 3 EXPECTED_DIFFERENCE, 2 NOT_VERIFIABLE); all unscoped/global object categories remain NOT_VERIFIABLE. The 513 DDL rows are migration events, not unique final object definitions, and regex extraction is not a PostgreSQL AST.
+- Corrected the stale browser CHECK analysis and malformed `20261116280000` report to reflect implemented source corrections and the new active path `20261116162800`. Original malformed bytes remain archived; five corrected browser sources remain unapplied. The live eight-value CHECK is preserved and no live DB mutation occurred.
+- No tests, replay, migration apply, production write, staging or deployment were run, consistent with the user's explicit waiver and scope.
+
+**Task 1 status: IMPLEMENTATION EVIDENCE EXPANDED / REVIEW_REQUIRED / NOT COMPLETE.** Static source baseline and migration inventory are committed; global expected-vs-observed semantic parity and exact historical execution receipts remain NOT_VERIFIABLE.
