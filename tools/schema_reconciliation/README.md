@@ -18,7 +18,7 @@ pip install -e .
 python schema_graph.py --migrations-dir ../../supabase/migrations --output ../../docs/implementation/generated/expected-object-graph.json
 ```
 
-The generated JSON contains exact source SHA-256, Git blob SHA-1, migration ID, statement ordinal, AST node type, normalized AST hash and event lineage. The parser marks objects whose last event is ALTER/GRANT/RENAME as requiring a semantic reducer. Function/procedural bodies are marked opaque unless a dedicated body parser is added. It does not turn syntax recognition into execution proof.
+The reconciliation CLI consumes an expected graph and a read-only catalog JSON. It emits one row per expected/observed object with MATCH, MISSING, UNEXPECTED, DEFINITION_MISMATCH, SECURITY_MISMATCH, DEPENDENCY_MISMATCH or NOT_VERIFIABLE. It only emits MATCH when normalized semantic definitions are supplied on both sides. For incomplete source coverage, unmatched observed objects remain NOT_VERIFIABLE rather than UNEXPECTED.\n\nThe generated JSON contains exact source SHA-256, Git blob SHA-1, migration ID, statement ordinal, AST node type, normalized AST hash and event lineage. The parser marks objects whose last event is ALTER/GRANT/RENAME as requiring a semantic reducer. Function/procedural bodies are marked opaque unless a dedicated body parser is added. It does not turn syntax recognition into execution proof.
 
 ## Classification contract
 
