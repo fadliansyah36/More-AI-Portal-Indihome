@@ -370,6 +370,7 @@ def parse_history_record(record: dict[str, Any], temp_root: Path) -> tuple[list[
     if not isinstance(statements, list):
         statements = [statements] if isinstance(statements, str) else []
     events: list[dict[str, Any]] = []
+    archive_events: list[dict[str, Any]] = []
     sources: list[dict[str, Any]] = []
     ordinal_offset = 0
     for statement_index, statement in enumerate(statements, start=1):
@@ -425,8 +426,19 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         for event in archive_events:
             event["source_kind"] = "HISTORICAL_GIT_SOURCE_ARCHIVE"
             event["source_path"] = path.relative_to(archive_dir).as_posix()
-        events.extend(archive_events)
+        for event in archive_events:
+            event["historical_archive_only"] = True
+        archive_events_all = archive_events
         sources.append(archive_record)
+    archived_event_records = []
+    for path in archive_files:
+        archive_file_events, _ = parse_source(path, archive_dir)
+        for event in archive_file_events:
+            event["source_kind"] = "HISTORICAL_GIT_SOURCE_ARCHIVE"
+            event["source_path"] = path.relative_to(archive_dir).as_posix()
+            event["historical_archive_only"] = True
+        archived_event_records.extend(archive_file_events)
+    archive_events = archived_event_records
     history_records = _history_payloads(history_dir) if history_dir and history_dir.is_dir() else []
     if history_records:
         with tempfile.TemporaryDirectory(prefix="moreai-migration-history-") as temp_dir:
@@ -530,7 +542,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         "parse_failure_count": len(parse_failures),
         "statement_count": sum(source["statement_count"] for source in sources),
         "ddl_event_count": len(events), "object_key_count": len(objects),
-        "sources": sources, "events": events, "objects": objects,
+        "archive_ddl_event_count": len(archive_events),
+        "sources": sources, "events": events, "historical_archive_events": archive_events, "objects": objects,
         "limitations": [
             "AST parsing proves grammar recognition, not migration execution.",
             "ALTER event folding into complete final definitions is not inferred; affected objects remain NOT_VERIFIABLE until a supported reducer exists.",
