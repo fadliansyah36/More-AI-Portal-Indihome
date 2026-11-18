@@ -350,3 +350,8 @@ A read-only comparison between current `main` and `supabase_migrations.schema_mi
 - Matrix: `MOREAI_SUPABASE_MIGRATION_PARITY_20261118.csv` (116 applied + 6 repo-only rows); report: `MOREAI_SUPABASE_MIGRATION_PARITY_AUDIT_20261118.md`.
 - Phase 05 is now **REVIEW_REQUIRED**, not COMPLETE, until statement-level reconciliation, missing historical source recovery and repo-only migration intent review are complete. No db push, repair, migration or DB write was executed.
 - Do not run `supabase db push` or apply the six repo-only files before the migration baseline is reconciled and product-owner approval is recorded.
+
+
+### Migration history recovery evidence
+
+The 32 applied migration history rows whose names have no current repo source each contain one stored SQL statement in `schema_migrations.statements`; their `rollback` arrays are NULL. This provides potential read-only recovery evidence, but the statements have not been exported or replayed. The migration table has no checksum column. Any recovery must inspect for embedded credentials/environment-specific values, compare against surviving source/commits, calculate hashes and store recovered SQL outside `supabase/migrations/` as archive-only evidence. Do not replay these statements.
