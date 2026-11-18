@@ -275,7 +275,7 @@ SELECT jsonb_build_object(
       SELECT item FROM sequences UNION ALL
       SELECT item FROM types UNION ALL
       SELECT item FROM extensions UNION ALL
-      SELECT item FROM acl_entries UNION ALL
+      SELECT item FROM acl_entries
     ) all_objects
   ),
   'dependencies', (SELECT coalesce(items, '[]'::jsonb) FROM dependencies)
