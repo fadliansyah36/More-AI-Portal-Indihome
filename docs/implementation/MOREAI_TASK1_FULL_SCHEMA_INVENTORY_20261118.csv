@@ -19,6 +19,30 @@
 "CLIENT TABLE GRANTS","public","0 observed","information_schema.role_table_grants returned only postgres and service_role","OBSERVED"
 "GRANTS","public","653 service_role rows; 665 postgres rows","information_schema.role_table_grants aggregate","OBSERVED"
 "MIGRATION HISTORY","supabase_migrations.schema_migrations","116 applied rows","latest 20261116113852; no native checksum column","OBSERVED"
-"REPO MIGRATIONS","supabase/migrations","85 SQL files","GitHub main contents inventory","OBSERVED"
-"EXPECTED SCHEMA BASELINE","all public objects","not available","No complete trusted schema dump or migration replay is authorized; 32 historical source gaps and 23 source mismatches prevent deterministic expected-state reconstruction","NOT_VERIFIABLE"
-"LIVE VS REPO FULL DEFINITION DIFF","all public objects","not completed","Observed catalog inventory is not proof of expected-vs-observed parity","NOT_VERIFIABLE"
+"REPO MIGRATIONS","supabase/migrations","83 active SQL files after source correction and alias archival","GitHub main contents inventory 2026-11-18","OBSERVED"
+"EXPECTED SCHEMA BASELINE","all schemas and objects","not available","116 history rows; 32 historical SQL statements archived from history; 23 source/history mismatch pairs mapped; 15084819 source identity recovered; no immutable known-good schema dump or authorized offline replay; history lacks native checksum","NOT_VERIFIABLE"
+"LIVE VS REPO FULL DEFINITION DIFF","all schemas and objects","not completed","All-schema catalog snapshot and 513 regex-extracted migration DDL candidates captured; no trusted expected object graph or semantic replay","NOT_VERIFIABLE"
+ALL_SCHEMA,non-system schemas,27,pg_namespace excluding system schemas,OBSERVED
+RELATION,ordinary tables,137,pg_class relkind r across all non-system schemas,OBSERVED
+RELATION,partitioned tables,1,pg_class relkind p across all non-system schemas,OBSERVED
+VIEW,all non-system schemas,4,pg_class relkind v,OBSERVED
+MATERIALIZED_VIEW,all non-system schemas,0,pg_class relkind m,OBSERVED
+COLUMN,all non-system schemas,1400,information_schema.columns,OBSERVED
+CONSTRAINT,all non-system schemas,709,pg_constraint / pg_get_constraintdef,OBSERVED
+INDEX,all non-system schemas,396,pg_indexes; 394 ordinary and 2 partitioned,OBSERVED
+FUNCTION/PROCEDURE,all non-system schemas,328 functions; 0 procedures,pg_proc prokind f/p,OBSERVED
+TRIGGER,all non-system schemas,19,non-internal pg_trigger,OBSERVED
+RLS POLICY,all non-system schemas,99,pg_policies,OBSERVED
+RLS ENABLED,all base/partitioned tables,123,pg_class relrowsecurity=true,OBSERVED
+RLS FORCED,all base/partitioned tables,0,pg_class relforcerowsecurity=true,OBSERVED
+SEQUENCE,all non-system schemas,4,pg_class relkind S; sequence parameters fingerprinted,OBSERVED
+TYPE,all non-system schemas,320 pg_type rows,pg_type metadata; includes generated row types,OBSERVED
+ENUM LABELS,all non-system schemas,47,pg_enum,OBSERVED
+DOMAIN CONSTRAINTS,all non-system schemas,2,pg_constraint contypid,OBSERVED
+TABLE PRIVILEGES,all non-system schemas,1704,information_schema.table_privileges,OBSERVED
+ROUTINE PRIVILEGES,all non-system schemas,702,information_schema.routine_privileges,OBSERVED
+ROLE MEMBERSHIPS,database,24,pg_auth_members,OBSERVED
+DEFAULT ACL,database,27,pg_default_acl,OBSERVED
+DEPENDENCIES,all non-system objects,5456 non-internal rows,pg_depend excluding internal/extension membership,OBSERVED
+MIGRATION DDL CANDIDATES,116 history versions,513 rows across 106 versions,MOREAI-MIGRATION-TO-OBJECT-DDL-MAP-20261118.csv; regex-extracted from recorded statement text; not AST/replay,PARTIAL
+ACTIVE BROWSER MIGRATION SOURCES,supabase/migrations,5 corrected active paths; original bytes archived,TASK1-EXECUTION-CONTINUATION-AND-REFERENCE-SKILLS-20261118.md,SOURCE_IMPLEMENTED_NOT_APPLIED
