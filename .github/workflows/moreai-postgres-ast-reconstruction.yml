@@ -7,6 +7,8 @@ on:
       - "tools/schema_reconciliation/**"
       - "supabase/migrations/**"
       - "docs/implementation/migration-history-sql-source-snapshot-20261118/**"
+      - "docs/implementation/observed-catalog-snapshot-20261118.json"
+      - "docs/implementation/observed-security-catalog-snapshot-20261118.json"
   workflow_dispatch:
 
 permissions:
@@ -40,6 +42,14 @@ jobs:
             --history-dir docs/implementation/migration-history-sql-source-snapshot-20261118 \
             --output artifacts/expected-object-graph.json
 
+      - name: Reconcile expected graph against read-only catalog snapshots
+        run: |
+          python tools/schema_reconciliation/reconcile.py \
+            --expected artifacts/expected-object-graph.json \
+            --observed docs/implementation/observed-catalog-snapshot-20261118.json \
+            --security docs/implementation/observed-security-catalog-snapshot-20261118.json \
+            --output artifacts/semantic-reconciliation.json
+
       - name: Write parse coverage summary
         if: always()
         run: |
@@ -52,7 +62,8 @@ jobs:
           graph = json.loads(p.read_text())
           summary = {
               "active_migration_file_count": graph["active_migration_file_count"],
-              "history_source_count": graph["history_source_count"],
+              "history_migration_record_count": graph["history_migration_record_count"],
+              "history_statement_source_count": graph["history_statement_source_count"],
               "source_record_count": graph["source_record_count"],
               "parsed_source_record_count": graph["parsed_source_record_count"],
               "parse_failure_count": graph["parse_failure_count"],
@@ -60,6 +71,12 @@ jobs:
               "ddl_event_count": graph["ddl_event_count"],
               "object_key_count": graph["object_key_count"],
           }
+          reconciliation_path = Path("artifacts/semantic-reconciliation.json")
+          if reconciliation_path.exists():
+              reconciliation = json.loads(reconciliation_path.read_text())
+              summary["reconciled_object_count"] = reconciliation["object_count"]
+              summary["classification_counts"] = reconciliation["classification_counts"]
+              summary["global_no_drift_claim"] = reconciliation["global_no_drift_claim"]
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as f:
               f.write("## PostgreSQL AST reconstruction\n\n")
               for key, value in summary.items():
@@ -72,6 +89,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: moreai-postgresql-ast-graph-${{ github.sha }}
-          path: artifacts/expected-object-graph.json
+          path: artifacts/*.json
           if-no-files-found: error
           retention-days: 30
