@@ -1,0 +1,7 @@
+finding_id,object,classification,risk,related_migration,proposed_resolution,approval_requirement,current_decision
+SD-001,moreai_browser_session_events_event_type_check,MATCH,LOW,16083451/16083458,None for current live object; retain lifecycle values,No,Scoped match
+SD-002,moreai_browser_sessions retention columns,MATCH,LOW,16083458,None for compared type/nullability,No,Scoped match only
+SD-003,moreai_customer_agent_configs.preferred_model_id,MATCH_WITH_LIMITATIONS,LOW,15084819,Complete FK/index/function definition comparison after trusted baseline,No schema change,Partial
+SD-004,moreai_browser_takeover_grants/commands/preview tables,EXPECTED_DIFFERENCE,MEDIUM-HIGH,16250000/16280000/16300000,Do not apply until source and ID decisions approved,Owner approval,Unapplied source difference not live drift
+SD-005,public full schema object set,NOT_VERIFIABLE,HIGH,All applied migrations,Obtain immutable expected baseline or approved offline replay,Owner approval,Blocked
+SD-006,public RLS/grants/ownership,NOT_VERIFIABLE,HIGH,All security migrations,Obtain expected security baseline and compare object-by-object,Owner approval,Blocked
