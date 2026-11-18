@@ -240,21 +240,10 @@ acl_entries AS (
   JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = x.table_schema
   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
 ),
-dependencies AS (
-  SELECT jsonb_agg(jsonb_build_object(
-    'dependent_class', d.classid::regclass::text,
-    'dependent_object', d.objid::text,
-    'dependent_subobject', d.objsubid,
-    'dependent_description', pg_describe_object(d.classid, d.objid, d.objsubid),
-    'referenced_class', d.refclassid::regclass::text,
-    'referenced_object', d.refobjid::text,
-    'referenced_subobject', d.refobjsubid,
-    'referenced_description', pg_describe_object(d.refclassid, d.refobjid, d.refobjsubid),
-    'dependency_type', d.deptype
-  )) AS items
-  FROM pg_depend d
-  WHERE d.deptype <> 'i' AND d.deptype <> 'e'
+dependency_count AS (
+  SELECT count(*)::integer AS count FROM pg_depend d WHERE d.deptype <> 'i' AND d.deptype <> 'e'
 )
+
 SELECT jsonb_build_object(
   'format', 'moreai.postgresql.observed-catalog.v1',
   'applied_migration_ids', (SELECT coalesce(jsonb_agg(version ORDER BY version), '[]'::jsonb) FROM supabase_migrations.schema_migrations),
@@ -278,5 +267,5 @@ SELECT jsonb_build_object(
       SELECT item FROM acl_entries
     ) all_objects
   ),
-  'dependencies', (SELECT coalesce(items, '[]'::jsonb) FROM dependencies)
+  'dependency_count', (SELECT count FROM dependency_count)
 ) AS observed_catalog;
