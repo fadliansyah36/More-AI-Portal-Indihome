@@ -129,29 +129,44 @@ def _first_rangevar(value: Any) -> str | None:
 def _object_names(tag: str, payload: Any) -> list[str]:
     if not isinstance(payload, dict):
         return []
-    for key in ("relation", "view", "sequence", "typevar", "server", "publication"):
-        if key in payload:
-            ranges = _rangevars(payload[key])
-            if ranges:
-                return ranges
-    for key in ("funcname", "schemaname", "extname", "policy_name", "idxname", "trigname", "rolename"):
-        if key in payload:
-            values = _strings(payload[key])
-            if values:
-                return [".".join(values)]
+    if tag in {"IndexStmt", "CreateTrigStmt", "CreatePolicyStmt"}:
+        relation = _first_rangevar(payload.get("relation"))
+        field = {"IndexStmt": "idxname", "CreateTrigStmt": "trigname", "CreatePolicyStmt": "policy_name"}[tag]
+        names = _strings(payload.get(field))
+        if relation and names:
+            return [f"{relation}.{'.'.join(names)}"]
+        return names[:1]
+    if tag == "CreateFunctionStmt":
+        names = _strings(payload.get("funcname"))
+        if not names:
+            return []
+        parameters = payload.get("parameters") or []
+        signature = hashlib.sha256(json.dumps(_normalize(parameters), sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
+        return [f"{'.'.join(names)}#args:{signature}"]
+    if tag in {"CreateEnumStmt", "CreateDomainStmt", "CompositeTypeStmt", "CreateRangeStmt", "AlterTypeStmt", "AlterEnumStmt"}:
+        values = _strings(payload.get("typeName") or payload.get("typevar"))
+        if values:
+            return [".".join(values)]
     if tag == "DropStmt":
-        objects = payload.get("objects")
-        values = _strings(objects)
+        values = _strings(payload.get("objects"))
         return [".".join(values)] if values else []
     if tag in {"GrantStmt", "GrantRoleStmt", "AlterDefaultPrivilegesStmt"}:
         values = _strings(payload.get("objects"))
         return [".".join(values)] if values else [str(payload.get("objtype") or tag)]
     if tag == "CreateTableAsStmt":
         return _rangevars(payload.get("into") or payload)
+    for key in ("relation", "view", "sequence", "typevar", "server", "publication"):
+        if key in payload:
+            ranges = _rangevars(payload[key])
+            if ranges:
+                return ranges
+    for key in ("funcname", "schemaname", "extname", "rolename"):
+        if key in payload:
+            values = _strings(payload[key])
+            if values:
+                return [".".join(values)]
     ranges = _rangevars(payload)
     return ranges[:1]
-
-
 def _classify_statement(stmt: Any) -> tuple[str, Any] | None:
     tag, payload = _node_tag(stmt)
     if tag in DDL_TAGS:
@@ -306,6 +321,7 @@ def build_graph(root: Path) -> dict[str, Any]:
             "latest_operation": last_operation,
             "expected_state_status": state,
             "latest_ast_sha256": latest["normalized_ast_sha256"],
+            "expected_definition": latest["normalized_ast"] if state == "CREATE_DEFINITION_AST_AVAILABLE" else None,
             "migration_lineage": [
                 {
                     "migration_id": item["migration_id"],
