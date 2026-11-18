@@ -300,6 +300,7 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
             event_status = "NOT_VERIFIABLE"
         events.append({
             "migration_id": migration_id,
+            "source_kind": "ACTIVE_GIT_MIGRATION_FILE",
             "source_path": relative,
             "source_sha256": source_sha256,
             "git_blob_sha1": git_blob_sha1,
