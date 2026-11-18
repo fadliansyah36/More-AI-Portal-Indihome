@@ -382,9 +382,39 @@ def _history_payloads(history_dir: Path) -> list[dict[str, Any]]:
     return records
 
 
+def _git_blob_sha1(raw: bytes) -> str:
+    header = f"blob {len(raw)}" + chr(0)
+    return hashlib.sha1(header.encode("ascii") + raw).hexdigest()
+
+
+def _history_archive_payloads(history_archive_dir: Path | None) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    if history_archive_dir is None or not history_archive_dir.is_dir():
+        return records
+    for path in sorted(history_archive_dir.glob("*.json"), key=lambda p: p.name):
+        raw = path.read_bytes()
+        payload = json.loads(raw.decode("utf-8"))
+        source = payload.get("source") if isinstance(payload, dict) else None
+        if not isinstance(source, dict) or not isinstance(source.get("version"), str):
+            continue
+        statements = payload.get("statements")
+        if not isinstance(statements, list):
+            statements = [statements] if isinstance(statements, str) else []
+        records.append({
+            "version": source["version"], "name": source.get("name") or path.stem,
+            "statements": statements, "_source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+            "_source_path": path.relative_to(history_archive_dir).as_posix(),
+            "_git_blob_sha1": _git_blob_sha1(raw),
+        })
+    return records
+
+
 def parse_history_record(record: dict[str, Any], temp_root: Path, hash_manifest: dict[str, list[str]] | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     version = str(record.get("version") or "UNKNOWN")
     name = str(record.get("name") or "unnamed")
+    record_source_kind = str(record.get("_source_kind") or "SUPABASE_HISTORY_STATEMENT")
+    record_source_path = record.get("_source_path")
+    record_git_blob_sha1 = record.get("_git_blob_sha1")
     statements = record.get("statements")
     if not isinstance(statements, list):
         statements = [statements] if isinstance(statements, str) else []
@@ -399,13 +429,14 @@ def parse_history_record(record: dict[str, Any], temp_root: Path, hash_manifest:
         expected_hashes = (hash_manifest or {}).get(version, [])
         expected_hash = expected_hashes[statement_index - 1] if statement_index - 1 < len(expected_hashes) else None
         hash_status = "MATCH" if expected_hash == source_sha256 else ("MISMATCH" if expected_hash else "NOT_VERIFIABLE")
-        relative = "supabase_migrations.schema_migrations/" + version + "/" + name + "#statement:" + str(statement_index)
+        relative = (str(record_source_path) if record_source_path else "supabase_migrations.schema_migrations/" + version + "/" + name) + "#statement:" + str(statement_index)
         if re.match(r"^supabase/migrations/[A-Za-z0-9_./-]+\.sql$", statement.strip()):
             sources.append({
                 "migration_id": version, "source_path": relative,
                 "source_sha256": source_sha256, "git_blob_sha1": None,
                 "byte_size": len(source_bytes), "parse_status": "NOT_VERIFIABLE",
                 "source_kind": "HISTORY_PATH_REFERENCE", "history_reference": statement.strip(),
+                "git_blob_sha1": record_git_blob_sha1,
                 "history_statement_hash_status": hash_status, "history_statement_expected_sha256": expected_hash,
                 "statement_count": 0, "ddl_event_count": 0,
             })
@@ -417,8 +448,8 @@ def parse_history_record(record: dict[str, Any], temp_root: Path, hash_manifest:
         parsed_count = source_record.get("statement_count", 0)
         for event in parsed_events:
             event["source_path"] = relative
-            event["source_kind"] = "SUPABASE_HISTORY_STATEMENT"
-            event["git_blob_sha1"] = None
+            event["source_kind"] = record_source_kind
+            event["git_blob_sha1"] = record_git_blob_sha1
             event["history_statement_index"] = statement_index
             event["history_statement_hash_status"] = hash_status
             event["history_statement_expected_sha256"] = expected_hash
@@ -427,8 +458,8 @@ def parse_history_record(record: dict[str, Any], temp_root: Path, hash_manifest:
             event["statement_ordinal"] = int(event.get("statement_ordinal", 0)) + ordinal_offset
             events.append(event)
         source_record["source_path"] = relative
-        source_record["source_kind"] = "SUPABASE_HISTORY_STATEMENT"
-        source_record["git_blob_sha1"] = None
+        source_record["source_kind"] = record_source_kind
+        source_record["git_blob_sha1"] = record_git_blob_sha1
         source_record["history_statement_index"] = statement_index
         source_record["history_statement_hash_status"] = hash_status
         source_record["history_statement_expected_sha256"] = expected_hash
@@ -437,7 +468,7 @@ def parse_history_record(record: dict[str, Any], temp_root: Path, hash_manifest:
     return events, sources
 
 
-def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path | None = None, history_hash_manifest_path: Path | None = None) -> dict[str, Any]:
+def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path | None = None, history_hash_manifest_path: Path | None = None, history_archive_dir: Path | None = None) -> dict[str, Any]:
     files = sorted(root.rglob("*.sql"), key=lambda p: p.relative_to(root).as_posix())
     events: list[dict[str, Any]] = []
     archive_events: list[dict[str, Any]] = []
@@ -458,7 +489,9 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             event["historical_archive_only"] = True
         archive_events.extend(archive_file_events)
         sources.append(archive_record)
-    history_records = _history_payloads(history_dir) if history_dir and history_dir.is_dir() else []
+    history_snapshot_records = _history_payloads(history_dir) if history_dir and history_dir.is_dir() else []
+    history_archive_records = _history_archive_payloads(history_archive_dir)
+    history_records = history_snapshot_records + history_archive_records
     hash_manifest: dict[str, list[str]] = {}
     if history_hash_manifest_path and history_hash_manifest_path.is_file():
         hash_payload = json.loads(history_hash_manifest_path.read_text(encoding="utf-8"))
@@ -540,8 +573,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
     parse_failures = [source for source in sources if source["parse_status"] != "PARSED"]
     active_sources = [source for source in sources if source.get("source_kind") == "ACTIVE_GIT_MIGRATION_FILE"]
     archive_sources = [source for source in sources if source.get("source_kind") == "HISTORICAL_GIT_SOURCE_ARCHIVE"]
-    history_sources = [source for source in sources if source.get("source_kind") in {"SUPABASE_HISTORY_STATEMENT", "HISTORY_PATH_REFERENCE"}]
-    history_ids = {str(record.get("version")) for record in history_records}
+    history_sources = [source for source in sources if source.get("source_kind") in {"SUPABASE_HISTORY_STATEMENT", "HISTORY_PATH_REFERENCE", "HISTORICAL_SQL_ARCHIVE_JSON"}]
+    history_ids = {str(record.get("version")) for record in history_snapshot_records}
     for source in sources:
         if source.get("source_kind") == "ACTIVE_GIT_MIGRATION_FILE":
             source["history_record_status"] = "HISTORY_RECORDED" if str(source.get("migration_id")) in history_ids else "HISTORY_ABSENT"
@@ -549,6 +582,10 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         elif source.get("source_kind") in {"SUPABASE_HISTORY_STATEMENT", "HISTORY_PATH_REFERENCE"}:
             source["history_record_status"] = "HISTORY_RECORDED"
             source["execution_evidence_status"] = "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT"
+        elif source.get("source_kind") == "HISTORICAL_SQL_ARCHIVE_JSON":
+            confirmed = str(source.get("migration_id")) in history_ids
+            source["history_record_status"] = "HISTORY_RECORD_CONFIRMED" if confirmed else "ARCHIVE_ASSERTION_ONLY"
+            source["execution_evidence_status"] = "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT" if confirmed else "SOURCE_ARCHIVE_ONLY"
         else:
             source["history_record_status"] = "HISTORICAL_SOURCE_NO_CURRENT_HISTORY_ROW_ASSERTION"
             source["execution_evidence_status"] = "SOURCE_EXISTENCE_ONLY"
@@ -558,7 +595,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         "execution_provenance_status": "EXECUTION_PROVENANCE_UNVERIFIABLE",
         "execution_provenance_reason": "Migration history rows and observed catalog are not independent exact-byte deployment receipts.",
         "source_root": str(root), "archive_source_file_count": len(archive_sources),
-        "history_migration_record_count": len(history_records),
+        "history_migration_record_count": len(history_snapshot_records),
+        "history_archive_record_count": len(history_archive_records),
         "history_hash_manifest_migration_count": len(hash_manifest),
         "history_statement_hash_mismatch_count": sum(1 for source in history_sources if source.get("history_statement_hash_status") == "MISMATCH"),
         "history_statement_hash_not_verifiable_count": sum(1 for source in history_sources if source.get("history_statement_hash_status") == "NOT_VERIFIABLE"),
@@ -586,16 +624,18 @@ def main() -> int:
     cli.add_argument("--history-dir", type=Path, default=None)
     cli.add_argument("--archive-dir", type=Path, default=None)
     cli.add_argument("--history-hash-manifest", type=Path, default=None)
+    cli.add_argument("--history-archive-dir", type=Path, default=None)
     cli.add_argument("--output", required=True, type=Path)
     args = cli.parse_args()
     if not args.migrations_dir.is_dir():
         raise SystemExit("migration_directory_not_found")
-    graph = build_graph(args.migrations_dir.resolve(), args.history_dir.resolve() if args.history_dir else None, args.archive_dir.resolve() if args.archive_dir else None, args.history_hash_manifest.resolve() if args.history_hash_manifest else None)
+    graph = build_graph(args.migrations_dir.resolve(), args.history_dir.resolve() if args.history_dir else None, args.archive_dir.resolve() if args.archive_dir else None, args.history_hash_manifest.resolve() if args.history_hash_manifest else None, args.history_archive_dir.resolve() if args.history_archive_dir else None)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(graph, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
         "active_migration_file_count": graph["active_migration_file_count"],
         "history_migration_record_count": graph["history_migration_record_count"],
+        "history_archive_record_count": graph["history_archive_record_count"],
         "history_hash_manifest_migration_count": graph["history_hash_manifest_migration_count"],
         "history_statement_hash_mismatch_count": graph["history_statement_hash_mismatch_count"],
         "history_statement_hash_not_verifiable_count": graph["history_statement_hash_not_verifiable_count"],
