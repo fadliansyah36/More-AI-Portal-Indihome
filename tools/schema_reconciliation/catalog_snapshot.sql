@@ -243,7 +243,7 @@ acl_entries AS (
     'security_fingerprint', md5(a.grantee::text || ':' || a.grantor::text || ':' || a.privilege_type || ':' || a.is_grantable)
   )
   FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-  CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault(CASE WHEN c.relkind = 'S' THEN 'S'::\"char\" ELSE 'r'::\"char\" END, c.relowner))) a
+  CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault(CASE WHEN c.relkind = 'S' THEN 'S'::"char" ELSE 'r'::"char" END, c.relowner))) a
   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema' AND c.relkind IN ('r','p','v','m','S','f')
   UNION ALL
   SELECT jsonb_build_object(
