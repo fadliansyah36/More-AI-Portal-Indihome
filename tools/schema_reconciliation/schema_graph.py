@@ -168,7 +168,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
             ranges = _rangevars(payload[key])
             if ranges:
                 return ranges
-    for key in ("funcname", "schemaname", "extname", "rolename"):
+    for key in ("funcname", "schemaname", "extname", "rolename", "role"):
         if key in payload:
             values = _strings(payload[key])
             if values:
@@ -181,6 +181,23 @@ def _classify_statement(stmt: Any) -> tuple[str, Any] | None:
         return tag, payload
     return None
 
+
+def _dependency_candidates(value: Any, target: str | None) -> list[str]:
+    candidates: list[str] = []
+    for tag, payload in _walk(value):
+        if tag == "RangeVar" and isinstance(payload, dict):
+            schema, relation = payload.get("schemaname"), payload.get("relname")
+            if isinstance(relation, str):
+                candidates.append((str(schema) + "." if schema else "") + relation)
+        elif tag == "FuncCall" and isinstance(payload, dict):
+            names = _strings(payload.get("funcname"))
+            if names:
+                candidates.append("function:" + ".".join(names))
+        elif tag == "TypeName" and isinstance(payload, dict):
+            names = _strings(payload.get("names"))
+            if names:
+                candidates.append("type:" + ".".join(names))
+    return [item for item in dict.fromkeys(candidates) if item != target]
 
 def _procedural_body_status(tag: str, payload: Any) -> str:
     if tag != "CreateFunctionStmt" or not isinstance(payload, dict):
@@ -293,8 +310,7 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
         ast_sha256 = hashlib.sha256(ast_json.encode("utf-8")).hexdigest()
         names = _object_names(tag, payload)
         target = names[0] if names else None
-        all_refs = _rangevars(payload)
-        dependencies = [name for name in all_refs if name != target]
+        dependencies = _dependency_candidates(payload, target)
         event_status = "AST_PARSED"
         if not names:
             event_status = "NOT_VERIFIABLE"
@@ -478,7 +494,8 @@ def build_graph(root: Path, history_dir: Path | None = None) -> dict[str, Any]:
     return {
         "format": "moreai.postgresql.expected-object-graph.v1",
         "parser": {"name": "pglast", "postgresql_grammar": "pglast-bundled-server-parser", "authority": "PostgreSQL parser AST"},
-        "source_root": str(root), "history_source_count": len(history_sources),
+        "source_root": str(root), "history_migration_record_count": len(history_records),
+        "history_statement_source_count": len(history_sources),
         "active_migration_file_count": len(active_sources),
         "source_record_count": len(sources), "parsed_source_record_count": len(sources) - len(parse_failures),
         "parse_failure_count": len(parse_failures),
