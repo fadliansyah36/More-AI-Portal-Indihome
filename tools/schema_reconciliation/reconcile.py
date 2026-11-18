@@ -7,6 +7,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from pglast.parser import parse_sql_json
+from schema_graph import _normalize
+
 
 VALID_CLASSES = {
     "MATCH", "MISSING", "UNEXPECTED", "DEFINITION_MISMATCH",
@@ -18,6 +21,28 @@ def canonical_hash(value: Any) -> str:
     encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
+
+def _observed_ast(item: dict[str, Any]) -> Any | None:
+    direct = item.get("definition_ast")
+    if isinstance(direct, dict):
+        return _normalize(direct)
+    sql = item.get("definition_sql")
+    if not isinstance(sql, str) or not sql.strip():
+        return None
+    try:
+        parsed = json.loads(parse_sql_json(sql))
+    except Exception:
+        return None
+    statements = parsed.get("stmts", []) if isinstance(parsed, dict) else []
+    if len(statements) != 1 or not isinstance(statements[0], dict):
+        return None
+    statement = statements[0].get("stmt")
+    return _normalize(statement) if isinstance(statement, dict) else None
+
+def _root_tag(value: Any) -> str | None:
+    if isinstance(value, dict) and len(value) == 1:
+        return next(iter(value))
+    return None
 
 def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, Any]:
     expected_objects = expected.get("objects")
@@ -61,7 +86,7 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
                 reason = "The latest source event is not proven applied; absence is not classified as live drift."
         else:
             expected_definition = expected_item.get("expected_definition")
-            observed_definition = observed_item.get("definition")
+            observed_definition = observed_item.get("definition") or _observed_ast(observed_item)
             expected_security = expected_item.get("security_fingerprint")
             observed_security = observed_item.get("security_fingerprint")
             expected_dependencies = expected_item.get("dependency_fingerprint")
@@ -74,12 +99,15 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
                 classification = "DEPENDENCY_MISMATCH"
                 reason = "Expected and observed dependency fingerprints differ."
             elif expected_definition is not None and observed_definition is not None:
-                if canonical_hash(expected_definition) == canonical_hash(observed_definition):
+                if _root_tag(expected_definition) != _root_tag(observed_definition):
+                    classification = "NOT_VERIFIABLE"
+                    reason = "Expected and observed definitions use different AST roots; object-specific normalization is required."
+                elif canonical_hash(expected_definition) == canonical_hash(observed_definition):
                     classification = "MATCH"
-                    reason = "Normalized semantic definitions are identical."
+                    reason = "Normalized PostgreSQL AST definitions are identical."
                 else:
                     classification = "DEFINITION_MISMATCH"
-                    reason = "Normalized semantic definitions differ."
+                    reason = "Normalized PostgreSQL AST definitions differ."
             else:
                 classification = "NOT_VERIFIABLE"
                 reason = (
