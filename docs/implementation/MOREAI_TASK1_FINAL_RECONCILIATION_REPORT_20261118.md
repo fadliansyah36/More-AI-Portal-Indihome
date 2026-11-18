@@ -125,3 +125,14 @@ Task 2 remains NOT_STARTED. Task 3/4/5 remain untouched in this execution. P1 ac
 - Schema-object and unapplied-migration dependencies: `MOREAI_TASK1_SCHEMA_OBJECT_DEPENDENCY_REPORT_20261118.md`.
 - Phase tracker refreshed in commit `8a4168b9c86ab778c020e3dc61a6534c30920a15`.
 - Latest verified main commit at report consolidation: `3a7ccf852bf2199ad3b94b14d43f2bfb6330de73`.
+
+
+## 10. Continuation addendum — 2026-11-18
+
+The original SQL source for migration history `20261115084819` is now recovered from Git commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31`, historical path `supabase/migrations/20261115090000_moreai_agent_model_preferences.sql`. Recursive tokenization confirms 619/619 ordered SQL tokens match the history statement. The current `main` file with that path remains a duplicate alias of `20261115100000` / applied `20261115085314`, not the source for 15084819. Source identity is confirmed historically; end-to-end provenance remains partial without a native execution checksum/receipt.
+
+Expected schema baseline candidates are documented; decision remains `BASELINE_SELECTION_BLOCKED`. The 2026-11-18 live catalog inventory is observed state, not expected state. All five browser migration SQL sources have completed static review. 16250000 and 16300000 remain UNRESOLVED; 16260000, 16270000 and 16280000 remain BLOCKED_BY_DEPENDENCY. Four event CHECK regressions and malformed 16280000 are confirmed source blockers. Security concerns involving server identity binding, ownership associations, artifact association and SECURITY DEFINER search_path are recorded as potential risks, not proven exploits.
+
+Task 1 remains `REVIEW_REQUIRED`, not READY_FOR_REVIEW or ACCEPTED. The expected schema baseline, browser migration disposition/approval, full object-level parity and execution attestation remain open. Task 2–5, P1 acceptance, P2 ADR and Phase 04–09 were not started. No migration apply, DB write, staging, test or deployment occurred.
+
+See `MOREAI_TASK1_MASTER_RECONCILIATION_REPORT_20261118.md`, `MOREAI_TASK1_MASTER_RECONCILIATION_REGISTER_20261118.csv`, and the new provenance/baseline/browser-review artifacts.
