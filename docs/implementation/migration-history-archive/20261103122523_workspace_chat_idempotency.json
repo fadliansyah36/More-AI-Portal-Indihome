@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261103122523",
+    "name": "workspace_chat_idempotency",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "create or replace function public.moreai_workspace_claim_chat_idempotency(\n p_scope_key text,p_idempotency_key text,p_request_hash text,p_expires_at timestamptz\n) returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$\ndeclare v_row public.idempotency_keys%rowtype;\nbegin\n if coalesce(p_scope_key,'')='' or coalesce(p_idempotency_key,'')='' or length(p_idempotency_key)>200\n  or coalesce(p_request_hash,'')='' or p_expires_at<=now() then\n  raise exception using errcode='22023',message='CHAT_IDEMPOTENCY_INVALID';\n end if;\n insert into public.idempotency_keys(scope_key,idempotency_key,request_hash,status,expires_at)\n values(p_scope_key,p_idempotency_key,p_request_hash,'processing',p_expires_at)\n on conflict(scope_key,idempotency_key) do update\n  set request_hash=excluded.request_hash,status='processing',response_status=null,response_body=null,\n      expires_at=excluded.expires_at,updated_at=now()\n  where public.idempotency_keys.expires_at<=now() or public.idempotency_keys.status='failed'\n returning * into v_row;\n if found then return jsonb_build_object('state','claimed'); end if;\n select * into v_row from public.idempotency_keys\n  where scope_key=p_scope_key and idempotency_key=p_idempotency_key for update;\n if not found then raise exception using errcode='40001',message='CHAT_IDEMPOTENCY_RETRY'; end if;\n if v_row.request_hash<>p_request_hash then return jsonb_build_object('state','conflict'); end if;\n if v_row.status='completed' then\n  return jsonb_build_object('state','completed','response_status',v_row.response_status,'response_body',v_row.response_body);\n end if;\n return jsonb_build_object('state','processing');\nend; $$;\n\ncreate or replace function public.moreai_workspace_finish_chat_idempotency(\n p_scope_key text,p_idempotency_key text,p_request_hash text,p_response_body jsonb,p_success boolean default true\n) returns boolean language plpgsql security invoker set search_path=public,pg_temp as $$\ndeclare v_updated integer;\nbegin\n update public.idempotency_keys\n set status=case when p_success then 'completed' else 'failed' end,\n     response_status=case when p_success then 200 else null end,\n     response_body=case when p_success then p_response_body else null end,\n     updated_at=now()\n where scope_key=p_scope_key and idempotency_key=p_idempotency_key\n   and request_hash=p_request_hash and status='processing';\n get diagnostics v_updated=row_count;\n return v_updated=1;\nend; $$;\n\nrevoke all on function public.moreai_workspace_claim_chat_idempotency(text,text,text,timestamptz) from public,anon,authenticated;\ngrant execute on function public.moreai_workspace_claim_chat_idempotency(text,text,text,timestamptz) to service_role;\nrevoke all on function public.moreai_workspace_finish_chat_idempotency(text,text,text,jsonb,boolean) from public,anon,authenticated;\ngrant execute on function public.moreai_workspace_finish_chat_idempotency(text,text,text,jsonb,boolean) to service_role;"
+  ],
+  "statement_sha256": [
+    "9e0794c3dda1c7759fbf3ec1c9ddce09b8f4dddb043dee35a5b3f70d557c8b3c"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

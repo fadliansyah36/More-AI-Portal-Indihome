@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261103101050",
+    "name": "grant_super_admin_partner_org_permissions",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "insert into public.role_permissions(role_id, permission_id)\nselect r.id, p.id\nfrom public.roles r\ncross join public.permissions p\nwhere r.key = 'super_admin'\n  and p.key in ('partner.organization.read', 'partner.organization.manage')\non conflict do nothing;"
+  ],
+  "statement_sha256": [
+    "12918e37a2b589560b09560379fdc958026ec1144d04ef2b6d19f0ba6ee70a05"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

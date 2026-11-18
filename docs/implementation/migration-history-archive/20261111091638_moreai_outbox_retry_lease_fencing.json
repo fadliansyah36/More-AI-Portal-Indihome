@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261111091638",
+    "name": "moreai_outbox_retry_lease_fencing",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "create or replace function public.moreai_worker_retry_event_outbox(\n  p_event_id uuid, p_worker_id text, p_error_code text\n) returns text\nlanguage plpgsql security definer set search_path='' as $$\ndeclare v_state text;\nbegin\n  update public.outbox_events\n    set attempts=attempts+1,\n        status=case when attempts+1 >= 12 then 'dead_letter' else 'failed' end,\n        available_at=now()+make_interval(secs=>least(3600,power(2,least(attempts,10))::integer)),\n        worker_id=null,lease_expires_at=null,last_error=left(coalesce(p_error_code,'publish_failed'),200)\n    where id=p_event_id and status='processing' and worker_id=p_worker_id\n      and lease_expires_at > now();\n  if not found then raise exception 'outbox_lease_lost' using errcode='40001'; end if;\n  return (select status from public.outbox_events where id=p_event_id);\nend;\n$$;\nrevoke all on function public.moreai_worker_retry_event_outbox(uuid,text,text) from public,anon,authenticated;\ngrant execute on function public.moreai_worker_retry_event_outbox(uuid,text,text) to service_role;\n"
+  ],
+  "statement_sha256": [
+    "a975cc21b12a9d1b0b6949683b8e4fe60ac2cb5512aa5f41a9abdab8c32a64a7"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

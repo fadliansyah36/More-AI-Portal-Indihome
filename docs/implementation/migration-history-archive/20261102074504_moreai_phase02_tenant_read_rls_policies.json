@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261102074504",
+    "name": "moreai_phase02_tenant_read_rls_policies",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "create policy user_entitlements_read_own on public.user_entitlements for select to authenticated using(user_id=(select auth.uid()));\ncreate policy network_sessions_read_own on public.network_sessions for select to authenticated using(user_id=(select auth.uid()));\ncreate policy network_verification_sessions_read_own on public.network_verification_sessions for select to authenticated using(user_id=(select auth.uid()));\ncreate policy network_verification_attempts_read_own on public.network_verification_attempts for select to authenticated using(user_id=(select auth.uid()));\ncreate policy partner_organizations_read_member on public.partner_organizations for select to authenticated using(exists(select 1 from public.partner_members pm where pm.partner_id=partner_organizations.id and pm.user_id=(select auth.uid()) and pm.status='active'));\ncreate policy partner_locations_read_member on public.partner_locations for select to authenticated using(exists(select 1 from public.partner_members pm where pm.partner_id=partner_locations.partner_id and pm.user_id=(select auth.uid()) and pm.status='active' and (pm.location_id is null or pm.location_id=partner_locations.id)));\ncreate policy partner_networks_read_member on public.partner_networks for select to authenticated using(exists(select 1 from public.partner_members pm where pm.partner_id=partner_networks.partner_id and pm.user_id=(select auth.uid()) and pm.status='active' and (pm.location_id is null or pm.location_id=partner_networks.location_id)));\n"
+  ],
+  "statement_sha256": [
+    "1c197fe3f437d605c1eb52024a4e902f76077233e84da479f24c2e9a5ea5174c"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

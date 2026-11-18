@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261114070551",
+    "name": "moreai_edutech_path_summary_view",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "-- Aggregate curriculum progress in Postgres instead of fetching every lesson into FastAPI.\ncreate or replace view public.learning_path_progress_summary\nwith (security_invoker = true)\nas\nselect\n  p.id as path_id,\n  p.owner_user_id,\n  count(l.id)::integer as lessons_total,\n  count(pr.id)::integer as lessons_started,\n  count(pr.id) filter (where pr.status='completed')::integer as lessons_completed,\n  case\n    when count(l.id)=0 then 0::numeric\n    else round(coalesce(sum(pr.progress_percent),0) / count(l.id), 1)\n  end as average_percent\nfrom public.learning_paths p\nleft join public.learning_lessons l\n  on l.path_id=p.id and l.owner_user_id=p.owner_user_id\nleft join public.learning_progress pr\n  on pr.lesson_id=l.id and pr.user_id=p.owner_user_id\ngroup by p.id,p.owner_user_id;\n\nrevoke all on public.learning_path_progress_summary from anon, authenticated;\ngrant select on public.learning_path_progress_summary to service_role;\n"
+  ],
+  "statement_sha256": [
+    "4ed779d68235619ca409c2a1d972fed9a6bc3bf2356fffc24e31b5a0e59fefeb"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

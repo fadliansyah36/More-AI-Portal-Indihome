@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261103122556",
+    "name": "extend_completed_chat_idempotency_retention",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "create or replace function public.moreai_workspace_finish_chat_idempotency(\n p_scope_key text,p_idempotency_key text,p_request_hash text,p_response_body jsonb,p_success boolean default true\n) returns boolean language plpgsql security invoker set search_path=public,pg_temp as $$\ndeclare v_updated integer;\nbegin\n update public.idempotency_keys\n set status=case when p_success then 'completed' else 'failed' end,\n     response_status=case when p_success then 200 else null end,\n     response_body=case when p_success then p_response_body else null end,\n     expires_at=case when p_success then now()+interval '24 hours' else now() end,\n     updated_at=now()\n where scope_key=p_scope_key and idempotency_key=p_idempotency_key\n   and request_hash=p_request_hash and status='processing';\n get diagnostics v_updated=row_count;\n return v_updated=1;\nend; $$;"
+  ],
+  "statement_sha256": [
+    "cf03713d18b4bf2df75430c55f95108d4e8de4e85ae5569524903909014ebcfe"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

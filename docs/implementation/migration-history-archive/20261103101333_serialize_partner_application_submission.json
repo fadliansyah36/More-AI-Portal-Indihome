@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261103101333",
+    "name": "serialize_partner_application_submission",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "create or replace function public.moreai_submit_partner_application(\n  p_user_id uuid,\n  p_legal_name text,\n  p_display_name text,\n  p_correlation_id text default null\n) returns jsonb\nlanguage plpgsql security definer set search_path = public, pg_temp\nas $$\ndeclare\n  v_partner public.partner_organizations%rowtype;\n  v_member public.partner_members%rowtype;\n  v_count integer;\n  v_correlation text := coalesce(nullif(p_correlation_id, ''), gen_random_uuid()::text);\nbegin\n  if p_user_id is null or length(trim(coalesce(p_legal_name, ''))) < 2\n    or length(trim(coalesce(p_legal_name, ''))) > 160\n    or length(trim(coalesce(p_display_name, ''))) < 2\n    or length(trim(coalesce(p_display_name, ''))) > 120 then\n    raise exception using errcode = '22023', message = 'PARTNER_APPLICATION_INVALID';\n  end if;\n\n  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text, 0));\n  select count(*) into v_count from public.partner_members where user_id = p_user_id;\n  if v_count > 1 then\n    raise exception using errcode = '23505', message = 'PARTNER_CONTEXT_AMBIGUOUS';\n  elsif v_count = 1 then\n    select po.* into v_partner from public.partner_members pm\n      join public.partner_organizations po on po.id = pm.partner_id\n      where pm.user_id = p_user_id limit 1;\n    select pm.* into v_member from public.partner_members pm where pm.user_id = p_user_id limit 1;\n    return jsonb_build_object('partner', to_jsonb(v_partner), 'membership', to_jsonb(v_member), 'replayed', true);\n  end if;\n\n  insert into public.partner_organizations(legal_name, display_name, status, created_by)\n  values(trim(p_legal_name), trim(p_display_name), 'pending', p_user_id) returning * into v_partner;\n  insert into public.partner_members(partner_id, user_id, role_key, location_id, status)\n  values(v_partner.id, p_user_id, 'partner_owner', null, 'active') returning * into v_member;\n  insert into public.admin_audit_logs(actor_user_id, action, resource_type, resource_id, scope_type, scope_id, correlation_id, outcome, metadata)\n  values(p_user_id, 'partner.application.submitted', 'partner_organization', v_partner.id::text, 'partner', v_partner.id, v_correlation, 'success',\n    jsonb_build_object('legal_name', v_partner.legal_name, 'display_name', v_partner.display_name));\n  return jsonb_build_object('partner', to_jsonb(v_partner), 'membership', to_jsonb(v_member), 'replayed', false);\nend;\n$$;"
+  ],
+  "statement_sha256": [
+    "3f4366ef1c0a6ae202836edcc0f83525272efede08824d5f6d01432e2c5df075"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

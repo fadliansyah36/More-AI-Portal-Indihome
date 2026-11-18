@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261111083146",
+    "name": "moreai_notifications_private_artifacts_immutable_audit",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "create table if not exists public.notifications (\n  id uuid primary key default gen_random_uuid(),\n  user_id uuid not null references auth.users(id) on delete cascade,\n  notification_type text not null check (char_length(notification_type) between 1 and 80),\n  title text not null check (char_length(title) between 1 and 180),\n  body text not null default '' check (char_length(body) <= 4000),\n  resource_type text,\n  resource_id text,\n  action_url text,\n  dedupe_key text,\n  metadata jsonb not null default '{}'::jsonb,\n  read_at timestamptz,\n  created_at timestamptz not null default now(),\n  constraint notifications_dedupe_key_valid check (dedupe_key is null or char_length(dedupe_key) between 1 and 200)\n);\ncreate unique index if not exists notifications_user_dedupe_uidx on public.notifications(user_id, dedupe_key) where dedupe_key is not null;\ncreate index if not exists notifications_user_created_idx on public.notifications(user_id, created_at desc);\ncreate index if not exists notifications_unread_idx on public.notifications(user_id, created_at desc) where read_at is null;\ncreate table if not exists public.notification_preferences (\n  user_id uuid primary key references auth.users(id) on delete cascade,\n  in_app_enabled boolean not null default true,\n  email_enabled boolean not null default false,\n  category_settings jsonb not null default '{}'::jsonb,\n  updated_at timestamptz not null default now()\n);\nalter table public.notifications enable row level security;\nalter table public.notification_preferences enable row level security;\ndrop policy if exists notifications_server_only on public.notifications;\ncreate policy notifications_server_only on public.notifications for all to anon, authenticated using (false) with check (false);\ndrop policy if exists notification_preferences_server_only on public.notification_preferences;\ncreate policy notification_preferences_server_only on public.notification_preferences for all to anon, authenticated using (false) with check (false);\nrevoke all on public.notifications, public.notification_preferences from anon, authenticated;\ngrant all on public.notifications, public.notification_preferences to service_role;\ninsert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)\nvalues ('moreai-artifacts','moreai-artifacts',false,2097152,array['text/plain','text/markdown','application/json','text/csv','application/pdf','image/png','image/jpeg','image/webp'])\non conflict (id) do update set public=false,file_size_limit=least(coalesce(storage.buckets.file_size_limit,2097152),2097152),allowed_mime_types=excluded.allowed_mime_types;\ncreate or replace function public.moreai_reject_admin_audit_mutation()\nreturns trigger language plpgsql set search_path=public,pg_temp as $$\nbegin raise exception 'admin_audit_logs_are_immutable' using errcode='55000'; end; $$;\ndrop trigger if exists admin_audit_logs_immutable_row on public.admin_audit_logs;\ncreate trigger admin_audit_logs_immutable_row before update or delete on public.admin_audit_logs for each row execute function public.moreai_reject_admin_audit_mutation();\ndrop trigger if exists admin_audit_logs_immutable_truncate on public.admin_audit_logs;\ncreate trigger admin_audit_logs_immutable_truncate before truncate on public.admin_audit_logs for each statement execute function public.moreai_reject_admin_audit_mutation();\nrevoke update,delete,truncate on public.admin_audit_logs from anon,authenticated,service_role;\ngrant select,insert on public.admin_audit_logs to service_role;\nrevoke all on function public.moreai_reject_admin_audit_mutation() from public,anon,authenticated;"
+  ],
+  "statement_sha256": [
+    "f540adb90f37cb096c82a5197f99efb70eba6e4e36600b694b908e5ce1063d2a"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

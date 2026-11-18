@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261102084950",
+    "name": "moreai_llm_request_record_server_only_policy",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "drop policy if exists llm_request_records_server_only on public.llm_request_records;\ncreate policy llm_request_records_server_only on public.llm_request_records\nas restrictive for all to anon,authenticated using (false) with check (false);\nrevoke all on public.llm_request_records from anon,authenticated;\ngrant select,insert,update,delete on public.llm_request_records to service_role;"
+  ],
+  "statement_sha256": [
+    "02bf1be58999cdf9b7d1e2c674253fb37eadde86a877be6d6ccac99d4eb9e748"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

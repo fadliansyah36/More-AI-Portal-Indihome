@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261102074028",
+    "name": "fix_workspace_membership_rls_qualification",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "drop policy if exists workspaces_read_member on public.workspaces;\ncreate policy workspaces_read_member on public.workspaces\nfor select to authenticated\nusing (\n  exists (\n    select 1 from public.workspace_members m\n    where m.workspace_id = workspaces.id\n      and m.user_id = (select auth.uid())\n      and m.status = 'active'\n  )\n  or owner_user_id = (select auth.uid())\n);"
+  ],
+  "statement_sha256": [
+    "100247b9aa6709fcbd73a9b741aa3d9edecd5aaaa905eb8143b5d18c58a48a1a"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

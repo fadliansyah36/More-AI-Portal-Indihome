@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261102083716",
+    "name": "moreai_worker_cancel_and_legacy_rpc_hardening",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "create or replace function public.moreai_worker_request_cancel(p_run_id uuid,p_user_id uuid)\nreturns jsonb language plpgsql security definer set search_path='' as $$\ndeclare r public.agent_runs%rowtype; seq bigint; next_status text;\nbegin\n select * into r from public.agent_runs where id=p_run_id and user_id=p_user_id for update;\n if not found then raise exception 'run not found'; end if;\n if r.status in('succeeded','failed','cancelled') then return jsonb_build_object('run_id',r.id,'status',r.status); end if;\n if r.status='queued' then\n  next_status:='cancelled';\n  update public.agent_runs set status='cancelled',cancel_requested_at=coalesce(cancel_requested_at,now()),finished_at=now(),updated_at=now() where id=r.id;\n else\n  next_status:='cancel_requested';\n  update public.agent_runs set cancel_requested_at=coalesce(cancel_requested_at,now()),updated_at=now() where id=r.id;\n end if;\n select coalesce(max(sequence),0)+1 into seq from public.agent_run_events where run_id=r.id;\n insert into public.agent_run_events(run_id,event_type,sequence,payload) values(r.id,'worker.cancel_requested',seq,jsonb_build_object('status',next_status));\n return jsonb_build_object('run_id',r.id,'status',next_status);\nend $$;\ndrop function if exists public.moreai_worker_claim_run(integer);\ndrop function if exists public.moreai_worker_checkpoint(uuid,text,jsonb,text);\ndrop function if exists public.moreai_worker_finish_run(uuid,text,jsonb,jsonb,integer);\nrevoke all on function public.moreai_worker_request_cancel(uuid,uuid) from public,anon,authenticated;\ngrant execute on function public.moreai_worker_request_cancel(uuid,uuid) to service_role;"
+  ],
+  "statement_sha256": [
+    "bd1daec6920ba1ad1bde340b378de95db3c1dea17ffdf8b2d18c6ca20aba7ab8"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}

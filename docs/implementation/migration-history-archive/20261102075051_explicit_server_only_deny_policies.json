@@ -1,0 +1,32 @@
+{
+  "archive_status": "ARCHIVE_ONLY_RECOVERED_FROM_APPLIED_MIGRATION_HISTORY",
+  "source": {
+    "project_ref": "uunfgimtokhucegqbpce",
+    "table": "supabase_migrations.schema_migrations",
+    "version": "20261102075051",
+    "name": "explicit_server_only_deny_policies",
+    "created_by": "app.muvon36@gmail.com",
+    "idempotency_key": null
+  },
+  "provenance": {
+    "retrieved_from": "read-only Supabase SQL query",
+    "retrieved_at_utc": "2026-11-18",
+    "repository_head_at_recovery": "ad9a159221bbd36ecea494ea539622e3eb072e63",
+    "source_repository_path": null,
+    "source_repository_git_blob_sha": null,
+    "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+  },
+  "statements": [
+    "\n-- Explicitly document server-only tables as deny-all for browser/mobile roles.\n-- The FastAPI service uses the server-only Supabase secret and remains subject\n-- to application authorization; service_role bypasses RLS by design.\nDO $$\nDECLARE t text;\nBEGIN\n  FOREACH t IN ARRAY ARRAY[\n    'admin_audit_logs',\n    'entitlement_policies',\n    'network_providers',\n    'network_session_events',\n    'network_verification_configs',\n    'network_verification_evidence',\n    'permissions',\n    'provider_partnerships',\n    'role_permissions',\n    'roles',\n    'security_events',\n    'user_devices',\n    'user_role_assignments'\n  ] LOOP\n    EXECUTE format(\n      'CREATE POLICY %I ON public.%I AS RESTRICTIVE FOR ALL TO anon, authenticated USING (false) WITH CHECK (false)',\n      'deny_client_access_' || t,\n      t\n    );\n  END LOOP;\nEND $$;\n"
+  ],
+  "statement_sha256": [
+    "fd46b3da0e4ef179d9a2f5e6ed4998d03a61a08897bf6fa81013eae0809f142a"
+  ],
+  "rollback": null,
+  "safety": {
+    "replay_prohibited": true,
+    "production_migration_applied_status": "APPLIED_HISTORY_ROW_PRESENT",
+    "schema_equivalence": "NOT_YET_PROVEN",
+    "credential_scan": "BASIC_PATTERN_SCAN_NO_MATCH"
+  }
+}
