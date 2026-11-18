@@ -141,8 +141,15 @@ def _object_names(tag: str, payload: Any) -> list[str]:
         if not names:
             return []
         parameters = payload.get("parameters") or []
-        signature = hashlib.sha256(json.dumps(_normalize(parameters), sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
-        return [f"{'.'.join(names)}#args:{signature}"]
+        argument_types: list[str] = []
+        for node_tag, node_payload in _walk(parameters):
+            if node_tag == "TypeName" and isinstance(node_payload, dict):
+                type_names = _strings(node_payload.get("names"))
+                if type_names:
+                    argument_types.append(".".join(type_names))
+        if not argument_types and parameters:
+            return [".".join(names) + "#signature-not-verifiable"]
+        return [".".join(names) + "(" + ",".join(argument_types) + ")"]
     if tag in {"CreateEnumStmt", "CreateDomainStmt", "CompositeTypeStmt", "CreateRangeStmt", "AlterTypeStmt", "AlterEnumStmt"}:
         values = _strings(payload.get("typeName") or payload.get("typevar"))
         if values:
