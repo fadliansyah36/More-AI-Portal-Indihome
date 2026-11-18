@@ -111,7 +111,7 @@ Task 1 is NOT READY_FOR_REVIEW because:
 3. Four unapplied migrations contain an event-type CHECK regression; one of those also contains malformed SQL.
 4. Owner intent/approval for the five unapplied browser migrations is absent.
 
-Task 2 remains NOT_STARTED. Task 3/4/5 remain untouched in this execution. P1 acceptance remains BLOCKED/NOT_ACCEPTED. P2 ADR remains gated. Phase 04–09 were not started.
+Task 2 remains NOT_STARTED. Task 3/4/5 remain untouched in this execution. P1 acceptance remains BLOCKED/NOT_ACCEPTED. P2 ADR remains gated. No Phase 04–09 implementation work was performed in this batch. The current tracker remains: Phase 04 IN PROGRESS / REVIEW_REQUIRED; Phase 05 REVIEW_REQUIRED; Phase 06–09 IN PROGRESS / REVIEW_REQUIRED. All remain gated by P1/ADR acceptance. Phase 10 and 11 remain BLOCKED / NOT_ACCEPTED.
 
 ## 8. Next Task 1 work only
 - Recover original provenance/commit/source for applied migration 20261115084819 or obtain owner-approved historical-only disposition.
