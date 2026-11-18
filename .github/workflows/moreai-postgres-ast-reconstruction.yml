@@ -7,6 +7,7 @@ on:
       - "tools/schema_reconciliation/**"
       - "supabase/migrations/**"
       - "docs/implementation/migration-history-sql-source-snapshot-20261118/**"
+      - "docs/implementation/migration-source-archive/**"
       - "docs/implementation/observed-catalog-snapshot-20261118.json"
       - "docs/implementation/observed-security-catalog-snapshot-20261118.json"
       - "docs/implementation/observed-dependency-graph-20261118.json"
@@ -45,6 +46,7 @@ jobs:
           python tools/schema_reconciliation/schema_graph.py \
             --migrations-dir supabase/migrations \
             --history-dir docs/implementation/migration-history-sql-source-snapshot-20261118 \
+            --archive-dir docs/implementation/migration-source-archive \
             --output artifacts/expected-object-graph.json
 
       - name: Reconcile expected graph against read-only catalog snapshots
@@ -69,6 +71,8 @@ jobs:
           summary = {
               "active_migration_file_count": graph["active_migration_file_count"],
               "history_migration_record_count": graph["history_migration_record_count"],
+              "archive_source_file_count": graph["archive_source_file_count"],
+              "archive_ddl_event_count": graph["archive_ddl_event_count"],
               "history_statement_source_count": graph["history_statement_source_count"],
               "source_record_count": graph["source_record_count"],
               "parsed_source_record_count": graph["parsed_source_record_count"],
