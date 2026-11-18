@@ -176,15 +176,15 @@ The evidence set now includes:
 
 Accordingly, a deterministic expected schema can be reconstructed as a *migration-lineage/source baseline*, but a full expected-object graph and semantic expected-vs-observed result cannot be certified without either:
 1. an immutable, known-good, schema-only dump with environment identity, capture time and hash; or
-2. explicit permission to replay the complete pinned lineage offline in an isolated disposable database.
+2. explicit permission to replay the complete pinned lineage offline in an isolated disposable database. The user has now explicitly chosen to skip this replay; this option is waived for the current continuation.
 
-The current instruction explicitly prohibits tests/replay and production DB writes. Neither evidence source has been supplied/authorized. This is a real blocker, not a reason to substitute the live snapshot or to guess missing object definitions.
+The user has explicitly waived offline replay and testing for this continuation. No known-good schema-only dump has been supplied. Therefore the expected schema can proceed only as a static source-derived reconstruction; it must remain marked UNVALIDATED and must not be presented as a replay-verified baseline. This is a documented scope decision, not permission to substitute the live snapshot or guess missing object definitions.
 
 ## 4. Object-level reconciliation result
 
 Observed public object classes and definitions were read for relations, columns, constraints, indexes, functions, triggers, views, RLS policies, table privileges, extensions, types and relation dependencies. Existing scoped comparison still has 7 MATCH, 3 EXPECTED_DIFFERENCE (unapplied browser objects) and 2 NOT_VERIFIABLE results.
 
-**Global object-level reconciliation is not closed.** In particular, a complete expected-vs-observed object-by-object comparison for every schema, object owner, schema/table/sequence/function ACL, default privilege, role membership, type definition, extension dependency and cross-object dependency cannot be truthfully claimed without the trusted expected baseline. No live object was changed to force a false match.
+**Global object-level reconciliation is not closed.** Static source analysis may continue, but a complete expected-vs-observed object-by-object comparison for every schema, object owner, schema/table/sequence/function ACL, default privilege, role membership, type definition, extension dependency and cross-object dependency cannot be truthfully claimed without a trusted expected baseline. Offline replay/testing is waived by the user for this continuation. No live object was changed to force a false match.
 
 ## 5. Reference AI Skills — source and integration status
 
@@ -238,7 +238,7 @@ The customer Skill Registry package count was previously observed as zero in the
 
 ## 6. Remaining blockers
 
-1. Trusted expected schema object baseline: immutable known-good schema-only dump or authorization for offline isolated replay.
+1. Trusted expected schema object baseline: no immutable known-good schema-only dump is available; offline isolated replay/testing has been explicitly waived by the user. Static reconstruction remains unvalidated.
 2. Full expected-vs-observed object comparison: every schema/object and ACL/owner/dependency class against that trusted baseline.
 3. Native execution receipts or independently verifiable deployment artifacts for historical migration execution; the history table alone is insufficient.
 4. The three path-reference rows are now mapped to exact current-main paths and Git blob SHAs; byte-for-byte execution remains unproven because history has no native checksum or independent deployment receipt.
@@ -251,9 +251,9 @@ The customer Skill Registry package count was previously observed as zero in the
 - 15084819 historical source identity: **RECOVERED**.
 - Migration history/source archive and mismatch mapping: **EVIDENCE RECOVERED; execution provenance PARTIAL**.
 - Read-only observed catalog inventory: **CAPTURED**.
-- Trusted expected schema baseline: **BLOCKED BY MISSING IMMUTABLE BASELINE / OFFLINE REPLAY NOT AUTHORIZED**.
+- Trusted expected schema baseline: **STATIC RECONSTRUCTION ONLY / UNVALIDATED — OFFLINE REPLAY AND TESTING WAIVED BY USER**.
 - Full object-level reconciliation: **PARTIAL — expected definitions unavailable**.
 - Visual/Scenario/Motion source catalog and unified registry/resolver path: **IMPLEMENTED IN SOURCE**.
 - Reference skill tenant import, publication and runtime activation: **NOT EXECUTED — production writes prohibited**.
 
-**Overall Task 1: REVIEW_REQUIRED / NOT COMPLETE.** Do not advance Phase 05 or claim global schema parity. Continue by acquiring one of the two trusted-baseline evidence sources, then complete the full object-level diff and migration execution receipt mapping. Reference skills can be imported and reviewed only in an explicitly authorized non-production or production write context; do not activate unsupported Scenario/Motion providers.
+**Overall Task 1: REVIEW_REQUIRED / NOT COMPLETE.** Do not advance Phase 05 or claim global schema parity. Continue with static source-derived object lineage, identify every deterministically provable expected definition, classify unresolved objects/ACLs/dependencies as NOT_VERIFIABLE, and complete the migration execution provenance map where evidence exists. Do not claim replay validation or global schema parity. Reference skills can be imported and reviewed only in an explicitly authorized non-production or production write context; do not activate unsupported Scenario/Motion providers.
