@@ -75,7 +75,7 @@ def _normalize(value: Any) -> Any:
 def _node_tag(value: Any) -> tuple[str | None, Any]:
     if isinstance(value, dict) and len(value) == 1:
         key = next(iter(value))
-        if key.endswith("Stmt") or key in {"RangeVar", "TypeName", "FuncCall", "Constraint"}:
+        if key and key[0].isupper() and isinstance(value[key], (dict, list, str, int, float, bool, type(None))):
             return key, value[key]
     return None, value
 
