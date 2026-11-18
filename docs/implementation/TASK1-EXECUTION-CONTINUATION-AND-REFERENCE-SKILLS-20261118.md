@@ -50,6 +50,18 @@ The current-main `15090000` file was a different duplicate alias of `15100000` /
 - `20261115090000_moreai_agent_model_preferences.sql` on current main was an exact duplicate alias of `20261115100000`; the separate original `20261115084819` source is recovered from its historical commit.
 - Historical migration-history rows and archived statements were not deleted or rewritten.
 
+### 1.5 Three migration-history path references — source identity resolved
+
+The three history rows `20261111030000`, `20261111033000` and `20261111040000` store path references rather than SQL text. Each reference was read directly from `supabase_migrations.schema_migrations.statements` and resolved to the exact current-main file and Git blob:
+
+| History version | Stored path reference | Current-main Git blob SHA |
+|---|---|---|
+| 20261111030000 | supabase/migrations/20261111030000_moreai_enqueue_chat_run.sql | 5496f3f51100b843d9b5e96032e52cc10de482d3 |
+| 20261111033000 | supabase/migrations/20261111033000_moreai_llm_reserve_with_entitlement_quota.sql | 9b4984abcd100c558a50e676f0f39a7296d49b66 |
+| 20261111040000 | supabase/migrations/20261111040000_moreai_llm_quota_settlement_reconciliation.sql | 7bb174c960aeabba71c49a84e95f30a13552eece |
+
+This resolves source-path identity and current source blob identity. It does **not** prove the exact bytes executed at deployment time: the history stores a path token, not a checksum or signed deployment receipt. The provenance CSV records these rows as `SOURCE_IDENTITY_PATH_RESOLVED;EXECUTION_UNPROVEN`.
+
 ### 1.4 Execution provenance rule
 
 The live `supabase_migrations.schema_migrations` history currently has 116 rows, latest version `20261116113852`. The table has no native checksum column. The three records `20261111030000`, `20261111033000` and `20261111040000` store path references rather than SQL text in their statement values. Reconstructed MD5/SHA-256 values are evidence hashes of retrieved source/history content, not historical deployment checksums.
@@ -216,6 +228,8 @@ The following source integration is already implemented in `main`; it was verifi
 - Motion Skills: adds a production-workflow guard; does not assume Remotion, ffmpeg/ffprobe, fonts, codecs, render workers, external model APIs or credentials are provisioned.
 - Adapter identity is attached to the per-run skill snapshot and resolution audit detail. No new tools, provider credentials, database tables or Agent Runtime were introduced.
 
+Worker trust-boundary correction (commit 0a4f99a906b227d71ea59d0055e1173d5fe11816): the resolver now invokes `_validate_pinned_source_identity` for each owner-scoped package before loading its stored files. This enforces the exact repository/commit/entrypoint allowlist again at execution time, so a privileged or malformed registry row cannot bypass the API import gate. This change is source-only and was not runtime-tested in this run.
+
 This is a source-level adaptation and security boundary. It is not runtime acceptance; no packages were imported or executed in this continuation.
 
 ### 5.5 What has not been executed
@@ -227,7 +241,7 @@ The customer Skill Registry package count was previously observed as zero in the
 1. Trusted expected schema object baseline: immutable known-good schema-only dump or authorization for offline isolated replay.
 2. Full expected-vs-observed object comparison: every schema/object and ACL/owner/dependency class against that trusted baseline.
 3. Native execution receipts or independently verifiable deployment artifacts for historical migration execution; the history table alone is insufficient.
-4. Three path-reference history statements require explicit source-path-to-exact-file provenance mapping if byte-for-byte execution proof is required.
+4. The three path-reference rows are now mapped to exact current-main paths and Git blob SHAs; byte-for-byte execution remains unproven because history has no native checksum or independent deployment receipt.
 5. Reference skills require actual per-user import/ingestion and privileged review before execution. The user explicitly prohibited production writes in this run; this is not performed.
 6. Scenario/Motion provider and tool contracts need explicit MoreAI adapters before model-specific workflows can execute; no Scenario MCP or parallel runtime is introduced.
 
