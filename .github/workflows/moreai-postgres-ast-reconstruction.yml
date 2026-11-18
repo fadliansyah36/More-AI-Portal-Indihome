@@ -93,12 +93,25 @@ jobs:
               "ddl_event_count": graph["ddl_event_count"],
               "object_key_count": graph["object_key_count"],
           }
+          from collections import Counter
+          class_counts = Counter(item.get("object_class", "UNKNOWN") for item in graph.get("objects", []))
+          summary["expected_object_class_counts"] = dict(sorted(class_counts.items()))
+          summary["parse_failure_samples"] = graph.get("parse_failures", [])[:25]
           reconciliation_path = Path("artifacts/semantic-reconciliation.json")
           if reconciliation_path.exists():
               reconciliation = json.loads(reconciliation_path.read_text())
               summary["reconciled_object_count"] = reconciliation["object_count"]
               summary["classification_counts"] = reconciliation["classification_counts"]
               summary["global_no_drift_claim"] = reconciliation["global_no_drift_claim"]
+              rows = reconciliation.get("objects", [])
+              missing = [item for item in rows if item.get("classification") == "MISSING"]
+              unverified = [item for item in rows if item.get("classification") == "NOT_VERIFIABLE"]
+              summary["missing_object_class_counts"] = dict(sorted(Counter(item.get("object_class", "UNKNOWN") for item in missing).items()))
+              summary["not_verifiable_reason_counts"] = dict(sorted(Counter(item.get("reason", "UNSPECIFIED") for item in unverified).items()))
+              summary["missing_samples"] = [{key: item.get(key) for key in ("object_key", "object_class", "latest_migration_id", "latest_operation", "reason")} for item in missing[:100]]
+              summary["not_verifiable_samples"] = [{key: item.get(key) for key in ("object_key", "object_class", "latest_migration_id", "latest_operation", "reason")} for item in unverified[:30]]
+              summary["mismatch_samples"] = [{key: item.get(key) for key in ("object_key", "object_class", "classification", "latest_migration_id", "reason")} for item in rows if item.get("classification") in {"DEFINITION_MISMATCH", "SECURITY_MISMATCH", "DEPENDENCY_MISMATCH", "UNEXPECTED"}][:100]
+          Path("artifacts/semantic-reconciliation-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as f:
               f.write("## PostgreSQL AST reconstruction\n\n")
               for key, value in summary.items():
@@ -113,9 +126,10 @@ jobs:
           mkdir -p docs/implementation/generated
           cp artifacts/expected-object-graph.json docs/implementation/generated/expected-object-graph.json
           cp artifacts/semantic-reconciliation.json docs/implementation/generated/semantic-reconciliation.json
+          cp artifacts/semantic-reconciliation-summary.json docs/implementation/generated/semantic-reconciliation-summary.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/implementation/generated/expected-object-graph.json docs/implementation/generated/semantic-reconciliation.json
+          git add docs/implementation/generated/expected-object-graph.json docs/implementation/generated/semantic-reconciliation.json docs/implementation/generated/semantic-reconciliation-summary.json
           if git diff --cached --quiet; then
             echo "Generated semantic artifacts are unchanged."
             exit 0
