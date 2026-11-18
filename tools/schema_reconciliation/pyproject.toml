@@ -7,7 +7,7 @@ name = "moreai-schema-reconciliation"
 version = "0.1.0"
 requires-python = ">=3.12"
 description = "PostgreSQL AST-based static schema lineage and reconciliation tools"
-dependencies = ["pglast==7.10"]
+dependencies = ["pglast==7.23"]
 
 [tool.setuptools]
 py-modules = ["schema_graph", "reconcile"]
