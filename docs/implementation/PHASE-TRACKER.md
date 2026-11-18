@@ -1,8 +1,12 @@
 # MoreAI Implementation Phase Tracker
 
-Updated: 2026-11-16
+Updated: 2026-11-18 — source and Supabase read-only audit
 
-Implementation is proceeding directly on `main`. Current source baseline before this documentation reconciliation: `a1586fa07ca64ced1fcd67cacf65d4d1fb45d4d5`. Read-only Supabase migration history currently contains 114 versions, including all fourteen Phase 09D migrations through `20261116084745`; the explicit server-only deny-policy migration `20261116083654` is already applied (the earlier pending statement below is stale). No tests, build, lint, typecheck, browser/API/worker/provider verification, staging or application deployment were run in this continuation.
+Implementation target: `main`. Audit baseline at start of 2026-11-18 continuation: `151da0a0133684bd38518c5f2f40f27bc08aa65a`. Current branch advances through subsequent P1 evidence/documentation commits; no product runtime or UI source was changed in this continuation.
+
+**Fresh Supabase snapshot (project `uunfgimtokhucegqbpce`):** 94 public base tables, RLS enabled on all 94, 95 public policies, zero RLS-enabled public tables without a policy, and 116 migration-history rows (latest `20261116113852`). This supersedes the stale 114-version count below. Read-only data counts were zero for Agent Runs, LLM providers/models/routing policies, worker capability snapshots, browser sessions, Connections, Skill packages/source files, personal memories and Knowledge documents/chunks. Supabase Security Advisor: leaked-password protection disabled (WARN); Performance Advisor: 94 unindexed foreign keys and 80 unused indexes (INFO). No database or Auth settings were changed.
+
+**Governance gate:** Master PRD file name includes `v1.0`, but its document header declares Version 1.2 (Draft). Root `AGENTS.md` controls implementation and supersedes the older PRD intro visual palette with the current light cool-gray / red / navy design authority. P1 remains IN_PROGRESS / NOT ACCEPTED; P2 ADR remains DRAFT / NOT ACCEPTED. Phase 04–09 remain IN_PROGRESS / REVIEW_REQUIRED and gated by P1/ADR acceptance. Phase 10 remains BLOCKED / NOT ACCEPTED; Phase 11 remains BLOCKED / NOT ACCEPTED. No real tests, builds, staging, production deployment, provider calls, worker activation or Supabase writes/migrations were run in this continuation.
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
