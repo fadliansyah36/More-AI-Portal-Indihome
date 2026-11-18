@@ -9,6 +9,7 @@ on:
       - "docs/implementation/migration-history-sql-source-snapshot-20261118/**"
       - "docs/implementation/observed-catalog-snapshot-20261118.json"
       - "docs/implementation/observed-security-catalog-snapshot-20261118.json"
+      - "docs/implementation/observed-dependency-graph-20261118.json"
   workflow_dispatch:
 
 permissions:
@@ -48,6 +49,7 @@ jobs:
             --expected artifacts/expected-object-graph.json \
             --observed docs/implementation/observed-catalog-snapshot-20261118.json \
             --security docs/implementation/observed-security-catalog-snapshot-20261118.json \
+            --dependencies docs/implementation/observed-dependency-graph-20261118.json \
             --output artifacts/semantic-reconciliation.json
 
       - name: Write parse coverage summary
