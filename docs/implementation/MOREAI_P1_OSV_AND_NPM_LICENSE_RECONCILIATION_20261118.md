@@ -13,9 +13,10 @@ Read-only OSV.dev queries were run against all exact package URLs in the current
 
 | Ecosystem/scope | Exact coordinates queried | Vulnerable coordinates | Advisory associations |
 |---|---:|---:|---:|
-| npm PURLs in current CycloneDX input | 1,963 | 40 | 134 |
+| Unique exact npm PURLs queried | 1,824 | 40 | 134 |
 | Scenario Kinetic Music Video platform Python locks | 104 | 6 | 87 |
 | Scenario Kinetic Film pinned Python requirements | 2 | 0 | 0 |
+| MoreAI API/Worker direct Python pins | 6 | 3 | 26 |
 | **Total exact coordinates queried** | **1,936** | **49** | **247** |
 
 - The 1,824 unique exact npm PURLs were queried in batches of up to 100. 1,784 returned no matching advisory; 40 returned `vulnerable=true`. The BOM contains 1,940 exact npm component rows plus 23 unversioned MoreAI root dependencies; 116 exact component rows are repeated PURLs across source/component contexts.
@@ -78,7 +79,7 @@ Important limits:
 - The package tarball SHA-512 values are registry-advertised integrity values and were not independently recomputed from downloaded tarball bytes in this no-install/no-execution audit.
 - The file-level SHA-256 values are CDN manifest integrity values, not independently recomputed local hashes.
 - The CC-BY-SA dictionary's attribution/share-alike implications require explicit legal/product review before copying or distributing its contents.
-- Other package source headers, nested third-party assets and all 1,963 npm package notices are not thereby cleared.
+- Other package source headers, nested third-party assets and all selected npm package notices across the 1,963 component rows are not thereby cleared.
 
 The 12-row source queue was updated; it now links to the license evidence CSV. This resolves the missing LICENSE-file evidence for those 12 coordinates, not the complete license reconciliation for all selected dependencies.
 
