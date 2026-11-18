@@ -463,6 +463,8 @@ def build_graph(root: Path, history_dir: Path | None = None) -> dict[str, Any]:
         state = "NOT_VERIFIABLE"
         if latest.get("source_conflict"):
             state = "SOURCE_CONFLICT_NOT_VERIFIABLE"
+        elif latest.get("procedural_body_status") not in {None, "NOT_APPLICABLE"}:
+            state = "FUNCTION_BODY_NOT_VERIFIABLE"
         elif latest["semantic_status"] == "AST_PARSED" and last_operation == "CREATE":
             state = "CREATE_DEFINITION_AST_AVAILABLE"
         elif last_operation == "DROP":
