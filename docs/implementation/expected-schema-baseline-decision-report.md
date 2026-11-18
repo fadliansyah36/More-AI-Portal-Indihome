@@ -26,3 +26,13 @@ No single candidate can be selected as the auditable expected schema baseline. A
 4. Explicit environment designation for the Supabase project (production/non-production) if production assertions are required.
 
 No live replay, test, staging, migration apply, DB write or deployment was performed.
+
+## Execution continuation addendum — 2026-11-18
+
+- Active `supabase/migrations` now contains 83 SQL files. The five malformed browser sources were replaced with valid paths `20261116162500`, `20261116162600`, `20261116162700`, `20261116162800`, `20261116163000`; original source bytes remain archived. The two duplicate aliases `20261115090000` and `20261111110000` are archived and no longer active migration paths.
+- The 32 historical SQL statement bodies missing from current same-name paths are preserved in the migration-history archive. This recovers SQL text but does not recreate original Git commits or an independent executed-byte receipt.
+- The 23 source/history mismatch pairs are mapped; 22 are formatting/comment or semantically equivalent and the original 15084819 source identity is recovered at historical Git commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31` (619/619 ordered SQL tokens).
+- A history-to-object candidate map contains 513 regex-extracted DDL candidates across 106 history versions. It is not a SQL AST, does not resolve dynamic SQL/complete ALTER/ACL semantics and does not prove execution.
+- The all-schema observed catalog now covers 27 non-system schemas, 1,400 columns, 709 constraints, 396 indexes, 328 functions, 19 triggers, 99 policies, 4 sequences, 4 views, 320 type rows, 27 default ACL rows, 24 role memberships and 5,456 non-internal dependency rows. Fingerprints are recorded separately.
+
+These improvements strengthen source lineage and observed-state coverage, but do not supply a trusted expected schema. The baseline remains **BASELINE_SELECTION_BLOCKED** until an immutable known-good schema-only dump is supplied or isolated offline replay is explicitly authorized. No migration apply or production write occurred.
