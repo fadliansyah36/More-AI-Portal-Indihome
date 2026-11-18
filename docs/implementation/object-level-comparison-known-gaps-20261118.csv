@@ -1,9 +1,10 @@
 gap_id,scope,limitation,status,required_evidence
-OG-001,full schema,No trusted expected schema baseline,OPEN,Immutable owner-approved schema dump or approved offline replay
-OG-002,full observed schema,Current capture has aggregate inventory and selected object introspection,PARTIAL,Complete catalog extraction at known timestamp/environment
-OG-003,environment identity,Project ref known but production/non-production designation not independently attested,OPEN,Owner attestation
-OG-004,functions,Only selected signatures/definitions inspected,OPEN,Full expected/observed pg_proc definitions and ACLs
-OG-005,indexes,245 observed aggregate; preferred_model index only presence checked,OPEN,Full pg_get_indexdef comparison
-OG-006,RLS and grants,95 policy aggregate and selected grant findings; no expected ACL baseline,OPEN,Full expected policies/grants/ownership
-OG-007,platform schemas,auth/realtime/storage managed object boundary not fully captured,OPEN,Approved platform scope manifest
-OG-008,execution provenance,History lacks native checksum/receipt,OPEN,Deployment logs/artifact checksum ledger
+OG-001,expected schema,No trusted expected schema baseline,OPEN,Immutable known-good schema-only dump or explicit authorization for isolated offline replay
+OG-002,observed schema,"All 27 non-system schemas inventoried; counts and aggregate fingerprints now cover relations, columns, constraints, indexes, routines, triggers, views, sequences, RLS policies, types, ACLs and dependencies",OBSERVED_SNAPSHOT_CAPTURED,Per-object expected-vs-observed comparison still requires trusted expected definitions
+OG-003,environment identity,Project ref known; production/non-production designation not independently attested,OPEN,Environment attestation and known-good source snapshot identity
+OG-004,functions and procedures,"328 function definitions, owners, security-definer flags and ACLs fingerprinted; no expected object-level comparison",OBSERVED_FINGERPRINT_CAPTURED,Trusted expected routine definitions and per-signature expected ACL baseline
+OG-005,indexes and sequences,396 index definitions and 4 sequence parameter/owner/ACL definitions fingerprinted; no expected baseline,OBSERVED_FINGERPRINT_CAPTURED,Trusted expected index/sequence definitions and dependency mapping
+OG-006,RLS grants ownership,"99 policies, schema ACLs, relation ACLs, routine ACLs, default ACLs and role memberships fingerprinted; expected security baseline absent",OBSERVED_FINGERPRINT_CAPTURED,Expected owner/ACL/policy/grant/role-membership source and per-object diff
+OG-007,platform schemas,"All non-system schemas including auth/realtime/storage are included; pg_catalog, information_schema and pg_toast internals excluded",SCOPED_AND_DOCUMENTED,Approved Supabase-managed platform-object boundary for any system catalog internals
+OG-008,execution provenance,History lacks native checksum/receipt; 513 regex DDL candidates mapped across 106 history versions,PARTIAL,Deployment logs/artifact checksum ledger and AST/replay-based source-to-object evolution
+OG-009,migration-to-object mapping,"513 DDL candidates mapped by regex from stored history statements; dynamic SQL, rename semantics, GRANT/REVOKE and function-body dependencies are not resolved",PARTIAL,SQL AST or isolated replay plus exact source mapping
