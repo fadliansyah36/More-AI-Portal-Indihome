@@ -136,3 +136,15 @@ Expected schema baseline candidates are documented; decision remains `BASELINE_S
 Task 1 remains `REVIEW_REQUIRED`, not READY_FOR_REVIEW or ACCEPTED. The expected schema baseline, browser migration disposition/approval, full object-level parity and execution attestation remain open. Task 2–5, P1 acceptance, P2 ADR and Phase 04–09 were not started. No migration apply, DB write, staging, test or deployment occurred.
 
 See `MOREAI_TASK1_MASTER_RECONCILIATION_REPORT_20261118.md`, `MOREAI_TASK1_MASTER_RECONCILIATION_REGISTER_20261118.csv`, and the new provenance/baseline/browser-review artifacts.
+
+
+## Continuation addendum — 2026-11-18 (latest Task 1 batch)
+
+- Full expected schema baseline remains INSUFFICIENT_EVIDENCE / BASELINE_SELECTION_BLOCKED.
+- The five browser migration IDs encode invalid hours 25, 26, 27, 28 and 30; no replacement IDs or owner approval were inferred.
+- Event CHECK lineage is proven from applied history 15084424, 16083451, 16083458 and 16083502. Four browser source CHECK definitions remove prior valid event values. Source correction proposals exist but none is approved or implemented.
+- 16280000 has both an invalid timestamp-style identifier (hour 28) and malformed SQL function fragments/duplicate definitions.
+- Execution provenance for 15084819 is partial: source and history SQL match 619/619 tokens; preferred_model_id column, FK and partial index are observed as matching. The historical six-argument enqueue overload is no longer present; current seven/eight-argument overloads indicate later evolution.
+- Current main 15090000 is a duplicate/misnamed alias of 15100000 / applied history 15085314. No path was changed.
+- Scoped object matrix: 12 rows; 7 MATCH, 3 EXPECTED_DIFFERENCE, 2 NOT_VERIFIABLE. Full public schema and security parity remain NOT_VERIFIABLE.
+- Task 1 remains REVIEW_REQUIRED. No migration apply, production write, staging, testing or deployment. Task 2–5, P1 acceptance, P2 ADR and Phase 04–09 were not started.
