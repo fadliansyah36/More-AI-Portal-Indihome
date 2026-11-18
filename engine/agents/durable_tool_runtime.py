@@ -532,7 +532,7 @@ END UNTRUSTED FILE CONTENT"
                     and isinstance(definition.get("function"), dict)
                     and (
                         definition["function"].get("name") in selected_tools
-                        or definition["function"].get("name") in {"create_chat_completion", "copy_engine_generate", "terminate"}
+                        or definition["function"].get("name") in {"create_chat_completion", "terminate"}
                     )
                 )
             ]
