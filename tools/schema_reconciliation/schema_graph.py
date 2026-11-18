@@ -405,6 +405,10 @@ def _history_archive_payloads(history_archive_dir: Path | None) -> list[dict[str
             "statements": statements, "_source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
             "_source_path": path.relative_to(history_archive_dir).as_posix(),
             "_git_blob_sha1": _git_blob_sha1(raw),
+            "_archive_status": payload.get("archive_status"),
+            "_archive_provenance": payload.get("provenance"),
+            "_source_repository_path": (payload.get("provenance") or {}).get("source_repository_path"),
+            "_source_repository_git_blob_sha": (payload.get("provenance") or {}).get("source_repository_git_blob_sha"),
         })
     return records
 
@@ -463,6 +467,11 @@ def parse_history_record(record: dict[str, Any], temp_root: Path, hash_manifest:
         source_record["history_statement_index"] = statement_index
         source_record["history_statement_hash_status"] = hash_status
         source_record["history_statement_expected_sha256"] = expected_hash
+        if record_source_kind == "HISTORICAL_SQL_ARCHIVE_JSON":
+            source_record["archive_status"] = record.get("_archive_status")
+            source_record["archive_provenance"] = record.get("_archive_provenance")
+            source_record["source_repository_path"] = record.get("_source_repository_path")
+            source_record["source_repository_git_blob_sha"] = record.get("_source_repository_git_blob_sha")
         sources.append(source_record)
         ordinal_offset += int(parsed_count or 0)
     return events, sources
