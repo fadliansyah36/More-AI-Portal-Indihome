@@ -81,6 +81,8 @@ jobs:
               "history_hash_manifest_migration_count": graph["history_hash_manifest_migration_count"],
               "history_statement_hash_mismatch_count": graph["history_statement_hash_mismatch_count"],
               "history_statement_hash_not_verifiable_count": graph["history_statement_hash_not_verifiable_count"],
+              "history_archive_statement_hash_variant_count": graph["history_archive_statement_hash_variant_count"],
+              "history_archive_statement_hash_not_verifiable_count": graph["history_archive_statement_hash_not_verifiable_count"],
               "archive_source_file_count": graph["archive_source_file_count"],
               "archive_ddl_event_count": graph["archive_ddl_event_count"],
               "history_statement_source_count": graph["history_statement_source_count"],
