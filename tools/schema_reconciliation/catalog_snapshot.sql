@@ -257,6 +257,7 @@ dependencies AS (
 )
 SELECT jsonb_build_object(
   'format', 'moreai.postgresql.observed-catalog.v1',
+  'applied_migration_ids', (SELECT coalesce(jsonb_agg(version ORDER BY version), '[]'::jsonb) FROM supabase_migrations.schema_migrations),
   'snapshot_id', to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYYMMDD"T"HH24MISS"Z"'),
   'database_version', current_setting('server_version'),
   'expected_source_coverage_complete', false,
