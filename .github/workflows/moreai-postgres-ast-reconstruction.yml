@@ -7,6 +7,8 @@ on:
       - "tools/schema_reconciliation/**"
       - "supabase/migrations/**"
       - "docs/implementation/migration-history-sql-source-snapshot-20261118/**"
+      - "docs/implementation/migration-history-statement-hashes-20261118.json"
+      - ".github/workflows/**"
       - "docs/implementation/migration-source-archive/**"
       - "docs/implementation/observed-catalog-snapshot-20261118.json"
       - "docs/implementation/observed-security-catalog-snapshot-20261118.json"
@@ -47,6 +49,7 @@ jobs:
             --migrations-dir supabase/migrations \
             --history-dir docs/implementation/migration-history-sql-source-snapshot-20261118 \
             --archive-dir docs/implementation/migration-source-archive \
+            --history-hash-manifest docs/implementation/migration-history-statement-hashes-20261118.json \
             --output artifacts/expected-object-graph.json
 
       - name: Reconcile expected graph against read-only catalog snapshots
@@ -71,6 +74,9 @@ jobs:
           summary = {
               "active_migration_file_count": graph["active_migration_file_count"],
               "history_migration_record_count": graph["history_migration_record_count"],
+              "history_hash_manifest_migration_count": graph["history_hash_manifest_migration_count"],
+              "history_statement_hash_mismatch_count": graph["history_statement_hash_mismatch_count"],
+              "history_statement_hash_not_verifiable_count": graph["history_statement_hash_not_verifiable_count"],
               "archive_source_file_count": graph["archive_source_file_count"],
               "archive_ddl_event_count": graph["archive_ddl_event_count"],
               "history_statement_source_count": graph["history_statement_source_count"],
