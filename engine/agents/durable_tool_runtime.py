@@ -131,6 +131,7 @@ class DurableOpenManusRuntime:
         self.skill_permission_tools = {
             "network.read": {"google_search"}, "search.web": {"google_search"},
             "content.generate": {"copy_engine_generate"},
+            "media.generate": {"image_generate", "video_generate"},
             "workspace.read": {"workspace_read_file"},
             "workspace.write": {"str_replace_editor", "workspace_restore_version"},
             "browser.navigate": {"browser_use"}, "browser.download": {"browser_use"},
