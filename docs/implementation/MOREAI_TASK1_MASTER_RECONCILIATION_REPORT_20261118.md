@@ -159,7 +159,7 @@ Current main 15090000 and 15100000 share blob 86c53087... and content; both map 
 
 ### Expected-vs-observed object-level comparison
 
-Scoped matrix contains 12 object rows after the preferred-model FK/index/function refinement: 7 MATCH, 3 EXPECTED_DIFFERENCE, 2 NOT_VERIFIABLE plus the remaining scoped comparison state as recorded in the matrix. The browser event CHECK, three retention columns, preferred_model_id column, FK and partial index match their source definitions. The six-argument enqueue function is not present as a current overload and requires later migration lineage mapping. Grants/commands/preview tables are absent while their sources are unapplied; this is EXPECTED_DIFFERENCE, not drift. Full schema and security parity remain NOT_VERIFIABLE.
+Scoped matrix contains 12 object rows after the preferred-model FK/index/function refinement: 7 MATCH, 3 EXPECTED_DIFFERENCE, 2 NOT_VERIFIABLE. The browser event CHECK, three retention columns, preferred_model_id column, FK and partial index match their source definitions. The six-argument enqueue function is not present as a current overload and requires later migration lineage mapping. Grants/commands/preview tables are absent while their sources are unapplied; this is EXPECTED_DIFFERENCE, not drift. Full schema and security parity remain NOT_VERIFIABLE.
 
 ### Owner decision evidence
 
