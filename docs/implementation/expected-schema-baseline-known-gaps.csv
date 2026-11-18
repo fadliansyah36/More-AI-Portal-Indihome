@@ -1,0 +1,10 @@
+gap_id,gap,impact,status,required_evidence
+BG-001,No authoritative immutable complete schema dump,Cannot define expected DDL object by object,OPEN,Owner-approved schema dump with provenance/hash
+BG-002,No approved offline migration replay authorization,Cannot deterministically replay historical SQL into isolated scratch database,OPEN,Explicit owner approval and isolated environment boundary
+BG-003,32 applied history names lack current same-name source,Migration source set incomplete,OPEN,Recover original SQL or owner-approved historical-only disposition
+BG-004,23 same-name SQL raw differences,Need pair-level source mapping; 22 explained and 15084819 recovered from Git history,PARTIALLY_RESOLVED,Revalidate all 23 and retain raw source evidence
+BG-005,Migration history has no native checksum,Cannot verify execution checksum from history metadata alone,OPEN,Trusted deployment artifact/checksum ledger
+BG-006,Five browser migrations are unapplied,Feature objects not part of observed schema,OPEN,Source review and owner approval; no apply in this task
+BG-007,No explicit environment designation in current audit artifacts,Do not assert production schema identity,OPEN,Owner/environment attestation
+BG-008,No complete expected grants/RLS/ownership snapshot,Security parity not provable,OPEN,Approved object-level security baseline
+BG-009,Platform-managed schema objects not in app-owned migration inventory,Need scope boundary for auth/realtime/storage schemas,OPEN,Platform schema ownership and extension manifest
