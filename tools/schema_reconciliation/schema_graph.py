@@ -370,7 +370,6 @@ def parse_history_record(record: dict[str, Any], temp_root: Path) -> tuple[list[
     if not isinstance(statements, list):
         statements = [statements] if isinstance(statements, str) else []
     events: list[dict[str, Any]] = []
-    archive_events: list[dict[str, Any]] = []
     sources: list[dict[str, Any]] = []
     ordinal_offset = 0
     for statement_index, statement in enumerate(statements, start=1):
@@ -379,7 +378,7 @@ def parse_history_record(record: dict[str, Any], temp_root: Path) -> tuple[list[
         source_bytes = statement.encode("utf-8")
         source_sha256 = hashlib.sha256(source_bytes).hexdigest()
         relative = "supabase_migrations.schema_migrations/" + version + "/" + name + "#statement:" + str(statement_index)
-        if re.match(r"^supabase/migrations/[A-Za-z0-9_./-]+\\.sql$", statement.strip()):
+        if re.match(r"^supabase/migrations/[A-Za-z0-9_./-]+\.sql$", statement.strip()):
             sources.append({
                 "migration_id": version, "source_path": relative,
                 "source_sha256": source_sha256, "git_blob_sha1": None,
@@ -412,6 +411,7 @@ def parse_history_record(record: dict[str, Any], temp_root: Path) -> tuple[list[
 def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path | None = None) -> dict[str, Any]:
     files = sorted(root.rglob("*.sql"), key=lambda p: p.relative_to(root).as_posix())
     events: list[dict[str, Any]] = []
+    archive_events: list[dict[str, Any]] = []
     sources: list[dict[str, Any]] = []
     for path in files:
         file_events, source_record = parse_source(path, root)
@@ -558,9 +558,12 @@ def main() -> int:
     args.output.write_text(json.dumps(graph, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
         "active_migration_file_count": graph["active_migration_file_count"],
-        "history_source_count": graph["history_source_count"],
+        "history_migration_record_count": graph["history_migration_record_count"],
+        "history_statement_source_count": graph["history_statement_source_count"],
+        "archive_source_file_count": graph["archive_source_file_count"],
+        "archive_ddl_event_count": graph["archive_ddl_event_count"],
         "source_record_count": graph["source_record_count"],
-        "parsed_source_file_count": graph["parsed_source_file_count"],
+        "parsed_source_record_count": graph["parsed_source_record_count"],
         "parse_failure_count": graph["parse_failure_count"],
         "statement_count": graph["statement_count"],
         "ddl_event_count": graph["ddl_event_count"],
