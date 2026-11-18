@@ -59,7 +59,7 @@ def _validate_pinned_source_identity(source_repository: Any, source_commit: Any,
     ):
         raise PermissionError("motion_skill_entrypoint_not_allowlisted")
 
-COPY_ENGINE_SCENARIO_SKILLS = frozenset({"scenario-brand-kit", "scenario-ad-variants"})
+COPY_ENGINE_SCENARIO_SKILLS = frozenset({"scenario-brand-kit", "scenario-ad-variants", "scenario-text-overlay"})
 
 SCENARIO_MCP_ONLY_SKILLS = frozenset({
     "scenario-3d",
