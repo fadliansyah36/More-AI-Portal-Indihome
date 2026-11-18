@@ -38,7 +38,7 @@ The tool uses no direct provider SDK, external SaaS or Scenario MCP. Usage remai
 
 ## Activation and authorization
 
-Source integration is committed. Database activation is intentionally not performed in this task: no package import, install, permission grant, publication or registry write was made to Supabase. Existing packages must be imported, validated, published and installed through the current FastAPI/Skill Registry workflow before a customer can select them. The tool itself remains subject to the existing per-run saved-agent tool allowlist and policy-enforced registry.
+Source integration is committed. Database activation is intentionally not performed in this task: no package import, install, permission grant, publication or registry write was made to Supabase. Existing packages must be imported, validated, published and installed through the current FastAPI/Skill Registry workflow before a customer can select them. The tool itself remains subject to the existing per-run saved-agent tool allowlist and policy-enforced registry. Scenario copy skills require the explicit skill permission `content.generate`; this permission is allowlisted by the API and worker, and maps only to `copy_engine_generate`. The resolver fails closed if the installation's granted permission snapshot does not include it. The two source mappings and their current activation state are in `AI-SKILLS-COPY-ENGINE-PERMISSION-MANIFEST-20261118.csv`.
 
 ## License and provenance
 
