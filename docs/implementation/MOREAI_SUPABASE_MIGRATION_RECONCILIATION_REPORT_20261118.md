@@ -42,7 +42,7 @@ Observed file-level classification (corrected after identifying three history pa
 - 5 repository files have no matching name or exact SQL content in applied history.
 - Of 7 exact version+name matches, 3 are path-reference-only, 3 have exact SQL content matches, and 1 has a raw SQL content mismatch.
 
-A hash mismatch may reflect whitespace/comments or a substantive SQL change. No equivalence claim is made until a per-file diff and semantic classification are recorded. The 26 mismatches remain REVIEW_REQUIRED.
+All 23 SQL-content mismatches were additionally compared after collapsing whitespace and stripping SQL line/block comments using a conservative regex normalization; all 23 still differ. This is not a SQL parser/AST equivalence proof, and differences inside quoted or dollar-quoted strings may affect normalization. The per-file MD5 evidence and normalized mismatch status are recorded in `MOREAI_SUPABASE_MIGRATION_SQL_MISMATCH_REVIEW_20261118.csv`. No equivalence claim is made; exact SQL diff and semantic classification remain required.
 
 ## 5. Duplicate applied names
 
