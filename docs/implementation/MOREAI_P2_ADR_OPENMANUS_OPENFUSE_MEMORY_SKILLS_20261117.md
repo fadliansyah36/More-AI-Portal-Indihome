@@ -236,3 +236,8 @@ Read-only migration parity audit found 116 applied history rows vs 85 current SQ
 ### Applied migration statement archive evidence
 
 The 32 applied history rows with no current repository source each retain one SQL statement in `schema_migrations.statements`; `rollback` is NULL for those rows. This is potential source-recovery evidence, not a verified source archive. Before recovering, inspect for embedded credentials/environment-specific values, compare with surviving source/commits and hash the recovered SQL. Keep any recovered historical SQL outside the active Supabase migration directory; never replay it.
+
+
+## P1 executable review update — Batch 07 (2026-11-18)
+
+Executable-source review advanced to **63/875**. Maya pipeline source includes a generic mayapy runner that executes a job file through `runpy`; scene script nodes are off by default, but customer-controlled job paths would still permit arbitrary code. ZBrush GoZ modifies shared user preference/object-list files and starts the desktop app; ZBrush plugin/character modules state live runtime operations have not been run. All remain DEFER. The report is `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_07_20261118.md`. P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED.
