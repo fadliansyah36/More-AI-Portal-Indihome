@@ -90,7 +90,61 @@ The following reproducible MD5 fingerprints were computed from sorted public-sch
 - RLS policies: `74762a7c84df6498207292292f8526e9`
 - table privilege rows: `118bd81a46ccf08993601020462a83dc`
 
-This inventory is an observed-state fingerprint. It is not an expected-state baseline. The public table privilege view does not replace schema, sequence, function ACL, role membership, ownership and default-privilege reconciliation. The 190 `pg_type` rows include PostgreSQL-generated relation row types and must not be interpreted as 190 independently authored domain types.
+This inventory is an observed-state fingerprint. It is not an expected-state baseline.
+
+### 2.1 Full non-system schema-family inventory
+
+A second read-only catalog query covered all 27 non-system schemas (not just `public`). The observed counts are:
+
+| Object class | Observed count |
+|---|---:|
+| Non-system schemas | 27 |
+| Ordinary tables | 137 |
+| Partitioned tables | 1 |
+| Views | 4 |
+| Materialized views | 0 |
+| Sequences | 4 |
+| Indexes | 396 (394 ordinary + 2 partitioned indexes) |
+| Columns | 1,400 |
+| Constraints | 709 |
+| Functions/procedures | 328 (all 328 are functions) |
+| Non-internal triggers | 19 |
+| RLS policies | 99 |
+| RLS-enabled base/partitioned tables | 123 |
+| FORCE RLS tables | 0 |
+| Table privilege rows | 1,704 |
+| Routine privilege rows | 702 |
+| pg_type rows | 320 |
+| Enum labels | 47 |
+| Domain constraints | 2 |
+| Role memberships | 24 |
+| Default ACL entries | 27 |
+| Non-internal dependency rows | 5,456 |
+| Extensions | 7 |
+
+The seven extensions and versions are: `pg_cron 1.6.4`, `pg_stat_statements 1.11`, `pgcrypto 1.3`, `plpgsql 1.0`, `supabase_vault 0.3.1`, `uuid-ossp 1.1`, and `vector 0.8.2`.
+
+Sorted catalog-definition fingerprints for the all-schema snapshot (MD5, reproducibility identifiers only):
+
+| Catalog set | Fingerprint |
+|---|---|
+| Schemas, owners and schema ACLs | `29a2265ac033284b723736ff4a269455` |
+| Relations, owners, RLS flags and relation ACLs | `533553c7d6f2bc8621b14513432e8954` |
+| Columns | `3269c99076916dcddd6b88be2ba22fe6` |
+| Constraints | `fb7c57f52c22d49090f95bd6f7193cf0` |
+| Index definitions | `b01daea35818f1a0fd70eb555378e2e5` |
+| Routine definitions, owners, security-definer flags and ACLs | `c098e21fd78656a9bb0715c0d61caad7` |
+| Trigger definitions | `d533ce13d2b715c843fe61a624b9f08d` |
+| RLS policy definitions | `c842208fffb2720bb24daad8589a5530` |
+| Type metadata | `08b0b3c4938e385f73fa0da35a9bf3ee` |
+| Relation/object dependency catalog rows | `a56fbd3c9c1be0cde66b2ac5126c23a3` |
+| View definitions | `e74a710960c3998bc2470325b0b79ffd` |
+| Sequence definitions and parameters | `673086bafa9ebbdc1ec8417860603c72` |
+| Default ACL entries | `648953781337e0e07d2f743aa8a67da2` |
+| Role memberships | `fc3d7ebff9ed4734e923337d3f2addad` |
+
+The all-schema inventory is also exported to `TASK1-OBSERVED-CATALOG-FINGERPRINTS-20261118.csv`. These hashes fingerprint the observed catalog only. They do not establish expected definitions, prove historical migration execution, or certify that the current state is correct.
+ The public table privilege view does not replace schema, sequence, function ACL, role membership, ownership and default-privilege reconciliation. The 190 `pg_type` rows include PostgreSQL-generated relation row types and must not be interpreted as 190 independently authored domain types.
 
 ## 3. Trusted expected schema baseline — status and concrete boundary
 
