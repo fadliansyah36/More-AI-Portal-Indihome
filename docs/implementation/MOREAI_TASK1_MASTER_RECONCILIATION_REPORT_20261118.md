@@ -1,0 +1,126 @@
+# Task 1 continuation — master reconciliation report
+
+Date: 2026-11-18
+Repository: fadliansyah36/More-AI-Portal-Indihome
+Branch: main
+Supabase project: uunfgimtokhucegqbpce
+Scope: migration provenance, expected schema baseline evidence, and five unapplied browser migration source reviews.
+
+## Execution boundary
+
+Read-only GitHub source/history inspection and read-only Supabase migration-history/catalog evidence only. No migration apply, SQL DDL, production data write, schema change, staging, testing (including static runtime/integration testing), deployment, or production configuration change. No Task 2–5, P1 acceptance, P2 ADR, or Phase 04–09 work was started. No migration history row or SQL source was deleted/overwritten.
+
+## 1. Initial audit and resume matrix
+
+Re-read root AGENTS.md, Master PRD v1.2 Draft, migration governance section, PHASE-TRACKER.md, Task 1 final reconciliation, 23-pair exact SQL diff, duplicate SQL report, schema inventory/drift matrix, RLS report, dependency report, and five-unapplied migration register. Re-read Supabase migration history and current Git main sources.
+
+| Workstream | Previous status | Current evidence | Remaining work |
+|---|---|---|---|
+| Migration provenance 15084819 | SOURCE_IDENTITY_UNVERIFIED | Recovered Git source at commit cc5563e; 619/619 ordered lexical SQL tokens match history SQL | Full deployment/execution attestation and owner disposition for current duplicate path |
+| Expected schema baseline | NOT_VERIFIABLE | Candidate inventory across history, repo migrations, live catalog and PRD | BASELINE_SELECTION_BLOCKED; obtain immutable schema dump or approved offline replay |
+| Five browser migrations | UNRESOLVED/BLOCKED | All five exact files fetched and source-reviewed; dependencies/security/compatibility documented | Corrected reviewed SQL, event vocabulary decision, ownership contracts and owner approval |
+
+## 2. Workstream A — migration provenance 20261115084819
+
+### Resolved source identity
+
+Supabase history row: version 20261115084819, name moreai_agent_model_preferences, one SQL statement, 3,480 bytes, MD5 9f5254d8a2749d42f512de381d22b68c, SHA-256 40c4a5081052cca21b287fc7e0797676eabda86ef72e584e2bf9a45dc2855320.
+
+Historical Git representation: commit cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31, path supabase/migrations/20261115090000_moreai_agent_model_preferences.sql, Git blob b7278df23425678a3009cb5c15f20e7c6cf53327, 4,108 characters. GitHub commit search records the commit at 2026-11-15 15:48:10 +07:00. The commit introduces preferred_model_id, its partial index and the model-preference-aware 6-argument chat enqueue function.
+
+A recursive SQL lexical tokenizer, including recursive tokenization inside dollar-quoted PL/pgSQL bodies, compared the Git source with the history SQL: 619 tokens on each side, all 619 in identical order. This establishes a strong source identity match; the raw representation hashes differ because the history statement is more compactly formatted. The tokenizer is not a SQL AST or runtime proof.
+
+### Current main file is a different representation
+
+Current main file 20261115090000 has blob 86c53087c128b6a867bc462f4b3671ad716ea048 and is byte-identical to 20261115100000_moreai_agent_model_preferences_attachment_compat.sql. Its raw SQL MD5 561ec2dfb21f2e7d74ad4a8ebf0ea4d5 matches applied history 20261115085314, not 15084819. Do not treat or relabel this current duplicate/misnamed file as the source for 15084819.
+
+### Provenance decision
+
+- HISTORY_RECORD_CONFIRMED: yes.
+- SOURCE_CONFIRMED: yes, via Git historical commit and 619/619 lexical token identity.
+- PROVENANCE_PARTIAL: overall, not fully attested. Supabase history has no native checksum/execution receipt; Git path version 15090000 differs from history version 15084819; no independent deployment pipeline receipt is available.
+- Source of record: SQL statement stored in history version 15084819, cross-identified to Git commit cc5563e.
+- Preserve both Git history and DB history. No rename, rewrite, delete or replacement migration is authorized.
+
+Detailed artifacts: migration-20261115084819-provenance-report.md, migration-20261115084819-source-inventory.csv, migration-20261115084819-hash-and-content-comparison.csv, migration-20261115084819-provenance-chain.csv, migration-20261115084819-decision-register.csv.
+
+## 3. Workstream B — expected schema baseline
+
+Decision: **BASELINE_SELECTION_BLOCKED**.
+
+Candidates examined:
+1. Applied migration history: 116 rows, latest 20261116113852. Best evidence of recorded migration sequence and stored SQL, but not a complete deterministic baseline: 32 applied migration names lack same-name current source; 23 same-name SQL comparisons have raw differences; no native checksum; no approved replay.
+2. Current main migration directory: 85 SQL files. It is authoritative for current repository content, not expected DB state. Five browser sources are unapplied; 15090000 is a duplicate/misnamed alias of 15100000/15085314.
+3. Connected Supabase public catalog: observed snapshot from 2026-11-18 with 94 tables, 1 view, 922 columns, 562 constraints, 245 indexes, 98 functions/procedures, 5 triggers, 95 policies; RLS enabled on 94/94. This is observed database state, not expected schema.
+4. Master PRD v1.2 Draft: product/architecture intent, not DDL-complete.
+5. Immutable full schema dump or approved offline migration replay: not identified/authorized.
+
+Expected schema object inventory classifies observed categories but expected definitions as BASELINE_UNVERIFIABLE. The prior catalog snapshot is not newly asserted as production schema; no independent environment attestation was provided. Platform-managed auth/realtime/storage objects remain outside the app-owned public migration baseline.
+
+Required unblock evidence: owner-approved immutable schema dump with provenance/hash and environment identity, or explicit authorization for offline-only replay in an isolated disposable database disconnected from Supabase, with complete ordered SQL sources and source mapping. Also needed: a per-migration source/checksum manifest and approved grants/RLS/ownership baseline.
+
+Artifacts: expected-schema-evidence-inventory.csv, expected-schema-baseline-candidates.csv, expected-schema-object-inventory.csv, expected-schema-baseline-matrix.csv, expected-schema-dependency-map.md, expected-schema-baseline-decision-report.md, expected-schema-baseline-known-gaps.csv.
+
+## 4. Workstream C — five browser migration source reviews
+
+All five are confirmed repository-only sources on main; all five versions are absent from migration history. Source reviews are complete as static source inspections, but final migration decisions remain blocked/unresolved.
+
+| Migration | Source review | Main finding | Final status |
+|---|---|---|---|
+| 20261116250000 grants | SOURCE_REVIEW_COMPLETE | CHECK drops close_requested, profile_retention_eligible and profile_deleted; grant table/RPC/session-close trigger; owner relation and SECURITY DEFINER hardening need review | UNRESOLVED |
+| 20261116260000 run-terminal revoke | SOURCE_REVIEW_COMPLETE | Requires grants predecessor; same three event values omitted by CHECK | BLOCKED_BY_DEPENDENCY |
+| 20261116270000 logout revoke | SOURCE_REVIEW_COMPLETE | Requires grants predecessor; service-only SECURITY DEFINER RPC accepts p_user_id and relies on trusted server identity binding | BLOCKED_BY_DEPENDENCY |
+| 20261116280000 command queue | SOURCE_REVIEW_COMPLETE | Requires grants predecessor; malformed PL/pgSQL/fragment ordering and duplicate definitions; CHECK omits two profile events | BLOCKED_BY_DEPENDENCY |
+| 20261116300000 preview requests | SOURCE_REVIEW_COMPLETE | Base tables exist; CHECK omits two profile events; SQL does not bind run to session's run_id/last_run_id or verify artifact association | UNRESOLVED |
+
+All five sources have event-vocabulary compatibility findings: 16250000/16260000 omit close_requested plus both profile retention events; 16280000/16300000 preserve close_requested but omit profile_retention_eligible and profile_deleted. These are source regressions, not current live schema drift. Current event rows were previously observed at zero; future event writes remain affected if the narrowed CHECK were applied.
+
+Security review distinguishes confirmed source defects from potential risks. The malformed SQL in 16280000 is confirmed. Other findings (service-role identity binding, composite ownership relationships, artifact/run association, cascade retention and SECURITY DEFINER search_path hardening) are potential risks requiring backend contract and owner review, not proven exploits. No storage bucket/policy mutation appears in these five sources.
+
+Artifacts: five-browser-migration-source-inventory.csv, five-browser-migration-provenance-matrix.csv, five-browser-migration-sql-review.md, five-browser-migration-dependency-analysis.md, five-browser-migration-security-review.md, five-browser-migration-baseline-compatibility.csv, five-browser-migration-final-decision-register.csv.
+
+## 5. Workstream D — consolidation and decision history
+
+### 23 SQL mismatch matrix
+
+The prior 23-pair findings remain valid as comparisons of current main file vs same-named applied history. The 15090000 current-main pair is still a wrong-source pairing, but its original source is now recovered from Git history. Update the mismatch row to SOURCE_IDENTITY_RECOVERED_HISTORICALLY while preserving its raw mismatch and current duplicate alias findings. Do not claim the current-main file matches 15084819.
+
+### Duplicate SQL decisions
+
+Five historical logical-name duplicate groups remain unchanged (three exact duplicates, two semantically equivalent variants). Current repo 15090000/15100000 remain identical aliases of applied 15085314. No file/history deletion or merge.
+
+### Schema drift decisions
+
+- Full expected-vs-observed parity remains NOT_VERIFIABLE; this batch does not change that conclusion.
+- Four browser CHECK replacements remain POTENTIAL_DRIFT source risks, not live drift.
+- Missing browser grant/command/preview objects remain EXPECTED_DIFFERENCE while migrations are unapplied.
+- Model preference source identity is now recovered from historical Git; update the previous provenance blocker accordingly. Full expected DDL parity is still not proven.
+
+### Task 1 master register
+
+See MOREAI_TASK1_MASTER_RECONCILIATION_REGISTER_20261118.csv. Existing 23-pair matrix, duplicate register and five-browser decision register remain source evidence.
+
+## 6. Task 1 acceptance gate
+
+**Task 1 status: REVIEW_REQUIRED (not READY_FOR_REVIEW, not ACCEPTED).**
+
+Resolved in this batch:
+- Original historical Git source for 15084819 found and token-matched to history SQL.
+- Source identity distinction between current main 15090000 alias and original historical source made explicit.
+- Static SQL/dependency/security/baseline compatibility reviews completed for all five browser files.
+- Candidate schema baseline evidence inventoried; selection explicitly blocked.
+
+Outstanding blockers:
+1. Expected schema baseline cannot be selected without immutable trusted schema dump or owner-authorized offline replay.
+2. Five browser sources are not approvable as-is: four event CHECK regressions, 16280000 malformed SQL, missing 16250000 predecessor for dependent migrations, and owner decisions absent.
+3. Full object-level expected definitions/grants/RLS/ownership parity remain unverified.
+4. 15084819 execution attestation and current duplicate path disposition remain partial/owner-level, despite source identity recovery.
+5. The exact 23-pair register and older final report must be kept consistent with this provenance correction.
+
+Task 2–5 remain NOT_STARTED/untouched. P1 Acceptance remains BLOCKED/NOT_ACCEPTED. P2 ADR remains DRAFT/NOT_ACCEPTED. Phase 04–09 were not started or advanced by this batch; existing tracker states are retained. Phase 10–11 remain blocked.
+
+## 7. Repository changes and safety
+
+Documentation/evidence only under docs/implementation. No application source, SQL migration source, migration history, production configuration or database object was modified. No tests/builds were run (per instruction). No staging or deployment.
+
+Next execution remains Task 1 only: obtain an approved expected schema source; maintain event vocabulary and fix/re-review source files only after owner authorization; obtain deployment provenance evidence if full attestation is required. Do not start Task 2 automatically.
