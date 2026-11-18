@@ -1,0 +1,77 @@
+name: MoreAI PostgreSQL AST Reconstruction
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/schema_reconciliation/**"
+      - "supabase/migrations/**"
+      - "docs/implementation/migration-history-sql-source-snapshot-20261118/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-expected-object-graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tools/schema_reconciliation/pyproject.toml
+
+      - name: Install pinned PostgreSQL AST parser
+        run: python -m pip install --disable-pip-version-check -e ./tools/schema_reconciliation
+
+      - name: Parse active migrations and recorded history
+        run: |
+          mkdir -p artifacts
+          python tools/schema_reconciliation/schema_graph.py \
+            --migrations-dir supabase/migrations \
+            --history-dir docs/implementation/migration-history-sql-source-snapshot-20261118 \
+            --output artifacts/expected-object-graph.json
+
+      - name: Write parse coverage summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("artifacts/expected-object-graph.json")
+          if not p.exists():
+              raise SystemExit("AST graph output missing")
+          graph = json.loads(p.read_text())
+          summary = {
+              "active_migration_file_count": graph["active_migration_file_count"],
+              "history_source_count": graph["history_source_count"],
+              "source_record_count": graph["source_record_count"],
+              "parsed_source_record_count": graph["parsed_source_record_count"],
+              "parse_failure_count": graph["parse_failure_count"],
+              "statement_count": graph["statement_count"],
+              "ddl_event_count": graph["ddl_event_count"],
+              "object_key_count": graph["object_key_count"],
+          }
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("## PostgreSQL AST reconstruction\n\n")
+              for key, value in summary.items():
+                  f.write(f"- **{key}**: {value}\n")
+              f.write("\nParse failures and unresolved object states are preserved in the graph as NOT_VERIFIABLE.\n")
+          PY
+
+      - name: Upload expected-object graph artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moreai-postgresql-ast-graph-${{ github.sha }}
+          path: artifacts/expected-object-graph.json
+          if-no-files-found: error
+          retention-days: 30
