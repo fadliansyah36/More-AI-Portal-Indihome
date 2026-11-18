@@ -267,7 +267,7 @@ acl_entries AS (
   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
   UNION ALL
   SELECT jsonb_build_object(
-    'object_key', 'DEFAULT_ACL:' || pg_get_userbyid(d.defaclrole) || ':' || coalesce(ns.nspname, 'ALL_SCHEMAS') || ':' || d.defaclobjtype || ':' || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END || ':' || a.privilege_type,
+    'object_key', 'DEFAULT_ACL:' || pg_get_userbyid(d.defaclrole) || ':' || coalesce(ns.nspname, 'ALL_SCHEMAS') || ':' || d.defaclobjtype::text || ':' || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END || ':' || a.privilege_type,
     'object_class', 'DEFAULT_ACL', 'name', 'DEFAULT_ACL:' || pg_get_userbyid(d.defaclrole),
     'definition', jsonb_build_object('owner_role', pg_get_userbyid(d.defaclrole), 'schema', ns.nspname, 'object_type', d.defaclobjtype, 'grantee', CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END, 'grantor', pg_get_userbyid(a.grantor), 'privilege', a.privilege_type, 'grantable', a.is_grantable),
     'security_fingerprint', md5(d.defaclrole::text || ':' || coalesce(d.defaclnamespace::text, '0') || ':' || d.defaclobjtype || ':' || a.grantee::text || ':' || a.privilege_type || ':' || a.is_grantable)
