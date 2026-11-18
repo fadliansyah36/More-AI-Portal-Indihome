@@ -477,6 +477,8 @@ def build_graph(root: Path, history_dir: Path | None = None) -> dict[str, Any]:
             "latest_operation": last_operation, "expected_state_status": state,
             "latest_ast_sha256": latest["normalized_ast_sha256"],
             "expected_definition": latest.get("normalized_ast") if state == "CREATE_DEFINITION_AST_AVAILABLE" else None,
+            "dependency_candidates": sorted({candidate for item in history for candidate in (item.get("dependency_candidates") or [])}),
+            "dependency_candidate_count": len({candidate for item in history for candidate in (item.get("dependency_candidates") or [])}),
             "migration_lineage": [
                 {
                     "migration_id": item["migration_id"], "source_path": item["source_path"],
