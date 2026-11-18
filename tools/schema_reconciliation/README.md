@@ -18,6 +18,7 @@ pip install -e .
 python schema_graph.py \
   --migrations-dir ../../supabase/migrations \
   --history-dir ../../docs/implementation/migration-history-sql-source-snapshot-20261118 \
+  --archive-dir ../../docs/implementation/migration-source-archive \
   --output ../../docs/implementation/generated/expected-object-graph.json
 python reconcile.py \
   --expected ../../docs/implementation/generated/expected-object-graph.json \
@@ -29,7 +30,7 @@ python reconcile.py \
 
 The history input contains 116 raw migration-history rows captured with read-only SELECT in `docs/implementation/migration-history-sql-source-snapshot-20261118/`. The snapshots preserve statement text as returned by Supabase history. Their Git blob hashes identify the snapshot files; the parser computes SHA-256 for each individual SQL statement. Three path-reference rows are not SQL and remain `NOT_VERIFIABLE`.
 
-Active Git files and history statements are cross-linked by migration ID and statement ordinal. Equal AST hashes retain both source evidence records. Different AST hashes are flagged as source conflicts rather than silently selecting one version. The graph retains source existence and history-record evidence separately; it does not attest exact deployed bytes.
+Active Git files and history statements are cross-linked by migration ID and statement ordinal. Equal AST hashes retain both source evidence records. Different AST hashes are flagged as source conflicts rather than silently selecting one version. The graph also parses the seven preserved malformed/duplicate original SQL files as historical archive evidence without mixing those old IDs into the active expected-object timeline. The graph retains source existence and history-record evidence separately; it does not attest exact deployed bytes.
 
 ## Reconciliation
 
