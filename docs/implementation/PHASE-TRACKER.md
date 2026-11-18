@@ -1903,3 +1903,15 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 
 
 **Task 1 continuation detail (2026-11-18):** Provenance is SOURCE_CONFIRMED / PROVENANCE_PARTIAL for migration 20261115084819. The expected schema baseline is BASELINE_SELECTION_BLOCKED; the current catalog is observed state only. All five browser migration source reviews are complete at source level, but none is approved for application. Task 1 remains REVIEW_REQUIRED; Task 2–5, P1 acceptance, P2 ADR and Phase 04–09 were not started or advanced. See `MOREAI_TASK1_MASTER_RECONCILIATION_REPORT_20261118.md` and `MOREAI_TASK1_MASTER_RECONCILIATION_REGISTER_20261118.csv`.
+
+
+## Task 1 continuation addendum — 2026-11-18: baseline, owner decisions and object-level comparison
+
+- Expected schema: no trusted full schema dump or approved offline replay. Full baseline remains BASELINE_SELECTION_BLOCKED. Scoped lineage-backed browser event CHECK and retention columns match live definitions.
+- Five browser migration IDs 20261116250000/260000/270000/280000/300000 encode invalid hours 25/26/27/28/30 in YYYYMMDDHHMMSS. No replacement IDs inferred.
+- All five browser source reviews remain owner-decision-required. Four event CHECK regressions confirmed; 16280000 SQL malformed and duplicate definitions. No source correction implemented.
+- 15084819 source remains recovered from Git commit cc5563e; live preferred_model_id column/FK/partial index match source; original six-argument enqueue overload is superseded by current seven/eight-argument overloads. Execution provenance remains partial.
+- Current main 15090000 is confirmed duplicate/misnamed alias of 15100000 / history 15085314; no path change made.
+- Scoped expected-vs-observed object comparison is documented; full object/security drift remains NOT_VERIFIABLE.
+- Task 1 remains REVIEW_REQUIRED. Task 2–5, P1 acceptance, P2 ADR and Phase 04–09 were not started. No migration apply, production write, staging, testing or deployment.
+- Evidence: expected-schema-source-inventory-20261118.csv; migration-lineage-and-provenance-map-20261118.md; five-browser-migration-final-source-review-20261118.md; browser-migration-owner-decision-register-20261118.csv; migration-execution-provenance-evidence-20261118.csv; current-migration-path-decision-register-20261118.csv; expected-vs-observed-schema-object-matrix-20261118.csv.
