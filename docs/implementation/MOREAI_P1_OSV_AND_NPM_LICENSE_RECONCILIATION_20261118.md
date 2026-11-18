@@ -16,12 +16,12 @@ Read-only OSV.dev queries were run against all exact package URLs in the current
 | npm PURLs in current CycloneDX input | 1,963 | 40 | 134 |
 | Scenario Kinetic Music Video platform Python locks | 104 | 6 | 87 |
 | Scenario Kinetic Film pinned Python requirements | 2 | 0 | 0 |
-| **Total exact coordinates queried** | **2,069** | **46** | **221** |
+| **Total exact coordinates queried** | **1,936** | **49** | **247** |
 
-- The 1,963 npm PURLs were queried in batches of up to 100. 1,923 returned no matching advisory; 40 returned `vulnerable=true`.
+- The 1,824 unique exact npm PURLs were queried in batches of up to 100. 1,784 returned no matching advisory; 40 returned `vulnerable=true`. The BOM contains 1,940 exact npm component rows plus 23 unversioned MoreAI root dependencies; 116 exact component rows are repeated PURLs across source/component contexts.
 - The 104 unique Python package@version coordinates from Linux x86_64 and macOS arm64 uv lock files were queried. Six returned vulnerable; 98 returned no matching advisory.
 - `numpy==2.5.4` and `opencv-python-headless==5.0.0.93` from Kinetic Film's nested requirements file were queried separately; both returned no matching advisory.
-- The 32 Python components in the original BOM that are only ranged/unpinned constraints, plus OpenManusWeb's 24 ranged/unpinned requirements, cannot be treated as exact resolved versions. They remain unresolved and are not included in the 2,069 exact-version count.
+- The 32 Python component rows in the original BOM comprise 8 exact direct-pin rows (6 unique PURLs) and 24 ranged/unpinned OpenManusWeb constraints. The 6 unique direct pins from MoreAI API/Worker were queried separately: python-multipart@0.0.20, cryptography@44.0.2 and pytest@8.3.5 are vulnerable; fastapi@0.115.12, httpx@0.28.1 and uvicorn@0.34.0 returned no matching advisory. OpenManusWeb's 24 ranged/unpinned requirements remain unresolved and are not included in the 1,936 exact-version count.
 - The two machine-readable risk registers are:
   - `MOREAI_P1_OSV_NPM_VULNERABLE_COORDINATES_20261118.csv` — 40 exact npm PURLs and all 134 advisory associations.
   - `MOREAI_P1_OSV_PYPI_VULNERABLE_COORDINATES_20261118.csv` — 6 exact PyPI PURLs and all 87 advisory associations.
@@ -90,9 +90,9 @@ The 12-row source queue was updated; it now links to the license evidence CSV. T
 
 ## 6. Gate status and required next work
 
-- Exact npm OSV query coverage: **1,963/1,963**.
-- Exact Python OSV query coverage: **106/106**.
-- Vulnerable exact coordinates: **46** (40 npm + 6 PyPI), with **221 advisory associations**.
+- Exact npm OSV query coverage: **1,824/1,824 unique exact PURLs** (1,940 exact component rows; 23 unversioned root dependency rows unresolved).
+- Exact Python OSV query coverage: **112/112 unique exact PURLs**.
+- Vulnerable exact coordinates: **49** (40 npm + 9 PyPI), with **247 advisory associations**.
 - The 12 previously missing npm license-file records now have exact-version license text evidence; CC-BY-SA obligations remain a legal review item.
 - Advisory-level triage, alias/CVE deduplication, severity/fixed-version analysis for all npm/PyPI records, and code-path reachability remain open.
 - Full SBOM is still incomplete because 32 original PyPI constraints and 24 OpenManusWeb ranged/unpinned requirements are unresolved, additional package sources must be reconciled, and source/tarball/NOTICE coverage is not complete.
@@ -100,3 +100,19 @@ The 12-row source queue was updated; it now links to the license evidence CSV. T
 - P1 remains **IN_PROGRESS / NOT ACCEPTED**. P2 ADR remains **DRAFT / NOT ACCEPTED**. Phase 04–09 remain gated; Phase 10/11 remain BLOCKED / NOT ACCEPTED.
 
 No dependency versions, package manifests, lockfiles, application source, database schema or runtime configuration were modified. No installs, tests, builds, provider activation, Supabase writes/migrations, staging or deployment were performed.
+
+
+## Correction addendum — exact PURL deduplication and direct API/Worker Python dependencies (2026-11-18)
+
+A second structural reconciliation of the CycloneDX component properties found that the npm component row count and unique exact PURL count must be distinguished:
+- 1,963 npm component rows total.
+- 1,940 exact-version npm component rows, but only **1,824 unique exact PURLs** after deduplicating repeated coordinates across source/component contexts.
+- 23 MoreAI frontend root `package.json` rows have no lockfile and remain `UNRESOLVED_NO_LOCKFILE`; they are not exact versions and were not OSV queried.
+- Therefore exact npm OSV coverage is **1,824/1,824 unique exact PURLs**, not 1,963. This correction supersedes the earlier count wording above.
+
+The 32 PyPI component rows comprise 24 unpinned/ranged OpenManusWeb constraints and eight exact direct-pin rows representing six unique MoreAI API/Worker PURLs. Those six were queried separately:
+- Vulnerable: `python-multipart@0.0.20` (14 advisory associations; representative [GHSA-5rvq-cxj2-64vf](https://osv.dev/vulnerability/GHSA-5rvq-cxj2-64vf), HIGH, fixed 0.0.30), `cryptography@44.0.2` (10 associations; representative [GHSA-537c-gmf6-5ccf](https://osv.dev/vulnerability/GHSA-537c-gmf6-5ccf), HIGH, fixed 48.0.1 for PyPI wheels), and `pytest@8.3.5` (2 associations; representative [GHSA-6w46-j5rx-g56g](https://osv.dev/vulnerability/GHSA-6w46-j5rx-g56g), MODERATE, fixed 9.0.3).
+- No matching OSV advisory: `fastapi@0.115.12`, `httpx@0.28.1`, `uvicorn@0.34.0`.
+- The PyPI risk register now includes these three direct dependency findings.
+
+Corrected total exact-version query coverage is **1,936 unique PURLs** (1,824 npm + 112 PyPI), with **49 vulnerable coordinates** (40 npm + 9 PyPI) and **247 advisory associations**. The 23 unversioned npm root rows and 24 ranged Python constraints remain unresolved. This count still does not include unresolved/transitive dependencies from manifests without lockfiles or packages outside the current BOM inputs.
