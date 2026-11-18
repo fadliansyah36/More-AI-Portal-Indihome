@@ -140,6 +140,12 @@ def _first_rangevar(value: Any) -> str | None:
     return values[0] if values else None
 
 
+def _qualified_identifier(names: list[str]) -> str:
+    if len(names) == 1:
+        return "public." + names[0]
+    return ".".join(names)
+
+
 def _object_names(tag: str, payload: Any) -> list[str]:
     if not isinstance(payload, dict):
         return []
@@ -155,7 +161,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
         if not names:
             return []
         if tag == "AlterFunctionStmt":
-            return [".".join(names) + "#signature-not-verifiable"]
+            return [_qualified_identifier(names) + "#signature-not-verifiable"]
         parameters = payload.get("parameters") or []
         argument_types: list[str] = []
         for node_tag, node_payload in _walk(parameters):
@@ -164,12 +170,12 @@ def _object_names(tag: str, payload: Any) -> list[str]:
                 if type_names:
                     argument_types.append(".".join(type_names))
         if not argument_types and parameters:
-            return [".".join(names) + "#signature-not-verifiable"]
-        return [".".join(names) + "(" + ", ".join(argument_types) + ")"]
+            return [_qualified_identifier(names) + "#signature-not-verifiable"]
+        return [_qualified_identifier(names) + "(" + ", ".join(argument_types) + ")"]
     if tag in {"CreateEnumStmt", "CreateDomainStmt", "CompositeTypeStmt", "CreateRangeStmt", "AlterTypeStmt", "AlterEnumStmt"}:
         values = _strings(payload.get("typeName") or payload.get("typevar"))
         if values:
-            return [".".join(values)]
+            return [_qualified_identifier(values)]
     if tag == "DropStmt":
         values = _strings(payload.get("objects"))
         return [".".join(values)] if values else []
@@ -187,7 +193,9 @@ def _object_names(tag: str, payload: Any) -> list[str]:
         if key in payload:
             values = _strings(payload[key])
             if values:
-                return [".".join(values)]
+                if key in {"schemaname", "extname", "rolename", "role", "servername", "fdwname", "pubname", "subname", "amname", "trigname"}:
+                    return [".".join(values)]
+                return [_qualified_identifier(values)]
     ranges = _rangevars(payload)
     return ranges[:1]
 def _classify_statement(stmt: Any) -> tuple[str, Any] | None:
