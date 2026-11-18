@@ -59,6 +59,7 @@ class CopyEngineAdapter:
         product = text_field("product_context", 3000)
         brand = text_field("brand_context", 3000)
         voice = text_field("brand_voice", 1200)
+        media_context = text_field("media_context", 3000)
         channels = string_list("channels", 8, 80)
         constraints = string_list("constraints", 20, 500)
         source_facts = string_list("source_facts", 30, 1000)
@@ -75,6 +76,7 @@ class CopyEngineAdapter:
             "product_context": product,
             "brand_context": brand,
             "brand_voice": voice,
+            "media_context": media_context,
             "channels": channels,
             "constraints": constraints,
             "source_facts": source_facts,
@@ -99,9 +101,15 @@ class CopyEngineAdapter:
                     "creative delta for each variant and do not create a Cartesian combination. "
                     "Return a compact structured result with: brand_voice_spec, core_message, variants "
                     "(label, strategic_delta, headline, body, CTA, channel_fit), factual_gaps, and compliance_notes. "
+                    "For mode text_overlay, also return media_overlay_spec with exact copy strings, text_template, "
+                    "variable slots, font family/weight, color, alignment, canvas dimensions, bounding box, "
+                    "overflow policy, missing_inputs and renderer_status=spec_only. Never invent canvas or brand "
+                    "design values that are absent from media_context; list them as missing_inputs. This is a "
+                    "specification only: do not claim that an image or video was rendered or composited. "
                     "Do not call tools or external providers. Source-derived workflow principles are adapted "
-                    "from Scenario Skills scenario-brand-kit and scenario-ad-variants; MoreAI implementation "
-                    "is an original adapter and uses no Scenario MCP."
+                    "from Scenario Skills scenario-brand-kit, scenario-ad-variants and scenario-text-overlay; "
+                    "MoreAI implementation is an original adapter and imports no Scenario MCP, chevron, Pillow "
+                    "or Chromium rendering dependencies."
                 ),
             },
             {
