@@ -1,0 +1,12 @@
+gap_id,description,impact,status,required_evidence
+BG-001,No trusted immutable full schema dump identified,Full expected object definitions unavailable,OPEN,Owner-approved schema-only dump with provenance and SHA-256
+BG-002,Offline replay not authorized,Cannot reconstruct full schema in isolated disposable DB,OPEN,Explicit owner approval and isolation boundary
+BG-003,32 history names lack same-name current SQL sources,Migration source lineage incomplete,OPEN,Recover exact historical SQL or owner-approved archive-only disposition
+BG-004,No native migration execution checksum or receipt,Exact executed source bytes not independently attested,OPEN,Deployment artifact/checksum ledger
+BG-005,Five browser migration IDs contain invalid hour fields 25/26/27/28/30,Migration timestamp identity/order ambiguous,OWNER_DECISION_REQUIRED,Approved replacement IDs or documented intentional naming exception
+BG-006,Four event CHECK replacements drop previously supported lifecycle values,Potential breakage of retention and close event lifecycle,OWNER_DECISION_REQUIRED,Approved corrected source and event vocabulary contract
+BG-007,16280000 SQL body malformed and duplicated,Source cannot be safely approved/applied,OWNER_DECISION_REQUIRED,Corrected full source with exact diff
+BG-008,No owner approval located in linked GitHub issue/PR search,Source corrections and migration IDs cannot be approved,OPEN,Owner decision record or reviewed PR
+BG-009,Full RLS/grants/ownership baseline absent,Security parity unprovable,OPEN,Approved security schema baseline
+BG-010,Observed environment role not independently attested,Do not assert production schema identity,OPEN,Owner/environment attestation
+BG-011,15090000 current path is duplicate alias of 15100000,Ambiguous source path for applied 15084819,OWNER_DECISION_REQUIRED,Owner-approved path disposition
