@@ -335,3 +335,18 @@ A follow-up parse of CycloneDX component properties corrected the OSV coverage d
 - Executable-source manual review is now **55/875**; 820 remain. The 8 rows link to Batch 06 and retain DEFER / FINAL_HOLD.
 - Consolidated 12-item security risk register created at `MOREAI_P1_SECURITY_RISK_REGISTER_20261118.csv`, commit `2522c153d677349d80cc9948bdfad7edd2ae86f3`. It covers dynamic code execution, DCC subprocesses, untrusted asset parsers, vulnerable npm/Python coordinates, unpinned dependencies, Supabase Auth warning, index tuning and license/provenance gaps.
 - P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. No Maya/DCC execution, tests/builds, provider calls, Supabase writes/migrations, staging or deployment occurred.
+
+
+## Supabase migration parity finding — 2026-11-18
+
+A read-only comparison between current `main` and `supabase_migrations.schema_migrations` found a material migration-history drift:
+- Supabase applied history: **116 rows**; current `supabase/migrations`: **85 SQL files**.
+- **7** exact version+name matches.
+- **72** current repo files share a logical name with applied history but have a different version; these map to **77 applied rows** because five logical migration names are duplicated in history.
+- **32** applied migration names have no current source file.
+- **6** current repo migration files are not present in applied history by name.
+- Five duplicate applied logical names: workspace CAS versioning, workspace file version history, workspace restore approval key, customer learning progress and Knowledge RAG vector.
+- `schema_migrations` has `version`, `statements`, `name`, `created_by`, `idempotency_key`, `rollback`; no checksum column. Therefore same-name migration files cannot be assumed byte/SQL-equivalent without comparing statement arrays.
+- Matrix: `MOREAI_SUPABASE_MIGRATION_PARITY_20261118.csv` (116 applied + 6 repo-only rows); report: `MOREAI_SUPABASE_MIGRATION_PARITY_AUDIT_20261118.md`.
+- Phase 05 is now **REVIEW_REQUIRED**, not COMPLETE, until statement-level reconciliation, missing historical source recovery and repo-only migration intent review are complete. No db push, repair, migration or DB write was executed.
+- Do not run `supabase db push` or apply the six repo-only files before the migration baseline is reconciled and product-owner approval is recorded.
