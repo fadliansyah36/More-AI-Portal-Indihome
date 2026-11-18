@@ -1915,3 +1915,15 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - Scoped expected-vs-observed object comparison is documented; full object/security drift remains NOT_VERIFIABLE.
 - Task 1 remains REVIEW_REQUIRED. Task 2–5, P1 acceptance and P2 ADR were not started. Existing Phase 04–09 tracker statuses were retained; no Phase 04–09 implementation work or status advancement occurred in this batch. No migration apply, production write, staging, testing or deployment.
 - Evidence: expected-schema-source-inventory-20261118.csv; migration-lineage-and-provenance-map-20261118.md; five-browser-migration-final-source-review-20261118.md; browser-migration-owner-decision-register-20261118.csv; migration-execution-provenance-evidence-20261118.csv; current-migration-path-decision-register-20261118.csv; expected-vs-observed-schema-object-matrix-20261118.csv.
+
+
+## 2026-11-18 — Task 1 browser migration recovery implementation
+
+- Owner-approved recovery direction applied to repository source: five invalid browser migration IDs were replaced with chronological valid IDs 20261116162500, 20261116162600, 20261116162700, 20261116162800 and 20261116163000.
+- Original SQL files were archived byte-for-byte under docs/implementation/migration-source-archive/ with original blob SHA recorded in docs/implementation/browser-migration-recovery-manifest-20261118.csv.
+- Corrected source preserves all previously applied browser lifecycle CHECK values. The takeover command claim/finish/revoke lifecycle was reconstructed with one definition per function/trigger; expired processing leases become outcome-unknown terminal failures and are never replayed.
+- Preview request claim/finish now enforce owner/session/run association and owner/run PNG artifact association based on the observed Supabase catalog.
+- Duplicate/misnamed active aliases 20261115090000 and 20261111110000 were archived and removed from active migration paths. Canonical applied migration history was not modified.
+- Report: TASK1-BROWSER-MIGRATION-RECOVERY-20261118.md.
+- Source-only recovery. No Supabase migration applied, no production schema/data writes, no staging, build, lint, typecheck, runtime, tests or deployment.
+- Task 1 remains REVIEW_REQUIRED (not READY_FOR_REVIEW, not ACCEPTED). Full expected-schema baseline and security/object-level comparison remain blockers. Task 2–5, P1/P2 and Phase 04–09 were not started or advanced.
