@@ -226,3 +226,8 @@ Executable-source manual review advanced to **47/875**. Eight Blender/Maya DCC m
 ## P1 source security update — Batch 06 (2026-11-18)
 
 Executable-source manual review advanced to **55/875**. The new Maya batch identified explicit dynamic execution in `mx_groom.py` (MEL eval and Python exec of menu callback strings; MEL recipe replay) and script injection potential through MASH Python nodes in `mx_fx.py`. Other reviewed files invoke Arnold/ImageMagick/ffmpeg processes and parse/write DCC assets. All remain DEFER and are blocked from ordinary customer Agent tools. Several Maya API headers state runtime verification has not occurred. A consolidated 12-item security risk register is stored at `MOREAI_P1_SECURITY_RISK_REGISTER_20261118.csv`. P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED.
+
+
+## Supabase migration parity gate — 2026-11-18
+
+Read-only migration parity audit found 116 applied history rows vs 85 current SQL migration files: 7 exact version+name matches; 72 repo files have a same-name/different-version mapping (77 applied rows due five duplicate logical names); 32 applied names have no current repo source; 6 current repo files are not applied by name. The history table stores SQL statement and rollback arrays but no checksum. Phase 05 is therefore **REVIEW_REQUIRED**, not COMPLETE. The 122-row matrix and report are in `MOREAI_SUPABASE_MIGRATION_PARITY_20261118.csv` and `MOREAI_SUPABASE_MIGRATION_PARITY_AUDIT_20261118.md`. No migration or database write was executed. Phase 04–09 acceptance remains blocked pending governance and migration reconciliation.
