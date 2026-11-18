@@ -1,5 +1,15 @@
 # AI Skills and Copy Engine integration
 
+## Curated source coverage and permission manifest
+
+The selected source manifest contains **230 curated entrypoints**: 2 Visual Skills, 173 Scenario Skills and 55 licensed Motion Skills. The 19th Motion pack without a resolved license remains excluded. Exact source pins, paths and blob hashes are retained in `MOREAI_P1_SELECTED_SKILL_ENTRYPOINTS_20261117.csv`. The scoped tool permissions for every selected entrypoint are in `AI-SKILLS-REQUIRED-PERMISSIONS-MANIFEST-20261118.csv`.
+
+- `media.generate` is required for Visual, Motion and Scenario native-media adapters; it maps only to the existing `image_generate` and `video_generate` tools.
+- `content.generate` is required for Scenario brand-kit, ad-variants and text-overlay skills; it maps only to `copy_engine_generate`.
+- API and worker both allowlist these permission names; the worker resolver fails closed if an adapter's required permission is not present in the install's granted-permission snapshot.
+
+A read-only Supabase constraint inspection confirmed the skill package/install permission columns are JSON arrays with type-only checks, not a fixed database enum/check list. No schema migration is required for these new permission labels. No package import, install, permission grant or publication write was made.
+
 ## Canonical runtime path
 
 `Agent Studio → FastAPI typed Agent Run API → existing Supabase Skill Registry/Resolver → OpenManus Durable Agent Runtime → policy-enforced tool registry`.
