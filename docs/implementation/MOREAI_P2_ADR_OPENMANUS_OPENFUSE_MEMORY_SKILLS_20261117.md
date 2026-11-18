@@ -217,3 +217,7 @@ CycloneDX rows were deduplicated by exact PURL after the preceding addendum:
 - The earlier 2,069/46/221 denominator/counts in this ADR are superseded by the corrected unique-PURL result. The 23 unversioned npm dependencies and 24 ranged Python constraints remain outside exact-version scan coverage.
 
 P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. No dependency versions were changed or installed.
+
+## P1 executable review update — Batch 05 (2026-11-18)
+
+Executable-source manual review advanced to **47/875**. Eight Blender/Maya DCC modules were reviewed and remain DEFER due scene mutation, render, image/model parsing, subprocess or GUI/toolkit boundaries. The selected-payload disposition manifest links all eight files to `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_05_20261118.md`. No code was imported or executed. P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED.
