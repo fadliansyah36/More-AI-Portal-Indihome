@@ -12,7 +12,7 @@ Implementation target: `main`. Audit baseline before this tracker refresh: `37d1
 
 **Migration parity:** 116 applied history rows vs 85 current SQL migration files; 7 exact matches, 72 repo files with version drift (77 applied rows), 32 applied names without current source, 6 repo-only unapplied files and 5 duplicate logical names. `schema_migrations` stores statements/rollback arrays but no checksum. Phase 05 is REVIEW_REQUIRED; no `db push`/repair/migration is safe until statement-level reconciliation.
 
-**Acceptance gate:** P1 remains IN_PROGRESS / NOT ACCEPTED; P2 ADR remains DRAFT / NOT ACCEPTED. Phase 04–09 remain IN_PROGRESS / REVIEW_REQUIRED and gated by P1/ADR acceptance. Phase 10 remains BLOCKED / NOT ACCEPTED; Phase 11 remains BLOCKED / NOT ACCEPTED. No real tests, builds, staging, production deployment, provider calls, worker activation or Supabase writes/migrations were run in this continuation.
+**Acceptance gate:** P1 remains IN_PROGRESS / NOT ACCEPTED; P2 ADR remains DRAFT / NOT ACCEPTED. Phase 05 is **REVIEW_REQUIRED** because migration history does not match the current migration directory. Phase 04 and Phase 06–09 remain IN_PROGRESS / REVIEW_REQUIRED and gated by P1/ADR acceptance. Phase 10 remains BLOCKED / NOT ACCEPTED; Phase 11 remains BLOCKED / NOT ACCEPTED. No real tests, builds, staging, production deployment, provider calls, worker activation or Supabase writes/migrations were run in this continuation.
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
