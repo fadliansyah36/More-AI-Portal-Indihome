@@ -10,11 +10,10 @@ A full expected schema baseline is not available, so the full object-level compa
 - Grants, commands and preview request tables from the five repository-only sources are absent from both history and observed catalog. This is EXPECTED_DIFFERENCE, not schema drift, while those sources remain unapplied.
 
 ## Counts
-- Scoped object rows: 9.
-- MATCH: 4.
-- MATCH_WITH_LIMITATIONS: 1.
+- Scoped object rows: 12.
+- MATCH: 6 (including preferred_model_id column, FK and partial index).
 - EXPECTED_DIFFERENCE: 3.
-- NOT_VERIFIABLE: 1.
+- NOT_VERIFIABLE: 2 (full public object set and superseded six-argument enqueue function).
 No global object counts can be calculated because the expected schema object set is incomplete.
 
 ## Conclusion
