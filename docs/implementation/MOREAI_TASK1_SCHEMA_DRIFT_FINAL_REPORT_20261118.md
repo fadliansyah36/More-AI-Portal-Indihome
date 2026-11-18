@@ -58,3 +58,8 @@ The database has 7 extensions: pg_cron 1.6.4, pg_stat_statements 1.11, pgcrypto 
 
 ## Decision register
 See `MOREAI_TASK1_SCHEMA_DRIFT_MATRIX_20261118.csv` and `MOREAI_TASK1_FULL_SCHEMA_INVENTORY_20261118.csv`.
+
+
+## Addendum — migration 15084819 provenance update (2026-11-18)
+
+The original Git source for history version `20261115084819` has been recovered at commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31`; recursive lexical comparison confirms 619/619 ordered tokens match the SQL stored in history. Therefore the prior provenance uncertainty for the historical source is resolved. The current main file `20261115090000` remains a duplicate alias of `20261115100000` / applied `20261115085314`, so the repository path mismatch remains a governance issue but is not evidence that the historical source is missing from Git history. The live column/index remain observed; full expected-vs-observed schema parity remains NOT_VERIFIABLE and no production drift-free claim is made.
