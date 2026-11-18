@@ -143,9 +143,9 @@ def _first_rangevar(value: Any) -> str | None:
 def _object_names(tag: str, payload: Any) -> list[str]:
     if not isinstance(payload, dict):
         return []
-    if tag in {"IndexStmt", "CreateTrigStmt", "CreatePolicyStmt"}:
+    if tag in {"IndexStmt", "CreateTrigStmt", "CreatePolicyStmt", "AlterPolicyStmt"}:
         relation = _first_rangevar(payload.get("relation"))
-        field = {"IndexStmt": "idxname", "CreateTrigStmt": "trigname", "CreatePolicyStmt": "policy_name"}[tag]
+        field = {"IndexStmt": "idxname", "CreateTrigStmt": "trigname", "CreatePolicyStmt": "policy_name", "AlterPolicyStmt": "policy_name"}[tag]
         names = _strings(payload.get(field))
         if relation and names:
             return [f"{relation}.{'.'.join(names)}"]
@@ -183,7 +183,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
             ranges = _rangevars(payload[key])
             if ranges:
                 return ranges
-    for key in ("funcname", "schemaname", "extname", "rolename", "role", "servername", "fdwname", "pubname", "subname", "amname", "opclassname", "opfamilyname", "conname", "collname", "trigname", "oprname", "defnames"):
+    for key in ("funcname", "func", "schemaname", "extname", "rolename", "role", "policy_name", "servername", "fdwname", "pubname", "subname", "amname", "opclassname", "opfamilyname", "conname", "collname", "trigname", "oprname", "defnames"):
         if key in payload:
             values = _strings(payload[key])
             if values:
