@@ -221,3 +221,8 @@ P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. No depen
 ## P1 executable review update — Batch 05 (2026-11-18)
 
 Executable-source manual review advanced to **47/875**. Eight Blender/Maya DCC modules were reviewed and remain DEFER due scene mutation, render, image/model parsing, subprocess or GUI/toolkit boundaries. The selected-payload disposition manifest links all eight files to `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_05_20261118.md`. No code was imported or executed. P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED.
+
+
+## P1 source security update — Batch 06 (2026-11-18)
+
+Executable-source manual review advanced to **55/875**. The new Maya batch identified explicit dynamic execution in `mx_groom.py` (MEL eval and Python exec of menu callback strings; MEL recipe replay) and script injection potential through MASH Python nodes in `mx_fx.py`. Other reviewed files invoke Arnold/ImageMagick/ffmpeg processes and parse/write DCC assets. All remain DEFER and are blocked from ordinary customer Agent tools. Several Maya API headers state runtime verification has not occurred. A consolidated 12-item security risk register is stored at `MOREAI_P1_SECURITY_RISK_REGISTER_20261118.csv`. P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED.
