@@ -355,3 +355,15 @@ A read-only comparison between current `main` and `supabase_migrations.schema_mi
 ### Migration history recovery evidence
 
 The 32 applied migration history rows whose names have no current repo source each contain one stored SQL statement in `schema_migrations.statements`; their `rollback` arrays are NULL. This provides potential read-only recovery evidence, but the statements have not been exported or replayed. The migration table has no checksum column. Any recovery must inspect for embedded credentials/environment-specific values, compare against surviving source/commits, calculate hashes and store recovered SQL outside `supabase/migrations/` as archive-only evidence. Do not replay these statements.
+
+
+## Executable source review — Batch 07 (2026-11-18)
+
+- Reviewed 8 additional Maya/ZBrush DCC files: Maya modeling, pipeline scripting, retopology/UV, rigging, ZBrush GoZ automation, plugin operations, character/creature tooling and OBJ audit.
+- Key security boundary: `mx_run.py` launches mayapy and executes a job file with Python `runpy`. Scene script nodes are disabled by default, but any customer-controlled job path would still be arbitrary code execution. Job files must be server-generated, signed/allowlisted, and workspace-confined.
+- `mx_pipeline.py` uses per-scene mayapy process isolation/timeouts but accepts job/scene/output/plugin/env/script-node controls; these require fixed schemas and server-side allowlists. ZBrush GoZ modifies shared user preferences and launches the desktop app; it is not multi-tenant API safe.
+- ZBrush plugin and character modules explicitly state live ZBrush operations have not been run; several plugin paths are tagged [verify]. OBJ audit lacks explicit input-size/mesh complexity limits. All remain DEFER.
+- Report: `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_07_20261118.md`, commit `52311f9f55938d779c9b6834a89f3be545036324`. Per-file ledger update commit `c7d2f4a065caeb3e0552f502da226e300b7dff7f`.
+- Executable-source manual review is now **63/875**; 812 remain. Eight rows are linked to Batch 07 and remain DEFER / FINAL_HOLD.
+- P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. Phase 05 remains REVIEW_REQUIRED due migration parity; Phase 04 and 06–09 remain gated; Phase 10/11 BLOCKED / NOT ACCEPTED.
+- No Maya/ZBrush runtime, tests/builds, provider calls, Supabase writes/migrations, staging or deployment occurred.
