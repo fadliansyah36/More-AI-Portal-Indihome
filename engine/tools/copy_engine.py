@@ -114,7 +114,7 @@ class CopyEngineAdapter:
             run_id=run_id,
             request_key=f"{run_id}:copy-engine:{payload_hash}",
             messages=messages,
-            task_type="copywriting",
+            task_type="chat",
         )
         output = result.get("text")
         if not isinstance(output, str) or not output.strip():
