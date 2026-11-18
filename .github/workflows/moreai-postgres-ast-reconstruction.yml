@@ -7,6 +7,7 @@ on:
       - "tools/schema_reconciliation/**"
       - "supabase/migrations/**"
       - "docs/implementation/migration-history-sql-source-snapshot-20261118/**"
+      - "docs/implementation/migration-history-archive/**"
       - "docs/implementation/migration-history-statement-hashes-20261118.json"
       - ".github/workflows/**"
       - "docs/implementation/migration-source-archive/**"
@@ -51,6 +52,7 @@ jobs:
             --history-dir docs/implementation/migration-history-sql-source-snapshot-20261118 \
             --archive-dir docs/implementation/migration-source-archive \
             --history-hash-manifest docs/implementation/migration-history-statement-hashes-20261118.json \
+            --history-archive-dir docs/implementation/migration-history-archive \
             --output artifacts/expected-object-graph.json
 
       - name: Reconcile expected graph against read-only catalog snapshots
@@ -75,6 +77,7 @@ jobs:
           summary = {
               "active_migration_file_count": graph["active_migration_file_count"],
               "history_migration_record_count": graph["history_migration_record_count"],
+              "history_archive_record_count": graph["history_archive_record_count"],
               "history_hash_manifest_migration_count": graph["history_hash_manifest_migration_count"],
               "history_statement_hash_mismatch_count": graph["history_statement_hash_mismatch_count"],
               "history_statement_hash_not_verifiable_count": graph["history_statement_hash_not_verifiable_count"],
