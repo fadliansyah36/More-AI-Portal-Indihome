@@ -1930,3 +1930,10 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - Report: TASK1-BROWSER-MIGRATION-RECOVERY-20261118.md.
 - Source-only recovery. No Supabase migration applied, no production schema/data writes, no staging, build, lint, typecheck, runtime, tests or deployment.
 - Task 1 remains REVIEW_REQUIRED (not READY_FOR_REVIEW, not ACCEPTED). Full expected-schema baseline and security/object-level comparison remain blockers. Task 2–5, P1/P2 and Phase 04–09 were not started or advanced.
+
+## 2026-11-18 — Reference skill resolver source-identity hardening
+
+- Fixed a worker-side trust-boundary gap: `_validate_pinned_source_identity` is now called for every selected package after owner-scoped registry/install lookup and before stored skill files are loaded.
+- The worker independently enforces the pinned repository, exact source commit, and allowlisted entrypoint path. API import validation is no longer the only source-identity gate.
+- Commit: `0a4f99a906b227d71ea59d0055e1173d5fe11816`.
+- Source-only implementation; no test, build, runtime activation, registry write, migration apply or deployment was performed.
