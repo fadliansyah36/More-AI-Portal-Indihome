@@ -9,6 +9,8 @@ This file records source-level licenses and attribution for the upstream reposit
 - License: MIT
 - Copyright: Copyright (c) 2025 manna_and_poem
 - Treatment: pristine source snapshot under `vendor/openmanusweb/`; adapted runtime code remains separate in MoreAI production modules.
+- Verbatim pinned license copy: `docs/third-party-licenses/openmanusweb/LICENSE`.
+- Verbatim pinned license copy: `docs/third-party-licenses/openfuse/LICENSE`.
 - Preserve the upstream LICENSE and copyright notice with any redistributed copy.
 
 ## OpenFuse
@@ -29,6 +31,7 @@ This file records source-level licenses and attribution for the upstream reposit
 - Additional NOTICE: acknowledges agentara/skills methods studied and rewritten under MIT; preserve the upstream NOTICE and attribution.
 - Selected entrypoints: `image/SKILL.md` and `video/SKILL.md`.
 - Treatment: source instructions are loaded as owner-installed, immutable skill snapshots and adapted to MoreAI's real `image_generate` / `video_generate` tool schemas. They do not install providers or assert upstream model availability.
+- Verbatim pinned files: `docs/third-party-licenses/visual-skills/LICENSE` and `NOTICE`.
 - Attribution must accompany redistributed or adapted material.
 
 ## Scenario Skills
@@ -38,13 +41,15 @@ This file records source-level licenses and attribution for the upstream reposit
 - License: MIT, Copyright (c) 2026 Scenario Inc.
 - Nested notice: `.agents/skills/skill-creator/LICENSE.txt` is Apache-2.0 and remains separately scoped; do not treat root MIT as overriding nested work.
 - Copy Engine source workflows selected: `skills/scenario-brand-kit/SKILL.md`, `skills/scenario-ad-variants/SKILL.md` and `skills/scenario-text-overlay/SKILL.md`.
+- Verbatim pinned files: `docs/third-party-licenses/scenario-skills/LICENSE` and nested `skill-creator-LICENSE.txt` (Apache-2.0).
 - Treatment: their brand-specification, controlled-variant and exact text-overlay specification principles are adapted into the original MoreAI Copy Engine adapter. Scenario text-overlay's `chevron`, `Pillow` and Chromium rendering dependencies are not imported; MoreAI returns a text-overlay specification only. No Scenario MCP, model endpoint, remote asset service or code from the Scenario runtime is imported.
 
 ## Motion Skills
 
 - Aggregator: https://github.com/iart-ai/motion-skills
 - Aggregator pin: `e8ba1f4eb2bcca3d1639d7545b9cd2bcfe4a3c6f` (master)
-- Aggregator license: MIT, Copyright (c) 2026 iart.ai
+- Aggregator license: MIT, Copyright (c) 2026 iart.ai; verbatim pinned copy at `docs/third-party-licenses/motion-skills/LICENSE`.
+- All 18 licensed child packs share the exact same LICENSE Git blob SHA-1 (`a61b911146037f2ef312f67e9b45de6c99b7f870`); preserved at `docs/third-party-licenses/motion-skills/child-pack-LICENSE`.
 - Skill payloads: the 18 child packs with root MIT notices at their individually pinned commits recorded in `docs/implementation/MOREAI_P1_MOTION_SKILLS_19_PACKS_MANIFEST_20261117.csv` and `MOREAI_P1_MOTION_SKILLS_19_PACKS_MANIFEST_PART2_20261117.csv`.
 - Excluded pack: `iart-ai/generative-illustration-skills` has no resolved root license in the captured source tree and remains blocked from import/adaptation.
 - Treatment: curated motion skill instructions are resolved through the existing Skill Registry and translated to existing MoreAI media tools. Remotion, ffmpeg, fonts, codecs, MCP services, external model APIs and credentials are not implicitly provisioned.
@@ -57,6 +62,10 @@ This file records source-level licenses and attribution for the upstream reposit
 - Source workflow attribution: Scenario Skills `scenario-brand-kit`, `scenario-ad-variants` and `scenario-text-overlay` (MIT, pinned commit above).
 - Implementation status: original MoreAI adapter; invokes only the existing metered LLM gateway and is callable as `copy_engine_generate` through the canonical OpenManus tool loop.
 - No Scenario MCP or external copywriting SaaS is called. User-provided facts are the only allowed factual basis for claims.
+
+## Preserved license text index
+
+The pinned license and NOTICE copies, their upstream blob SHA-1 values and local paths are indexed in `docs/third-party-licenses/README.md`.
 
 ## Scope disclaimer
 
