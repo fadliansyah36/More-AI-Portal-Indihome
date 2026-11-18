@@ -82,3 +82,13 @@ There is no checksum column. The statements/rollback arrays may provide historic
 - P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. Phase 05 is **REVIEW_REQUIRED**; Phase 04, 06–09 remain IN_PROGRESS / REVIEW_REQUIRED. Phase 10/11 remain BLOCKED / NOT ACCEPTED.
 
 No database write, migration, test, build, staging, deployment or production configuration change was performed.
+
+
+## Applied-statement recovery evidence — 2026-11-18
+
+A further read-only query of the 32 applied history rows whose logical migration names have no current repository source found:
+- `statements` cardinality is **1** for each of the 32 rows.
+- `rollback` is NULL for each of the 32 rows.
+- The table has no checksum column.
+
+The one-element statement arrays are a potential source for reconstructing an archival copy of the applied SQL, but they have not been exported or committed. Before recovery, inspect the statements for embedded credentials or environment-specific values, compare them against any surviving source/commit, calculate immutable hashes, and store recovered SQL outside `supabase/migrations/` as historical evidence only. Do not replay these statements.
