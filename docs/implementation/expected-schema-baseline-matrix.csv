@@ -1,0 +1,9 @@
+comparison_area,repository_intent,applied_history,observed_database,expected_state,classification,confidence
+migration_version_set,85 SQL files,116 history rows,not applicable,not deterministically reconstructable,BASELINE_CONFLICTED,LOW
+tables_columns,partial migration definitions,partial embedded statements,94 tables/922 columns,unknown,BASELINE_UNVERIFIABLE,LOW
+constraints_indexes,partial migration definitions,partial embedded statements,562 constraints/245 indexes,unknown,BASELINE_UNVERIFIABLE,LOW
+functions_triggers_views,partial migration definitions,partial embedded statements,98 functions/5 triggers/1 view,unknown,BASELINE_UNVERIFIABLE,LOW
+rls_grants_ownership,partial SQL policy/grant definitions,partial embedded statements,95 policies and observed grants,unknown,BASELINE_UNVERIFIABLE,LOW
+extensions_types,not a complete manifest,history incomplete,7 extensions and 12 managed enums,unknown,BASELINE_UNVERIFIABLE,LOW
+browser_takeover_preview,5 unapplied source files,history rows absent,objects absent,not expected live until approved/applied,EXPECTED_DIFFERENCE,MEDIUM
+preferred_model_id,original Git source recovered; current same-name repo file is alias,history 15084819 present,column/index observed live,source relation token-matched; exact schema definitions require full replay,BASELINE_SUPPORTED_FOR_OBJECT_INTENT,MEDIUM
