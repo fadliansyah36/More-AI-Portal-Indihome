@@ -205,3 +205,15 @@ The P1 executable-source manual review advanced to **39/875**. Batch 03 and Batc
 - This is partial progress, not license/vulnerability acceptance. 32 unpinned/ranged Python BOM entries, 24 ranged OpenManusWeb requirements, complete dependency source mapping, tarball byte-level independent integrity verification, package NOTICE/source headers, and remaining advisory triage remain open.
 - Every vulnerable coordinate is blocked from skill import pending triage. No package versions were changed, and no packages were installed.
 - P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED; Phase 04–09 remain gated and Phase 10/11 remain BLOCKED / NOT ACCEPTED.
+
+
+## Correction — unique PURL coverage and MoreAI direct dependency advisories (2026-11-18)
+
+CycloneDX rows were deduplicated by exact PURL after the preceding addendum:
+- npm: 1,963 rows; 1,940 exact-version rows; 23 unversioned root dependency rows; **1,824 unique exact npm PURLs queried**.
+- PyPI: 32 rows; 24 unresolved OpenManusWeb constraints; 8 direct pin rows representing 6 unique PURLs. Including 104 Kinetic Music Video pins and 2 Kinetic Film pins, **112 unique exact PyPI PURLs queried**.
+- Total exact query coverage: **1,936 unique PURLs**, **49 vulnerable coordinates**, **247 advisory associations**.
+- The three vulnerable direct MoreAI Python pins are `python-multipart@0.0.20` (HIGH representative advisory; fixed 0.0.30), `cryptography@44.0.2` (HIGH representative advisory; fixed 48.0.1 for PyPI wheels) and `pytest@8.3.5` (MODERATE representative advisory; fixed 9.0.3). All are recorded in the PyPI vulnerable coordinate register.
+- The earlier 2,069/46/221 denominator/counts in this ADR are superseded by the corrected unique-PURL result. The 23 unversioned npm dependencies and 24 ranged Python constraints remain outside exact-version scan coverage.
+
+P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. No dependency versions were changed or installed.
