@@ -279,3 +279,13 @@ Current disposition evidence:
 - Phase 10 remains BLOCKED / NOT ACCEPTED; Phase 11 remains BLOCKED / NOT ACCEPTED. No real tests, builds, staging, production deployment, provider calls, worker activation or Supabase writes/migrations were performed.
 
 P1 remains **IN_PROGRESS / NOT ACCEPTED**. P2 remains **DRAFT / NOT ACCEPTED**.
+
+
+## Executable source review continuation — Batches 03 and 04 (2026-11-18)
+
+- Batch 03 reviewed 8 Blender animation/blockout files. All remain DEFER due Blender scene mutation, render and caller-selected output filesystem boundaries. Report: `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_03_20261118.md`; commit `1f50d71024785299a46db7185be4adffd96d356a`.
+- Batch 04 reviewed 8 Blender audit/GUI/review/export/geometry-node/Grease Pencil/hair/hard-surface files. `bx_export.py` launches a fixed-argv Blender subprocess with timeout but imports caller-selected model files and performs batch export; other tools mutate a Blender scene, invoke GUI/render operators or write outputs. All remain DEFER. Report: `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_04_20261118.md`; commit `35a854d6598457b82ee4fac72f8a7bcba6fec473`.
+- The selected-payload operational disposition CSV now links all 16 Batch 03/04 source paths to their detailed review reports. Each row retains DEFER / FINAL_HOLD; no COPY/ADAPT approval was made. CSV evidence update commit: `4adc5b40b4283fd4499abd9360f8a9945d70678c`.
+- Cumulative executable-source manual review is now **39/875**; 836 remain. Entrypoints 229/229, configuration/schema 13/69 and references 17/726 remain the current review counts. Selected payload SHA-256 remains 1,941/1,941 verified.
+- These reports are static source reviews. No Blender, Python source, subprocess, render, package installation, test/build, provider, Supabase mutation, staging or deployment was executed.
+- P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. Phase 04–09 remain gated and Phase 10/11 remain BLOCKED / NOT ACCEPTED.
