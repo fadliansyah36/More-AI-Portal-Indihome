@@ -202,6 +202,7 @@ types AS (
     'object_class', CASE WHEN t.typtype = 'd' THEN 'DOMAIN' ELSE 'TYPE' END,
     'name', n.nspname || '.' || t.typname,
     'definition', jsonb_build_object(
+      'owner', pg_get_userbyid(t.typowner),
       'type_kind', t.typtype,
       'category', t.typcategory,
       'base_type', CASE WHEN t.typbasetype <> 0 THEN t.typbasetype::regtype::text ELSE NULL END,
@@ -228,69 +229,27 @@ extensions AS (
 ),
 acl_entries AS (
   SELECT jsonb_build_object(
-    'object_key', 'ACL:SCHEMA:' || n.nspname || ':' || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END || ':' || a.privilege_type,
-    'object_class', 'ACL', 'name', 'SCHEMA:' || n.nspname,
-    'definition', jsonb_build_object('grantee', CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END, 'grantor', pg_get_userbyid(a.grantor), 'privilege', a.privilege_type, 'grantable', a.is_grantable),
-    'security_fingerprint', md5(a.grantee::text || ':' || a.grantor::text || ':' || a.privilege_type || ':' || a.is_grantable)
+    'object_key', 'ACL:' || n.nspname || '.' || c.relname || ':' || x.grantee || ':' || x.privilege_type,
+    'object_class', 'ACL',
+    'name', n.nspname || '.' || c.relname,
+    'definition', jsonb_build_object('grantee', x.grantee, 'grantor', x.grantor, 'privilege', x.privilege_type, 'grantable', x.is_grantable),
+    'security_fingerprint', md5(x.grantee || ':' || x.grantor || ':' || x.privilege_type || ':' || x.is_grantable)
   ) AS item
-  FROM pg_namespace n CROSS JOIN LATERAL aclexplode(coalesce(n.nspacl, acldefault('n', n.nspowner))) a
+  FROM information_schema.table_privileges x
+  JOIN pg_class c ON c.relname = x.table_name
+  JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = x.table_schema
   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
-  UNION ALL
-  SELECT jsonb_build_object(
-    'object_key', 'ACL:RELATION:' || n.nspname || '.' || c.relname || ':' || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END || ':' || a.privilege_type,
-    'object_class', 'ACL', 'name', 'RELATION:' || n.nspname || '.' || c.relname,
-    'definition', jsonb_build_object('grantee', CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END, 'grantor', pg_get_userbyid(a.grantor), 'privilege', a.privilege_type, 'grantable', a.is_grantable),
-    'security_fingerprint', md5(a.grantee::text || ':' || a.grantor::text || ':' || a.privilege_type || ':' || a.is_grantable)
-  )
-  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-  CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault(CASE WHEN c.relkind = 'S' THEN 'S'::"char" ELSE 'r'::"char" END, c.relowner))) a
-  WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema' AND c.relkind IN ('r','p','v','m','S','f')
-  UNION ALL
-  SELECT jsonb_build_object(
-    'object_key', 'ACL:ROUTINE:' || n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || '):' || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END || ':' || a.privilege_type,
-    'object_class', 'ACL', 'name', 'ROUTINE:' || n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
-    'definition', jsonb_build_object('grantee', CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END, 'grantor', pg_get_userbyid(a.grantor), 'privilege', a.privilege_type, 'grantable', a.is_grantable),
-    'security_fingerprint', md5(a.grantee::text || ':' || a.grantor::text || ':' || a.privilege_type || ':' || a.is_grantable)
-  )
-  FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-  CROSS JOIN LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
-  WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema' AND p.prokind IN ('f','p')
-  UNION ALL
-  SELECT jsonb_build_object(
-    'object_key', 'ACL:TYPE:' || n.nspname || '.' || t.typname || ':' || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END || ':' || a.privilege_type,
-    'object_class', 'ACL', 'name', 'TYPE:' || n.nspname || '.' || t.typname,
-    'definition', jsonb_build_object('grantee', CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END, 'grantor', pg_get_userbyid(a.grantor), 'privilege', a.privilege_type, 'grantable', a.is_grantable),
-    'security_fingerprint', md5(a.grantee::text || ':' || a.grantor::text || ':' || a.privilege_type || ':' || a.is_grantable)
-  )
-  FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
-  CROSS JOIN LATERAL aclexplode(coalesce(t.typacl, acldefault('T', t.typowner))) a
-  WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
-  UNION ALL
-  SELECT jsonb_build_object(
-    'object_key', 'DEFAULT_ACL:' || pg_get_userbyid(d.defaclrole) || ':' || coalesce(ns.nspname, 'ALL_SCHEMAS') || ':' || d.defaclobjtype::text || ':' || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END || ':' || a.privilege_type,
-    'object_class', 'DEFAULT_ACL', 'name', 'DEFAULT_ACL:' || pg_get_userbyid(d.defaclrole),
-    'definition', jsonb_build_object('owner_role', pg_get_userbyid(d.defaclrole), 'schema', ns.nspname, 'object_type', d.defaclobjtype, 'grantee', CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END, 'grantor', pg_get_userbyid(a.grantor), 'privilege', a.privilege_type, 'grantable', a.is_grantable),
-    'security_fingerprint', md5(d.defaclrole::text || ':' || coalesce(d.defaclnamespace::text, '0') || ':' || d.defaclobjtype::text || ':' || a.grantee::text || ':' || a.privilege_type || ':' || a.is_grantable)
-  )
-  FROM pg_default_acl d LEFT JOIN pg_namespace ns ON ns.oid = d.defaclnamespace
-  CROSS JOIN LATERAL aclexplode(d.defaclacl) a
-),
-role_memberships AS (
-  SELECT jsonb_build_object(
-    'object_key', 'ROLE_MEMBERSHIP:' || granted.rolname || ':' || member.rolname,
-    'object_class', 'ROLE_MEMBERSHIP', 'name', granted.rolname || ':' || member.rolname,
-    'definition', jsonb_build_object('granted_role', granted.rolname, 'member_role', member.rolname, 'grantor', pg_get_userbyid(m.grantor), 'admin_option', m.admin_option, 'inherit_option', m.inherit_option, 'set_option', m.set_option)
-  ) AS item
-  FROM pg_auth_members m JOIN pg_roles granted ON granted.oid = m.roleid JOIN pg_roles member ON member.oid = m.member
 ),
 dependencies AS (
   SELECT jsonb_agg(jsonb_build_object(
     'dependent_class', d.classid::regclass::text,
     'dependent_object', d.objid::text,
     'dependent_subobject', d.objsubid,
+    'dependent_description', pg_describe_object(d.classid, d.objid, d.objsubid),
     'referenced_class', d.refclassid::regclass::text,
     'referenced_object', d.refobjid::text,
     'referenced_subobject', d.refobjsubid,
+    'referenced_description', pg_describe_object(d.refclassid, d.refobjid, d.refobjsubid),
     'dependency_type', d.deptype
   )) AS items
   FROM pg_depend d
@@ -317,7 +276,6 @@ SELECT jsonb_build_object(
       SELECT item FROM types UNION ALL
       SELECT item FROM extensions UNION ALL
       SELECT item FROM acl_entries UNION ALL
-      SELECT item FROM role_memberships
     ) all_objects
   ),
   'dependencies', (SELECT coalesce(items, '[]'::jsonb) FROM dependencies)
