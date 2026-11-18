@@ -408,7 +408,7 @@ def parse_history_record(record: dict[str, Any], temp_root: Path) -> tuple[list[
     return events, sources
 
 
-def build_graph(root: Path, history_dir: Path | None = None) -> dict[str, Any]:
+def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path | None = None) -> dict[str, Any]:
     files = sorted(root.rglob("*.sql"), key=lambda p: p.relative_to(root).as_posix())
     events: list[dict[str, Any]] = []
     sources: list[dict[str, Any]] = []
@@ -417,6 +417,16 @@ def build_graph(root: Path, history_dir: Path | None = None) -> dict[str, Any]:
         source_record["source_kind"] = "ACTIVE_GIT_MIGRATION_FILE"
         events.extend(file_events)
         sources.append(source_record)
+    archive_files = sorted(archive_dir.rglob("*.sql"), key=lambda p: p.relative_to(archive_dir).as_posix()) if archive_dir and archive_dir.is_dir() else []
+    for path in archive_files:
+        archive_events, archive_record = parse_source(path, archive_dir)
+        archive_record["source_kind"] = "HISTORICAL_GIT_SOURCE_ARCHIVE"
+        archive_record["source_path"] = path.relative_to(archive_dir).as_posix()
+        for event in archive_events:
+            event["source_kind"] = "HISTORICAL_GIT_SOURCE_ARCHIVE"
+            event["source_path"] = path.relative_to(archive_dir).as_posix()
+        events.extend(archive_events)
+        sources.append(archive_record)
     history_records = _history_payloads(history_dir) if history_dir and history_dir.is_dir() else []
     if history_records:
         with tempfile.TemporaryDirectory(prefix="moreai-migration-history-") as temp_dir:
@@ -494,11 +504,26 @@ def build_graph(root: Path, history_dir: Path | None = None) -> dict[str, Any]:
 
     parse_failures = [source for source in sources if source["parse_status"] != "PARSED"]
     active_sources = [source for source in sources if source.get("source_kind") == "ACTIVE_GIT_MIGRATION_FILE"]
-    history_sources = [source for source in sources if source.get("source_kind") != "ACTIVE_GIT_MIGRATION_FILE"]
+    archive_sources = [source for source in sources if source.get("source_kind") == "HISTORICAL_GIT_SOURCE_ARCHIVE"]
+    history_sources = [source for source in sources if source.get("source_kind") in {"SUPABASE_HISTORY_STATEMENT", "HISTORY_PATH_REFERENCE"}]
+    history_ids = {str(record.get("version")) for record in history_records}
+    for source in sources:
+        if source.get("source_kind") == "ACTIVE_GIT_MIGRATION_FILE":
+            source["history_record_status"] = "HISTORY_RECORDED" if str(source.get("migration_id")) in history_ids else "HISTORY_ABSENT"
+            source["execution_evidence_status"] = "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT" if str(source.get("migration_id")) in history_ids else "SOURCE_ONLY_NOT_APPLIED"
+        elif source.get("source_kind") in {"SUPABASE_HISTORY_STATEMENT", "HISTORY_PATH_REFERENCE"}:
+            source["history_record_status"] = "HISTORY_RECORDED"
+            source["execution_evidence_status"] = "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT"
+        else:
+            source["history_record_status"] = "HISTORICAL_SOURCE_NO_CURRENT_HISTORY_ROW_ASSERTION"
+            source["execution_evidence_status"] = "SOURCE_EXISTENCE_ONLY"
     return {
         "format": "moreai.postgresql.expected-object-graph.v1",
-        "parser": {"name": "pglast", "postgresql_grammar": "pglast-bundled-server-parser", "authority": "PostgreSQL parser AST"},
-        "source_root": str(root), "history_migration_record_count": len(history_records),
+        "parser": {"name": "pglast", "version": "7.10", "postgresql_grammar": "pglast-bundled-server-parser", "authority": "PostgreSQL parser AST"},
+        "execution_provenance_status": "EXECUTION_PROVENANCE_UNVERIFIABLE",
+        "execution_provenance_reason": "Migration history rows and observed catalog are not independent exact-byte deployment receipts.",
+        "source_root": str(root), "archive_source_file_count": len(archive_sources),
+        "history_migration_record_count": len(history_records),
         "history_statement_source_count": len(history_sources),
         "active_migration_file_count": len(active_sources),
         "source_record_count": len(sources), "parsed_source_record_count": len(sources) - len(parse_failures),
@@ -520,11 +545,12 @@ def main() -> int:
     cli = argparse.ArgumentParser(description="Build a PostgreSQL AST-backed static expected-object event graph.")
     cli.add_argument("--migrations-dir", required=True, type=Path)
     cli.add_argument("--history-dir", type=Path, default=None)
+    cli.add_argument("--archive-dir", type=Path, default=None)
     cli.add_argument("--output", required=True, type=Path)
     args = cli.parse_args()
     if not args.migrations_dir.is_dir():
         raise SystemExit("migration_directory_not_found")
-    graph = build_graph(args.migrations_dir.resolve(), args.history_dir.resolve() if args.history_dir else None)
+    graph = build_graph(args.migrations_dir.resolve(), args.history_dir.resolve() if args.history_dir else None, args.archive_dir.resolve() if args.archive_dir else None)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(graph, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
