@@ -13,6 +13,7 @@ from engine.agents.errors import RunPausedForApproval
 from engine.agents.protocol import AgentRunContext, AgentRunResult, CheckpointWriter
 from engine.agents.types import Message, ToolCall, ToolFunction
 from engine.tools.policy import ToolPolicy
+from engine.tools.copy_engine import CopyEngineAdapter
 from engine.tools.registry import PolicyEnforcedToolRegistry
 
 
@@ -122,6 +123,7 @@ class DurableOpenManusRuntime:
         self.image_tool_timeout_seconds = float(image_tool_timeout_seconds)
         self.video_tool_timeout_seconds = float(video_tool_timeout_seconds)
         self.gateway = gateway
+        self.copy_engine = CopyEngineAdapter(gateway)
         self.memory_store = memory_store
         self.personal_memory_store = personal_memory_store
         self.knowledge_tools = knowledge_tools
@@ -147,7 +149,7 @@ class DurableOpenManusRuntime:
         )
         self.max_rounds = max_rounds
         self.system_prompt = system_prompt
-        enabled_tools = {"create_chat_completion", "terminate", "run"}
+        enabled_tools = {"create_chat_completion", "copy_engine_generate", "terminate", "run"}
         if plan_store is not None:
             enabled_tools.add("planning")
         if search_tools is not None:
@@ -175,6 +177,7 @@ class DurableOpenManusRuntime:
             approval_gate=approval_gate,
         )
         self.tools.register("create_chat_completion", self._nested_completion)
+        self.tools.register("copy_engine_generate", self.copy_engine.generate)
         self.tools.register("terminate", self._terminate_tool)
         if plan_store is not None:
             self.tools.register("planning", self._planning_tool)
@@ -529,7 +532,7 @@ END UNTRUSTED FILE CONTENT"
                     and isinstance(definition.get("function"), dict)
                     and (
                         definition["function"].get("name") in selected_tools
-                        or definition["function"].get("name") in {"create_chat_completion", "terminate"}
+                        or definition["function"].get("name") in {"create_chat_completion", "copy_engine_generate", "terminate"}
                     )
                 )
             ]
