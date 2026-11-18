@@ -31,7 +31,8 @@ create table if not exists public.moreai_worker_capability_snapshots (
 );
 alter table public.moreai_worker_capability_snapshots enable row level security;
 revoke all on public.moreai_worker_capability_snapshots from public, anon, authenticated;
-grant select, insert, update on public.moreai_worker_capability_snapshots to service_role;
+grant select on public.moreai_worker_capability_snapshots to service_role;
+grant insert, update on public.moreai_worker_capability_snapshots to service_role;
 
 create or replace function public.moreai_worker_publish_capabilities(
     p_worker_id text, p_runtime_keys text[], p_capabilities jsonb, p_status text default 'healthy'
