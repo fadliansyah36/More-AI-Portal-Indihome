@@ -1,10 +1,10 @@
 comparison_area,repository_intent,applied_history,observed_database,expected_state,classification,confidence
 migration_version_set,83 active SQL files,116 history rows,not applicable,not deterministically reconstructable,BASELINE_CONFLICTED,LOW
-tables_columns,partial migration definitions,partial embedded statements,1,400 columns across 27 non-system schemas,unknown,BASELINE_UNVERIFIABLE,LOW
-constraints_indexes,partial migration definitions,partial embedded statements,709 constraints/396 indexes,unknown,BASELINE_UNVERIFIABLE,LOW
-functions_triggers_views,partial migration definitions,partial embedded statements,328 functions/19 triggers/4 views,unknown,BASELINE_UNVERIFIABLE,LOW
-rls_grants_ownership,partial SQL policy/grant definitions,partial embedded statements,99 policies; 1,704 table privilege rows; 702 routine privilege rows,unknown,BASELINE_UNVERIFIABLE,LOW
-extensions_types,not a complete manifest,history incomplete,7 extensions and 12 managed enums,unknown,BASELINE_UNVERIFIABLE,LOW
-browser_takeover_preview,5 unapplied source files,history rows absent,objects absent,not expected live until approved/applied,EXPECTED_DIFFERENCE,MEDIUM
-preferred_model_id,original Git source recovered; current same-name repo file is alias,history 15084819 present,column/index observed live,source relation token-matched; exact schema definitions require full replay,BASELINE_SUPPORTED_FOR_OBJECT_INTENT,MEDIUM
-all_schema_catalog,27 non-system schemas,116 history rows,27 schemas/137 ordinary + 1 partitioned tables/1,400 columns/709 constraints/396 indexes/328 functions/19 triggers/99 policies,unknown,OBSERVED_ONLY,high for observed state
+tables_columns,partial migration definitions,partial embedded statements,"1,400 columns across 27 non-system schemas",unknown,BASELINE_UNVERIFIABLE,LOW
+constraints_indexes,partial migration definitions,partial embedded statements,709 constraints / 396 indexes,unknown,BASELINE_UNVERIFIABLE,LOW
+functions_triggers_views,partial migration definitions,partial embedded statements,328 functions / 19 triggers / 4 views,unknown,BASELINE_UNVERIFIABLE,LOW
+rls_grants_ownership,partial SQL policy/grant definitions,partial embedded statements,"99 policies; 1,704 table privilege rows; 702 routine privilege rows",unknown,BASELINE_UNVERIFIABLE,LOW
+extensions_types,not a complete manifest,history incomplete,7 extensions; 320 type rows; 47 enum labels; 2 domain constraints,unknown,BASELINE_UNVERIFIABLE,LOW
+browser_takeover_preview,5 corrected active source files; original bytes archived,history rows absent,objects absent,not expected live while unapplied,EXPECTED_DIFFERENCE,MEDIUM
+preferred_model_id,original Git source recovered; current-main duplicate alias archived,history 15084819 present,column/index observed live,source relation token-matched; exact schema definitions require full replay,BASELINE_SUPPORTED_FOR_OBJECT_INTENT,MEDIUM
+all_schema_catalog,27 non-system schemas,116 history rows,"27 schemas; 137 ordinary + 1 partitioned tables; 1,400 columns; 709 constraints; 396 indexes; 328 functions; 19 triggers; 99 policies",unknown,OBSERVED_ONLY,HIGH
