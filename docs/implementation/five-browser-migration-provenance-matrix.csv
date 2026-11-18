@@ -1,0 +1,6 @@
+migration_id,history_record,git_blob,provenance,duplicate_or_superseded,source_status
+20261116250000,ABSENT,8cd9be2c829feedec2137a64255118fc97017d3f,Current main source identified by exact path/blob; no history SQL counterpart,None identified,PROVENANCE_PARTIAL
+20261116260000,ABSENT,e577c761e5c02075a9c308d05f66c9e907b193ea,Current main source identified by exact path/blob; no history SQL counterpart,None identified,PROVENANCE_PARTIAL
+20261116270000,ABSENT,fad309b95d7c67e1f0585d4b3d923456e6443449,Current main source identified by exact path/blob; no history SQL counterpart,None identified,PROVENANCE_PARTIAL
+20261116280000,ABSENT,dac0d2796ebef75570a7ca79ed10a13025579615,Current main source identified by exact path/blob; no history SQL counterpart,None identified,PROVENANCE_PARTIAL
+20261116300000,ABSENT,1ae88c4f56cb1c69ae225a258273e8e1f3f6bfe2,Current main source identified by exact path/blob; no history SQL counterpart,None identified,PROVENANCE_PARTIAL
