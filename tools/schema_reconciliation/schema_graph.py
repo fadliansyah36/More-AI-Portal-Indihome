@@ -206,6 +206,47 @@ def _migration_identity(path: Path, root: Path) -> str:
     return match.group(1) if match else f"UNVERSIONED:{relative}"
 
 
+def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relative: str, source_sha256: str, git_blob_sha1: str, statement_ordinal: int, parent_name: str | None, operation: str) -> list[dict[str, Any]]:
+    if tag not in {"CreateStmt", "AlterTableStmt"} or not isinstance(payload, dict) or not parent_name:
+        return []
+    roots = payload.get("tableElts") if tag == "CreateStmt" else payload.get("cmds")
+    output: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for child_tag, child_payload in _walk(roots):
+        if not isinstance(child_payload, dict):
+            continue
+        if child_tag == "ColumnDef":
+            name = child_payload.get("colname")
+            if not isinstance(name, str) or not name:
+                continue
+            object_class, object_name = "COLUMN", parent_name + "." + name
+        elif child_tag == "Constraint":
+            name = child_payload.get("conname")
+            if not isinstance(name, str) or not name:
+                name = "unnamed:" + hashlib.sha256(json.dumps(_normalize(child_payload), sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:12]
+            object_class, object_name = "CONSTRAINT", parent_name + "." + name
+        else:
+            continue
+        identity = (object_class, object_name)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        normalized = _normalize({child_tag: child_payload})
+        encoded = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        output.append({
+            "migration_id": migration_id, "source_path": relative,
+            "source_sha256": source_sha256, "git_blob_sha1": git_blob_sha1,
+            "statement_ordinal": statement_ordinal, "ast_node_tag": child_tag,
+            "object_class": object_class, "operation": operation,
+            "object_name": object_name, "object_names": [object_name],
+            "expected_effect": operation,
+            "normalized_ast_sha256": hashlib.sha256(encoded.encode()).hexdigest(),
+            "normalized_ast": normalized, "dependency_candidates": [],
+            "dependency_status": "NOT_APPLICABLE",
+            "procedural_body_status": "NOT_APPLICABLE", "semantic_status": "AST_PARSED",
+        })
+    return output
+
 def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     raw = path.read_bytes()
     source = raw.decode("utf-8")
@@ -267,6 +308,11 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
             "procedural_body_status": _procedural_body_status(tag, payload),
             "semantic_status": event_status,
         })
+        events.extend(_table_subobject_events(
+            tag, payload, migration_id=migration_id, relative=relative,
+            source_sha256=source_sha256, git_blob_sha1=git_blob_sha1,
+            statement_ordinal=ordinal, parent_name=target, operation=operation,
+        ))
 
     source_record = {
         "migration_id": migration_id,
