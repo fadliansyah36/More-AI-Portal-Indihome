@@ -15,9 +15,9 @@ schemas AS (
 relations AS (
   SELECT jsonb_build_object(
     'object_key',
-      CASE WHEN c.relkind IN ('v','m') THEN 'VIEW:' ELSE 'TABLE:' END || n.nspname || '.' || c.relname,
+      CASE WHEN c.relkind = 'f' THEN 'FOREIGN_TABLE:' WHEN c.relkind IN ('v','m') THEN 'VIEW:' ELSE 'TABLE:' END || n.nspname || '.' || c.relname,
     'object_class',
-      CASE WHEN c.relkind IN ('v','m') THEN 'VIEW' ELSE 'TABLE' END,
+      CASE WHEN c.relkind = 'f' THEN 'FOREIGN_TABLE' WHEN c.relkind IN ('v','m') THEN 'VIEW' ELSE 'TABLE' END,
     'name', n.nspname || '.' || c.relname,
     'definition', jsonb_build_object(
       'relkind', c.relkind,
@@ -42,7 +42,7 @@ relations AS (
   FROM pg_class c
   JOIN pg_namespace n ON n.oid = c.relnamespace
   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
-    AND c.relkind IN ('r','p','v','m')
+    AND c.relkind IN ('r','p','v','m','f')
 ),
 columns AS (
   SELECT jsonb_build_object(
@@ -69,21 +69,23 @@ columns AS (
 ),
 constraints AS (
   SELECT jsonb_build_object(
-    'object_key', 'CONSTRAINT:' || n.nspname || '.' || t.relname || '.' || con.conname,
+    'object_key', 'CONSTRAINT:' || n.nspname || '.' || coalesce(t.relname, typ.typname) || '.' || con.conname,
     'object_class', 'CONSTRAINT',
-    'name', n.nspname || '.' || t.relname || '.' || con.conname,
+    'name', n.nspname || '.' || coalesce(t.relname, typ.typname) || '.' || con.conname,
     'definition', jsonb_build_object(
       'constraint_type', con.contype,
       'definition', pg_get_constraintdef(con.oid, true),
       'validated', con.convalidated,
       'deferrable', con.condeferrable,
-      'initially_deferred', con.condeferred
+      'initially_deferred', con.condeferred,
+      'domain', con.contypid <> 0
     ),
-    'dependency_fingerprint', md5(con.conrelid::text || ':' || con.confrelid::text || ':' || con.conindid::text)
+    'dependency_fingerprint', md5(con.conrelid::text || ':' || con.confrelid::text || ':' || con.conindid::text || ':' || con.contypid::text)
   ) AS item
   FROM pg_constraint con
-  JOIN pg_class t ON t.oid = con.conrelid
-  JOIN pg_namespace n ON n.oid = t.relnamespace
+  LEFT JOIN pg_class t ON t.oid = con.conrelid
+  LEFT JOIN pg_type typ ON typ.oid = con.contypid
+  JOIN pg_namespace n ON n.oid = coalesce(t.relnamespace, typ.typnamespace)
   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
 ),
 indexes AS (
@@ -222,7 +224,7 @@ extensions AS (
     'object_key', 'EXTENSION:' || e.extname,
     'object_class', 'EXTENSION',
     'name', e.extname,
-    'definition', jsonb_build_object('version', e.extversion, 'schema', n.nspname)
+    'definition', jsonb_build_object('version', e.extversion, 'schema', n.nspname, 'owner', pg_get_userbyid(e.extowner))
   ) AS item
   FROM pg_extension e
   JOIN pg_namespace n ON n.oid = e.extnamespace
