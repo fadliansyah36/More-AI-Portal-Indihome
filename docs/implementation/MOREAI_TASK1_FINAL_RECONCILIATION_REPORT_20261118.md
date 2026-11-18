@@ -119,3 +119,9 @@ Task 2 remains NOT_STARTED. Task 3/4/5 remain untouched in this execution. P1 ac
 - Resolve the event-type constraint regression in the four unapplied source files through reviewed source correction; do not apply them.
 - Obtain an authoritative schema baseline or approved offline replay evidence to complete expected-vs-observed schema definition comparison.
 - Reassess Task 1 acceptance criteria only after these blockers have evidence-backed decisions.
+
+## 9. Additional schema evidence
+- RLS/permission detail: `MOREAI_TASK1_RLS_PERMISSION_DRIFT_REPORT_20261118.md`.
+- Schema-object and unapplied-migration dependencies: `MOREAI_TASK1_SCHEMA_OBJECT_DEPENDENCY_REPORT_20261118.md`.
+- Phase tracker refreshed in commit `8a4168b9c86ab778c020e3dc61a6534c30920a15`.
+- Latest verified main commit at report consolidation: `3a7ccf852bf2199ad3b94b14d43f2bfb6330de73`.
