@@ -29,7 +29,7 @@ All 32 applied history rows with no same-name source in current `supabase/migrat
 
 All 32 contain one SQL statement and NULL rollback. A basic credential-pattern scan returned no matches. This limited scan is not a complete secrets audit. Archive files are under `docs/implementation/migration-history-archive/`; they are intentionally outside the active migration directory and must never be replayed.
 
-Git path-history provenance was sampled for five representative historical paths; all five returned no path commits. The remaining 27 paths have not yet been individually checked against Git history. Database-history provenance is preserved; original Git commit/blob provenance remains REVIEW_REQUIRED.
+Git path-history provenance was checked for all 32 exact expected migration paths using the GitHub commits API; all 32 returned zero path commits. Database-history provenance is preserved, but no original Git commit/blob provenance is recoverable through those exact paths.
 
 ## 4. Repository SQL content comparison — 85 files
 
@@ -80,7 +80,7 @@ For items 2–6, the evidence proves not applied by name/content and key objects
 **Task 1 is NOT COMPLETE and P1 remains IN_PROGRESS.** Blocking items:
 1. Review all 23 raw SQL mismatches with exact diff and semantic classification; recover/verify the 3 path-reference rows against immutable source evidence.
 2. Reconcile the two divergent duplicate-name pairs.
-3. Individually search Git history for all 32 historical source paths and update provenance where recoverable.
+3. Git path history has been checked for all 32 exact paths and returned no commits; seek any alternative source archive/release artifact if original Git provenance is required.
 4. Obtain owner/reviewer decision on the five genuinely unapplied migration files; repair the malformed command-queue migration before it can be considered.
 5. Complete read-only schema drift comparison (columns, constraints, indexes, triggers, functions, RLS, grants and Storage policies).
 
