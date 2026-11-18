@@ -46,3 +46,12 @@ The history statement values for 20261111030000, 20261111033000 and 202611110400
 - 20261111040000 → `supabase/migrations/20261111040000_moreai_llm_quota_settlement_reconciliation.sql` (Git blob `7bb174c960aeabba71c49a84e95f30a13552eece`).
 
 This closes the path-to-source mapping gap only. It does not attest exact deployed bytes or independent execution.
+
+
+## Static expected schema baseline addendum — 2026-11-18
+
+The source-derived expected-object event baseline is committed as `TASK1-STATIC-EXPECTED-OBJECT-BASELINE-20261118.csv` (513 regex/lexical DDL candidates across 106 applied history versions). The human-readable category matrix and trust boundary are in `TASK1-STATIC-EXPECTED-SCHEMA-BASELINE-20261118.md`. This baseline is source-traceable, not replay-validated. The source inventory `TASK1-MIGRATION-SOURCE-INVENTORY-20261118.csv` records 121 active migration files, 34 historical SQL archive records and 7 preserved malformed/duplicate source files, with Git blob SHA-1 and file sizes.
+
+The five browser source originals remain preserved; corrected active sources are 20261116162500, 20261116162600, 20261116162700, 20261116162800 and 20261116163000. Their source corrections preserve the eight applied lifecycle event values and append feature-specific values, but all five remain absent from history and unapplied. The malformed command queue report now identifies 20261116162800 as the corrected active source and the old 20261116280000 path as archived provenance only.
+
+Static event lineage does not prove exact execution. The 513 rows are DDL candidates, not unique final objects or AST-normalized definitions. Global semantic expected-vs-observed parity remains NOT_VERIFIABLE; no category is declared globally MATCH. The user waived replay/testing; no replay, migration apply, production write, staging or deployment occurred.
