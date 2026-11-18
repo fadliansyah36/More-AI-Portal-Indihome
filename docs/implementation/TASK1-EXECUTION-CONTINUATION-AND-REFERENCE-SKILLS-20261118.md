@@ -141,6 +141,7 @@ The following source integration is already implemented in `main`; it was verifi
 5. `engine/agents/durable_tool_runtime.py` resolves skills for the Agent Run through the existing `SupabaseSkillResolver`.
 6. `apps/worker/app/skill_resolver.py` enforces owner-scoped package/install status, validation, license approval, publication, exact granted-permission subset, immutable source inventory, SHA-256 and Git blob SHA-1 checks, and per-run resolution/execution audit events.
 7. The resolver is injected into the existing OpenManus durable runtime. No second Agent Runtime, Skill database, or browser-side Supabase access was added.
+8. A source-aware MoreAI adapter was implemented in `apps/worker/app/skill_resolver.py` (commit `dd3f9ba170568182674c54e75140d452e09bc88a`). It adds an explicit native-tool contract to Visual/Scenario/Motion skill context, blocks Scenario 3D/Mesh/Blender-only entrypoints while no native 3D provider exists, and records the selected adapter in the immutable per-run snapshot/audit event. It does not add provider tools or activate packages.
 
 ### 5.3 Compatibility curation and execution gates
 
@@ -150,7 +151,18 @@ The following source integration is already implemented in `main`; it was verifi
 - Motion packs are discoverable through the same pinned registry. Their instructions do not provision video providers, ffmpeg/ffprobe, Remotion, model pricing, billing, or rendering infrastructure. These dependencies remain separate release gates.
 - Skills remain untrusted instruction context. They cannot grant tools or override system policy. Runtime execution requires per-owner import, complete ingestion, source integrity, dependency/license/asset review, publication, installation, permission grant and the existing worker release flags.
 
-### 5.4 What has not been executed
+### 5.4 Native source adapters implemented
+
+`apps/worker/app/skill_resolver.py` now derives the source adapter from immutable `source_repository` and `source_path` fields after verifying every stored file and root hash:
+
+- Visual Skills: prompt-authoring-only adapter; maps to MoreAI `image_generate` or `video_generate` only when the respective tool is actually registered.
+- Scenario Skills: explicitly rejects Scenario MCP tool names and translates supported creative workflows to the native MoreAI image/video tool boundary. Scenario 3D, 3D-world, Blender, Meshy, Rodin, SPARC3D and Patina-retexture entrypoints fail closed with `skill_provider_capability_unavailable` until a native 3D/mesh adapter exists.
+- Motion Skills: adds a production-workflow guard; does not assume Remotion, ffmpeg/ffprobe, fonts, codecs, render workers, external model APIs or credentials are provisioned.
+- Adapter identity is attached to the per-run skill snapshot and resolution audit detail. No new tools, provider credentials, database tables or Agent Runtime were introduced.
+
+This is a source-level adaptation and security boundary. It is not runtime acceptance; no packages were imported or executed in this continuation.
+
+### 5.5 What has not been executed
 
 The customer Skill Registry package count was previously observed as zero in the read-only Supabase snapshot. Because this task forbids production writes, no package was inserted, ingested, installed, published, permission-granted or activated in the connected project during this continuation. No skills were represented by fake seed data. The source-level integration is real; actual tenant package activation remains intentionally off.
 
