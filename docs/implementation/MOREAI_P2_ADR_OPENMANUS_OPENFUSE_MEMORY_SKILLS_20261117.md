@@ -194,3 +194,14 @@ Phase 04–09 continue to follow the AGENTS.md acceptance gate. Phase 10 and Pha
 ## P1 executable review update — 2026-11-18
 
 The P1 executable-source manual review advanced to **39/875**. Batch 03 and Batch 04 each reviewed eight pinned Scenario Blender source files; all 16 remain DEFER because they mutate Blender scenes, import/parse 3D model files, invoke GUI/render operators, write caller-selected output paths or launch a Blender subprocess for batch export. The selected-payload per-file operational disposition manifest now references both reports. No skill was imported or executed. P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED.
+
+
+## Exact-version OSV and npm package-license evidence — 2026-11-18
+
+- OSV exact-PURL coverage: 1,963/1,963 npm coordinates, 104/104 pinned Python lock coordinates and 2/2 additional exact Python requirements (2,069 exact coordinates total).
+- Results: 40 npm coordinates with 134 advisory associations and 6 Python coordinates with 87 advisory associations (46 exact vulnerable coordinates, 221 associations total). Machine-readable registers: `MOREAI_P1_OSV_NPM_VULNERABLE_COORDINATES_20261118.csv` and `MOREAI_P1_OSV_PYPI_VULNERABLE_COORDINATES_20261118.csv`.
+- Advisory detail samples establish affected/fixed ranges for certifi, Pillow, filelock, protobuf, setuptools and torch. The rest of the 221 advisory associations still require per-record severity/fixed-version/alias/reachability triage; no runtime reachability was asserted.
+- Exact package LICENSE text was retrieved for all 12 entries in the previous npm license-review queue. SPDX mapping evidence and registry-advertised tarball integrity plus CDN-advertised LICENSE file SHA-256 are in `MOREAI_P1_NPM_TARBALL_LICENSE_EVIDENCE_20261118.csv`. The 11 registry-null records have text evidence; CC-BY-SA-4.0 dictionary data still needs legal/share-alike review. No separate NOTICE files were listed for these 12 package versions.
+- This is partial progress, not license/vulnerability acceptance. 32 unpinned/ranged Python BOM entries, 24 ranged OpenManusWeb requirements, complete dependency source mapping, tarball byte-level independent integrity verification, package NOTICE/source headers, and remaining advisory triage remain open.
+- Every vulnerable coordinate is blocked from skill import pending triage. No package versions were changed, and no packages were installed.
+- P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED; Phase 04–09 remain gated and Phase 10/11 remain BLOCKED / NOT ACCEPTED.
