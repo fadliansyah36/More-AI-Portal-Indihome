@@ -313,3 +313,13 @@ A follow-up parse of CycloneDX component properties corrected the OSV coverage d
 - Corrected total: **1,936 unique exact PURLs queried** (1,824 npm + 112 PyPI), **49 vulnerable coordinates** (40 npm + 9 PyPI), **247 advisory associations**. This supersedes the prior 2,069/46/221 figures in the preceding addendum.
 - The Python vulnerable-coordinate register now includes the three direct dependency records. The full report's correction addendum documents the denominator and package details.
 - 23 npm root dependencies and 24 Python requirements remain unpinned/unresolved and outside exact-version query coverage. No dependency versions were changed; P1 remains IN_PROGRESS / NOT ACCEPTED.
+
+
+## Executable source review — Batch 05 (2026-11-18)
+
+- Reviewed 8 additional pinned Scenario Skills source files: seven Blender modules (lighting/rendering, previs/storyboard, retopology, rigging, sculpting, materials/shading, UV/baking) and one Maya animation module.
+- Static findings: Blender render/scene mutation and image parsing, large mesh/UV operations, a fixed-argv Blender subprocess in `bx_rig.cycle_check` (300s timeout), and Maya plan/audio file processing plus sibling GUI/toolkit dependencies. All 8 remain DEFER pending isolated DCC worker architecture, full source/dependency/license review and output-path confinement.
+- Report: `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_05_20261118.md`, commit `04ca37af78654e220f78fa6aba7bc6362cf7183b`.
+- The selected-payload per-file operational disposition CSV now links these 8 paths to Batch 05; evidence update commit `1f6037e615bb785ba2e4c3419b205b24911f38d7`.
+- Executable-source manual review is now **47/875**; 828 remain. All eight rows retain DEFER / FINAL_HOLD.
+- P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. No source execution, DCC application, test/build, provider call, database write/migration, staging or deployment occurred.
