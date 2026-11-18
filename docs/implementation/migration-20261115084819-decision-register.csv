@@ -1,0 +1,6 @@
+decision_id,subject,status,decision,rationale,required_follow_up
+MP-001,Migration history row,HISTORY_RECORD_CONFIRMED,Retain history row 20261115084819,Read-only history query returned version/name/SQL; no history edits,No action
+MP-002,Historical Git source,SOURCE_CONFIRMED,Map source to commit cc5563e and path 20261115090000,619 ordered lexical SQL tokens match history source,Preserve commit object and report
+MP-003,Overall provenance,PROVENANCE_PARTIAL,Do not claim fully attested execution provenance,No native checksum/execution receipt and filename version differs from history version,Owner or deployment artifact evidence if full attestation is required
+MP-004,Current main file 15090000,DUPLICATE_OR_SUPERSEDED,Do not treat as source for history 15084819,Current blob equals 15100000 and matches history 15085314,Owner-approved duplicate disposition only; do not modify now
+MP-005,Historical source preservation,RETAIN,Do not delete/overwrite Git history or DB history,Historical traceability,No action
