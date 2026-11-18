@@ -193,7 +193,7 @@ Observed public object classes and definitions were read for relations, columns,
 The current FastAPI Skill Registry source already contains pinned-source support for:
 
 - Visual Skills: `smixs/visual-skills@61a60d317f0fa0c3dc98902e58a7cb178838ae3f` — two entrypoints, CC BY 4.0. Root LICENSE and NOTICE are present. Attribution/change notices are required. Third-party provider logos and three image/banner assets remain excluded/held pending rights evidence.
-- Scenario Skills: `scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9` — 172 product-facing `skills/*/SKILL.md` entrypoints; root MIT. Seven internal maintainer/skill-authoring entrypoints are archive-only. Per-file nested license, asset and dependency review remains incomplete.
+- Scenario Skills: `scenario-labs/skills@94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9` — 173 product-facing `skills/*/SKILL.md` entrypoints; root MIT. Seven internal maintainer/skill-authoring entrypoints are archive-only. Per-file nested license, asset and dependency review remains incomplete.
 - Motion Skills: the supplied `iart-ai/motion-skills` repository is an index, not an executable package. The API pins 19 linked pack repositories and 56 `skills/*/SKILL.md` entrypoints. Eighteen pack roots have MIT licenses; `generative-illustration-skills` has no root license and remains blocked as NOASSERTION. Exact pack pins and counts are in `REFERENCE-SKILLS-CURATION-AND-INTEGRATION-20261118.csv`.
 
 The catalog's current source inventory is 230 product entrypoints (2 Visual + 172 Scenario + 56 Motion). The aggregator repository itself is not admitted as a skill package because it contains no `skills/*/SKILL.md` entrypoints.
