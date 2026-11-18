@@ -205,6 +205,14 @@ class SupabaseSkillResolver:
             if not installs:
                 raise PermissionError("skill_execution_permission_not_granted")
             package, install = packages[0], installs[0]
+            # Re-check immutable source identity at the worker trust boundary.
+            # API import validation is not sufficient: registry rows may be malformed,
+            # privileged writes may bypass the API, and runtime must fail closed.
+            _validate_pinned_source_identity(
+                package.get("source_repository"),
+                package.get("source_commit"),
+                package.get("source_path"),
+            )
             requested = package.get("requested_permissions") or []
             granted = install.get("granted_permissions") or []
             if (
