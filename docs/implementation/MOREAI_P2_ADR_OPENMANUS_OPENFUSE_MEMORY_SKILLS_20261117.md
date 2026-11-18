@@ -189,3 +189,8 @@ The following facts supersede the preliminary evidence figures in Sections 2 and
 This new evidence improves integrity and inventory confidence but does not close P1. Per-file content/security/legal review, exact dependency artifact/license reconciliation, complete SBOM and vulnerability analysis, final disposition acceptance and product-owner approval remain outstanding. The P2 ADR remains **DRAFT / NOT ACCEPTED**. It does not authorize product implementation or runtime activation by itself.
 
 Phase 04–09 continue to follow the AGENTS.md acceptance gate. Phase 10 and Phase 11 remain **BLOCKED / NOT ACCEPTED** while real verification and staging are prohibited. No source execution, tests, builds, provider calls, migrations, Supabase writes, staging or deployment were performed in this audit continuation.
+
+
+## P1 executable review update — 2026-11-18
+
+The P1 executable-source manual review advanced to **39/875**. Batch 03 and Batch 04 each reviewed eight pinned Scenario Blender source files; all 16 remain DEFER because they mutate Blender scenes, import/parse 3D model files, invoke GUI/render operators, write caller-selected output paths or launch a Blender subprocess for batch export. The selected-payload per-file operational disposition manifest now references both reports. No skill was imported or executed. P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED.
