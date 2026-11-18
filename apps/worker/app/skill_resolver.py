@@ -101,6 +101,7 @@ def _adapt_source_instructions(
             "adapter_id": "visual-prompt-authoring-to-moreai-v1",
             "mode": "prompt_authoring",
             "native_tool_keys": ["image_generate"] if normalized == "image/SKILL.md" else ["video_generate"],
+            "required_permissions": ["media.generate"],
         })
         guard = (
             "MOREAI SOURCE ADAPTER — VISUAL PROMPT AUTHORING: This source is a prompt-planning "
@@ -139,6 +140,7 @@ def _adapt_source_instructions(
                 "adapter_id": "scenario-mcp-to-moreai-native-media-v1",
                 "mode": "native_adapter_required",
                 "native_tool_keys": ["image_generate", "video_generate"],
+                "required_permissions": ["media.generate"],
                 "unsupported_upstream_tools": ["recommend", "search", "model_schema_get", "model_run", "jobs_wait", "asset_display", "asset_download", "skill_get"],
             })
             guard = (
@@ -158,6 +160,7 @@ def _adapt_source_instructions(
             "adapter_id": "motion-workflow-to-moreai-v1",
             "mode": "native_tool_boundary",
             "native_tool_keys": ["video_generate", "image_generate"],
+            "required_permissions": ["media.generate"],
             "external_runtime_assumptions": ["Remotion", "ffmpeg", "ffprobe", "external model APIs"],
         })
         guard = (
@@ -184,7 +187,7 @@ ALLOWED_SKILL_PERMISSIONS = frozenset({
     "network.read", "search.web",
     "workspace.read", "workspace.write",
     "browser.navigate", "browser.download",
-    "files.read", "files.write", "content.generate",
+    "files.read", "files.write", "content.generate", "media.generate",
     "gmail.read", "calendar.read", "gmail.send", "calendar.write",
 })
 
