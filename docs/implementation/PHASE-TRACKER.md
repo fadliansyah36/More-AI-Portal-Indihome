@@ -1937,3 +1937,9 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - The worker independently enforces the pinned repository, exact source commit, and allowlisted entrypoint path. API import validation is no longer the only source-identity gate.
 - Commit: `0a4f99a906b227d71ea59d0055e1173d5fe11816`.
 - Source-only implementation; no test, build, runtime activation, registry write, migration apply or deployment was performed.
+
+## 2026-11-18 — Reject unknown skill source repositories at worker boundary
+
+- Tightened `_validate_pinned_source_identity`: an unknown repository now fails with `skill_source_repository_not_allowlisted`; a known repository must match its exact pinned commit. This closes the prior permissive case where a non-Motion unknown repository could pass the helper.
+- Commit: `1f096d231292bf83ca84192c2352409e0fda5bfd`.
+- No database write, skill import, test, build, runtime activation or deployment was performed.
