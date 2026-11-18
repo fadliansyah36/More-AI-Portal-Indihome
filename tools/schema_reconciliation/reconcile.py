@@ -63,6 +63,10 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
     applied = set(observed.get("applied_migration_ids") or [])
     complete_expected = observed.get("expected_source_coverage_complete") is True
     rows: list[dict[str, Any]] = []
+    dependency_map: dict[str, list[dict[str, Any]]] = {}
+    for edge in observed.get("dependency_edges") or []:
+        if isinstance(edge, dict) and isinstance(edge.get("dependent_identity"), str):
+            dependency_map.setdefault(edge["dependent_identity"], []).append(edge)
 
     for key, expected_item in sorted(expected_by_key.items()):
         observed_item = observed_by_key.get(key)
@@ -132,6 +136,11 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
                 "migration_lineage": lineage,
             },
             "observed_evidence": observed_item,
+            "dependency_evidence": {
+                "expected_ast_candidates": expected_item.get("dependency_candidates") or [],
+                "observed_catalog_edges": dependency_map.get(str(expected_item.get("object_name") or ""), []),
+                "comparison_status": "NOT_VERIFIABLE_AST_CANDIDATES_ARE_NOT_A_COMPLETE_DEPENDENCY_BINDING",
+            },
         })
 
     for key, observed_item in sorted(observed_by_key.items()):
@@ -162,6 +171,8 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
         "expected_graph_format": expected.get("format"),
         "observed_snapshot_id": observed.get("snapshot_id"),
         "security_snapshot_id": observed.get("security_snapshot_id"),
+        "dependency_snapshot_id": observed.get("dependency_snapshot_id"),
+        "dependency_edge_count": len(observed.get("dependency_edges") or []),
         "routine_privilege_row_count": len(observed.get("routine_privilege_rows") or []),
         "comparison_mode": "read_only_object_level",
         "expected_source_coverage_complete": complete_expected,
@@ -184,6 +195,7 @@ def main() -> int:
     cli.add_argument("--expected", required=True, type=Path)
     cli.add_argument("--observed", required=True, type=Path)
     cli.add_argument("--security", type=Path, default=None)
+    cli.add_argument("--dependencies", type=Path, default=None)
     cli.add_argument("--output", required=True, type=Path)
     args = cli.parse_args()
     expected = json.loads(args.expected.read_text(encoding="utf-8"))
@@ -194,6 +206,10 @@ def main() -> int:
         base_objects = [item for item in observed.get("objects", []) if isinstance(item, dict) and item.get("object_class") != "ACL"]
         observed["objects"] = base_objects + list(security.get("acl_objects") or []) + list(security.get("default_acl_objects") or []) + list(security.get("role_memberships") or [])
         observed["routine_privilege_rows"] = security.get("routine_privileges") or []
+    if args.dependencies is not None:
+        dependencies = json.loads(args.dependencies.read_text(encoding="utf-8"))
+        observed["dependency_snapshot_id"] = dependencies.get("snapshot_id")
+        observed["dependency_edges"] = dependencies.get("edges") or []
     result = reconcile(expected, observed)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
