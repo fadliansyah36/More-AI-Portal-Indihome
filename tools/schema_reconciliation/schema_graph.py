@@ -150,10 +150,12 @@ def _object_names(tag: str, payload: Any) -> list[str]:
         if relation and names:
             return [f"{relation}.{'.'.join(names)}"]
         return names[:1]
-    if tag == "CreateFunctionStmt":
-        names = _strings(payload.get("funcname"))
+    if tag in {"CreateFunctionStmt", "AlterFunctionStmt"}:
+        names = _strings(payload.get("funcname") or payload.get("func"))
         if not names:
             return []
+        if tag == "AlterFunctionStmt":
+            return [".".join(names) + "#signature-not-verifiable"]
         parameters = payload.get("parameters") or []
         argument_types: list[str] = []
         for node_tag, node_payload in _walk(parameters):
@@ -318,6 +320,10 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
             continue
         tag, payload = classified
         object_class, operation = DDL_TAGS[tag]
+        if tag == "CreateFunctionStmt" and isinstance(payload, dict) and payload.get("is_procedure"):
+            object_class = "PROCEDURE"
+        elif tag == "AlterFunctionStmt" and isinstance(payload, dict) and payload.get("objtype") in {"OBJECT_PROCEDURE", "PROCEDURE"}:
+            object_class = "PROCEDURE"
         normalized = _normalize(stmt)
         ast_json = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         ast_sha256 = hashlib.sha256(ast_json.encode("utf-8")).hexdigest()
