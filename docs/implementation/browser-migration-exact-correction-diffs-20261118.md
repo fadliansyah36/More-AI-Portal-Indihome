@@ -59,3 +59,29 @@ The remaining claim body must be reconstructed as one complete function with one
 ## Identifier correction
 
 Do not invent a replacement timestamp. Owner must approve the intended chronological position and valid YYYYMMDDHHMMSS IDs for all five sources as a coordinated set. Keep originals unchanged until that decision.
+
+
+## Full proposed CHECK after-blocks (exact event set, not approved)
+
+### 16280000 proposed after
+```sql
+check (event_type in (
+  'created','restored','state_saved','close_requested','closed','expired',
+  'profile_retention_eligible','profile_deleted',
+  'takeover_grant_created','takeover_grant_consumed','takeover_grants_revoked',
+  'takeover_input_succeeded','takeover_input_failed','takeover_command_queued'
+));
+```
+
+### 16300000 proposed after
+```sql
+check (event_type in (
+  'created','restored','state_saved','close_requested','closed','expired',
+  'profile_retention_eligible','profile_deleted',
+  'takeover_grant_created','takeover_grant_consumed','takeover_grants_revoked',
+  'takeover_input_succeeded','takeover_input_failed','takeover_command_queued',
+  'preview_requested'
+));
+```
+
+These are event-vocabulary proposals only. They do not correct the malformed 16280000 function body or resolve the invalid migration IDs. They are not owner-approved and are not implemented.
