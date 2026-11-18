@@ -21,13 +21,16 @@ The CSV manifest assigns every one of the 219 blobs a source Git blob SHA, size,
 | Source class | Files | Decision |
 |---|---:|---|
 | Mobile/web UI | 54 | Archive/reference only; preserve existing MoreAI customer UI |
-| OpenFuse server/runtime | 36 server files split by boundary | Adapt contracts only; do not deploy its Hono/API/auth/store/agent authority |
+| OpenFuse server/API/domain code | 36 | Adapt contracts only; exclude Hono/auth/store/agent authority |
 | Browser worker | 22 | Adapt through existing isolated MoreAI browser supervisor |
-| Computer runtime | 5 | Defer; not safe as-is for multi-tenant hostile execution |
-| Shared/domain packages | 9 | Map contracts; do not introduce parallel domain authority |
-| Tests | 57 | Reference only; no tests ported or run under current instruction |
+| Computer runtime | 5 | Defer; single-owner Docker/E2B model is not a hostile multi-tenant boundary |
+| Domain contracts + external backend adapter | 6 | Map to existing types; no parallel OpenBot or domain runtime |
+| Tests | 57 | Reference only; no tests ported or run in this continuation |
 | Docs | 10 | Reference and capability evidence |
-| Build/dependency/config/assets/license/infra | 26 | Preserve provenance; review per dependency/asset before reuse |
+| Build/dependency/config | 25 | Preserve provenance; do not install dependencies or replace build setup |
+| Deployment infra | 1 | Adapt only through approved MoreAI infrastructure |
+| Assets | 2 | Review each asset's rights before reuse |
+| License | 1 | Retain upstream MIT notice |
 
 ## MoreAI integration already present
 
