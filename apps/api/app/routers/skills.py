@@ -1426,7 +1426,7 @@ PINNED_SKILL_SOURCES = {
     ("iart-ai", "freelance-motion-skills"): {"9f294eb6df73cde7e2dea235f42275df11a16466"},
     ("iart-ai", "webgl-animation-skills"): {"0041933813688c357804f7b13dcb85095c5a3210"},
     ("iart-ai", "manim-skills"): {"3e989cb044f6a6fed8c07b06dddade6e3463d7ac"},
-    ("iart-ai", "generative-illustration-skills"): {"e7d62437c875fc8ad5eff6e90fe0e25b30e43933"},
+    # generative-illustration-skills is deliberately not import-allowlisted: pinned tree has no root LICENSE.
     ("iart-ai", "javascript-animation-skills"): {"060f7467a6e5ae5b57c90c9cb1b3508c13b88e49"},
     ("iart-ai", "lower-thirds-skills"): {"58d3623da95a2c97a4890a2d3f6d9d67e040b3d7"},
     ("iart-ai", "b-roll-skills"): {"bcd56742a8a99edaa699a6f7bc5a45922a8ec567"},
