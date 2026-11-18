@@ -168,3 +168,25 @@ GitHub issue/PR search for browser takeover and migration owner decisions return
 ### Task 1 status
 
 **REVIEW_REQUIRED**. Not READY_FOR_REVIEW and not ACCEPTED. The full expected schema baseline, owner decisions/source corrections, timestamp identity resolution, independent execution receipt, path disposition and full object-level/security comparison remain blockers. No migration apply, database write, staging, testing or deployment occurred. Task 2–5, P1 acceptance and P2 ADR were not started. Existing Phase 04–09 tracker statuses were retained; no Phase 04–09 implementation work or status advancement occurred in this batch.
+
+## Execution continuation addendum — 2026-11-18 (supersedes stale status above)
+
+The earlier report sections above are retained as historical evidence of the initial investigation. The following source and inventory decisions supersede any earlier statements that the browser paths remain invalid/unresolved, that the two current aliases remain active, or that no source implementation has occurred.
+
+### Repository implementation
+- Five browser migration files were corrected and committed under valid active IDs: `20261116162500`, `20261116162600`, `20261116162700`, `20261116162800`, `20261116163000`. Original malformed bytes are preserved in `docs/implementation/migration-source-archive/`; corrected blob hashes are in `browser-migration-recovery-manifest-20261118.csv`.
+- Current active `supabase/migrations` directory contains 83 SQL files. Two duplicate aliases (`20261115090000` and `20261111110000`) are archived outside the active directory. Migration `20261115084819` source identity was recovered from Git commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31` with 619/619 ordered SQL tokens.
+- A source-aware adapter was implemented in `apps/worker/app/skill_resolver.py` at commit `dd3f9ba170568182674c54e75140d452e09bc88a`. It maps Visual/Scenario/Motion instructions to native MoreAI tool boundaries, explicitly disables Scenario MCP assumptions, fails closed for Scenario 3D/Mesh/Blender-only entrypoints, and records adapter identity in per-run skill snapshots/audit events. It does not provision external providers or a second runtime.
+- New evidence includes the master register, dependency map, 513-row migration-to-object DDL candidate map, all-schema catalog fingerprints, and reference-skill curation manifest. See `TASK1-EXECUTION-CONTINUATION-AND-REFERENCE-SKILLS-20261118.md` for the authoritative current state.
+
+### All-schema observed inventory
+Read-only catalog inspection covers 27 non-system schemas: 137 ordinary tables, 1 partitioned table, 1,400 columns, 709 constraints, 396 indexes, 328 functions, 19 triggers, 99 RLS policies, 4 sequences, 4 views, 0 materialized views, 320 type rows, 27 default ACL entries, 24 role memberships and 5,456 non-internal dependency rows. Definitions/ACLs/ownership and dependency fingerprints are persisted in `TASK1-OBSERVED-CATALOG-FINGERPRINTS-20261118.csv`.
+
+### Migration-to-object provenance
+A read-only regex extraction of recorded migration statements produced 513 DDL candidate rows across 106 of 116 migration history versions. It includes per-statement SHA-256 but is not a PostgreSQL AST, offline replay or proof of execution. History records alone are not treated as execution receipts.
+
+### Skills source integration
+Visual Skills (CC BY 4.0), Scenario Skills (MIT), and 19 pinned Motion packs (18 MIT; one NOASSERTION excluded) are catalogued under the existing unified Skill Registry/Resolver. Agent Studio selection flows through FastAPI and the existing OpenManus runtime. No packages were imported, published, installed or written to Supabase in this run because production writes were prohibited.
+
+### Current gate
+**Task 1 remains REVIEW_REQUIRED / NOT COMPLETE.** Trusted expected schema and global expected-vs-observed object parity remain blocked by the absence of an immutable known-good schema-only dump and the prohibition on isolated offline replay. Migration history has no native checksum and is not execution proof. No migration apply, production database write, staging, testing, build, lint, typecheck or deployment was performed.
