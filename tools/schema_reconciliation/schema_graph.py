@@ -502,6 +502,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         archive_events.extend(archive_file_events)
         sources.append(archive_record)
     history_snapshot_records = _history_payloads(history_dir) if history_dir and history_dir.is_dir() else []
+    history_ids = {str(record.get("version")) for record in history_snapshot_records}
+    events.extend(event for event in archive_events if str(event.get("migration_id")) in history_ids)
     history_archive_records = _history_archive_payloads(history_archive_dir)
     history_records = history_snapshot_records + history_archive_records
     hash_manifest: dict[str, list[str]] = {}
@@ -586,7 +588,6 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
     active_sources = [source for source in sources if source.get("source_kind") == "ACTIVE_GIT_MIGRATION_FILE"]
     archive_sources = [source for source in sources if source.get("source_kind") == "HISTORICAL_GIT_SOURCE_ARCHIVE"]
     history_sources = [source for source in sources if source.get("source_kind") in {"SUPABASE_HISTORY_STATEMENT", "HISTORY_PATH_REFERENCE", "HISTORICAL_SQL_ARCHIVE_JSON"}]
-    history_ids = {str(record.get("version")) for record in history_snapshot_records}
     for source in sources:
         if source.get("source_kind") == "ACTIVE_GIT_MIGRATION_FILE":
             source["history_record_status"] = "HISTORY_RECORDED" if str(source.get("migration_id")) in history_ids else "HISTORY_ABSENT"
@@ -598,6 +599,10 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             confirmed = str(source.get("migration_id")) in history_ids
             source["history_record_status"] = "HISTORY_RECORD_CONFIRMED" if confirmed else "ARCHIVE_ASSERTION_ONLY"
             source["execution_evidence_status"] = "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT" if confirmed else "SOURCE_ARCHIVE_ONLY"
+        elif source.get("source_kind") == "HISTORICAL_GIT_SOURCE_ARCHIVE":
+            confirmed = str(source.get("migration_id")) in history_ids
+            source["history_record_status"] = "HISTORY_RECORD_CONFIRMED" if confirmed else "HISTORICAL_SOURCE_NO_CURRENT_HISTORY_ROW_ASSERTION"
+            source["execution_evidence_status"] = "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT" if confirmed else "SOURCE_EXISTENCE_ONLY"
         else:
             source["history_record_status"] = "HISTORICAL_SOURCE_NO_CURRENT_HISTORY_ROW_ASSERTION"
             source["execution_evidence_status"] = "SOURCE_EXISTENCE_ONLY"
