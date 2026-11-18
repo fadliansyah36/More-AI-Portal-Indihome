@@ -36,3 +36,13 @@ Migration history row + matching SQL source + current object effect provide exec
 The original source identities `20261116250000`, `20261116260000`, `20261116270000`, `20261116280000`, and `20261116300000` are retained as archived source evidence only. Their corrected active source paths are `20261116162500`, `20261116162600`, `20261116162700`, `20261116162800`, and `20261116163000`. All five corrected sources remain absent from applied history and unapplied. The eight existing browser event types are preserved by corrected active SQL. The original 15090000 and 11110000 alias paths are archived and removed from active migrations.
 
 The 15084819 source is recovered at Git commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31` with 619/619 ordered SQL tokens matching the history statement. A 513-row regex DDL candidate map from 106 history versions is committed separately; it is not a complete SQL parser or execution receipt. The all-schema observed catalog snapshot is fingerprinted separately. History rows alone are not treated as proof of exact deployed bytes.
+
+## Path-reference source identity addendum
+
+The history statement values for 20261111030000, 20261111033000 and 20261111040000 are path references. They now resolve to exact current-main files:
+
+- 20261111030000 → `supabase/migrations/20261111030000_moreai_enqueue_chat_run.sql` (Git blob `5496f3f51100b843d9b5e96032e52cc10de482d3`).
+- 20261111033000 → `supabase/migrations/20261111033000_moreai_llm_reserve_with_entitlement_quota.sql` (Git blob `9b4984abcd100c558a50e676f0f39a7296d49b66`).
+- 20261111040000 → `supabase/migrations/20261111040000_moreai_llm_quota_settlement_reconciliation.sql` (Git blob `7bb174c960aeabba71c49a84e95f30a13552eece`).
+
+This closes the path-to-source mapping gap only. It does not attest exact deployed bytes or independent execution.
