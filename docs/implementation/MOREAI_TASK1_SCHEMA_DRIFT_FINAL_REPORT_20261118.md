@@ -63,3 +63,11 @@ See `MOREAI_TASK1_SCHEMA_DRIFT_MATRIX_20261118.csv` and `MOREAI_TASK1_FULL_SCHEM
 ## Addendum — migration 15084819 provenance update (2026-11-18)
 
 The original Git source for history version `20261115084819` has been recovered at commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31`; recursive lexical comparison confirms 619/619 ordered tokens match the SQL stored in history. Therefore the prior provenance uncertainty for the historical source is resolved. The current main file `20261115090000` remains a duplicate alias of `20261115100000` / applied `20261115085314`, so the repository path mismatch remains a governance issue but is not evidence that the historical source is missing from Git history. The live column/index remain observed; full expected-vs-observed schema parity remains NOT_VERIFIABLE and no production drift-free claim is made.
+
+## Execution continuation addendum — 2026-11-18
+
+The original five malformed browser SQL files are preserved in the migration source archive. Their active replacements now use valid chronological IDs: `20261116162500`, `20261116162600`, `20261116162700`, `20261116162800`, and `20261116163000`. The corrected active definitions preserve the full eight-event lifecycle CHECK vocabulary; the four original event-CHECK regressions are fixed in active source. The original malformed command-queue PL/pgSQL fragments/duplicate definitions are replaced by one claim, one finish and one revoke-trigger implementation. The two duplicate aliases `20261115090000` and `20261111110000` are archived outside the active migration directory. These replacements remain unapplied, so absence of their new objects remains an EXPECTED_DIFFERENCE. No production DDL or database write occurred.
+
+Migration `20261115084819` source identity is recovered from historical Git commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31` (619/619 ordered SQL tokens). The current-main alias was archived; no execution receipt is inferred from history.
+
+The all-schema observed catalog inventory and fingerprints are recorded in `TASK1-OBSERVED-CATALOG-FINGERPRINTS-20261118.csv`; the recorded-history DDL candidate map is `MOREAI-MIGRATION-TO-OBJECT-DDL-MAP-20261118.csv`. The DDL map is regex-derived and not a full AST/replay. Full expected-vs-observed parity remains NOT_VERIFIABLE until a trusted expected schema baseline exists.
