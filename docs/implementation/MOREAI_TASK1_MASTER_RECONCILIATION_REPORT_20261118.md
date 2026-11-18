@@ -8,7 +8,7 @@ Scope: migration provenance, expected schema baseline evidence, and five unappli
 
 ## Execution boundary
 
-Read-only GitHub source/history inspection and read-only Supabase migration-history/catalog evidence only. No migration apply, SQL DDL, production data write, schema change, staging, testing (including static runtime/integration testing), deployment, or production configuration change. No Task 2–5, P1 acceptance, P2 ADR, or Phase 04–09 work was started. No migration history row or SQL source was deleted/overwritten.
+Read-only GitHub source/history inspection and read-only Supabase migration-history/catalog evidence only. No migration apply, SQL DDL, production data write, schema change, staging, testing (including static runtime/integration testing), deployment, or production configuration change. No Task 2–5, P1 acceptance or P2 ADR work was started. Phase 04–09 existing tracker statuses were retained; no Phase 04–09 implementation work or status advancement occurred in this batch. No migration history row or SQL source was deleted/overwritten.
 
 ## 1. Initial audit and resume matrix
 
