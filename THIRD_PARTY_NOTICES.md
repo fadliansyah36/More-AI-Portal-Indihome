@@ -37,8 +37,8 @@ This file records source-level licenses and attribution for the upstream reposit
 - Pinned source: `94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9`
 - License: MIT, Copyright (c) 2026 Scenario Inc.
 - Nested notice: `.agents/skills/skill-creator/LICENSE.txt` is Apache-2.0 and remains separately scoped; do not treat root MIT as overriding nested work.
-- Copy Engine source workflows selected: `skills/scenario-brand-kit/SKILL.md` and `skills/scenario-ad-variants/SKILL.md`.
-- Treatment: their brand-specification and controlled-variant principles are adapted into the original MoreAI Copy Engine adapter. No Scenario MCP, model endpoint, remote asset service or code from the Scenario runtime is imported.
+- Copy Engine source workflows selected: `skills/scenario-brand-kit/SKILL.md`, `skills/scenario-ad-variants/SKILL.md` and `skills/scenario-text-overlay/SKILL.md`.
+- Treatment: their brand-specification, controlled-variant and exact text-overlay specification principles are adapted into the original MoreAI Copy Engine adapter. Scenario text-overlay's `chevron`, `Pillow` and Chromium rendering dependencies are not imported; MoreAI returns a text-overlay specification only. No Scenario MCP, model endpoint, remote asset service or code from the Scenario runtime is imported.
 
 ## Motion Skills
 
@@ -54,7 +54,7 @@ This file records source-level licenses and attribution for the upstream reposit
 - Implementation: `engine/tools/copy_engine.py`
 - Registry: `engine/tools/catalog.py`
 - Runtime: `engine/agents/durable_tool_runtime.py`
-- Source workflow attribution: Scenario Skills `scenario-brand-kit` and `scenario-ad-variants` (MIT, pinned commit above).
+- Source workflow attribution: Scenario Skills `scenario-brand-kit`, `scenario-ad-variants` and `scenario-text-overlay` (MIT, pinned commit above).
 - Implementation status: original MoreAI adapter; invokes only the existing metered LLM gateway and is callable as `copy_engine_generate` through the canonical OpenManus tool loop.
 - No Scenario MCP or external copywriting SaaS is called. User-provided facts are the only allowed factual basis for claims.
 
