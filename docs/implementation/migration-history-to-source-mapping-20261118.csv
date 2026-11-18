@@ -1,0 +1,7 @@
+history_version,history_name,source_reference,source_identity,execution_evidence,decision
+20261115084819,moreai_agent_model_preferences,Git commit cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31 historical path 20261115090000_moreai_agent_model_preferences.sql,619/619 ordered tokens match stored history SQL,preferred_model_id column/index observed; historical function overload superseded,PROVENANCE_PARTIAL
+20261115085314,moreai_agent_model_preferences_attachment_compat,current main 20261115100000 and duplicate 20261115090000,raw MD5 561ec2dfb21f2e7d74ad4a8ebf0ea4d5,history row and source identity; no exact effect map in this batch,SOURCE_CONFIRMED
+20261115084424,moreai_openfuse_persistent_browser_sessions,stored history SQL,history SQL creates sessions/events tables,live tables and columns observed,EXECUTION_PROVENANCE_SUPPORTED
+20261116083451,moreai_browser_session_close_event_constraint,stored history SQL,history SQL adds close_requested,live CHECK includes close_requested; superseded later,EXECUTION_PROVENANCE_SUPPORTED
+20261116083458,moreai_browser_profile_retention,stored history SQL,history SQL adds two retention events and three columns,live CHECK and columns match,EXECUTION_PROVENANCE_SUPPORTED
+20261116083502,moreai_browser_profile_retention_rpcs,stored history SQL,history SQL defines claim/ack RPCs,live functions exist,EXECUTION_PROVENANCE_SUPPORTED
