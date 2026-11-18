@@ -208,7 +208,7 @@ def main() -> int:
         security = json.loads(args.security.read_text(encoding="utf-8"))
         observed["security_snapshot_id"] = security.get("snapshot_id")
         base_objects = [item for item in observed.get("objects", []) if isinstance(item, dict) and item.get("object_class") != "ACL"]
-        observed["objects"] = base_objects + list(security.get("acl_objects") or []) + list(security.get("default_acl_objects") or []) + list(security.get("role_memberships") or [])
+        observed["objects"] = base_objects + list(security.get("acl_objects") or []) + list(security.get("default_acl_objects") or []) + list(security.get("role_memberships") or []) + list(security.get("roles") or [])
         observed["routine_privilege_rows"] = security.get("routine_privileges") or []
     if args.dependencies is not None:
         dependencies = json.loads(args.dependencies.read_text(encoding="utf-8"))
