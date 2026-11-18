@@ -30,3 +30,6 @@ Raw hashes intentionally differ because the stored history representation is mor
 - Status: `HISTORY_RECORD_CONFIRMED`, `SOURCE_CONFIRMED`, `PROVENANCE_PARTIAL`; not `PROVENANCE_CONFIRMED` because migration history has no native source checksum/execution receipt, the Git filename version (15090000) differs from history version (15084819), and the commit's relation to the actual deployment pipeline is not independently attested.
 - Preserve the original commit object and history row. Do not overwrite/delete the current duplicate files or create a replacement migration. Owner-approved disposition is still required for the duplicate/misnamed current path.
 - No evidence supports applying, replaying, renaming or editing any migration as part of this audit.
+
+
+The recovered historical SQL source is now also preserved byte-for-byte at `docs/implementation/migration-source-archive/20261115084819_moreai_agent_model_preferences.historical.sql` with Git blob SHA-1 `b7278df23425678a3009cb5c15f20e7c6cf53327`. The AST graph parser includes this historical source as an archive variant linked to applied history `20261115084819`; its archived events are merged into the expected lineage only because the migration ID is present in the read-only history snapshot. The archive file is not an active migration and provides no independent deployed-byte receipt.
