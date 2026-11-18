@@ -242,7 +242,7 @@ def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relati
         normalized = _normalize({child_tag: child_payload})
         encoded = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         output.append({
-            "migration_id": migration_id, "source_path": relative,
+            "migration_id": migration_id, "source_kind": "ACTIVE_GIT_MIGRATION_FILE", "source_path": relative,
             "source_sha256": source_sha256, "git_blob_sha1": git_blob_sha1,
             "statement_ordinal": statement_ordinal, "ast_node_tag": child_tag,
             "object_class": object_class, "operation": operation,
