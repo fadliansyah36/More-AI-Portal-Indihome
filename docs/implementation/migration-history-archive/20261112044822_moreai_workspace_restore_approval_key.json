@@ -1,0 +1,14 @@
+{
+  "version": "20261112044822",
+  "name": "moreai_workspace_restore_approval_key",
+  "statements": [
+    "alter table public.agent_tool_approvals\n  drop constraint if exists agent_tool_approvals_tool_key_check;\nalter table public.agent_tool_approvals\n  add constraint agent_tool_approvals_tool_key_check\n  check (tool_key in (\n    'bash','python_execute','browser_use','planning_step',\n    'browser','file_read','file_write','file_edit','workspace_restore_version'\n  ));\ncreate or replace function public.moreai_request_tool_approval(\n  p_run_id uuid, p_user_id uuid, p_tool_key text, p_arguments_hash text,\n  p_summary text, p_expires_in_seconds integer default 900\n) returns uuid\nlanguage plpgsql security definer set search_path = public, pg_temp\nas $$\ndeclare v_id uuid;\nbegin\n  if p_tool_key not in (\n       'bash','python_execute','browser_use','planning_step',\n       'browser','file_read','file_write','file_edit','workspace_restore_version'\n     )\n     or p_arguments_hash !~ '^[0-9a-f]{64}$'\n     or p_expires_in_seconds < 60 or p_expires_in_seconds > 3600\n     or char_length(p_summary) not between 1 and 1000 then\n    raise exception 'invalid_tool_approval_request' using errcode = '22023';\n  end if;\n  if not exists (\n    select 1 from public.agent_runs r\n    where r.id=p_run_id and r.user_id=p_user_id\n  ) then\n    raise exception 'approval_run_owner_mismatch' using errcode = '42501';\n  end if;\n  update public.agent_tool_approvals\n     set status='expired'\n   where run_id=p_run_id and tool_key=p_tool_key and arguments_hash=p_arguments_hash\n     and status in ('pending','approved') and expires_at <= now();\n  select id into v_id from public.agent_tool_approvals\n   where run_id=p_run_id and tool_key=p_tool_key and arguments_hash=p_arguments_hash\n     and status in ('pending','approved') and expires_at > now()\n   order by requested_at desc limit 1;\n  if v_id is not null then return v_id; end if;\n  insert into public.agent_tool_approvals(run_id,user_id,tool_key,arguments_hash,summary,expires_at)\n  values(p_run_id,p_user_id,p_tool_key,p_arguments_hash,p_summary,now()+make_interval(secs=>p_expires_in_seconds))\n  returning id into v_id;\n  return v_id;\nend;\n$$;\nrevoke all on function public.moreai_request_tool_approval(uuid,uuid,text,text,text,integer)\n  from public,anon,authenticated;\ngrant execute on function public.moreai_request_tool_approval(uuid,uuid,text,text,text,integer)\n  to service_role;"
+  ],
+  "rollback": null,
+  "archive_metadata": {
+    "source": "read-only SELECT from supabase_migrations.schema_migrations",
+    "retrieved_at": "2026-11-18",
+    "statement_array_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+    "execution_claim": "history row only; not independent execution receipt"
+  }
+}
