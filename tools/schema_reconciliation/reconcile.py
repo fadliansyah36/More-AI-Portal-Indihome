@@ -78,7 +78,10 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
             classification = "UNEXPECTED" if observed_item else "MATCH"
             reason = "Dropped by source lineage; observed presence contradicts the final source event." if observed_item else "Dropped object is absent from the observed catalog."
         elif not observed_item:
-            if latest_migration in applied and all_events_applied:
+            if expected_item.get("object_class") in {"ACL", "DEFAULT_ACL", "ROLE_MEMBERSHIP", "OWNERSHIP"} or "unnamed:" in str(expected_item.get("object_name") or ""):
+                classification = "NOT_VERIFIABLE"
+                reason = "The source AST does not provide a normalized identity compatible with the catalog ACL/ownership/implicit-constraint representation."
+            elif latest_migration in applied and all_events_applied:
                 classification = "MISSING"
                 reason = "Source lineage is recorded as applied but the object key is absent from the observed catalog."
             else:
