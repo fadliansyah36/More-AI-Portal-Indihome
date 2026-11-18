@@ -18,6 +18,7 @@ The baseline is deliberately not copied from the live Supabase snapshot. It is r
 | Supabase migration history | 116 rows | History records, latest `20261116113852`; no native checksum/independent execution receipt |
 | Active migration directory | 121 SQL files | 116 IDs have history records; 5 corrected browser sources are source-only and unapplied |
 | Historical SQL archive | 34 JSON records | Archived source evidence; not execution receipts |
+| Archived SQL sources | 8 files | 7 malformed/duplicate originals plus recovered applied Git source for `20261115084819`; blob hashes retained |
 | DDL candidate extraction | 513 rows / 106 history versions | Regex/lexical candidate map; not PostgreSQL AST |
 | Historical source for `20261115084819` | 619/619 ordered tokens match | Recovered from Git commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31`; source identity recovered, execution still partial |
 | Path-reference migrations | 3 | Exact current-main path and Git blob resolved; exact executed bytes unproven |
