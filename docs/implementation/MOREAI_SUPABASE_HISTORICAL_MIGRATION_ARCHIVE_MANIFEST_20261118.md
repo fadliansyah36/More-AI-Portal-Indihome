@@ -45,3 +45,14 @@ These files are immutable historical evidence and MUST NOT be placed in `supabas
 | 20261115090226 | moreai_edutech_assessment_derived_progress | 96de056306359f57c3eaddbfc9ad06d59981ff295538eb5a655498ef3b9c6725 | `docs/implementation/migration-history-archive/20261115090226_moreai_edutech_assessment_derived_progress.json` |
 
 Status: source bytes recovered from migration history; original repository commit/blob provenance and SQL equivalence to historical deployed schema remain under review.
+
+## Additional superseded same-name SQL source recovery — 2026-11-18
+
+Two more historical SQL statements were preserved because their logical names also occur in later migration history but the source definitions differ:
+
+| Version | Name | Statement SHA-256 | Archive |
+|---|---|---|---|
+| 20261112044816 | moreai_workspace_file_version_history | c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b | `migration-history-archive/20261112044816_moreai_workspace_file_version_history.json` |
+| 20261112044822 | moreai_workspace_restore_approval_key | cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2 | `migration-history-archive/20261112044822_moreai_workspace_restore_approval_key.json` |
+
+The later same-name sources are recovered from Git history: 20261113002544 matches `20261112100000_moreai_workspace_file_version_history.sql` at commit `42d3cb142dd7b5cf391f31481f84321baf6b2b0c` (284/284 ordered SQL tokens); 20261113002550 matches `20261112120000_moreai_workspace_restore_approval_key.sql` at commit `66ad9af97b73ff4ea69ca56a660478def3346d6b` (137/137 ordered SQL tokens). The earlier 20261112044816 and 20261112044822 source files were not recovered from Git history; their exact history SQL is now archived. This disambiguates the two source versions without asserting their execution beyond the history records.
