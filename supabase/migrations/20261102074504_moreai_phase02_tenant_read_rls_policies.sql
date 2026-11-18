@@ -1,0 +1,7 @@
+create policy user_entitlements_read_own on public.user_entitlements for select to authenticated using(user_id=(select auth.uid()));
+create policy network_sessions_read_own on public.network_sessions for select to authenticated using(user_id=(select auth.uid()));
+create policy network_verification_sessions_read_own on public.network_verification_sessions for select to authenticated using(user_id=(select auth.uid()));
+create policy network_verification_attempts_read_own on public.network_verification_attempts for select to authenticated using(user_id=(select auth.uid()));
+create policy partner_organizations_read_member on public.partner_organizations for select to authenticated using(exists(select 1 from public.partner_members pm where pm.partner_id=partner_organizations.id and pm.user_id=(select auth.uid()) and pm.status='active'));
+create policy partner_locations_read_member on public.partner_locations for select to authenticated using(exists(select 1 from public.partner_members pm where pm.partner_id=partner_locations.partner_id and pm.user_id=(select auth.uid()) and pm.status='active' and (pm.location_id is null or pm.location_id=partner_locations.id)));
+create policy partner_networks_read_member on public.partner_networks for select to authenticated using(exists(select 1 from public.partner_members pm where pm.partner_id=partner_networks.partner_id and pm.user_id=(select auth.uid()) and pm.status='active' and (pm.location_id is null or pm.location_id=partner_networks.location_id)));
