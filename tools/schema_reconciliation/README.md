@@ -5,7 +5,7 @@ This is a static source-analysis utility. It does not connect to PostgreSQL, exe
 ## Parser
 
 - Parser: `pglast`, using PostgreSQL's grammar parser and AST JSON representation.
-- Pin: `pglast==7.10`.
+- Pin: `pglast==7.23`.
 - Sources: active Git migration files plus raw SQL statements preserved from the Supabase migration history.
 - Output: source manifests, AST-normalized DDL events, per-object migration event history, nested column/constraint events and AST reference candidates.
 
