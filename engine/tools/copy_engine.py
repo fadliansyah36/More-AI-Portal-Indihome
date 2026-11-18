@@ -26,7 +26,7 @@ class CopyEngineAdapter:
 
     MODES = {
         "brand_voice", "campaign_concept", "ad_variant", "social_caption",
-        "landing_page", "product_description", "email", "headline",
+        "landing_page", "product_description", "email", "headline", "text_overlay",
     }
 
     def __init__(self, gateway: MeteredTextGateway):
