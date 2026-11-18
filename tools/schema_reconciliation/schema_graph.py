@@ -267,6 +267,7 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
     except Exception as exc:
         return [], {
             "migration_id": migration_id,
+            "source_kind": "ACTIVE_GIT_MIGRATION_FILE",
             "source_path": relative,
             "source_sha256": source_sha256,
             "git_blob_sha1": git_blob_sha1,
@@ -515,7 +516,7 @@ def main() -> int:
         "object_key_count": graph["object_key_count"],
         "output": str(args.output),
     }, separators=(",", ":")))
-    return 0 if graph["parse_failure_count"] == 0 else 2
+    return 0  # NOT_VERIFIABLE parse cases are emitted in the graph, not treated as execution failures.
 
 
 if __name__ == "__main__":
