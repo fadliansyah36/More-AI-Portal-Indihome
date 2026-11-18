@@ -323,3 +323,15 @@ A follow-up parse of CycloneDX component properties corrected the OSV coverage d
 - The selected-payload per-file operational disposition CSV now links these 8 paths to Batch 05; evidence update commit `1f6037e615bb785ba2e4c3419b205b24911f38d7`.
 - Executable-source manual review is now **47/875**; 828 remain. All eight rows retain DEFER / FINAL_HOLD.
 - P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. No source execution, DCC application, test/build, provider call, database write/migration, staging or deployment occurred.
+
+
+## Executable source review — Batch 06 and consolidated risk register (2026-11-18)
+
+- Reviewed 8 additional Maya DCC files covering deformation, mesh audit/review/validation, FX, groom, lighting and look development. All remain DEFER.
+- **High-risk finding:** `scenario-maya-groom/scripts/mx_groom.py` evaluates Maya menu callback strings using `mel.eval` and Python `exec`; it also loads/replays MEL recipes from JSON. `scenario-maya-fx/scripts/mx_fx.py` writes Python code into MASH Python nodes. These are explicit dynamic execution boundaries and must not be exposed as ordinary customer-callable skills.
+- Other reviewed modules invoke Arnold `kick`, `imconvert`, `ffmpeg`, and write/render files. They require isolated, non-root, resource-limited DCC workers with fixed binaries, path confinement, process-tree cancellation, approval and audit.
+- Several Maya source headers state that Maya 2027 / Arnold / MtoA API calls are not yet run or verified. Under the current no-real-world-testing restriction, these remain unaccepted.
+- Batch report: `MOREAI_P1_EXECUTABLE_PAYLOAD_MANUAL_REVIEW_BATCH_06_20261118.md`, commit `ad790422781bd41e700e11521ba8aff67a0e54cd`. Per-file ledger evidence update commit: `0dc8230a39ebd4a25805a8f8ea7d87b6f99811e7`.
+- Executable-source manual review is now **55/875**; 820 remain. The 8 rows link to Batch 06 and retain DEFER / FINAL_HOLD.
+- Consolidated 12-item security risk register created at `MOREAI_P1_SECURITY_RISK_REGISTER_20261118.csv`, commit `2522c153d677349d80cc9948bdfad7edd2ae86f3`. It covers dynamic code execution, DCC subprocesses, untrusted asset parsers, vulnerable npm/Python coordinates, unpinned dependencies, Supabase Auth warning, index tuning and license/provenance gaps.
+- P1 remains IN_PROGRESS / NOT ACCEPTED; P2 remains DRAFT / NOT ACCEPTED. No Maya/DCC execution, tests/builds, provider calls, Supabase writes/migrations, staging or deployment occurred.
