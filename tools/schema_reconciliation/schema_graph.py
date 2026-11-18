@@ -432,7 +432,10 @@ def parse_history_record(record: dict[str, Any], temp_root: Path, hash_manifest:
         source_sha256 = hashlib.sha256(source_bytes).hexdigest()
         expected_hashes = (hash_manifest or {}).get(version, [])
         expected_hash = expected_hashes[statement_index - 1] if statement_index - 1 < len(expected_hashes) else None
-        hash_status = "MATCH" if expected_hash == source_sha256 else ("MISMATCH" if expected_hash else "NOT_VERIFIABLE")
+        if record_source_kind == "HISTORICAL_SQL_ARCHIVE_JSON":
+            hash_status = "MATCH" if expected_hash == source_sha256 else ("ARCHIVE_TEXT_VARIANT" if expected_hash else "NOT_VERIFIABLE")
+        else:
+            hash_status = "MATCH" if expected_hash == source_sha256 else ("MISMATCH" if expected_hash else "NOT_VERIFIABLE")
         relative = (str(record_source_path) if record_source_path else "supabase_migrations.schema_migrations/" + version + "/" + name) + "#statement:" + str(statement_index)
         if re.match(r"^supabase/migrations/[A-Za-z0-9_./-]+\.sql$", statement.strip()):
             sources.append({
@@ -607,8 +610,10 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         "history_migration_record_count": len(history_snapshot_records),
         "history_archive_record_count": len(history_archive_records),
         "history_hash_manifest_migration_count": len(hash_manifest),
-        "history_statement_hash_mismatch_count": sum(1 for source in history_sources if source.get("history_statement_hash_status") == "MISMATCH"),
-        "history_statement_hash_not_verifiable_count": sum(1 for source in history_sources if source.get("history_statement_hash_status") == "NOT_VERIFIABLE"),
+        "history_statement_hash_mismatch_count": sum(1 for source in history_sources if source.get("source_kind") in {"SUPABASE_HISTORY_STATEMENT", "HISTORY_PATH_REFERENCE"} and source.get("history_statement_hash_status") == "MISMATCH"),
+        "history_statement_hash_not_verifiable_count": sum(1 for source in history_sources if source.get("source_kind") in {"SUPABASE_HISTORY_STATEMENT", "HISTORY_PATH_REFERENCE"} and source.get("history_statement_hash_status") == "NOT_VERIFIABLE"),
+        "history_archive_statement_hash_variant_count": sum(1 for source in history_sources if source.get("source_kind") == "HISTORICAL_SQL_ARCHIVE_JSON" and source.get("history_statement_hash_status") == "ARCHIVE_TEXT_VARIANT"),
+        "history_archive_statement_hash_not_verifiable_count": sum(1 for source in history_sources if source.get("source_kind") == "HISTORICAL_SQL_ARCHIVE_JSON" and source.get("history_statement_hash_status") == "NOT_VERIFIABLE"),
         "history_statement_source_count": len(history_sources),
         "active_migration_file_count": len(active_sources),
         "source_record_count": len(sources), "parsed_source_record_count": len(sources) - len(parse_failures),
@@ -648,6 +653,8 @@ def main() -> int:
         "history_hash_manifest_migration_count": graph["history_hash_manifest_migration_count"],
         "history_statement_hash_mismatch_count": graph["history_statement_hash_mismatch_count"],
         "history_statement_hash_not_verifiable_count": graph["history_statement_hash_not_verifiable_count"],
+        "history_archive_statement_hash_variant_count": graph["history_archive_statement_hash_variant_count"],
+        "history_archive_statement_hash_not_verifiable_count": graph["history_archive_statement_hash_not_verifiable_count"],
         "history_statement_source_count": graph["history_statement_source_count"],
         "archive_source_file_count": graph["archive_source_file_count"],
         "archive_ddl_event_count": graph["archive_ddl_event_count"],
