@@ -56,3 +56,9 @@ Current row count in `moreai_browser_session_events` is zero. The regression sti
 - 16300000: UNRESOLVED — base objects exist, but CHECK regression and no approval.
 
 No migrations were applied and no database objects were modified.
+
+## Execution continuation addendum — 2026-11-18
+
+The dependency map has been updated in `TASK1-DEPENDENCY-MAPPING-20261118.csv`. Current active browser migration IDs are `20261116162500`, `20261116162600`, `20261116162700`, `20261116162800`, and `20261116163000`. Original malformed files and two current alias paths are archived and not active. Corrected source dependencies are: grants table/RPCs → run-terminal revocation, logout revocation and command queue; preview requests depend on existing sessions, auth users, agent runs and artifacts. The full object names/signatures and Skill Registry → Agent Studio → FastAPI enqueue → OpenManus resolver path are in the dependency CSV.
+
+All five migrations remain unapplied. The current live catalog correctly lacks their new tables/functions; this is an expected difference, not live drift. The corrected command queue has one claim function, one finish function and one grant-revocation trigger. No migration apply or production DB write was performed. SQL runtime validity is not claimed because tests/replay were prohibited.
