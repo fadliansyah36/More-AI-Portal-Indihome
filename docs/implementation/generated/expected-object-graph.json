@@ -11,18 +11,18 @@
   "source_root": "/home/runner/work/More-AI-Portal-Indihome/More-AI-Portal-Indihome/supabase/migrations",
   "archive_source_file_count": 8,
   "history_migration_record_count": 116,
-  "history_archive_record_count": 32,
+  "history_archive_record_count": 34,
   "history_hash_manifest_migration_count": 116,
   "history_statement_hash_mismatch_count": 0,
   "history_statement_hash_not_verifiable_count": 0,
   "history_archive_statement_hash_variant_count": 0,
   "history_archive_statement_hash_not_verifiable_count": 0,
-  "history_statement_source_count": 148,
+  "history_statement_source_count": 150,
   "active_migration_file_count": 121,
-  "source_record_count": 277,
-  "parsed_source_record_count": 273,
+  "source_record_count": 279,
+  "parsed_source_record_count": 275,
   "parse_failure_count": 4,
-  "statement_count": 2388,
+  "statement_count": 2404,
   "ddl_event_count": 1013,
   "object_key_count": 665,
   "archive_ddl_event_count": 77,
@@ -4366,6 +4366,56 @@
         "source_repository_path": null,
         "source_repository_git_blob_sha": null,
         "reason": "No same-name source file exists in current main migration directory at recovery baseline."
+      },
+      "source_repository_path": null,
+      "source_repository_git_blob_sha": null,
+      "history_record_status": "HISTORY_RECORD_CONFIRMED",
+      "execution_evidence_status": "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT"
+    },
+    {
+      "migration_id": "20261112044816",
+      "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+      "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+      "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+      "byte_size": 2538,
+      "parse_status": "PARSED",
+      "statement_count": 11,
+      "ddl_event_count": 11,
+      "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+      "history_statement_index": 1,
+      "history_statement_hash_status": "MATCH",
+      "history_statement_expected_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+      "archive_status": null,
+      "archive_provenance": {
+        "source": "read-only SELECT from supabase_migrations.schema_migrations",
+        "retrieved_at": "2026-11-18",
+        "statement_array_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+        "execution_claim": "history row only; not independent execution receipt"
+      },
+      "source_repository_path": null,
+      "source_repository_git_blob_sha": null,
+      "history_record_status": "HISTORY_RECORD_CONFIRMED",
+      "execution_evidence_status": "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT"
+    },
+    {
+      "migration_id": "20261112044822",
+      "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+      "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+      "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
+      "byte_size": 2319,
+      "parse_status": "PARSED",
+      "statement_count": 5,
+      "ddl_event_count": 5,
+      "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+      "history_statement_index": 1,
+      "history_statement_hash_status": "MATCH",
+      "history_statement_expected_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+      "archive_status": null,
+      "archive_provenance": {
+        "source": "read-only SELECT from supabase_migrations.schema_migrations",
+        "retrieved_at": "2026-11-18",
+        "statement_array_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+        "execution_claim": "history row only; not independent execution receipt"
       },
       "source_repository_path": null,
       "source_repository_git_blob_sha": null,
@@ -97002,6 +97052,13 @@
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
           "ast_sha256": "4667616f7c44487fc041ec6de7fde6effde52ee84b8b6ede4612d495a8617581"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+          "ast_sha256": "4667616f7c44487fc041ec6de7fde6effde52ee84b8b6ede4612d495a8617581"
         }
       ]
     },
@@ -97082,6 +97139,13 @@
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
           "ast_sha256": "82cd997e8cd5bc80889f82c58e86401fba604d9dad73aa5cdff75a511cb9f2fa"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+          "ast_sha256": "82cd997e8cd5bc80889f82c58e86401fba604d9dad73aa5cdff75a511cb9f2fa"
         }
       ]
     },
@@ -97135,6 +97199,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
+          "ast_sha256": "20a64e3cceb625c750e9944913e11154a7ef799e96dc02e434b6079e7795b3a7"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
           "ast_sha256": "20a64e3cceb625c750e9944913e11154a7ef799e96dc02e434b6079e7795b3a7"
         }
       ]
@@ -97202,6 +97273,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
+          "ast_sha256": "a0fb997f76617a53649d52a47800a3e48dc0c14a64893b90c4bee446b0f7b4f8"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
           "ast_sha256": "a0fb997f76617a53649d52a47800a3e48dc0c14a64893b90c4bee446b0f7b4f8"
         }
       ]
@@ -97276,6 +97354,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
+          "ast_sha256": "2614b86599c6f3f2856b9b688741bdb3756733dd73563e628a79294713bdbc6b"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
           "ast_sha256": "2614b86599c6f3f2856b9b688741bdb3756733dd73563e628a79294713bdbc6b"
         }
       ]
@@ -97352,6 +97437,13 @@
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
           "ast_sha256": "9088e5738403cefa004efc97ce2be75860e65a92aa09765fce9de7cbdba9e5c9"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+          "ast_sha256": "9088e5738403cefa004efc97ce2be75860e65a92aa09765fce9de7cbdba9e5c9"
         }
       ]
     },
@@ -97416,6 +97508,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
+          "ast_sha256": "95a8f18ba43c87ed44c277f625d6ffffb19eefcf66298b6f748a6f7bbf2b489c"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
           "ast_sha256": "95a8f18ba43c87ed44c277f625d6ffffb19eefcf66298b6f748a6f7bbf2b489c"
         }
       ]
@@ -97547,6 +97646,13 @@
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
           "ast_sha256": "e13c830ae971f8fb2a459cac3f99223fb5881ed30d70fe44df09d1eac95c63c4"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+          "ast_sha256": "e13c830ae971f8fb2a459cac3f99223fb5881ed30d70fe44df09d1eac95c63c4"
         }
       ]
     },
@@ -97613,6 +97719,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
+          "ast_sha256": "56caa9e569480f1e8961313d24ecfb4df531768ee3d5041fd8d952282c8d3a56"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
           "ast_sha256": "56caa9e569480f1e8961313d24ecfb4df531768ee3d5041fd8d952282c8d3a56"
         }
       ]
@@ -97683,6 +97796,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
+          "ast_sha256": "1ce68ca7772059e95c23d913b85fc9c3593b5d8ef6be768ae6050bb39a15fc83"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
           "ast_sha256": "1ce68ca7772059e95c23d913b85fc9c3593b5d8ef6be768ae6050bb39a15fc83"
         }
       ]
@@ -97765,6 +97885,13 @@
           "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
           "git_blob_sha1": null,
           "ast_sha256": "5ef395c33174f0c6b0bc4fab8ea8839bb37fa80fe8cd1cbe8e889bc701c69e80"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+          "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+          "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+          "ast_sha256": "5ef395c33174f0c6b0bc4fab8ea8839bb37fa80fe8cd1cbe8e889bc701c69e80"
         }
       ]
     },
@@ -97820,6 +97947,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044822/moreai_workspace_restore_approval_key#statement:1",
           "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
           "git_blob_sha1": null,
+          "ast_sha256": "36fc5dc38bae70d5eff5a5ac53ee8e04a899aad39d416b6e22c2c0065176a56e"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+          "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+          "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
           "ast_sha256": "36fc5dc38bae70d5eff5a5ac53ee8e04a899aad39d416b6e22c2c0065176a56e"
         }
       ]
@@ -97973,6 +98107,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044822/moreai_workspace_restore_approval_key#statement:1",
           "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
           "git_blob_sha1": null,
+          "ast_sha256": "1d410c3fe400342df14161cee6bacc0f2f538d96c7c750f4f57ba036b897a4cb"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+          "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+          "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
           "ast_sha256": "1d410c3fe400342df14161cee6bacc0f2f538d96c7c750f4f57ba036b897a4cb"
         }
       ]
@@ -98220,6 +98361,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044822/moreai_workspace_restore_approval_key#statement:1",
           "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
           "git_blob_sha1": null,
+          "ast_sha256": "77955d6df9808911e3246665e4ed813e0bd6112e9bf5bc24e9a6eeb288a6a9f3"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+          "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+          "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
           "ast_sha256": "77955d6df9808911e3246665e4ed813e0bd6112e9bf5bc24e9a6eeb288a6a9f3"
         }
       ]
@@ -98482,6 +98630,13 @@
           "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
           "git_blob_sha1": null,
           "ast_sha256": "fa7ecf41840230f12f75b89149604e693c3e96d29d5ab7c957ab5ce09fbc9db3"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+          "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+          "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
+          "ast_sha256": "fa7ecf41840230f12f75b89149604e693c3e96d29d5ab7c957ab5ce09fbc9db3"
         }
       ]
     },
@@ -98739,6 +98894,13 @@
           "source_path": "supabase_migrations.schema_migrations/20261112044822/moreai_workspace_restore_approval_key#statement:1",
           "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
           "git_blob_sha1": null,
+          "ast_sha256": "663731350d0e6ec907eb1f482c345224c1d931dbe14c2791ce53697f796ce40a"
+        },
+        {
+          "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+          "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+          "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+          "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
           "ast_sha256": "663731350d0e6ec907eb1f482c345224c1d931dbe14c2791ce53697f796ce40a"
         }
       ]
@@ -211918,6 +212080,13 @@
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
               "ast_sha256": "9088e5738403cefa004efc97ce2be75860e65a92aa09765fce9de7cbdba9e5c9"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+              "ast_sha256": "9088e5738403cefa004efc97ce2be75860e65a92aa09765fce9de7cbdba9e5c9"
             }
           ]
         },
@@ -211942,6 +212111,13 @@
               "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
+              "ast_sha256": "95a8f18ba43c87ed44c277f625d6ffffb19eefcf66298b6f748a6f7bbf2b489c"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
               "ast_sha256": "95a8f18ba43c87ed44c277f625d6ffffb19eefcf66298b6f748a6f7bbf2b489c"
             }
           ]
@@ -219636,6 +219812,13 @@
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
               "ast_sha256": "5ef395c33174f0c6b0bc4fab8ea8839bb37fa80fe8cd1cbe8e889bc701c69e80"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+              "ast_sha256": "5ef395c33174f0c6b0bc4fab8ea8839bb37fa80fe8cd1cbe8e889bc701c69e80"
             }
           ]
         },
@@ -220006,6 +220189,13 @@
               "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
               "git_blob_sha1": null,
               "ast_sha256": "fa7ecf41840230f12f75b89149604e693c3e96d29d5ab7c957ab5ce09fbc9db3"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+              "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+              "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
+              "ast_sha256": "fa7ecf41840230f12f75b89149604e693c3e96d29d5ab7c957ab5ce09fbc9db3"
             }
           ]
         },
@@ -220030,6 +220220,13 @@
               "source_path": "supabase_migrations.schema_migrations/20261112044822/moreai_workspace_restore_approval_key#statement:1",
               "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
               "git_blob_sha1": null,
+              "ast_sha256": "663731350d0e6ec907eb1f482c345224c1d931dbe14c2791ce53697f796ce40a"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+              "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+              "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
               "ast_sha256": "663731350d0e6ec907eb1f482c345224c1d931dbe14c2791ce53697f796ce40a"
             }
           ]
@@ -228818,6 +229015,13 @@
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
               "ast_sha256": "e13c830ae971f8fb2a459cac3f99223fb5881ed30d70fe44df09d1eac95c63c4"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+              "ast_sha256": "e13c830ae971f8fb2a459cac3f99223fb5881ed30d70fe44df09d1eac95c63c4"
             }
           ]
         },
@@ -229070,6 +229274,13 @@
               "source_path": "supabase_migrations.schema_migrations/20261112044822/moreai_workspace_restore_approval_key#statement:1",
               "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
               "git_blob_sha1": null,
+              "ast_sha256": "77955d6df9808911e3246665e4ed813e0bd6112e9bf5bc24e9a6eeb288a6a9f3"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+              "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+              "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
               "ast_sha256": "77955d6df9808911e3246665e4ed813e0bd6112e9bf5bc24e9a6eeb288a6a9f3"
             }
           ]
@@ -232483,6 +232694,13 @@
               "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
+              "ast_sha256": "82cd997e8cd5bc80889f82c58e86401fba604d9dad73aa5cdff75a511cb9f2fa"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
               "ast_sha256": "82cd997e8cd5bc80889f82c58e86401fba604d9dad73aa5cdff75a511cb9f2fa"
             }
           ]
@@ -244457,6 +244675,13 @@
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
               "ast_sha256": "4667616f7c44487fc041ec6de7fde6effde52ee84b8b6ede4612d495a8617581"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+              "ast_sha256": "4667616f7c44487fc041ec6de7fde6effde52ee84b8b6ede4612d495a8617581"
             }
           ]
         }
@@ -244497,6 +244722,13 @@
               "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
+              "ast_sha256": "20a64e3cceb625c750e9944913e11154a7ef799e96dc02e434b6079e7795b3a7"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
               "ast_sha256": "20a64e3cceb625c750e9944913e11154a7ef799e96dc02e434b6079e7795b3a7"
             }
           ]
@@ -244539,6 +244771,13 @@
               "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
               "git_blob_sha1": null,
               "ast_sha256": "36fc5dc38bae70d5eff5a5ac53ee8e04a899aad39d416b6e22c2c0065176a56e"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+              "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+              "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
+              "ast_sha256": "36fc5dc38bae70d5eff5a5ac53ee8e04a899aad39d416b6e22c2c0065176a56e"
             }
           ]
         }
@@ -244579,6 +244818,13 @@
               "source_path": "supabase_migrations.schema_migrations/20261112044822/moreai_workspace_restore_approval_key#statement:1",
               "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
               "git_blob_sha1": null,
+              "ast_sha256": "1d410c3fe400342df14161cee6bacc0f2f538d96c7c750f4f57ba036b897a4cb"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044822_moreai_workspace_restore_approval_key.json#statement:1",
+              "source_sha256": "cf88be8f25a548d5c462b0bf4e61ce55ad7866be960e758c8fd909dafdd63ba2",
+              "git_blob_sha1": "6914ca6ac734af0078f5eebaa6ffea7949cfb075",
               "ast_sha256": "1d410c3fe400342df14161cee6bacc0f2f538d96c7c750f4f57ba036b897a4cb"
             }
           ]
@@ -249420,6 +249666,13 @@
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
               "ast_sha256": "a0fb997f76617a53649d52a47800a3e48dc0c14a64893b90c4bee446b0f7b4f8"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
+              "ast_sha256": "a0fb997f76617a53649d52a47800a3e48dc0c14a64893b90c4bee446b0f7b4f8"
             }
           ]
         },
@@ -249485,6 +249738,13 @@
               "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
+              "ast_sha256": "56caa9e569480f1e8961313d24ecfb4df531768ee3d5041fd8d952282c8d3a56"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
               "ast_sha256": "56caa9e569480f1e8961313d24ecfb4df531768ee3d5041fd8d952282c8d3a56"
             }
           ]
@@ -251526,6 +251786,13 @@
               "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
+              "ast_sha256": "2614b86599c6f3f2856b9b688741bdb3756733dd73563e628a79294713bdbc6b"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
               "ast_sha256": "2614b86599c6f3f2856b9b688741bdb3756733dd73563e628a79294713bdbc6b"
             }
           ]
@@ -256561,6 +256828,13 @@
               "source_path": "supabase_migrations.schema_migrations/20261112044816/moreai_workspace_file_version_history#statement:1",
               "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
               "git_blob_sha1": null,
+              "ast_sha256": "1ce68ca7772059e95c23d913b85fc9c3593b5d8ef6be768ae6050bb39a15fc83"
+            },
+            {
+              "source_kind": "HISTORICAL_SQL_ARCHIVE_JSON",
+              "source_path": "20261112044816_moreai_workspace_file_version_history.json#statement:1",
+              "source_sha256": "c9fbea7a93b449729fc6868a7b93874ad7994195279e879f5ca13da4844f266b",
+              "git_blob_sha1": "a7aa8c26acf8559d0105a0db888b61265c99fb8a",
               "ast_sha256": "1ce68ca7772059e95c23d913b85fc9c3593b5d8ef6be768ae6050bb39a15fc83"
             }
           ]
