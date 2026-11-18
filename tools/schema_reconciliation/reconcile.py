@@ -158,6 +158,8 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
         "format": "moreai.postgresql.semantic-reconciliation.v1",
         "expected_graph_format": expected.get("format"),
         "observed_snapshot_id": observed.get("snapshot_id"),
+        "security_snapshot_id": observed.get("security_snapshot_id"),
+        "routine_privilege_row_count": len(observed.get("routine_privilege_rows") or []),
         "comparison_mode": "read_only_object_level",
         "expected_source_coverage_complete": complete_expected,
         "object_count": len(rows),
@@ -178,10 +180,17 @@ def main() -> int:
     cli = argparse.ArgumentParser(description="Compare source-derived expected objects to a read-only catalog snapshot.")
     cli.add_argument("--expected", required=True, type=Path)
     cli.add_argument("--observed", required=True, type=Path)
+    cli.add_argument("--security", type=Path, default=None)
     cli.add_argument("--output", required=True, type=Path)
     args = cli.parse_args()
     expected = json.loads(args.expected.read_text(encoding="utf-8"))
     observed = json.loads(args.observed.read_text(encoding="utf-8"))
+    if args.security is not None:
+        security = json.loads(args.security.read_text(encoding="utf-8"))
+        observed["security_snapshot_id"] = security.get("snapshot_id")
+        base_objects = [item for item in observed.get("objects", []) if isinstance(item, dict) and item.get("object_class") != "ACL"]
+        observed["objects"] = base_objects + list(security.get("acl_objects") or []) + list(security.get("default_acl_objects") or []) + list(security.get("role_memberships") or [])
+        observed["routine_privilege_rows"] = security.get("routine_privileges") or []
     result = reconcile(expected, observed)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
