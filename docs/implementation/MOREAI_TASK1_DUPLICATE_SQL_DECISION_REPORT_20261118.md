@@ -26,3 +26,8 @@ Decision: retain all duplicate history rows. Do not delete, merge, rename or rew
 ## Applied-content alias — durable run event outbox
 - Repository-only `20261111110000_moreai_durable_run_event_outbox.sql` has exact SQL content matching applied history `20261111091531_moreai_durable_run_event_outbox_phase_07a` (historical source SHA-256 5a4da40e3a2c1c8a484e80a6dccb23c8a4000baad38422545deffdf82949a48e).
 - Decision: DUPLICATE_OR_SUPERSEDED content alias; do not apply it again.
+
+
+## Addendum — recovered historical source for 15084819 (2026-11-18)
+
+The original 15084819 SQL source is now available in Git history at commit `cc5563e58fe8e3cc5744335ecd68b2f9d9e6ef31`, path `supabase/migrations/20261115090000_moreai_agent_model_preferences.sql`, blob `b7278df23425678a3009cb5c15f20e7c6cf53327`. Its 619 ordered SQL lexical tokens match history version 15084819. This does not change the duplicate decision for the current main files: current 15090000 and 15100000 remain identical attachment-compat aliases matching history 15085314. Preserve all representations; no cleanup is authorized.
