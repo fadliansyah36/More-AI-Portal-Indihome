@@ -5,3 +5,5 @@ SD-003,moreai_customer_agent_configs.preferred_model_id,MATCH_WITH_LIMITATIONS,L
 SD-004,moreai_browser_takeover_grants/commands/preview tables,EXPECTED_DIFFERENCE,MEDIUM-HIGH,16250000/16280000/16300000,Do not apply until source and ID decisions approved,Owner approval,Unapplied source difference not live drift
 SD-005,public full schema object set,NOT_VERIFIABLE,HIGH,All applied migrations,Obtain immutable expected baseline or approved offline replay,Owner approval,Blocked
 SD-006,public RLS/grants/ownership,NOT_VERIFIABLE,HIGH,All security migrations,Obtain expected security baseline and compare object-by-object,Owner approval,Blocked
+
+SD-007,browser migration CHECK source regressions,SOURCE_REGRESSION_CORRECTED,MEDIUM,16250000/16260000/16280000/16300000,Corrected active replacements preserve all eight applied values and append feature-specific values; keep unapplied,No production apply in this task,Source correction committed; five active migrations remain NOT_APPLIED
