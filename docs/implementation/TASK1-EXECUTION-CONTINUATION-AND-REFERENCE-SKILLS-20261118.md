@@ -36,7 +36,7 @@ Decisions already implemented in the base commit:
 - All five original malformed source files are preserved byte-for-byte under `docs/implementation/migration-source-archive/`; their original Git blob SHAs are recorded in the prior recovery manifest.
 - Two duplicate/misnamed aliases were moved out of the active migration directory and retained under the historical source archive: `20261115090000_moreai_agent_model_preferences.sql` and `20261111110000_moreai_durable_run_event_outbox.sql`.
 
-These are repository-source corrections only. None of the five corrected browser migrations was applied to Supabase.
+The source/object dependency map is recorded in `TASK1-DEPENDENCY-MAPPING-20261118.csv`. These are repository-source corrections only. None of the five corrected browser migrations was applied to Supabase.
 
 ### 1.2 Migration 20261115084819
 
