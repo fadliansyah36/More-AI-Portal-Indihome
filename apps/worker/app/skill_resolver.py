@@ -123,6 +123,7 @@ def _adapt_source_instructions(
                 "adapter_id": "scenario-copywriting-to-moreai-copy-engine-v1",
                 "mode": "copy_engine",
                 "native_tool_keys": ["copy_engine_generate"],
+                "required_permissions": ["content.generate"],
                 "unsupported_upstream_tools": ["recommend", "search", "model_schema_get", "model_run", "jobs_wait", "asset_display", "asset_download", "skill_get"],
             })
             guard = (
@@ -332,6 +333,13 @@ class SupabaseSkillResolver:
             body, source_adapter = _adapt_source_instructions(
                 package.get("source_repository"), package.get("source_path"), body,
             )
+            required_adapter_permissions = source_adapter.get("required_permissions", [])
+            if (
+                not isinstance(required_adapter_permissions, list)
+                or any(not isinstance(value, str) or value not in ALLOWED_SKILL_PERMISSIONS for value in required_adapter_permissions)
+                or not set(required_adapter_permissions).issubset(set(granted))
+            ):
+                raise PermissionError("skill_source_adapter_permission_not_granted")
             snapshot = {
                 "skill_id": str(skill_id), "version": package["version"],
                 "content_sha256": package["content_sha256"],
