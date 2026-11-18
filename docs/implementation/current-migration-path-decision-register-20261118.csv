@@ -1,0 +1,5 @@
+path,decision,owner_status,rationale,approval_evidence,next_step
+supabase/migrations/20261115090000_moreai_agent_model_preferences.sql,CONFIRMED_DUPLICATE + MISNAMED_SOURCE,OWNER_DECISION_REQUIRED,Same blob as 15100000 and maps to history 15085314; original 15084819 source recovered from older Git commit,NONE,Owner decides retain archive-only/remove duplicate/rename; no action now
+supabase/migrations/20261115100000_moreai_agent_model_preferences_attachment_compat.sql,CANONICAL_CURRENT_PATH_CANDIDATE,OWNER_DECISION_REQUIRED,Current filename and history 15085314 match content,NONE,Owner approval required before any path mutation
+supabase/migrations/20261111110000_moreai_durable_run_event_outbox.sql,DUPLICATE_OR_SUPERSEDED,OWNER_DECISION_REQUIRED,Exact content already represented by history 20261111091531,NONE,Keep as audit evidence until owner disposition
+five browser migration paths,INVALID_TIMESTAMP_ID,OWNER_DECISION_REQUIRED,Hour component >23; all absent from migration history,NONE,Owner supplies intended chronological IDs and source lineage
