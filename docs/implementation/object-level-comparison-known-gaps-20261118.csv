@@ -1,0 +1,9 @@
+gap_id,scope,limitation,status,required_evidence
+OG-001,full schema,No trusted expected schema baseline,OPEN,Immutable owner-approved schema dump or approved offline replay
+OG-002,full observed schema,Current capture has aggregate inventory and selected object introspection,PARTIAL,Complete catalog extraction at known timestamp/environment
+OG-003,environment identity,Project ref known but production/non-production designation not independently attested,OPEN,Owner attestation
+OG-004,functions,Only selected signatures/definitions inspected,OPEN,Full expected/observed pg_proc definitions and ACLs
+OG-005,indexes,245 observed aggregate; preferred_model index only presence checked,OPEN,Full pg_get_indexdef comparison
+OG-006,RLS and grants,95 policy aggregate and selected grant findings; no expected ACL baseline,OPEN,Full expected policies/grants/ownership
+OG-007,platform schemas,auth/realtime/storage managed object boundary not fully captured,OPEN,Approved platform scope manifest
+OG-008,execution provenance,History lacks native checksum/receipt,OPEN,Deployment logs/artifact checksum ledger
