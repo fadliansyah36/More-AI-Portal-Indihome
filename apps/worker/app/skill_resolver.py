@@ -10,6 +10,55 @@ from app.client import WorkerRpcClient
 
 MAX_SKILL_SOURCE_FILES = 64
 
+# Runtime-side source pins are intentionally repeated from the API import
+# allowlist. A compromised/malformed registry row must not widen provenance.
+PINNED_SKILL_SOURCE_COMMITS: dict[str, frozenset[str]] = {
+    "smixs/visual-skills": frozenset({"61a60d317f0fa0c3dc98902e58a7cb178838ae3f"}),
+    "scenario-labs/skills": frozenset({"94cab3f1da47841f52d4c7b3ea8583aa13dd0eb9"}),
+    "iart-ai/tiktok-video-skills": frozenset({"88e7152fc2710fa16852d013959cfd988a8adc8b"}),
+    "iart-ai/text-message-video-skills": frozenset({"10ae6bb32e89519c904b8f7950479ff655f839aa"}),
+    "iart-ai/youtube-video-skills": frozenset({"7838388571a3a6301bf5633e91941f9dfed0abfd"}),
+    "iart-ai/ecommerce-video-skills": frozenset({"a430fbbb7660783c421ad0a145bcc1c98d6f0b7b"}),
+    "iart-ai/ad-video-skills": frozenset({"cc8071678f4225ee7bdccc4506f2468722bb3515"}),
+    "iart-ai/data-animation-skills": frozenset({"6570c0c4fbc9daa8d7ac1f1163a890352344206b"}),
+    "iart-ai/explainer-video-skills": frozenset({"3c13a1bc360c08503f24f9c9a99fda6d3d35de56"}),
+    "iart-ai/map-animation-skills": frozenset({"c8ef8463f5a4a8aa35ff0c6c17f42e52bbf588a5"}),
+    "iart-ai/web-animation-skills": frozenset({"ed3a045192679b24d32090ee7a983871311ababd"}),
+    "iart-ai/motion-design-skills": frozenset({"b85e50c4cef5ff17aa2187a10d49d2dae9226c74"}),
+    "iart-ai/kinetic-typography-skills": frozenset({"2b79c81230c6647a344844f9ed53b6fa07f3f1f9"}),
+    "iart-ai/freelance-motion-skills": frozenset({"9f294eb6df73cde7e2dea235f42275df11a16466"}),
+    "iart-ai/webgl-animation-skills": frozenset({"0041933813688c357804f7b13dcb85095c5a3210"}),
+    "iart-ai/manim-skills": frozenset({"3e989cb044f6a6fed8c07b06dddade6e3463d7ac"}),
+    "iart-ai/javascript-animation-skills": frozenset({"060f7467a6e5ae5b57c90c9cb1b3508c13b88e49"}),
+    "iart-ai/lower-thirds-skills": frozenset({"58d3623da95a2c97a4890a2d3f6d9d67e040b3d7"}),
+    "iart-ai/b-roll-skills": frozenset({"bcd56742a8a99edaa699a6f7bc5a45922a8ec567"}),
+    "iart-ai/talking-head-skills": frozenset({"eac1f6b01467f6f95d8ab7602310ba0ff67ed91b"}),
+}
+BLOCKED_UNLICENSED_SKILL_SOURCES = frozenset({"iart-ai/generative-illustration-skills"})
+
+
+def _validate_pinned_source_identity(source_repository: Any, source_commit: Any, source_path: Any) -> None:
+    repository = source_repository if isinstance(source_repository, str) else ""
+    commit = source_commit if isinstance(source_commit, str) else ""
+    path = source_path if isinstance(source_path, str) else ""
+    if repository in BLOCKED_UNLICENSED_SKILL_SOURCES:
+        raise PermissionError("skill_source_license_unresolved")
+    pinned = PINNED_SKILL_SOURCE_COMMITS.get(repository)
+    if pinned is not None and commit not in pinned:
+        raise PermissionError("skill_source_commit_not_pinned")
+    if repository.startswith("iart-ai/") and pinned is None:
+        raise PermissionError("motion_skill_repository_not_allowlisted")
+    if repository == "smixs/visual-skills" and path.strip("/") not in {"image/SKILL.md", "video/SKILL.md"}:
+        raise PermissionError("visual_skill_entrypoint_not_allowlisted")
+    if repository == "scenario-labs/skills" and not (
+        path.strip("/").startswith("skills/") and path.strip("/").endswith("/SKILL.md")
+    ):
+        raise PermissionError("scenario_skill_entrypoint_not_allowlisted")
+    if repository.startswith("iart-ai/") and not (
+        path.strip("/").startswith("skills/") and path.strip("/").endswith("/SKILL.md")
+    ):
+        raise PermissionError("motion_skill_entrypoint_not_allowlisted")
+
 SCENARIO_MCP_ONLY_SKILLS = frozenset({
     "scenario-3d",
     "scenario-3d-worlds",
@@ -141,7 +190,7 @@ class SupabaseSkillResolver:
                 "id": f"eq.{skill_id}", "owner_user_id": f"eq.{user_id}",
                 "validation_status": "eq.validated", "license_status": "eq.approved",
                 "publication_status": "eq.published",
-                "select": "id,version,content_sha256,source_repository,source_path,source_blob_sha,manifest,requested_permissions,validation_report",
+                "select": "id,version,content_sha256,source_repository,source_commit,source_path,source_blob_sha,manifest,requested_permissions,validation_report",
                 "limit": "1",
             })
             if not packages:
@@ -254,6 +303,9 @@ class SupabaseSkillResolver:
                 f"### {item['relative_path']}\n{item['text_content'][:24000]}"
                 for item in instruction_files
             )[:100000]
+            _validate_pinned_source_identity(
+                package.get("source_repository"), package.get("source_commit"), package.get("source_path"),
+            )
             body, source_adapter = _adapt_source_instructions(
                 package.get("source_repository"), package.get("source_path"), body,
             )
