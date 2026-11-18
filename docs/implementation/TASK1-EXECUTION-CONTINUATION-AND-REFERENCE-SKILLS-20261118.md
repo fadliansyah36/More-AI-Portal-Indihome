@@ -50,7 +50,7 @@ The current-main `15090000` file was a different duplicate alias of `15100000` /
 - `20261115090000_moreai_agent_model_preferences.sql` on current main was an exact duplicate alias of `20261115100000`; the separate original `20261115084819` source is recovered from its historical commit.
 - Historical migration-history rows and archived statements were not deleted or rewritten.
 
-### 1.5 Three migration-history path references — source identity resolved
+### 1.4 Three migration-history path references — source identity resolved
 
 The three history rows `20261111030000`, `20261111033000` and `20261111040000` store path references rather than SQL text. Each reference was read directly from `supabase_migrations.schema_migrations.statements` and resolved to the exact current-main file and Git blob:
 
@@ -62,7 +62,7 @@ The three history rows `20261111030000`, `20261111033000` and `20261111040000` s
 
 This resolves source-path identity and current source blob identity. It does **not** prove the exact bytes executed at deployment time: the history stores a path token, not a checksum or signed deployment receipt. The provenance CSV records these rows as `SOURCE_IDENTITY_PATH_RESOLVED;EXECUTION_UNPROVEN`.
 
-### 1.4 Execution provenance rule
+### 1.5 Execution provenance rule
 
 The live `supabase_migrations.schema_migrations` history currently has 116 rows, latest version `20261116113852`. The table has no native checksum column. The three records `20261111030000`, `20261111033000` and `20261111040000` store path references rather than SQL text in their statement values. Reconstructed MD5/SHA-256 values are evidence hashes of retrieved source/history content, not historical deployment checksums.
 
