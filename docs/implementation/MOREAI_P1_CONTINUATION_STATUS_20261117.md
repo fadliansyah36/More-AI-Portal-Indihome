@@ -225,3 +225,57 @@ Cumulative manual reference/maintainer content review is now **17/726** (8 uniqu
 The Kinetic Music Video README exposed two previously uncounted platform Python wheel locks. Static parsing (no install) recorded Linux x86_64 100 package records, macOS arm64 83 records, 104 unique exact package@version coordinates, 3,660 SHA-256 wheel hash entries and 306 dependency edges. The locks use binary-only wheel/hash pins; the Linux lock includes CUDA/NVIDIA/Triton packages, versions diverge by platform, and no Linux ARM64 lock exists. Upstream notes also identify Demucs checkpoint verification by short hash prefix followed by unpickling and unverified Hugging Face model content. See `MOREAI_P1_KINETIC_MUSIC_VIDEO_PYTHON_LOCK_PACKAGES_20261117.csv`, `MOREAI_P1_KINETIC_MUSIC_VIDEO_PYTHON_LOCK_EDGES_20261117.csv` and Batch 02 reference review.
 
 These 104 PyPI coordinates require source+PURL deduplication against the CycloneDX BOM, exact-version registry license/vulnerability review and model provenance. They are not assumed to be 104 net-new components. The previous 1,995-component BOM count remains incomplete for all selected skill payloads until this nested platform lock scope is reconciled. P1 remains OPEN.
+
+
+## Fresh repository + Supabase audit — 2026-11-18 (superseding stale counts)
+
+Audit baseline at start of this continuation: `main@151da0a0133684bd38518c5f2f40f27bc08aa65a`. Root `AGENTS.md`, the current Master PRD document, phase tracker, P1 evidence and P2 ADR were reread before any source review.
+
+### Governing-document correction
+
+- The repository file name is `public/assets/aistudio/MoreAI_Master_PRD_v1.0_ID_2f5fa0c2.md`, but its document header explicitly states **Version 1.2**. The earlier sentence in this report claiming that no Master PRD v1.2 exists is incorrect and is superseded.
+- The document header is Version 1.2 / 11 November 2026 / Draft. Its opening narrative still mentions the former Playful Neo-Brutalist / Soft Pastel visual direction. Root `AGENTS.md` is the current implementation authority for the protected frontend and explicitly supersedes that older palette with clean white/light cool-gray surfaces, MoreAI/IndiHome red actions, deep navy typography and restrained category accents. Existing UI remains frozen; do not apply a visual redesign or global token migration.
+- The current tree contains 780 tracked blobs at the audit baseline. Phase 00 has historical CI/browser evidence in the tracker; this continuation did not rerun those checks. Phase 10/11 remain blocked/not accepted under the current no-testing/no-staging instruction.
+
+### Current Supabase read-only snapshot
+
+Project ref: `uunfgimtokhucegqbpce`.
+
+- 94 public base tables; RLS enabled on all 94.
+- 95 public RLS policies; zero RLS-enabled public tables without a policy.
+- 116 rows in `supabase_migrations.schema_migrations`; latest version `20261116113852` (`moreai_skill_ingestion_pending_until_validation`).
+- Installed extensions include `vector 0.8.2`, `pgcrypto 1.3`, `supabase_vault 0.3.1`, `pg_cron 1.6.4`, and `uuid-ossp 1.1`.
+- At query time, row counts were zero in `agent_runs`, `outbox_events`, `llm_providers`, `llm_models`, `llm_routing_policies`, `moreai_worker_capability_snapshots`, `moreai_browser_sessions`, `moreai_connections`, `moreai_skill_packages`, `moreai_skill_source_files`, `moreai_customer_memories`, `moreai_customer_memory_preferences`, `knowledge_documents` and `knowledge_chunks`. This is a data/configuration snapshot only; it does not prove that a worker process is absent, but it provides no persisted evidence of configured providers, healthy worker capability, active browser sessions, imported skills, memory or knowledge content.
+- Supabase Security Advisor: one WARN — leaked password protection disabled. It was not changed.
+- Performance Advisor: 94 unindexed foreign-key findings and 80 unused-index findings (INFO). No index changes were made; workload/EXPLAIN evidence is required before tuning.
+- No schema, migration history, data, Auth settings, storage policy or runtime configuration was modified.
+
+### P1 evidence reconciliation
+
+The authoritative current selected-payload audit summary JSON reports:
+- 229/229 selected skill entrypoints.
+- 1,941/1,941 payload files with raw SHA-256 verified, Git blob SHA match, byte-size match and zero fetch failures.
+- Content-kind inventory: 229 entrypoints, 726 reference documents, 875 executable-source files, 69 configuration/schema files, 23 other files, 10 media/binary assets, 4 font assets and 5 test/example fixtures.
+- Static pattern scan: filesystem mutation 171, remote tool/MCP 29, process spawn 155, dynamic code 65, credential/environment references 86, network I/O 59 and package-install patterns 22. These are review flags, not confirmed vulnerabilities.
+
+Do not confuse the two hash artifacts: `p1-skill-payload-evidence/skill-payload-file-audit.csv` contains the 1,941 selected-payload SHA-256 evidence rows; `MOREAI_P1_RAW_SHA256_MANIFEST_20261117.csv` is a separate 34-row supplemental manifest for selected root notices, dependency files and samples.
+
+Current disposition evidence:
+- Selected payload ledger: 1,941 rows = 19 ARCHIVE_ONLY / 1,922 DEFER (FINAL_HOLD). No selected payload is approved COPY/ADAPT.
+- Full pinned source-tree ledger: 3,919 rows = 111 COPY (only pristine OpenManusWeb archival snapshot), 388 ARCHIVE_ONLY FINAL, 7 ARCHIVE_ONLY FINAL_BLOCKED, 2,454 DEFER FINAL_HOLD, and 959 directory records NOT_APPLICABLE.
+- The full source-tree ledger's 7 FINAL_BLOCKED archive-only records include source/license blockers; these are not approved for import. In particular, the Motion `generative-illustration-skills` child pack still lacks a root license and remains blocked.
+- Entrypoint content review 229/229; executable-source review 31/875 after Batch 03; configuration/schema review 13/69; reference-document review 17/726. The 148 parser reference candidates are path-triaged, not equivalent to semantic review of all 726 references.
+- Fonts: 4/4 OFL notices inspected, binary metadata/provenance still pending. Media/binary assets: 10 ARCHIVE_ONLY.
+- Exact-version npm registry metadata: 1,808 exact coordinates; 1,797 license fields, 11 missing fields, one non-SPDX `CC BY-SA 4.0` string. Package tarball NOTICE/source-header review and vulnerability reconciliation remain incomplete.
+- The prior 1,995-component CycloneDX BOM is not a complete all-selected-payload SBOM: two nested Scenario npm lockfiles, a Python requirements file and two platform-specific Kinetic Music Video Python locks were discovered and must be reconciled. The platform locks contain 104 unique Python package@version coordinates, 3,660 wheel SHA-256 entries and 306 dependency edges; they are not assumed net-new components until deduplicated. OpenManusWeb also has 24 ranged/unpinned Python requirements.
+- P1 executable manual review Batch 03 added 8 Blender source files; all remain DEFER due Blender scene mutation, render and caller-selected filesystem output boundaries. The per-file selected-payload ledger now links those 8 rows to the Batch 03 report.
+- Vulnerability/CVE evidence across the complete resolved dependency graph has not been reconciled. Registry license metadata alone is not a vulnerability scan.
+
+### P2 and phase gate
+
+- P2 ADR remains DRAFT / NOT ACCEPTED. No product-owner acceptance evidence exists.
+- Phase 04, 06, 07, 08 and 09 remain IN_PROGRESS / REVIEW_REQUIRED; Phase 05 remains COMPLETE at the documented schema-reconciliation scope, but this read-only snapshot does not certify end-to-end runtime behavior.
+- Phase 04–09 product implementation remains gated by AGENTS.md's P1/ADR prerequisites unless a written product-owner exception is recorded. This continuation therefore advances P1 governance rather than bypassing the acceptance gate.
+- Phase 10 remains BLOCKED / NOT ACCEPTED; Phase 11 remains BLOCKED / NOT ACCEPTED. No real tests, builds, staging, production deployment, provider calls, worker activation or Supabase writes/migrations were performed.
+
+P1 remains **IN_PROGRESS / NOT ACCEPTED**. P2 remains **DRAFT / NOT ACCEPTED**.
