@@ -79,12 +79,16 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
         )
 
         if latest_operation == "DROP":
-            classification = "UNEXPECTED" if observed_item else "MATCH"
-            reason = "Dropped by source lineage; observed presence contradicts the final source event." if observed_item else "Dropped object is absent from the observed catalog."
-        elif not observed_item:
-            if expected_item.get("object_class") in {"ACL", "DEFAULT_ACL", "ROLE_MEMBERSHIP", "OWNERSHIP"} or "unnamed:" in str(expected_item.get("object_name") or ""):
+            if latest_migration in applied and all_events_applied:
+                classification = "UNEXPECTED" if observed_item else "MATCH"
+                reason = "Applied source lineage drops the object; observed presence is unexpected." if observed_item else "Applied source lineage drops the object and it is absent from the observed catalog."
+            else:
                 classification = "NOT_VERIFIABLE"
-                reason = "The source AST does not provide a normalized identity compatible with the catalog ACL/ownership/implicit-constraint representation."
+                reason = "The DROP source event is not proven applied; live presence or absence is not classified as drift."
+        elif not observed_item:
+            if expected_item.get("expected_state_status") == "SOURCE_CONFLICT_NOT_VERIFIABLE" or expected_item.get("object_class") in {"ACL", "DEFAULT_ACL", "ROLE_MEMBERSHIP", "OWNERSHIP", "OBJECT", "COMMENT", "ROLE"} or "unnamed:" in str(expected_item.get("object_name") or ""):
+                classification = "NOT_VERIFIABLE"
+                reason = "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
             elif latest_migration in applied and all_events_applied:
                 classification = "MISSING"
                 reason = "Source lineage is recorded as applied but the object key is absent from the observed catalog."
