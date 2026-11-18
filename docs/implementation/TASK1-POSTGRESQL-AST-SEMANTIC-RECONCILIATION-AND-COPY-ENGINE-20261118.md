@@ -9,7 +9,7 @@ Supabase: `uunfgimtokhucegqbpce`
 
 ### PostgreSQL parser and expected-object graph
 
-- Added a pinned `pglast==7.10` parser package under `tools/schema_reconciliation/`. It uses PostgreSQL grammar/AST JSON, not regex, as the parser authority.
+- Added a pinned `pglast==7.23` parser package under `tools/schema_reconciliation/`. It uses PostgreSQL grammar/AST JSON, not regex, as the parser authority.
 - AST inputs are: 121 active migration SQL files; 116 exact migration-history rows captured through read-only SELECT; and 8 archived SQL sources parsed as archive evidence (7 malformed/duplicate originals plus the recovered applied Git source for 20261115084819).
 - Raw history statement text is preserved in 15 JSON batches under `migration-history-sql-source-snapshot-20261118/`; each batch is Git-blob-addressed.
 - Added `migration-history-statement-hashes-20261118.json`: 116 migration records, 116 statement hashes, 113 SQL statement records and 3 path-reference records. SHA-256 values were computed read-only in PostgreSQL using pgcrypto. The AST parser independently recomputes statement hashes and compares them to this manifest.
