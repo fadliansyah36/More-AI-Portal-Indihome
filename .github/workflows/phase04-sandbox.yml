@@ -126,7 +126,7 @@ jobs:
         run: docker build -f apps/worker/Dockerfile -t moreai-worker-browser-ci .
       - name: Verify worker-to-supervisor private network connectivity
         run: |
-          docker run --rm --network sandbox_browser_isolated \
+          docker run --rm --network moreai_browser_isolated \
             -e MOREAI_BROWSER_SERVICE_TOKEN \
             --entrypoint python moreai-worker-browser-ci -c '
           import asyncio, os, httpx
