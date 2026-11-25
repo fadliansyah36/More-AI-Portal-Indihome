@@ -96,6 +96,12 @@ jobs:
           from collections import Counter
           class_counts = Counter(item.get("object_class", "UNKNOWN") for item in graph.get("objects", []))
           summary["expected_object_class_counts"] = dict(sorted(class_counts.items()))
+          reduction_counts = Counter(
+              item.get("semantic_reduction_status", "NOT_REDUCED")
+              for item in graph.get("objects", [])
+              if item.get("semantic_reduction_status") not in (None, "NOT_APPLICABLE")
+          )
+          summary["semantic_reduction_status_counts"] = dict(sorted(reduction_counts.items()))
           summary["parse_failure_samples"] = graph.get("parse_failures", [])[:25]
           reconciliation_path = Path("artifacts/semantic-reconciliation.json")
           if reconciliation_path.exists():
