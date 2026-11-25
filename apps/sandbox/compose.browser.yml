@@ -4,7 +4,7 @@
 services:
   browser-supervisor:
     build:
-      context: .
+      context: ../..
       dockerfile: apps/sandbox/Dockerfile.openfuse
       args:
         OPENFUSE_BASE_IMAGE: ${MOREAI_OPENFUSE_BASE_IMAGE:?set a digest-pinned Playwright base image}
@@ -34,7 +34,7 @@ services:
 
   browser-egress-proxy:
     build:
-      context: .
+      context: ../..
       dockerfile: apps/sandbox/Dockerfile.browser
     command: ["python", "-m", "app.proxy_main"]
     environment:
