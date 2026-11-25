@@ -32,8 +32,7 @@
     "VIEW": 1
   },
   "semantic_reduction_status_counts": {
-    "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING": 156,
-    "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED": 6
+    "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED": 162
   },
   "parse_failure_samples": [
     {

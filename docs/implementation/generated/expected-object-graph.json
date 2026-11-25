@@ -376326,10 +376326,14 @@
       "first_migration_id": "20261112084047",
       "last_migration_id": "20261112084047",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "18042ad132f075543804346c4e6f724104fc1396a8381d26bb340749fcada0cd",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -376368,10 +376372,14 @@
       "first_migration_id": "20261112084047",
       "last_migration_id": "20261112084047",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "8f085b773e91a97e8c5ba2407605e7023668ded2d5c8f0844216ad7c0b459199",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -376576,10 +376584,57 @@
       "first_migration_id": "20261111083342",
       "last_migration_id": "20261111083342",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "fd6ea6d57c4f444414354b5f1ad583eff522bdb8a38432b0ce3858a6fb5e996e",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -376643,10 +376698,57 @@
       "first_migration_id": "20261111122750",
       "last_migration_id": "20261111122750",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "4d5d05d895e8bebbd40494adfc1deedc70beb94a73405c74cc9ab3c78c7d85d0",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -376710,10 +376812,57 @@
       "first_migration_id": "20261111091531",
       "last_migration_id": "20261111091531",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "ed679e6342974bc2ae213e25913fd8f3ba77ed65c5b003ac9c73928113d0c776",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -376823,10 +376972,57 @@
       "first_migration_id": "20261111061443",
       "last_migration_id": "20261111061443",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "7b02a3efb226aab2787c2abaf00ee5e668e6787dd7c579eed16eac68184fa56e",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -376890,10 +377086,57 @@
       "first_migration_id": "20261113002624",
       "last_migration_id": "20261113002624",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "4ee9c761c180d6a9ad164f49716ca397f466f8d0be4c8a0e350da5aa512a81d8",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -376957,10 +377200,57 @@
       "first_migration_id": "20261112044816",
       "last_migration_id": "20261113002544",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "95a8f18ba43c87ed44c277f625d6ffffb19eefcf66298b6f748a6f7bbf2b489c",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -377088,10 +377378,57 @@
       "first_migration_id": "20261111140238",
       "last_migration_id": "20261111140255",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "8043feee210af6a0014e808f4c27606e1b0fcf389fc23dc4d51cd62687f2f72b",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -377205,10 +377542,21 @@
       "first_migration_id": "20261103100442",
       "last_migration_id": "20261103100442",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "3b7985d12df7da94ff9b73ab5753a4d387998e20f7485e52908a1da24e4d9c4b",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:timestamptz",
@@ -377290,10 +377638,57 @@
       "first_migration_id": "20261113003132",
       "last_migration_id": "20261113003132",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "a52ff401f45cc76ff6dc073a04c9172914d6405d56a0d4e3fd08be2290e9f768",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -377357,10 +377752,57 @@
       "first_migration_id": "20261112044926",
       "last_migration_id": "20261113002555",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "4a8444b60aa1c55630659c773ca0e954c4310807aed191f9dc1d26b3d889a835",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -377474,10 +377916,57 @@
       "first_migration_id": "20261113002613",
       "last_migration_id": "20261113002613",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "49d13710c674d9b7df5825dba94b4cb80db215831e0c47d8a0cf06d40d49057e",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -377541,10 +378030,14 @@
       "first_migration_id": "20261103100442",
       "last_migration_id": "20261103100442",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "d10ebf2f6aa3af33cc35a72cfffac460bdf2f3ad4e902e3bc09d42367562979d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -377590,10 +378083,57 @@
       "first_migration_id": "20261112060109",
       "last_migration_id": "20261113002601",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "1ad75e595a039add5c3fede26a547713e89afec10ea7b1793abfe7ef9b8282f1",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "public.knowledge_documents"
       ],
@@ -377709,10 +378249,57 @@
       "first_migration_id": "20261112060109",
       "last_migration_id": "20261113002601",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "1ad75e595a039add5c3fede26a547713e89afec10ea7b1793abfe7ef9b8282f1",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "public.knowledge_chunks"
       ],
@@ -377828,10 +378415,21 @@
       "first_migration_id": "20261114070551",
       "last_migration_id": "20261114070551",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "6f30967a906c3b651162dcc93ed041dcaee7f9f56b4cc7872a439a32a71b0543",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -377909,10 +378507,39 @@
       "first_migration_id": "20261102084310",
       "last_migration_id": "20261102084950",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "c0646ab300802b63aa599003f497fab50ca6816b121cbf824bf0de81c7255f40",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -378054,10 +378681,21 @@
       "first_migration_id": "20261116083502",
       "last_migration_id": "20261116083510",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "19b32ef0c3a67ee506d8450658ea1a1f4358569b9755e4ef318e5d8e353ad6de",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -378173,10 +378811,21 @@
       "first_migration_id": "20261116083856",
       "last_migration_id": "20261116084745",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "a2be61bc8737dddd509a0d51b47142820e42b2e68bb761634ce28ef535cd0b7c",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:text",
@@ -378344,10 +378993,21 @@
       "first_migration_id": "20261103102141",
       "last_migration_id": "20261103102141",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "b6a65679a4c29706807f602d228f378dd308f464304d9872ee1fe7b75465f712",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:timestamptz",
@@ -378429,10 +379089,21 @@
       "first_migration_id": "20261115092653",
       "last_migration_id": "20261115092653",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "7a9ab8991242ba4a1cc2274dc26e2ec22e7f38dcca97a7a4142694b5a004382d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -378499,10 +379170,21 @@
       "first_migration_id": "20261103101453",
       "last_migration_id": "20261103101453",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "44952668db6f41a2a74bb2982d638b418fa9576cfe560dc73c2842f0fc3204d9",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.bool",
         "type:pg_catalog.int4",
@@ -378586,10 +379268,21 @@
       "first_migration_id": "20261103101453",
       "last_migration_id": "20261103101453",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "dd2d234eba63061ae3a78d3418b8489db22380a66d2e00760ad1270c86db4464",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.bool",
         "type:text",
@@ -378671,10 +379364,21 @@
       "first_migration_id": "20261103101453",
       "last_migration_id": "20261103101453",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "67bd6d0f0329647f9b2f10b3fc82613f9aff5af91e9d53c7c8798a92e4ff9432",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.bool",
         "type:pg_catalog.int4",
@@ -378757,10 +379461,21 @@
       "first_migration_id": "20261103101208",
       "last_migration_id": "20261103101208",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "86e2b8a29313d6fd2304f839662627042338cd3a548fe6f0a0166d627b0dd870",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -378841,10 +379556,21 @@
       "first_migration_id": "20261103102141",
       "last_migration_id": "20261103102141",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "90384cc8ed986a9fbd000e219dfc6e90d1f10ee6206f12a900e1f26ac7a97622",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -378925,10 +379651,21 @@
       "first_migration_id": "20261103122824",
       "last_migration_id": "20261103122824",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "28f8bbe4aae46d98002cd1b1f407e0c02e2c023ebc7ad7ecd2bab3e96f6319e4",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.bool",
         "type:text",
@@ -379010,10 +379747,21 @@
       "first_migration_id": "20261111083342",
       "last_migration_id": "20261111083342",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "6252f821b65d8fac4edcb721f4d9efab89bb30991ebff45c663b6380a56df8a2",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -379080,10 +379828,21 @@
       "first_migration_id": "20261113182657",
       "last_migration_id": "20261113182657",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "b3670fdd33c7c4cc394585c4c6464b6b120f227370d260c2c9990b2293d85ea5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -379151,10 +379910,21 @@
       "first_migration_id": "20261115084417",
       "last_migration_id": "20261115084420",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "edc05e559cb6188b14a1280c23cd236907b1cd3903cfd674769762829e43e470",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -379271,10 +380041,39 @@
       "first_migration_id": "20261115095114",
       "last_migration_id": "20261115095114",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "09b5297f8ab55e2f8073cd38156896f8774efb3612da729424293305ad7f0ccd",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -379338,10 +380137,57 @@
       "first_migration_id": "20261116083856",
       "last_migration_id": "20261116083856",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "36088b5b208583b194f4ff09a9508bbe83e48e56397d68346cbb340b7c5963a5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -379405,10 +380251,39 @@
       "first_migration_id": "20261116163000",
       "last_migration_id": "20261116163000",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "3366525a870dcad61025f1dd48847be5f2f3880fd4cc43616575ebf1760062f3",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -379458,10 +380333,27 @@
       "first_migration_id": "20261115084424",
       "last_migration_id": "20261115084424",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "3aba6bf12d329e2822bdfbb36eefc241242656a4a38fafded725ebd89b381d7d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -379525,10 +380417,39 @@
       "first_migration_id": "20261115084424",
       "last_migration_id": "20261115084424",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "ec50e74eac950729827073b49eb7f8fb1ccc4be878becdcc17173b3e41a3e7d4",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -379592,10 +380513,39 @@
       "first_migration_id": "20261116162800",
       "last_migration_id": "20261116162800",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "855f44679a9ff56228d7ac626faf2a17ee7ca29e89adc516a58b12ede1f7f246",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -379645,10 +380595,39 @@
       "first_migration_id": "20261116162500",
       "last_migration_id": "20261116162500",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "a11d3ed4492c4c7ae37475fa6b0964250488ef209a6d9877670e6e4c715135a3",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -379698,10 +380677,21 @@
       "first_migration_id": "20261116163000",
       "last_migration_id": "20261116163000",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "18fa81842d28a51f13f8119d72596889966b52d78b3eb18b7cf61d144b8ce696",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:text"
@@ -379754,10 +380744,21 @@
       "first_migration_id": "20261116083502",
       "last_migration_id": "20261116083510",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "89e4709bdfbea3afe44231c601bbec2e5827514d5db4f1249ab255cb1b8b4e12",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4"
       ],
@@ -379873,10 +380874,21 @@
       "first_migration_id": "20261116162800",
       "last_migration_id": "20261116162800",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "952a7cde7343cc9ffd8ac4f6c852c6a1ab785596da24b98e9737bfd1775d88df",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:text"
@@ -379929,10 +380941,21 @@
       "first_migration_id": "20261116083514",
       "last_migration_id": "20261116083856",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "e823177c7904d2cf12ff88c94be671092dd97b77369d22e6a8b82256ffd3a98a",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -380048,10 +381071,39 @@
       "first_migration_id": "20261115101318",
       "last_migration_id": "20261115101318",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "92a3865772a35e0b11bbbe3ae7b1ccf4f17afe112d304eca61f958f9eb5ce8d3",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -380115,10 +381167,33 @@
       "first_migration_id": "20261115084417",
       "last_migration_id": "20261115084417",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "805e602ef077bdb36643c6025e476bf8070d6e14426fa6470c66c27134a15902",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -380182,10 +381257,27 @@
       "first_migration_id": "20261115084413",
       "last_migration_id": "20261115084413",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "f6a95b632c9c734f654a36d23c56dfacfbaf4e57c63455c2c9dfd8d069efd759",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -380249,10 +381341,39 @@
       "first_migration_id": "20261115084413",
       "last_migration_id": "20261115084413",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "9d0ed67fbfdcd4a480009e50f45b49b751d2c37f9c03276da09b2270ddb897e6",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -380316,10 +381437,21 @@
       "first_migration_id": "20261116162500",
       "last_migration_id": "20261116162500",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "b41fda80ad2dbcde7bcca938d241cc1f684f6514455086b0a788db80c30d0f10",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text"
       ],
@@ -380371,10 +381503,21 @@
       "first_migration_id": "20261115084413",
       "last_migration_id": "20261115084413",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "d62847d9861aa678dcc69d52373513a723a4fa6726934873abb67e150c655b8b",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text"
       ],
@@ -380440,10 +381583,21 @@
       "first_migration_id": "20261111061443",
       "last_migration_id": "20261111061443",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "7efc81fff3fce77d726b59a57b367f947dd3f2bf187e006c7b70cdee98df92de",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -380510,10 +381664,21 @@
       "first_migration_id": "20261102080148",
       "last_migration_id": "20261102080148",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "552707fe263ce251d434984855a9087f4a9234dc144535c088379945ba0e3656",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -380594,10 +381759,21 @@
       "first_migration_id": "20261102080148",
       "last_migration_id": "20261102080148",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "bf47e8886b01cf5d8094e92a86507a8676028dfd12bad8db12102831b3b406c5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:pg_catalog.numeric",
@@ -380680,10 +381856,21 @@
       "first_migration_id": "20261102080148",
       "last_migration_id": "20261102080148",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "496e4ad9547b6ada0e1dea5f0f5f8547d9423e83eb854110794a91d239619ffc",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.numeric",
         "type:text",
@@ -380765,10 +381952,39 @@
       "first_migration_id": "20261114034343",
       "last_migration_id": "20261114034343",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "2cee788a6f758caa016b6e4f7afe97b08ccd8a90ed07cb5189994e83fb60b785",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -380832,10 +382048,21 @@
       "first_migration_id": "20261116083527",
       "last_migration_id": "20261116083527",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "ac842d214f77bb6a84e3c44e4e845b2b71ab9407efae3d79321d1c2c5e99a62e",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -380901,10 +382128,21 @@
       "first_migration_id": "20261114033138",
       "last_migration_id": "20261114033138",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "0505ed8940cf7d4e1a5d5a8ea6ef26dc7b36cb44c5820fa7f131f921b79f7f1b",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -380970,10 +382208,21 @@
       "first_migration_id": "20261116083527",
       "last_migration_id": "20261116083527",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "fdba8aae6911c88dcf5835fa626c2de20e3104802871c8799d75d32ef935adc5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:text",
@@ -381041,10 +382290,21 @@
       "first_migration_id": "20261116083527",
       "last_migration_id": "20261116083527",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "804ff9f17e830b866956064e303f954596d32031cdd77cb1513fbf05d1d41a2a",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -381111,10 +382371,21 @@
       "first_migration_id": "20261113134544",
       "last_migration_id": "20261113134544",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "0b18c48509088a0440ebb71443ac0bf1bcaa8abed039e63ba3a1081468552664",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -381180,10 +382451,21 @@
       "first_migration_id": "20261113134251",
       "last_migration_id": "20261113134251",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "b2e2c09bbfba13a13ae7fd9d24569a05710712a12d718f89dd033d22da6fd56f",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -381250,10 +382532,57 @@
       "first_migration_id": "20261114033138",
       "last_migration_id": "20261114033138",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "e6996341d56150611f82cd4591996ecb4a1d3df6fcaf2858659410b41291af56",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -381317,10 +382646,57 @@
       "first_migration_id": "20261114033138",
       "last_migration_id": "20261114033138",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "df91399f99c933eec252f7bb76db0c32ce0d6116dd0cb28165d34a85da74734e",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -381384,10 +382760,21 @@
       "first_migration_id": "20261114033138",
       "last_migration_id": "20261114033138",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "bf1b1459796e8bb00b2f4a9cec382a6e670168bc005bedb7584cfd7bab312660",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.bool",
         "type:text",
@@ -381455,10 +382842,21 @@
       "first_migration_id": "20261113051221",
       "last_migration_id": "20261113051221",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "5fb8b84d3d7b6408bbc857d43136c7652ae04ec05c4635be784f04b7c4f43589",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:timestamptz",
         "type:uuid"
@@ -381575,10 +382973,21 @@
       "first_migration_id": "20261113002613",
       "last_migration_id": "20261113002613",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "7bf026b6dc212bcfcd8e6b7b892d94e0c2da1531395d0595eccf80bc6dd2c226",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:text",
@@ -381646,10 +383055,21 @@
       "first_migration_id": "20261113133149",
       "last_migration_id": "20261113133519",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "e1f811a2d89bb3655b802f55aea2874044c67cad821b1e2e6dd6b26daa3a4faa",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:uuid"
@@ -381766,10 +383186,14 @@
       "first_migration_id": "20261113133149",
       "last_migration_id": "20261113133453",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "8bd6d4439f8388a5eea23506b32e13fc09940e49f63049e7317e6021565232f5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:uuid"
@@ -381861,10 +383285,21 @@
       "first_migration_id": "20261113133453",
       "last_migration_id": "20261113133736",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "865ba1d6249e70a8395ac765d94ce8ddbf790ac98f0ef4018f5a9664976dcbed",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:text",
@@ -381982,10 +383417,21 @@
       "first_migration_id": "20261113132826",
       "last_migration_id": "20261113132826",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "44c395d75479586fc49a48cdce73e8fe895d963754534d6f25d287417dc55123",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:timestamptz",
@@ -382103,10 +383549,21 @@
       "first_migration_id": "20261111061443",
       "last_migration_id": "20261113182657",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "832d51990cc06868536564673b4ad71e248d91c57ba2194632f71f4d0de8b83d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -382273,10 +383730,21 @@
       "first_migration_id": "20261115084413",
       "last_migration_id": "20261115084413",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "d044ae8b0febf478421e4a7b0b4046ecbe72c2f36318ae9388a5831eeffacef0",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -382342,10 +383810,21 @@
       "first_migration_id": "20261111030000",
       "last_migration_id": "20261113002618",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "6adf187e1facf55efc3bea26cb69dd8203c8ddb197e47c57986d8dda0938136b",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -382534,10 +384013,21 @@
       "first_migration_id": "20261113003132",
       "last_migration_id": "20261113003132",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "419e65d10c61ee4f485331e527ef8264f257e1750de657cb5d3360717f6afadd",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -382604,10 +384094,21 @@
       "first_migration_id": "20261115084400",
       "last_migration_id": "20261115084400",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "40b2546f00b2232ea430b57189470d111816af89db416564eb0cdd3d799a80a6",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -382674,10 +384175,21 @@
       "first_migration_id": "20261114034343",
       "last_migration_id": "20261115084819",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "d82bd57c3bfb9751db91fe32884afff7729747e3e73ab12750b87a6fb33e83db",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -382808,10 +384320,21 @@
       "first_migration_id": "20261114034649",
       "last_migration_id": "20261115085314",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "9c7d09182a589d3dbe2011b3b87518a60a28a069d10cce448458bd9bec60bdd6",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -382928,10 +384451,21 @@
       "first_migration_id": "20261115084400",
       "last_migration_id": "20261115084400",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "12ca3c9a1df36179e2749fc21e8e1d91258b65f157d76789cf1ab87d2624872f",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -382998,10 +384532,21 @@
       "first_migration_id": "20261114035142",
       "last_migration_id": "20261114035142",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "75f9eb56956aa03de9d3a3cf92ba81917c7665beb81e9865aa516936538e3555",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -383069,10 +384614,21 @@
       "first_migration_id": "20261116163000",
       "last_migration_id": "20261116163000",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "59ec754d2edfa645625ae7010800ad044db326f8f0c47213767da5aed52243a4",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -383125,10 +384681,21 @@
       "first_migration_id": "20261116162800",
       "last_migration_id": "20261116162800",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "8f40d8771abe480f4374f77dab025ffaccb442e805ba22ae07c974208bdc0141",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -383182,10 +384749,21 @@
       "first_migration_id": "20261115084417",
       "last_migration_id": "20261115084417",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "c0388fee25ba3dba8b4c189a59995327c39686e99064f15a38f38c792c4932a5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -383253,10 +384831,21 @@
       "first_migration_id": "20261115084405",
       "last_migration_id": "20261116113852",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "fa4a0414a0b1f82105e0650b711ef3e37870e607ed51d4a982162a290cd27176",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:uuid"
@@ -383423,10 +385012,21 @@
       "first_migration_id": "20261114065521",
       "last_migration_id": "20261115090226",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "34cc3ebd5180c896fbf44b5dcc05becf5adf19d0dd0566508eb7524905f4fa45",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:pg_catalog.numeric",
@@ -383558,10 +385158,21 @@
       "first_migration_id": "20261114065521",
       "last_migration_id": "20261114065521",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "5da95c0146c234277a97993b60e90ff5dd7044257a3edf96fa89179fb3ee4130",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -383629,10 +385240,21 @@
       "first_migration_id": "20261114065521",
       "last_migration_id": "20261114065521",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "62211768c64326d045faa3d5b6f12ab1d6fe5ebb2ef53d555bac24fadfc5299c",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -383700,10 +385322,21 @@
       "first_migration_id": "20261114065521",
       "last_migration_id": "20261115090226",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "c446679ef774dc0ad6e50009839f1eae15d7512f254113bab5e2d025fc3248b3",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -383884,10 +385517,21 @@
       "first_migration_id": "20261114065521",
       "last_migration_id": "20261114065521",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "10e79555ff0d472b8e64caf88c3866389c04f226ead48a215992d62e21f6f558",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:pg_catalog.numeric",
@@ -383956,10 +385600,21 @@
       "first_migration_id": "20261102084310",
       "last_migration_id": "20261102084310",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "189b4b97eccef67bd96bd1adfe53b883d4efe2f545383daf1fa0d07573a64c85",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -384040,10 +385695,21 @@
       "first_migration_id": "20261102084310",
       "last_migration_id": "20261102084310",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "90bb88842013eb9fd1b8d0ca64ef07d9d829227f3726b622d21effbb292b27ff",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.bool",
         "type:text",
@@ -384125,10 +385791,21 @@
       "first_migration_id": "20261102084310",
       "last_migration_id": "20261102084310",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "a2475ceb041302cbb97d73b425a204a70764dc2e4903a3e5d9887f9ca9f75656",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.numeric",
         "type:text",
@@ -384210,10 +385887,21 @@
       "first_migration_id": "20261102084310",
       "last_migration_id": "20261102084310",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "785f695fd136aee9e3b4972ba00fc397006012d5879a57cb6ff228823b02cdfe",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:pg_catalog.numeric",
@@ -384296,10 +385984,21 @@
       "first_migration_id": "20261111033000",
       "last_migration_id": "20261111040000",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "155914078941d743c4fa8b63321eee641d502df2410336dd5faa785575fa5561",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.numeric",
         "type:text",
@@ -384461,10 +386160,21 @@
       "first_migration_id": "20261102084310",
       "last_migration_id": "20261102084310",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "4b6cce1682c74f4a3674963c061f1ecb7a45504b4c3e8ae6a10eb61e9cc8be4f",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.numeric",
         "type:uuid"
@@ -384545,10 +386255,21 @@
       "first_migration_id": "20261116083521",
       "last_migration_id": "20261116083856",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "1b95e14db726d6e10c95e0facb6fb3b6c12803a6193cffcf6fe4420b3f388606",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -384664,10 +386385,21 @@
       "first_migration_id": "20261112060109",
       "last_migration_id": "20261113002601",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "d0e7a02d16b55e2ada8831af42303d896c861337d1a4a54f45b9afd33b4a81db",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:extensions.vector",
         "type:pg_catalog.int4",
@@ -384785,10 +386517,33 @@
       "first_migration_id": "20261115084413",
       "last_migration_id": "20261115084413",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "e349da4618fdd5897c819169eb175bcd949a2f9b97860846d1eec58d85189253",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -384852,10 +386607,14 @@
       "first_migration_id": "20261112044816",
       "last_migration_id": "20261113002544",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "5ef395c33174f0c6b0bc4fab8ea8839bb37fa80fe8cd1cbe8e889bc701c69e80",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -384926,10 +386685,21 @@
       "first_migration_id": "20261105095527",
       "last_migration_id": "20261105095527",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "30a35a404cd211f28bbe4bd4167edccf3ee7416843ddeb30a1991ba28d916430",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -385010,10 +386780,14 @@
       "first_migration_id": "20261111083146",
       "last_migration_id": "20261111083146",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "757a13ab895b205c9621083ea87c5f9238ffc11277ccc6c93f9e0c0811421c91",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -385059,10 +386833,21 @@
       "first_migration_id": "20261116083517",
       "last_migration_id": "20261116083517",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "38d2e94c8a89d92e26b11673e385625923fe759b6edcf0495876ec9bb6cf95a6",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -385129,10 +386914,21 @@
       "first_migration_id": "20261111061443",
       "last_migration_id": "20261113002550",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "663731350d0e6ec907eb1f482c345224c1d931dbe14c2791ce53697f796ce40a",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:text",
@@ -385364,10 +387160,21 @@
       "first_migration_id": "20261115084409",
       "last_migration_id": "20261116083455",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "690e3248eef21df35418fe164fc08322cfcec0fc83ff31d0bddb12f909e5dd0f",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -385484,10 +387291,21 @@
       "first_migration_id": "20261115084405",
       "last_migration_id": "20261115084405",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "1687aaf27ebd02eecaf5ddc2466ff1c14277201306032c0652ee553f2f7d7cfa",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.bool",
         "type:text",
@@ -385555,10 +387373,14 @@
       "first_migration_id": "20261116162800",
       "last_migration_id": "20261116162800",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "4bb78e0edeb296dca0fd80844a9ae863668695c836e0a8b836ed28fbbeaf2237",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -385590,10 +387412,21 @@
       "first_migration_id": "20261116162500",
       "last_migration_id": "20261116162500",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "e6e3e1fb92a36f7f856777cf401e8b53cb44fcc42b4f9f43bb0ba00586e3c0da",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -385645,10 +387478,14 @@
       "first_migration_id": "20261116162600",
       "last_migration_id": "20261116162600",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "ce24d3233262ef0bd0e56f490c1f9a61f2b43c1f0c0e65101b71f5969730e6e1",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -385680,10 +387517,14 @@
       "first_migration_id": "20261116162500",
       "last_migration_id": "20261116162500",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "6c4bec1bad2677a5601e5d564c52fee88c2bf2952129876ff83adc85e74cd866",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -385715,10 +387556,21 @@
       "first_migration_id": "20261116162700",
       "last_migration_id": "20261116162700",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "a00e663e32b693df4958ab95c027b7f1a1a33fec861bee8e35895579a4e6e444",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -385770,10 +387622,21 @@
       "first_migration_id": "20261112044926",
       "last_migration_id": "20261113002555",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "94f620d95295646f358a72d4b4aade0fd514140bc58ec32ed466ce7338f94d25",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.bool",
         "type:text",
@@ -385891,10 +387754,27 @@
       "first_migration_id": "20261115084355",
       "last_migration_id": "20261115084355",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "f14e1734fb3b1efb8a35ae564fa52d6bb2f8741d16f7775b953a1f8d6b944684",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -385958,10 +387838,39 @@
       "first_migration_id": "20261115084346",
       "last_migration_id": "20261115084346",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "b366fcb6405289b3c00ba2c0600ba8df48ddc5764702c7c07925c663b5b96538",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "public.moreai_skill_packages"
       ],
@@ -386027,10 +387936,39 @@
       "first_migration_id": "20261115084346",
       "last_migration_id": "20261115084346",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "b366fcb6405289b3c00ba2c0600ba8df48ddc5764702c7c07925c663b5b96538",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "public.moreai_skill_installs"
       ],
@@ -386096,10 +388034,27 @@
       "first_migration_id": "20261115084405",
       "last_migration_id": "20261115084405",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "a56484d42cc62f65c2becbe60f4c071a2944c90b2352ebaebbab1a7d49ef573d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -386163,10 +388118,39 @@
       "first_migration_id": "20261115084355",
       "last_migration_id": "20261115084355",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "58f9e2ecd4ab97ac617db30c6a118b2ffcfc4f596a4a4d60c8226d9bdb519830",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -386230,10 +388214,21 @@
       "first_migration_id": "20261115084413",
       "last_migration_id": "20261115084413",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "e448e2d8e27531667f01a1f7ec0e36adf6f0361835980686b859d55fa6d97f57",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -386302,10 +388297,21 @@
       "first_migration_id": "20261103101208",
       "last_migration_id": "20261103101208",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "d59314e2562041b9ec83887209fcf3ff6be870ce47050feb465a1a50abe8a5ef",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -386386,10 +388392,21 @@
       "first_migration_id": "20261111091531",
       "last_migration_id": "20261111091531",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "ee5080dc65734141e7cd5362e403efde567d8bfb09fdaad7538175c858c7b2ad",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -386470,10 +388487,21 @@
       "first_migration_id": "20261111091531",
       "last_migration_id": "20261111091531",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "de796572d805c7d452e506bf31a0a75d1565640d74a0ccc1c684de485fb24ffd",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -386555,10 +388583,33 @@
       "first_migration_id": "20261114034343",
       "last_migration_id": "20261114034343",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "134298daf0f7963b0824bad653cea1ddc809ab37cb55de27f56fa5bb350ed992",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -386647,10 +388698,21 @@
       "first_migration_id": "20261102081613",
       "last_migration_id": "20261102081613",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "f953b82de31b018e9dc3fb4fc91727afe874b9b0ffd77b60fd8027b7946ae745",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -386732,10 +388794,21 @@
       "first_migration_id": "20261102082317",
       "last_migration_id": "20261102082504",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "abf36b5d7f79d1d8f72c2c1153e5a6677a070df66eabaebbc75eb852d3e890a5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -386881,10 +388954,21 @@
       "first_migration_id": "20261111091531",
       "last_migration_id": "20261111091531",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "f3555ecc7a7e32ed2d8b20353809e312d771e072ae1d8420b3c95b47be1e8689",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:text"
@@ -386965,10 +389049,21 @@
       "first_migration_id": "20261113002607",
       "last_migration_id": "20261113002607",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "acdb22363725c5603b753e38a57b621aa0349ef0b9faa92d02a996b3a89b2f3d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4"
       ],
@@ -387034,10 +389129,21 @@
       "first_migration_id": "20261102081613",
       "last_migration_id": "20261102081613",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "f2505448da2580d50b356966d385676e22bd54796e4d8b468da984a00f542804",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4"
       ],
@@ -387117,10 +389223,21 @@
       "first_migration_id": "20261102082317",
       "last_migration_id": "20261111122750",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "9d7de2f1c5cb707b68079a96e706abd950a3e10c8f5c0172f1ea8b510a7eab88",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:text"
@@ -387315,10 +389432,21 @@
       "first_migration_id": "20261113002607",
       "last_migration_id": "20261113002607",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "16a5ffe12ee158517e52909f632d8871b1f488aa058c4a2e180fd88132ad8389",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.bool",
         "type:pg_catalog.int4",
@@ -387387,10 +389515,21 @@
       "first_migration_id": "20261102081613",
       "last_migration_id": "20261102081613",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "dfcd12e2a4e3ee7614616a329437f4b755ea32ec0248efe9e7a6f4dde162c64d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:pg_catalog.int4",
@@ -387473,10 +389612,21 @@
       "first_migration_id": "20261102082317",
       "last_migration_id": "20261102082504",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "bcf46b2bdc88f8bb90859ff07a8ccc69dbbf3553f7eb673754b13ee3a092de01",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:pg_catalog.int4",
@@ -387623,10 +389773,21 @@
       "first_migration_id": "20261102082317",
       "last_migration_id": "20261102082504",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "1d7d714966aadb12fa30ec97388774d28236684a9c8f0634ed6720ec9b730182",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:text",
@@ -387772,10 +389933,21 @@
       "first_migration_id": "20261111122750",
       "last_migration_id": "20261111122750",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "9d892216e0da61e577c7aee76c1d8de00f8934e25cd32d1f31cd6157b6312948",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int4",
         "type:text",
@@ -387843,10 +390015,21 @@
       "first_migration_id": "20261114034343",
       "last_migration_id": "20261114034343",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "7ea7ba0da5f4ef57a1381589978bd323c085bea11b3218716d7ff0de04f2b2ff",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text"
@@ -387913,10 +390096,21 @@
       "first_migration_id": "20261115100615",
       "last_migration_id": "20261115100615",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "78db03f5a26e768115b326a77362483d610bac3d8d11423a2f5fd6653c7088ef",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -387980,10 +390174,21 @@
       "first_migration_id": "20261115101318",
       "last_migration_id": "20261115101318",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "4804ec71d1f461c51c5ccfcbf8befddcf5e6fffe6d4191bfd0ce76ad1bbd32f5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -388047,10 +390252,21 @@
       "first_migration_id": "20261114033442",
       "last_migration_id": "20261114033442",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "f508a1c3f943e04197868b7a72f79eb0e8fa756fdcc414201b96496994f7346e",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -388114,10 +390330,21 @@
       "first_migration_id": "20261102082317",
       "last_migration_id": "20261111140514",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "8c9a98ba0bfcf255509a491ac6f5f3b0bc33a2d41bc238ba20661c262f43a001",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -388375,10 +390602,21 @@
       "first_migration_id": "20261102082317",
       "last_migration_id": "20261102082504",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "182ba3e6c525e2744a8b1bd9104e811ef8635011433dfae9397ff8c48513aff7",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:uuid"
       ],
@@ -388522,10 +390760,21 @@
       "first_migration_id": "20261111091531",
       "last_migration_id": "20261111091638",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "c11dec2ffed46201cd6f8d43ac0e9461ad7eaa2d65eac9a93cc5dd65ce899d8c",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -388670,10 +390919,21 @@
       "first_migration_id": "20261111140238",
       "last_migration_id": "20261111140255",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "f8afebb3ffa0cea93f0634fab1e63a958a91a48becc01f71ce6b624e3c0557bc",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -388790,10 +391050,21 @@
       "first_migration_id": "20261111140238",
       "last_migration_id": "20261111140255",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "68dae16051c5a368c6f4445f7178e39b2db5c3b9898b5e85e04784506b81395e",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:text",
@@ -388911,10 +391182,21 @@
       "first_migration_id": "20261103122523",
       "last_migration_id": "20261103122523",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "06bd51db875fe940e92da37280ab68089bd9a7947ac8127541d5980fcb85e4e2",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:timestamptz"
@@ -388995,10 +391277,21 @@
       "first_migration_id": "20261113002624",
       "last_migration_id": "20261113002624",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "e1166510668a3fbc520205a65580b570a6f9d8fd797274fabe437ea84b3f182e",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
@@ -389066,10 +391359,21 @@
       "first_migration_id": "20261111140238",
       "last_migration_id": "20261111140255",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "a9d451fb61f80d3c0f92c1fa93383ea674bf450e2e11d4305f0a3f82ca4f9457",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:text",
@@ -389187,10 +391491,21 @@
       "first_migration_id": "20261112073357",
       "last_migration_id": "20261112073357",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "08e7834337398c5ae7e47a769c92131418aa89ad5a66df63c64328f9b3ab8cf1",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:text",
@@ -389258,10 +391573,21 @@
       "first_migration_id": "20261103122523",
       "last_migration_id": "20261103122523",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "1ebbf35c5a9f72e7e80de10548136fcc587cce5fb88b7a913c8ab42e5a2cd4ba",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:pg_catalog.bool",
@@ -389343,10 +391669,21 @@
       "first_migration_id": "20261111140238",
       "last_migration_id": "20261112073831",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "f16ad936754e8ab345619704dbf5dfdf047f62f8c78ce7e41f85c20fe83f75d6",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:text",
         "type:uuid"
@@ -389513,10 +391850,21 @@
       "first_migration_id": "20261112073357",
       "last_migration_id": "20261112073357",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "25341df71f1c9b90c5ff83a0a21ba6e78ab131862565cf8d300618869994b929",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:text",
@@ -389584,10 +391932,14 @@
       "first_migration_id": "20261112073831",
       "last_migration_id": "20261113133656",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "5e1cb01535c02ada3b9851965eaecf3f0eb71f5b5566ab800a720894188fa60f",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:text",
@@ -389680,10 +392032,21 @@
       "first_migration_id": "20261113133656",
       "last_migration_id": "20261113133656",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "ef88085ad2786cc8ddf5bbf12cfc64a6199dc1c29808d2f85d8647e29f8200a6",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:pg_catalog.int8",
         "type:text",
@@ -389751,10 +392114,33 @@
       "first_migration_id": "20261103100442",
       "last_migration_id": "20261103100442",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "8c3cd08f0cb631af7a912a5608c92b587b1f8fc7db968b67b7b055267c462c2d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -390108,10 +392494,33 @@
       "first_migration_id": "20261103100442",
       "last_migration_id": "20261103100442",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "0ef59b666b2911ed4d4e135f1e4b8a7f9f8d8fa5f7c3ba76b9824b3571c3b07f",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -390189,10 +392598,57 @@
       "first_migration_id": "20261111083146",
       "last_migration_id": "20261111083146",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "284e551151cb5e46a9ade6335c14a0bff42b8a621c223d30fef4fc42c22c1f5d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "public.notifications"
       ],
@@ -390272,10 +392728,57 @@
       "first_migration_id": "20261111083146",
       "last_migration_id": "20261111083146",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "284e551151cb5e46a9ade6335c14a0bff42b8a621c223d30fef4fc42c22c1f5d",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "delete",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "references",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "trigger",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "truncate",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "public.notification_preferences"
       ],
@@ -390355,10 +392858,27 @@
       "first_migration_id": "20261105095527",
       "last_migration_id": "20261105095527",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "f06997b483c7f75cfa4e0baf4b27b95aaad7a00c509a7b1f4a62caf4f4ae20f8",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "public.partner_access_codes"
       ],
@@ -390438,10 +392958,33 @@
       "first_migration_id": "20261105095527",
       "last_migration_id": "20261105095527",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "4fcf7b3fefe57dbf41ff8062c9706c62182c1b7f60666c17ab2f87a3690b47c5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "insert",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "select",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            },
+            {
+              "grantee": "service_role",
+              "privilege": "update",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "public.partner_access_code_redemptions"
       ],
@@ -390593,10 +393136,14 @@
       "first_migration_id": "20261102075825",
       "last_migration_id": "20261102075825",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "c3f68090588f9f6f6ce0eac8eaab0f173075c1677c36ba6c911e391e1f9a6046",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -390642,10 +393189,14 @@
       "first_migration_id": "20261102073329",
       "last_migration_id": "20261102073329",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "e459da855bad419d8f37095b7678785802ef7eb0d9fb22f2fdff87ac5f722a4b",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": []
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [],
       "dependency_candidate_count": 0,
       "migration_lineage": [
@@ -390793,10 +393344,21 @@
       "first_migration_id": "20261103100442",
       "last_migration_id": "20261103100442",
       "latest_operation": "GRANT_OR_REVOKE",
-      "expected_state_status": "NOT_VERIFIABLE",
+      "expected_state_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "latest_ast_sha256": "7b2e06417eaba575836fa4b204d115faf60c7f5a08352f820321e4b7c38b34a5",
-      "expected_definition": null,
-      "semantic_reduction_status": "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING",
+      "expected_definition": {
+        "EffectiveACL": {
+          "grants": [
+            {
+              "grantee": "service_role",
+              "privilege": "execute",
+              "grantor": "CURRENT_USER_UNRESOLVED",
+              "grant_option": false
+            }
+          ]
+        }
+      },
+      "semantic_reduction_status": "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED",
       "dependency_candidates": [
         "type:jsonb",
         "type:text",
