@@ -753,6 +753,44 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
     return "REDUCED_TABLE_SUBOBJECT_DEFINITION", {("ColumnDef" if object_class == "COLUMN" else "Constraint"): current}, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED"
 
 
+
+def _reduce_policy_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Fold CREATE POLICY + ALTER POLICY without treating omitted fields as NULL."""
+    current: dict[str, Any] | None = None
+    for event in history:
+        operation = event.get("operation")
+        node_tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if operation == "DROP":
+            current = None
+            continue
+        if operation == "CREATE" and node_tag == "CreatePolicyStmt" and isinstance(payload, dict):
+            current = json.loads(json.dumps(payload))
+            continue
+        if operation == "ALTER" and node_tag == "AlterPolicyStmt" and isinstance(payload, dict):
+            if current is None:
+                return "NOT_VERIFIABLE", None, "POLICY_ALTER_WITHOUT_CREATE_BASE"
+            if payload.get("policy_name") != current.get("policy_name"):
+                return "NOT_VERIFIABLE", None, "POLICY_IDENTITY_CHANGED"
+            if _rangevars(payload.get("table")) != _rangevars(current.get("table")):
+                return "NOT_VERIFIABLE", None, "POLICY_TABLE_IDENTITY_CHANGED"
+            # ALTER POLICY updates only the clauses supplied in that statement.
+            # Empty roles and NULL expressions mean omitted, not an instruction
+            # to erase the existing policy state.
+            roles = payload.get("roles")
+            if isinstance(roles, list) and roles:
+                current["roles"] = json.loads(json.dumps(roles))
+            for field in ("qual", "with_check"):
+                value = payload.get(field)
+                if value is not None:
+                    current[field] = json.loads(json.dumps(value))
+            continue
+        return "NOT_VERIFIABLE", None, "POLICY_EVENT_SHAPE_OR_OPERATION_UNSUPPORTED"
+    if current is None:
+        return "DROPPED_IN_SOURCE_LINEAGE", None, "POLICY_DROP_REDUCED"
+    return "REDUCED_POLICY_STATE", {"CreatePolicyStmt": current}, "POLICY_CREATE_ALTER_CHAIN_REDUCED"
+
+
+
 def _acl_role_name(value: Any) -> str | None:
     for tag, payload in _walk(value):
         if tag != "RoleSpec" or not isinstance(payload, dict):
@@ -951,6 +989,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state, expected_definition, reduction_status = _reduce_acl_history(history)
         elif latest["object_class"] == "OWNERSHIP":
             state, expected_definition, reduction_status = _reduce_ownership_history(history)
+        elif latest["object_class"] == "RLS_POLICY":
+            state, expected_definition, reduction_status = _reduce_policy_history(history)
         elif last_operation in {"ALTER", "GRANT_OR_REVOKE", "RENAME", "ALTER_SCHEMA"}:
             state = "EVOLVED_STATE_REQUIRES_SEMANTIC_REDUCER"
         objects.append({
