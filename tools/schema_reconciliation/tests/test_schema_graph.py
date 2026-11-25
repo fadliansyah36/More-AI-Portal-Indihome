@@ -499,6 +499,23 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertTrue(constraint["initdeferred"])
         self.assertFalse(constraint["skip_validation"])
 
+    def test_constraint_reducer_rejects_alter_for_different_constraint_name(self):
+        history = [
+            {"operation": "CREATE", "object_class": "CONSTRAINT", "normalized_ast": {"Constraint": {
+                "conname": "orders_customer_fk", "deferrable": False, "initdeferred": False,
+            }}},
+            {"operation": "ALTER", "object_class": "CONSTRAINT", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_AlterConstraint",
+                "name": "another_constraint",
+                "deferrable": True,
+                "initdeferred": True,
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_table_subobject_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "CONSTRAINT_ALTER_TARGET_MISMATCH")
+
     def test_constraint_reducer_fails_closed_for_implicit_deferrability_flags(self):
         history = [
             {"operation": "CREATE", "object_class": "CONSTRAINT", "normalized_ast": {"Constraint": {"conname": "orders_customer_fk"}}},
