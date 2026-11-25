@@ -1,4 +1,8 @@
 {
+  "graph_generation_status": "SUCCEEDED",
+  "execution_provenance_status": "EXECUTION_PROVENANCE_UNVERIFIABLE",
+  "execution_provenance_reason": "Migration history rows and observed catalog are not independent exact-byte deployment receipts.",
+  "migration_lineage_object_count": 2543,
   "active_migration_file_count": 121,
   "history_migration_record_count": 116,
   "history_archive_record_count": 34,
@@ -110,6 +114,12 @@
     "UNEXPECTED": 0
   },
   "global_no_drift_claim": false,
+  "dependency_binding_status_counts": {
+    "DEPENDENT_IDENTITY_CLASS_NOT_SUPPORTED_FOR_EXACT_BINDING": 134,
+    "NOT_REPORTED": 6660,
+    "NO_AST_CANDIDATE_BOUND_TO_OBSERVED_PG_DEPEND_EDGES": 99,
+    "NO_AST_DEPENDENCY_CANDIDATES": 2310
+  },
   "missing_object_class_counts": {
     "RLS_POLICY": 40
   },
