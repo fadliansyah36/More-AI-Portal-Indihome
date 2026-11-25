@@ -831,6 +831,46 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
 
 
 
+def _reduce_range_type_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Validate and preserve explicit CREATE TYPE AS RANGE parameters."""
+    if len(history) != 1:
+        return "NOT_VERIFIABLE", None, "RANGE_TYPE_HISTORY_REQUIRES_SINGLE_CREATE"
+    event = history[0]
+    tag, payload = _node_tag(event.get("normalized_ast") or {})
+    if event.get("operation") != "CREATE" or tag != "CreateRangeStmt" or not isinstance(payload, dict):
+        return "NOT_VERIFIABLE", None, "RANGE_TYPE_EVENT_SHAPE_UNSUPPORTED"
+    names = _strings(payload.get("typeName"))
+    if not names or _qualified_identifier(names) != event.get("object_name"):
+        return "NOT_VERIFIABLE", None, "RANGE_TYPE_IDENTITY_UNRESOLVED_OR_MISMATCHED"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params:
+        return "NOT_VERIFIABLE", None, "RANGE_TYPE_PARAMETERS_MISSING"
+    parameter_names: set[str] = set()
+    subtype_present = False
+    for item in params:
+        option_tag, option = _node_tag(item)
+        if option_tag != "DefElem" or not isinstance(option, dict):
+            return "NOT_VERIFIABLE", None, "RANGE_TYPE_PARAMETER_NODE_UNSUPPORTED"
+        name = option.get("defname")
+        if not isinstance(name, str) or not name:
+            return "NOT_VERIFIABLE", None, "RANGE_TYPE_PARAMETER_NAME_UNRESOLVED"
+        normalized_name = name.lower()
+        if normalized_name in parameter_names:
+            return "NOT_VERIFIABLE", None, "RANGE_TYPE_PARAMETER_DUPLICATE:" + normalized_name
+        parameter_names.add(normalized_name)
+        if normalized_name == "subtype":
+            if option.get("arg") is None:
+                return "NOT_VERIFIABLE", None, "RANGE_TYPE_SUBTYPE_MISSING"
+            subtype_present = True
+    if not subtype_present:
+        return "NOT_VERIFIABLE", None, "RANGE_TYPE_SUBTYPE_NOT_DECLARED"
+    return (
+        "REDUCED_RANGE_TYPE_DEFINITION",
+        {"CreateRangeStmt": json.loads(json.dumps(payload))},
+        "RANGE_TYPE_CREATE_PARAMETERS_PRESERVED",
+    )
+
+
 def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
     """Fold explicit CREATE/ALTER DOMAIN changes with exact type/constraint identity."""
     current: dict[str, Any] | None = None
@@ -1601,6 +1641,11 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             for item in history
         ):
             state, expected_definition, reduction_status = _reduce_enum_type_history(history)
+        elif latest["object_class"] == "TYPE" and all(
+            _node_tag(item.get("normalized_ast") or {})[0] == "CreateRangeStmt"
+            for item in history
+        ):
+            state, expected_definition, reduction_status = _reduce_range_type_history(history)
         elif last_operation in {"ALTER", "GRANT_OR_REVOKE", "RENAME", "ALTER_SCHEMA"}:
             state = "EVOLVED_STATE_REQUIRES_SEMANTIC_REDUCER"
         objects.append({
