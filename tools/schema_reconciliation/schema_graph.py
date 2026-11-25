@@ -303,6 +303,10 @@ def _object_names(tag: str, payload: Any) -> list[str]:
         if values:
             return [_qualified_identifier(values)]
         return []
+    if tag == "AlterTableStmt" and payload.get("objtype") == "OBJECT_TYPE":
+        relations = _rangevars(payload.get("relation"))
+        if relations:
+            return [item if "." in item else "public." + item for item in relations]
     if tag in {"CreateEnumStmt", "CompositeTypeStmt", "CreateRangeStmt", "AlterTypeStmt", "AlterEnumStmt", "AlterDomainStmt"}:
         values = _strings(payload.get("typeName") or payload.get("typevar"))
         if values:
@@ -840,6 +844,97 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
 
 
 
+
+
+def _reduce_composite_type_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Fold composite type attributes from CREATE TYPE and ALTER TYPE commands."""
+    current: dict[str, Any] | None = None
+    source_identity: str | None = None
+    for event in history:
+        operation = event.get("operation")
+        tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if operation == "DROP":
+            current = None
+            continue
+        if operation == "CREATE" and tag == "CompositeTypeStmt" and isinstance(payload, dict):
+            names = _strings(payload.get("typevar"))
+            if not names:
+                return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_CREATE_IDENTITY_UNRESOLVED"
+            source_identity = _qualified_identifier(names)
+            attributes = payload.get("coldeflist")
+            if not isinstance(attributes, list):
+                return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ATTRIBUTE_LIST_UNRESOLVED"
+            current = {"typevar": json.loads(json.dumps(payload.get("typevar"))),
+                       "coldeflist": json.loads(json.dumps(attributes))}
+            seen: set[str] = set()
+            for item in current["coldeflist"]:
+                item_tag, attribute = _node_tag(item)
+                name = attribute.get("colname") if item_tag == "ColumnDef" and isinstance(attribute, dict) else None
+                if not isinstance(name, str) or not name or name in seen:
+                    return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_CREATE_ATTRIBUTE_IDENTITY_INVALID"
+                seen.add(name)
+            continue
+        if operation == "ALTER" and tag == "AlterTableStmt" and isinstance(payload, dict):
+            if current is None:
+                return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ALTER_WITHOUT_CREATE_BASE"
+            if payload.get("objtype") != "OBJECT_TYPE":
+                return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ALTER_OBJECT_KIND_MISMATCH"
+            relation_names = _rangevars(payload.get("relation"))
+            if len(relation_names) != 1:
+                return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ALTER_RELATION_UNRESOLVED"
+            target_identity = relation_names[0] if "." in relation_names[0] else "public." + relation_names[0]
+            if target_identity != source_identity:
+                return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ALTER_TARGET_MISMATCH"
+            attributes = current["coldeflist"]
+            for command in payload.get("cmds") or []:
+                cmd_tag, cmd = _node_tag(command)
+                if cmd_tag != "AlterTableCmd" or not isinstance(cmd, dict):
+                    return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ALTER_COMMAND_UNSUPPORTED"
+                subtype = str(cmd.get("subtype") or "")
+                definition = cmd.get("def") if "def" in cmd else cmd.get("def_")
+                if subtype in {"AT_AddColumn", "AT_AddColumnRecurse"}:
+                    def_tag, attribute = _node_tag(definition)
+                    if def_tag != "ColumnDef" or not isinstance(attribute, dict):
+                        return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ADD_ATTRIBUTE_DEFINITION_UNRESOLVED"
+                    name = attribute.get("colname")
+                    if not isinstance(name, str) or not name or any(
+                        _node_tag(item)[1].get("colname") == name
+                        for item in attributes if _node_tag(item)[0] == "ColumnDef" and isinstance(_node_tag(item)[1], dict)
+                    ):
+                        return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ADD_ATTRIBUTE_IDENTITY_INVALID"
+                    attributes.append(json.loads(json.dumps(definition)))
+                    continue
+                name = cmd.get("name")
+                matches = [
+                    index for index, item in enumerate(attributes)
+                    if _node_tag(item)[0] == "ColumnDef"
+                    and isinstance(_node_tag(item)[1], dict)
+                    and _node_tag(item)[1].get("colname") == name
+                ]
+                if not isinstance(name, str) or not name or len(matches) != 1:
+                    return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ATTRIBUTE_TARGET_NOT_UNIQUE"
+                index = matches[0]
+                if subtype in {"AT_DropColumn", "AT_DropColumnRecurse"}:
+                    attributes.pop(index)
+                elif subtype == "AT_AlterColumnType":
+                    if definition is None:
+                        return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ATTRIBUTE_TYPE_MISSING"
+                    attribute = _node_tag(attributes[index])[1]
+                    attribute["typeName"] = json.loads(json.dumps(definition))
+                    transform = cmd.get("transform")
+                    if transform is not None:
+                        attribute["type_change_using"] = json.loads(json.dumps(transform))
+                    else:
+                        attribute.pop("type_change_using", None)
+                else:
+                    return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_ALTER_SUBTYPE_UNSUPPORTED:" + subtype
+            continue
+        return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_EVENT_SHAPE_OR_OPERATION_UNSUPPORTED"
+    if current is None:
+        return "DROPPED_IN_SOURCE_LINEAGE", None, "COMPOSITE_TYPE_DROP_REDUCED"
+    if source_identity is None:
+        return "NOT_VERIFIABLE", None, "COMPOSITE_TYPE_CREATE_NOT_FOUND"
+    return "REDUCED_COMPOSITE_TYPE_STATE_PARTIAL", {"CompositeType": current}, "COMPOSITE_TYPE_ATTRIBUTE_CHAIN_REDUCED"
 
 
 def _reduce_range_type_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
@@ -1652,6 +1747,11 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             for item in history
         ):
             state, expected_definition, reduction_status = _reduce_enum_type_history(history)
+        elif latest["object_class"] == "TYPE" and any(
+            _node_tag(item.get("normalized_ast") or {})[0] == "CompositeTypeStmt"
+            for item in history
+        ):
+            state, expected_definition, reduction_status = _reduce_composite_type_history(history)
         elif latest["object_class"] == "TYPE" and all(
             _node_tag(item.get("normalized_ast") or {})[0] == "CreateRangeStmt"
             for item in history
