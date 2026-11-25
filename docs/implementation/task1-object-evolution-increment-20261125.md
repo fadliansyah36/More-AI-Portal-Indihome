@@ -1,45 +1,52 @@
-# Task 1 — PostgreSQL object identity and evolution reducer increment
+# Task 1 — PostgreSQL semantic reducers: incremental implementation
 
 Date: 2026-11-25
 Branch: `main`
-Starting HEAD: `bdd62195a0997ed2789cff52d15cf55d9b7166ce`
+Baseline for this increment: `81950cb101b5e0825e1de67d47d242d8bea783b1`
 
-## Implemented source changes
+## Implemented in this increment
 
-1. Dependency binding: exact qualified identity matching replaces ambiguous schema suffix/prefix matching. Unqualified AST references remain unbound unless exact evidence exists.
-2. DROP lineage: decode PostgreSQL typed DROP targets separately; preserve multi-object statements; map supported DROP object types to their CREATE semantic classes; do not invent `public` for unqualified relation/global-object names.
-3. Function identity: preserve full argument signatures for ALTER FUNCTION and zero-argument signatures across CREATE/DROP/GRANT/ALTER identity extraction.
-4. RLS policy lineage: use the PostgreSQL `table` field for policy identity; reduce CREATE POLICY + ALTER POLICY while preserving clauses omitted by ALTER and rejecting changed table identity.
-5. Enum evolution: reduce CREATE TYPE AS ENUM with ADD VALUE (append/before/after) and RENAME VALUE; duplicate/unknown-neighbor cases fail closed.
-6. Sequence evolution: fold supported scalar CREATE SEQUENCE / ALTER SEQUENCE options into an explicit partial state; do not infer PostgreSQL defaults, OWNED BY dependencies or runtime RESTART/last_value state. Regression source covers option merge, restart fail-closed behavior and missing CREATE lineage.\n7. ACL safety: effective ACL reduction now refuses to emit a comparable definition when GRANT/REVOKE grantor is unresolved, because ACL entries are grantor-specific. Explicit grantor GRANT OPTION revocation retains the privilege and clears only its grant option. Regression source covers both cases.\n8. Benefit UI safety: disable the Top Up control until a real payment-intent and signed settlement path exists; no fake wallet crediting or informational click masquerading as a payment action.
+- Role membership statements now receive pair-specific identities (`member:<member>->role:<role>`) instead of collapsing unrelated grants into one generic object.
+- `GrantRoleStmt` events are expanded per member/role pair and reduced independently.
+- Explicit role membership grants and full revokes are reduced only when grantor and ADMIN/INHERIT/SET options are explicit. The reducer preserves grantor identity.
+- Implicit role options, option-only revokes and CASCADE effects remain `NOT_VERIFIABLE`; no role catalog defaults or dependent membership effects are inferred.
+- ACL reduction refuses to publish an effective ACL definition if any grantor is unresolved. Explicit `REVOKE GRANT OPTION` retains the privilege and clears only that grant option.
+- Regression source covers role/member identity, explicit grant/revoke, implicit option fail-closed behavior, ACL grantor ambiguity and grant-option revocation.
 
-## Source files changed
+## Previously implemented reducers retained
 
-- `tools/schema_reconciliation/reconcile.py`
+- Dependency binding uses exact qualified identity and avoids ambiguous schema suffix matching.
+- Typed DROP handling preserves each target and function/procedure signatures.
+- RLS policy CREATE/ALTER folding preserves omitted clauses and rejects identity changes.
+- Enum evolution supports ADD VALUE append/before/after and RENAME VALUE with fail-closed handling for unknown neighbors.
+- Sequence evolution folds supported explicit options only; defaults, OWNED BY dependencies and runtime restart/last_value remain outside its proven scope.
+- Column evolution supports selected ALTER subtypes; unknown subtypes remain unverifiable.
+- Trigger evolution supports named enable/disable modes; rename/drop/bulk modes remain unsupported.
+- Customer Wallet Top Up remains disabled until a real payment-intent and signed-settlement flow exists.
+
+## Files changed in this increment
+
 - `tools/schema_reconciliation/schema_graph.py`
-- `tools/schema_reconciliation/tests/test_dependency_identity_binding.py`
 - `tools/schema_reconciliation/tests/test_schema_graph.py`
-- `components/views/benefit-credit-view.tsx`\n- `tools/schema_reconciliation/schema_graph.py` (sequence, expanded column and named trigger reducers)\n- `tools/schema_reconciliation/tests/test_schema_graph.py` (sequence, column, trigger and ACL regression source)\n- `tools/schema_reconciliation/schema_graph.py` (sequence reducer and explicit limitations)\n- `tools/schema_reconciliation/tests/test_schema_graph.py` (sequence regression source)
-- `docs/implementation/task1-dependency-binding-hardening-20261125.md`
-- `docs/implementation/task1-typed-drop-lineage-20261125.md`
-- `docs/implementation/task1-rls-policy-reducer-20261125.md`
-- `docs/implementation/task1-rls-enum-reducers-20261125.md`
-- `docs/implementation/phase09-benefit-topup-safety-gate-20261125.md`
+- `docs/implementation/task1-object-evolution-increment-20261125.md`
 
-## Verification and safety boundary
+## Verification and safety
 
-- Regression test source was added for dependency identity, DROP multi-target/function identities, RLS policy evolution and enum evolution. Tests were not executed under the current Master PRD Section 37 restriction. Sequence tests are source-only regression cases.
-- No reconciliation graph was regenerated from the old observed snapshot; fresh observed schema/security/dependency evidence is required.
-- No Supabase query or write, migration apply, staging, provider call, payment call or deployment was performed.
-- Copy Engine implementation was source-confirmed as already present: nine modes, structured output validation, metered gateway adapter, catalog entry and registration in `DurableOpenManusRuntime`. No duplicate engine or runtime was added.
+- Regression tests were authored but not executed, per the current Master PRD Section 37 P1 execution restriction.
+- No reconciliation artifact was regenerated from stale observed snapshots.
+- No Supabase production data mutation, migration apply, provider/payment call, staging or deployment was performed.
+- Source lineage and migration history records do not constitute an independent database execution receipt.
 
-## Remaining
+## Remaining Task 1 work
 
-- ACL reduction remains partial for unresolved grantor, default privileges, role membership, grant-option dependency chains and CASCADE effects; it deliberately returns NOT_VERIFIABLE rather than overstate effective permissions. Full sequence semantics still require PostgreSQL default resolution, OWNED BY dependency lineage and runtime RESTART handling; composite/range/domain types, function/procedure option evolution, trigger rename/drop/bulk-mode evolution and remaining ALTER TABLE subtypes remain outstanding.
-- Complete ACL effective state with grantor/role membership/default ACL/ownership and observed catalog binding.
-- Search-path-aware dependency resolution and exact pg_depend coverage.
-- Fresh full catalog/security/dependency snapshots and independent migration execution receipts.
-- Regenerate expected graph/reconciliation artifacts from current source and fresh evidence.
-- Complete remaining backend and Phase 09 customer/admin integration domains; payment provider is not configured, so wallet top-up remains safely disabled.
+- Default ACL reduction and role membership option-only revoke / grantor dependency semantics.
+- Ownership history bound to observed owner catalog evidence.
+- Composite, range and domain type evolution.
+- Function/procedure option evolution and opaque body handling.
+- Trigger rename/drop/bulk-mode evolution and remaining ALTER TABLE/constraint subtypes.
+- Search-path-aware dependency binding and complete `pg_depend` reconciliation.
+- Fresh observed catalog, security and dependency snapshots from the canonical Supabase project.
+- Independent migration execution provenance and regenerated expected-vs-observed artifacts.
+- Browser migration source corrections and duplicate/misnamed migration decisions still require evidence-backed finalization.
 
-Task 1 and Phase 09 remain IN PROGRESS. This increment is not a global parity or release acceptance claim.
+Task 1 remains IN PROGRESS. This document records source implementation only; it is not a global semantic reconciliation or release acceptance claim.
