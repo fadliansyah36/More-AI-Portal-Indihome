@@ -209,6 +209,31 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(len(names), 2)
         self.assertNotIn("public.invoice_id_seq.public.event_id_seq", names)
 
+    def test_zero_argument_function_signature_is_preserved_for_drop_and_grant(self):
+        object_with_args = {
+            "ObjectWithArgs": {
+                "objname": [
+                    {"String": {"sval": "public"}},
+                    {"String": {"sval": "refresh_cache"}},
+                ],
+                "objargs": [],
+            },
+        }
+        self.assertEqual(
+            schema_graph._object_names("DropStmt", {
+                "removeType": "OBJECT_FUNCTION",
+                "objects": [object_with_args],
+            }),
+            ["public.refresh_cache()"],
+        )
+        self.assertEqual(
+            schema_graph._object_names("GrantStmt", {
+                "objtype": "OBJECT_FUNCTION",
+                "objects": [object_with_args],
+            }),
+            ["public.refresh_cache()"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
