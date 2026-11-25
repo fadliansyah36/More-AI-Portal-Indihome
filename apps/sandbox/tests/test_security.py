@@ -55,7 +55,7 @@ async def test_docker_runner_uses_disposable_networkless_restricted_container(mo
             self.stdin = FakeStdin()
             self.stdout = asyncio.StreamReader()
             self.stderr = asyncio.StreamReader()
-            self.stdout.feed_data(b"ok")
+            self.stdout.feed_data(b'{"exit_code":0,"stdout":"ok","stderr":"","workspace_files":{}}')
             self.stdout.feed_eof()
             self.stderr.feed_eof()
 
