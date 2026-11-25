@@ -745,6 +745,14 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
             definition = payload.get("def")
             if subtype == "AT_AlterColumnType" and definition is not None:
                 current["typeName"] = definition
+                # ALTER COLUMN TYPE ... USING carries a separate expression
+                # from the target type. Preserve it as part of the evolved
+                # column state instead of silently dropping conversion logic.
+                transform = payload.get("transform")
+                if transform is not None:
+                    current["type_change_using"] = json.loads(json.dumps(transform))
+                else:
+                    current.pop("type_change_using", None)
             elif subtype == "AT_SetNotNull":
                 current["is_not_null"] = True
             elif subtype == "AT_DropNotNull":
