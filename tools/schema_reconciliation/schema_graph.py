@@ -770,6 +770,14 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
             if not saw_create or current is None or node_tag != "AlterTableCmd" or not isinstance(payload, dict):
                 return "NOT_VERIFIABLE", None, "ALTER_WITHOUT_REDUCIBLE_CONSTRAINT_BASE"
             subtype = str(payload.get("subtype") or "")
+            source_name = current.get("conname")
+            target_name = payload.get("name")
+            if not isinstance(source_name, str) or not source_name:
+                return "NOT_VERIFIABLE", None, "CONSTRAINT_CREATE_NAME_UNRESOLVED"
+            if not isinstance(target_name, str) or not target_name:
+                return "NOT_VERIFIABLE", None, "CONSTRAINT_ALTER_NAME_UNRESOLVED"
+            if target_name != source_name:
+                return "NOT_VERIFIABLE", None, "CONSTRAINT_ALTER_TARGET_MISMATCH"
             if subtype == "AT_ValidateConstraint":
                 # PostgreSQL's Constraint AST records NOT VALID as
                 # skip_validation=true. VALIDATE CONSTRAINT clears that bit.
