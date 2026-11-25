@@ -234,6 +234,24 @@ class SemanticObjectGraphTests(unittest.TestCase):
             ["public.refresh_cache()"],
         )
 
+    def test_drop_unqualified_relation_does_not_invent_public_schema(self):
+        self.assertEqual(
+            schema_graph._object_names("DropStmt", {
+                "removeType": "OBJECT_TABLE",
+                "objects": [{"List": [{"String": {"sval": "customer_events"}}]}],
+            }),
+            ["customer_events"],
+        )
+
+    def test_drop_schema_identity_is_not_schema_qualified(self):
+        self.assertEqual(
+            schema_graph._object_names("DropStmt", {
+                "removeType": "OBJECT_SCHEMA",
+                "objects": [{"List": [{"String": {"sval": "analytics"}}]}],
+            }),
+            ["analytics"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
