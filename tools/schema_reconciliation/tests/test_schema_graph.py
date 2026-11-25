@@ -56,9 +56,9 @@ class SemanticObjectGraphTests(unittest.TestCase):
             },
         ]
         status, definition, reduction = schema_graph._reduce_table_subobject_history(history)
-        self.assertEqual(status, "REDUCED")
-        self.assertEqual(reduction, "COLUMN_HISTORY_REDUCED")
-        self.assertTrue(definition["is_not_null"])
+        self.assertEqual(status, "REDUCED_TABLE_SUBOBJECT_DEFINITION")
+        self.assertEqual(reduction, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED")
+        self.assertTrue(definition["ColumnDef"]["is_not_null"])
 
     def test_acl_reducer_folds_grant_option_revoke(self):
         base = {
