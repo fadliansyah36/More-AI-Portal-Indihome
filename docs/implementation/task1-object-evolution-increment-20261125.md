@@ -11,7 +11,7 @@ Starting HEAD: `bdd62195a0997ed2789cff52d15cf55d9b7166ce`
 3. Function identity: preserve full argument signatures for ALTER FUNCTION and zero-argument signatures across CREATE/DROP/GRANT/ALTER identity extraction.
 4. RLS policy lineage: use the PostgreSQL `table` field for policy identity; reduce CREATE POLICY + ALTER POLICY while preserving clauses omitted by ALTER and rejecting changed table identity.
 5. Enum evolution: reduce CREATE TYPE AS ENUM with ADD VALUE (append/before/after) and RENAME VALUE; duplicate/unknown-neighbor cases fail closed.
-6. Sequence evolution: fold supported scalar CREATE SEQUENCE / ALTER SEQUENCE options into an explicit partial state; do not infer PostgreSQL defaults, OWNED BY dependencies or runtime RESTART/last_value state. Regression source covers option merge, restart fail-closed behavior and missing CREATE lineage.\n7. Benefit UI safety: disable the Top Up control until a real payment-intent and signed settlement path exists; no fake wallet crediting or informational click masquerading as a payment action.
+6. Sequence evolution: fold supported scalar CREATE SEQUENCE / ALTER SEQUENCE options into an explicit partial state; do not infer PostgreSQL defaults, OWNED BY dependencies or runtime RESTART/last_value state. Regression source covers option merge, restart fail-closed behavior and missing CREATE lineage.\n7. ACL safety: effective ACL reduction now refuses to emit a comparable definition when GRANT/REVOKE grantor is unresolved, because ACL entries are grantor-specific. Explicit grantor GRANT OPTION revocation retains the privilege and clears only its grant option. Regression source covers both cases.\n8. Benefit UI safety: disable the Top Up control until a real payment-intent and signed settlement path exists; no fake wallet crediting or informational click masquerading as a payment action.
 
 ## Source files changed
 
@@ -19,7 +19,7 @@ Starting HEAD: `bdd62195a0997ed2789cff52d15cf55d9b7166ce`
 - `tools/schema_reconciliation/schema_graph.py`
 - `tools/schema_reconciliation/tests/test_dependency_identity_binding.py`
 - `tools/schema_reconciliation/tests/test_schema_graph.py`
-- `components/views/benefit-credit-view.tsx`\n- `tools/schema_reconciliation/schema_graph.py` (sequence, expanded column and named trigger reducers)\n- `tools/schema_reconciliation/tests/test_schema_graph.py` (sequence, column and trigger regression source)\n- `tools/schema_reconciliation/schema_graph.py` (sequence reducer and explicit limitations)\n- `tools/schema_reconciliation/tests/test_schema_graph.py` (sequence regression source)
+- `components/views/benefit-credit-view.tsx`\n- `tools/schema_reconciliation/schema_graph.py` (sequence, expanded column and named trigger reducers)\n- `tools/schema_reconciliation/tests/test_schema_graph.py` (sequence, column, trigger and ACL regression source)\n- `tools/schema_reconciliation/schema_graph.py` (sequence reducer and explicit limitations)\n- `tools/schema_reconciliation/tests/test_schema_graph.py` (sequence regression source)
 - `docs/implementation/task1-dependency-binding-hardening-20261125.md`
 - `docs/implementation/task1-typed-drop-lineage-20261125.md`
 - `docs/implementation/task1-rls-policy-reducer-20261125.md`
@@ -35,7 +35,7 @@ Starting HEAD: `bdd62195a0997ed2789cff52d15cf55d9b7166ce`
 
 ## Remaining
 
-- Full sequence semantics still require PostgreSQL default resolution, OWNED BY dependency lineage and runtime RESTART handling; composite/range/domain types, function/procedure option evolution, trigger rename/drop/bulk-mode evolution and remaining ALTER TABLE subtypes remain outstanding.
+- ACL reduction remains partial for unresolved grantor, default privileges, role membership, grant-option dependency chains and CASCADE effects; it deliberately returns NOT_VERIFIABLE rather than overstate effective permissions. Full sequence semantics still require PostgreSQL default resolution, OWNED BY dependency lineage and runtime RESTART handling; composite/range/domain types, function/procedure option evolution, trigger rename/drop/bulk-mode evolution and remaining ALTER TABLE subtypes remain outstanding.
 - Complete ACL effective state with grantor/role membership/default ACL/ownership and observed catalog binding.
 - Search-path-aware dependency resolution and exact pg_depend coverage.
 - Fresh full catalog/security/dependency snapshots and independent migration execution receipts.
