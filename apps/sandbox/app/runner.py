@@ -111,7 +111,7 @@ class DockerSandbox:
         image, digest = self.image.rsplit("@sha256:", 1)
         if not image or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
             raise RuntimeError("sandbox_image_digest_invalid")
-        if any(c in self.image for c in "\\n\\r\\x00"):
+        if any(ord(character) < 32 for character in self.image):
             raise RuntimeError("invalid_sandbox_image")
 
     async def check_ready(self) -> None:
