@@ -512,8 +512,12 @@ class SemanticObjectGraphTests(unittest.TestCase):
 
     def test_sequence_reducer_fails_closed_for_restart_runtime_state(self):
         history = [
-            {"operation": "CREATE", "normalized_ast": {"CreateSeqStmt": {"options": []}}},
+            {"operation": "CREATE", "normalized_ast": {"CreateSeqStmt": {
+                "sequence": {"RangeVar": {"schemaname": "public", "relname": "invoice_seq"}},
+                "options": [],
+            }}},
             {"operation": "ALTER", "normalized_ast": {"AlterSeqStmt": {
+                "sequence": {"RangeVar": {"schemaname": "public", "relname": "invoice_seq"}},
                 "options": [{"DefElem": {"defname": "restart", "arg": {"A_Const": {"val": {"Integer": {"ival": 20}}}}}}],
             }}},
         ]
@@ -521,6 +525,35 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(status, "NOT_VERIFIABLE")
         self.assertIsNone(definition)
         self.assertEqual(reason, "SEQUENCE_OPTION_UNSUPPORTED:restart")
+
+    def test_sequence_reducer_rejects_alter_for_different_sequence(self):
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateSeqStmt": {
+                "sequence": {"RangeVar": {"schemaname": "public", "relname": "invoice_seq"}},
+                "options": [],
+            }}},
+            {"operation": "ALTER", "normalized_ast": {"AlterSeqStmt": {
+                "sequence": {"RangeVar": {"schemaname": "public", "relname": "event_seq"}},
+                "options": [],
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_sequence_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "SEQUENCE_ALTER_TARGET_MISMATCH")
+
+    def test_sequence_reducer_fails_closed_when_alter_identity_is_missing(self):
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateSeqStmt": {
+                "sequence": {"RangeVar": {"schemaname": "public", "relname": "invoice_seq"}},
+                "options": [],
+            }}},
+            {"operation": "ALTER", "normalized_ast": {"AlterSeqStmt": {"options": []}}},
+        ]
+        status, definition, reason = schema_graph._reduce_sequence_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "SEQUENCE_ALTER_IDENTITY_UNRESOLVED")
 
     def test_sequence_reducer_requires_source_create(self):
         status, definition, reason = schema_graph._reduce_sequence_history([
