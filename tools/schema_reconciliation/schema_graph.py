@@ -1504,7 +1504,7 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             "Sequence CREATE/ALTER folding captures explicit scalar options only; PostgreSQL defaults, OWNED BY dependencies and RESTART runtime state remain outside the reducer.",
             "Explicit GRANT/REVOKE and ALL PRIVILEGES are reduced by PostgreSQL object class; implicit grantors remain unresolved unless the AST supplies a grantor.",
             "ALTER OWNER records the latest explicit owner role; ownership execution and catalog parity still require independent observed evidence.",
-            "Function bodies and dynamic SQL are not treated as outer SQL AST; procedural bodies are explicitly marked opaque.",
+            "Function bodies and dynamic SQL are not treated as outer SQL AST; procedural bodies are explicitly marked opaque. CREATE/ALTER FUNCTION folding is limited to explicit scalar volatility, strict, security, leakproof, cost, rows and parallel options; SET/RESET configuration and support-function changes remain NOT_VERIFIABLE.",
             "Dependency candidates are AST references and observed pg_depend edges are retained as evidence, but complete source-to-catalog dependency binding is not yet proven.",
             "RLS policy definitions are preserved as AST; policy ALTER chains and role membership/default-ACL effects remain object-specific NOT_VERIFIABLE where no reducer exists.",
             "History path-reference statements have no SQL body and remain NOT_VERIFIABLE.",
