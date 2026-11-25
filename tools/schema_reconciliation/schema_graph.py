@@ -256,44 +256,84 @@ def _migration_identity(path: Path, root: Path) -> str:
 
 
 def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relative: str, source_sha256: str, git_blob_sha1: str, statement_ordinal: int, parent_name: str | None, operation: str) -> list[dict[str, Any]]:
+    """Emit identity-stable column/constraint events, including ALTER effects.
+
+    PostgreSQL's AlterTableCmd subtype is the semantic authority for add/drop/
+    alter operations. Unsupported subtypes are deliberately not guessed.
+    """
     if tag not in {"CreateStmt", "AlterTableStmt"} or not isinstance(payload, dict) or not parent_name:
         return []
-    roots = payload.get("tableElts") if tag == "CreateStmt" else payload.get("cmds")
     output: list[dict[str, Any]] = []
-    seen: set[tuple[str, str]] = set()
-    for child_tag, child_payload in _walk(roots):
-        if not isinstance(child_payload, dict):
-            continue
-        if child_tag == "ColumnDef":
-            name = child_payload.get("colname")
-            if not isinstance(name, str) or not name:
-                continue
-            object_class, object_name = "COLUMN", parent_name + "." + name
-        elif child_tag == "Constraint":
-            name = child_payload.get("conname")
-            if not isinstance(name, str) or not name:
-                name = "unnamed:" + hashlib.sha256(json.dumps(_normalize(child_payload), sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:12]
-            object_class, object_name = "CONSTRAINT", parent_name + "." + name
-        else:
-            continue
-        identity = (object_class, object_name)
+    seen: set[tuple[str, str, str]] = set()
+
+    def emit(object_class: str, object_name: str, event_operation: str, node_tag: str, node_payload: Any, status: str = "AST_PARSED") -> None:
+        identity = (object_class, object_name, event_operation)
         if identity in seen:
-            continue
+            return
         seen.add(identity)
-        normalized = _normalize({child_tag: child_payload})
+        normalized = _normalize({node_tag: node_payload})
         encoded = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         output.append({
             "migration_id": migration_id, "source_kind": "ACTIVE_GIT_MIGRATION_FILE", "source_path": relative,
             "source_sha256": source_sha256, "git_blob_sha1": git_blob_sha1,
-            "statement_ordinal": statement_ordinal, "ast_node_tag": child_tag,
-            "object_class": object_class, "operation": operation,
+            "statement_ordinal": statement_ordinal, "ast_node_tag": node_tag,
+            "object_class": object_class, "operation": event_operation,
             "object_name": object_name, "object_names": [object_name],
-            "expected_effect": operation,
+            "expected_effect": event_operation,
             "normalized_ast_sha256": hashlib.sha256(encoded.encode()).hexdigest(),
             "normalized_ast": normalized, "dependency_candidates": [],
             "dependency_status": "NOT_APPLICABLE",
-            "procedural_body_status": "NOT_APPLICABLE", "semantic_status": "AST_PARSED",
+            "procedural_body_status": "NOT_APPLICABLE", "semantic_status": status,
         })
+
+    if tag == "CreateStmt":
+        for child_tag, child_payload in _walk(payload.get("tableElts")):
+            if not isinstance(child_payload, dict):
+                continue
+            if child_tag == "ColumnDef":
+                name = child_payload.get("colname")
+                if isinstance(name, str) and name:
+                    emit("COLUMN", parent_name + "." + name, "CREATE", child_tag, child_payload)
+            elif child_tag == "Constraint":
+                name = child_payload.get("conname")
+                if not isinstance(name, str) or not name:
+                    name = "unnamed:" + hashlib.sha256(json.dumps(_normalize(child_payload), sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:12]
+                emit("CONSTRAINT", parent_name + "." + name, "CREATE", child_tag, child_payload)
+        return output
+
+    commands = payload.get("cmds") or []
+    for command in commands:
+        if not isinstance(command, dict) or not isinstance(command.get("AlterTableCmd"), dict):
+            continue
+        cmd = command["AlterTableCmd"]
+        subtype = str(cmd.get("subtype") or "")
+        definition = cmd.get("def")
+        def_tag, def_payload = _node_tag(definition)
+        name = cmd.get("name")
+        if def_tag == "ColumnDef" and isinstance(def_payload, dict):
+            name = def_payload.get("colname") or name
+            event_operation = "CREATE" if subtype in {"AT_AddColumn", "AT_AddColumnRecurse"} else "ALTER"
+            if subtype in {"AT_DropColumn", "AT_DropColumnRecurse"}:
+                event_operation = "DROP"
+            if isinstance(name, str) and name:
+                emit("COLUMN", parent_name + "." + name, event_operation, def_tag, def_payload)
+            continue
+        if def_tag == "Constraint" and isinstance(def_payload, dict):
+            name = def_payload.get("conname") or name
+            event_operation = "CREATE" if subtype in {"AT_AddConstraint", "AT_AddConstraintRecurse"} else "ALTER"
+            if isinstance(name, str) and name:
+                emit("CONSTRAINT", parent_name + "." + name, event_operation, def_tag, def_payload)
+            continue
+        if subtype in {"AT_DropColumn", "AT_DropColumnRecurse"} and isinstance(name, str) and name:
+            emit("COLUMN", parent_name + "." + name, "DROP", "AlterTableCmd", cmd)
+        elif subtype in {"AT_DropConstraint"} and isinstance(name, str) and name:
+            emit("CONSTRAINT", parent_name + "." + name, "DROP", "AlterTableCmd", cmd)
+        elif subtype in {"AT_AlterColumnType", "AT_ColumnDefault", "AT_CookedColumnDefault", "AT_ColumnOnUpdate", "AT_ColumnNotNull", "AT_DropNotNull", "AT_SetNotNull", "AT_DropColumnDefault", "AT_SetStatistics", "AT_SetStorage", "AT_SetCompression", "AT_SetOptions", "AT_ResetOptions"} and isinstance(name, str) and name:
+            emit("COLUMN", parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
+        elif subtype in {"AT_RenameColumn", "AT_RenameConstraint"} and isinstance(name, str) and name:
+            # Rename changes identity; preserve it as an explicit unbound event.
+            object_class = "COLUMN" if subtype == "AT_RenameColumn" else "CONSTRAINT"
+            emit(object_class, parent_name + "." + name, "RENAME", "AlterTableCmd", cmd, "RENAME_IDENTITY_REQUIRES_OLD_AND_NEW_NAME_BINDING")
     return output
 
 def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
