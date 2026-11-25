@@ -548,6 +548,7 @@ async def send_customer_message(
         from app.routers.workspaces import _workspace_access
         await _workspace_access(repo, UUID(str(conversation["workspace_id"])), principal["id"], "agent.run.create")
     await _require_live_customer_runtime(repo, body.agent_key)
+    skill_ids = [str(item) for item in body.skill_ids]
     if body.agent_configuration_id:
         return await repo.rpc("moreai_enqueue_chat_run_with_config", {
             "p_user_id": principal["id"],
@@ -557,12 +558,14 @@ async def send_customer_message(
             "p_idempotency_key": idempotency_key,
             "p_agent_config_id": str(body.agent_configuration_id),
             "p_attachment_ids": [str(item) for item in body.attachment_ids],
+            "p_skill_ids": skill_ids,
         })
     return await repo.rpc("moreai_enqueue_chat_run_with_attachments", {
         "p_user_id": principal["id"], "p_conversation_id": str(conversation_id),
         "p_content": body.content, "p_agent_key": body.agent_key,
         "p_idempotency_key": idempotency_key,
         "p_attachment_ids": [str(item) for item in body.attachment_ids],
+        "p_skill_ids": skill_ids,
     })
 
 
