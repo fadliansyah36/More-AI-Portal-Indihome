@@ -11,7 +11,8 @@ Baseline for this increment: `81950cb101b5e0825e1de67d47d242d8bea783b1`
 - Explicit role membership grants and full revokes are reduced only when grantor and ADMIN/INHERIT/SET options are explicit. The reducer preserves grantor identity.
 - Implicit role options, option-only revokes and CASCADE effects remain `NOT_VERIFIABLE`; no role catalog defaults or dependent membership effects are inferred.
 - ACL reduction refuses to publish an effective ACL definition if any grantor is unresolved. Explicit `REVOKE GRANT OPTION` retains the privilege and clears only that grant option.
-- Regression source covers role/member identity, explicit grant/revoke, implicit option fail-closed behavior, ACL grantor ambiguity and grant-option revocation.
+- Default ACL statements now receive owner/schema/object-type identities. The reducer folds explicit GRANT/REVOKE transitions per owner/schema/object type and preserves the owner role as grantor. Implicit owner, unsupported object types, unresolved grantees and CASCADE remain `NOT_VERIFIABLE`.
+- Regression source covers role/member identity, explicit role grant/revoke, implicit role options, ACL grantor ambiguity, grant-option revocation, default-ACL identity and default-ACL grant/revoke. 
 
 ## Previously implemented reducers retained
 
@@ -28,6 +29,8 @@ Baseline for this increment: `81950cb101b5e0825e1de67d47d242d8bea783b1`
 
 - `tools/schema_reconciliation/schema_graph.py`
 - `tools/schema_reconciliation/tests/test_schema_graph.py`
+- `lib/api/client.ts`
+- `components/views/super-admin-view.tsx`
 - `docs/implementation/task1-object-evolution-increment-20261125.md`
 
 ## Verification and safety
@@ -39,14 +42,24 @@ Baseline for this increment: `81950cb101b5e0825e1de67d47d242d8bea783b1`
 
 ## Remaining Task 1 work
 
-- Default ACL reduction and role membership option-only revoke / grantor dependency semantics.
+- Role membership option-only revoke / grantor dependency semantics remain unsupported.
 - Ownership history bound to observed owner catalog evidence.
 - Composite, range and domain type evolution.
 - Function/procedure option evolution and opaque body handling.
 - Trigger rename/drop/bulk-mode evolution and remaining ALTER TABLE/constraint subtypes.
 - Search-path-aware dependency binding and complete `pg_depend` reconciliation.
-- Fresh observed catalog, security and dependency snapshots from the canonical Supabase project.
+- Fresh observed catalog, security and dependency snapshots from the canonical Supabase project, including a normalized `pg_default_acl` view for comparing reduced default ACL state.
 - Independent migration execution provenance and regenerated expected-vs-observed artifacts.
 - Browser migration source corrections and duplicate/misnamed migration decisions still require evidence-backed finalization.
 
 Task 1 remains IN PROGRESS. This document records source implementation only; it is not a global semantic reconciliation or release acceptance claim.
+
+
+## Additional increment — default ACL and Super Admin API transport
+
+- `AlterDefaultPrivilegesStmt` identities now bind explicit owner role, schema scope (including global scope) and nested GRANT object type.
+- Added explicit default ACL history reduction for table, sequence, function and type defaults. Each migration event is reduced only for its exact owner/schema/object target.
+- Added fail-closed handling for missing owner role, unsupported object type, unresolved grantee/privilege, unknown action and CASCADE.
+- Added regression source for multi-schema identity, explicit GRANT/REVOKE and implicit owner.
+- Centralized Super Admin dashboard reads and mutations through the shared authenticated `platformAdminApi` transport. Removed the dashboard-local fetch/auth implementation so admin API requests share the same token refresh, error normalization and safe-read fallback rules as the rest of MoreAI.
+- This is an API transport integration only; it does not expand the set of admin capabilities or claim frontend E2E verification.
