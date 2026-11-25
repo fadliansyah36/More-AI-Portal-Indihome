@@ -470,6 +470,50 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reason, "ALTER_SUBTYPE_NOT_SUPPORTED_BY_COLUMN_REDUCER:AT_UnknownFutureSubtype")
 
 
+    def test_constraint_reducer_folds_explicit_deferrability_change(self):
+        base = {
+            "contype": "CONSTR_FOREIGN",
+            "conname": "orders_customer_fk",
+            "deferrable": False,
+            "initdeferred": False,
+            "skip_validation": True,
+        }
+        history = [
+            {"operation": "CREATE", "object_class": "CONSTRAINT", "normalized_ast": {"Constraint": base}},
+            {"operation": "ALTER", "object_class": "CONSTRAINT", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_AlterConstraint",
+                "name": "orders_customer_fk",
+                "deferrable": True,
+                "initdeferred": True,
+            }}},
+            {"operation": "ALTER", "object_class": "CONSTRAINT", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_ValidateConstraint",
+                "name": "orders_customer_fk",
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_table_subobject_history(history)
+        self.assertEqual(status, "REDUCED_TABLE_SUBOBJECT_DEFINITION")
+        self.assertEqual(reason, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED")
+        constraint = definition["Constraint"]
+        self.assertTrue(constraint["deferrable"])
+        self.assertTrue(constraint["initdeferred"])
+        self.assertFalse(constraint["skip_validation"])
+
+    def test_constraint_reducer_fails_closed_for_implicit_deferrability_flags(self):
+        history = [
+            {"operation": "CREATE", "object_class": "CONSTRAINT", "normalized_ast": {"Constraint": {"conname": "orders_customer_fk"}}},
+            {"operation": "ALTER", "object_class": "CONSTRAINT", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_AlterConstraint",
+                "name": "orders_customer_fk",
+                "deferrable": True,
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_table_subobject_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "CONSTRAINT_DEFERRABILITY_FLAGS_UNRESOLVED")
+
+
     def test_trigger_reducer_folds_named_enablement_modes(self):
         create = {
             "trigname": "audit_change",
