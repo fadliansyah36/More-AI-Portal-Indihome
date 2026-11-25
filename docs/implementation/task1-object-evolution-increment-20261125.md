@@ -73,3 +73,10 @@ Task 1 remains IN PROGRESS. This document records source implementation only; it
 - Unsupported SET/RESET configuration and support-function options return `NOT_VERIFIABLE`.
 - Added regression source for scalar option override, body preservation and fail-closed configuration handling.
 - Regression source was not executed under the active Section 37 restriction.
+
+
+## Additional increment — trigger target identity hardening
+
+- Trigger enablement reducers now require the ALTER command's explicit trigger name to match the exact `CreateTrigStmt.trigname` in the same source lineage.
+- Missing CREATE trigger identity and mismatched ALTER target both fail closed as `NOT_VERIFIABLE`.
+- Added regression source for a different trigger name; not executed under the active PRD restriction.
