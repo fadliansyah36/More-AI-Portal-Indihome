@@ -621,6 +621,78 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
     return "REDUCED_TABLE_SUBOBJECT_DEFINITION", {("ColumnDef" if object_class == "COLUMN" else "Constraint"): current}, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED"
 
 
+def _acl_role_name(value: Any) -> str | None:
+    for tag, payload in _walk(value):
+        if tag != "RoleSpec" or not isinstance(payload, dict):
+            continue
+        role_type = str(payload.get("roletype") or "")
+        if role_type == "ROLESPEC_PUBLIC":
+            return "PUBLIC"
+        role_name = payload.get("rolename")
+        if isinstance(role_name, str) and role_name:
+            return role_name
+        return None
+    return None
+
+
+def _reduce_acl_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Reduce explicit GRANT/REVOKE privilege transitions without inventing catalog grantors."""
+    grants: dict[tuple[str, str, str], bool] = {}
+    grantor_unresolved = False
+    for event in history:
+        ast = event.get("normalized_ast") or {}
+        node_tag, payload = _node_tag(ast)
+        if node_tag != "GrantStmt" or not isinstance(payload, dict):
+            return "NOT_VERIFIABLE", None, "ACL_EVENT_SHAPE_UNSUPPORTED"
+        if str(payload.get("objtype") or "") not in {
+            "OBJECT_TABLE", "OBJECT_SEQUENCE", "OBJECT_FUNCTION", "OBJECT_PROCEDURE",
+            "OBJECT_SCHEMA", "OBJECT_DATABASE", "OBJECT_TYPE", "OBJECT_DOMAIN",
+        }:
+            return "NOT_VERIFIABLE", None, "ACL_OBJECT_TYPE_UNSUPPORTED"
+        privileges = payload.get("privileges")
+        grantees = payload.get("grantees")
+        if not isinstance(privileges, list) or not privileges or not isinstance(grantees, list) or not grantees:
+            return "NOT_VERIFIABLE", None, "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING"
+        privilege_names: list[str] = []
+        for item in privileges:
+            tag, value = _node_tag(item)
+            if tag != "AccessPriv" or not isinstance(value, dict) or not isinstance(value.get("priv_name"), str):
+                # ALL PRIVILEGES and column-level privilege expansion require
+                # object-specific catalog knowledge; do not approximate them.
+                return "NOT_VERIFIABLE", None, "ACL_ALL_OR_UNSUPPORTED_PRIVILEGE"
+            privilege_names.append(value["priv_name"].lower())
+        grantee_names = [_acl_role_name(item) for item in grantees]
+        if any(name is None for name in grantee_names):
+            return "NOT_VERIFIABLE", None, "ACL_GRANTEE_ROLE_UNRESOLVED"
+        grantor = _acl_role_name(payload.get("grantor")) if payload.get("grantor") else None
+        if grantor is None:
+            grantor = "CURRENT_USER_UNRESOLVED"
+            grantor_unresolved = True
+        is_grant = payload.get("is_grant")
+        grant_option = payload.get("grant_option") is True
+        behavior = str(payload.get("behavior") or "")
+        if is_grant is not True and behavior not in {"DROP_RESTRICT", ""}:
+            # CASCADE may revoke dependent grants not explicitly present in this
+            # migration chain. Such effects need catalog/dependency evidence.
+            return "NOT_VERIFIABLE", None, "ACL_REVOKE_CASCADE_EFFECT_UNRESOLVED"
+        for grantee in grantee_names:
+            for privilege in privilege_names:
+                key = (str(grantee), privilege, grantor)
+                if is_grant is True:
+                    grants[key] = grant_option
+                elif grant_option:
+                    if key in grants:
+                        grants[key] = False
+                else:
+                    grants.pop(key, None)
+    rows = [
+        {"grantee": grantee, "privilege": privilege, "grantor": grantor, "grant_option": option}
+        for (grantee, privilege, grantor), option in sorted(grants.items())
+    ]
+    status = "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED" if grantor_unresolved else "REDUCED_EXPLICIT_EFFECTIVE_ACL"
+    return status, {"EffectiveACL": {"grants": rows}}, status
+
+
 
 def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path | None = None, history_hash_manifest_path: Path | None = None, history_archive_dir: Path | None = None) -> dict[str, Any]:
     files = sorted(root.rglob("*.sql"), key=lambda p: p.relative_to(root).as_posix())
@@ -708,6 +780,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state = "DROPPED_IN_SOURCE_LINEAGE"
         elif latest["object_class"] in {"COLUMN", "CONSTRAINT"}:
             state, expected_definition, reduction_status = _reduce_table_subobject_history(history)
+        elif latest["object_class"] == "ACL":
+            state, expected_definition, reduction_status = _reduce_acl_history(history)
         elif last_operation in {"ALTER", "GRANT_OR_REVOKE", "RENAME", "ALTER_SCHEMA"}:
             state = "EVOLVED_STATE_REQUIRES_SEMANTIC_REDUCER"
         objects.append({
