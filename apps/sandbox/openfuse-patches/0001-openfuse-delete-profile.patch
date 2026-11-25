@@ -1,9 +1,7 @@
 diff --git a/apps/worker/src/browser.ts b/apps/worker/src/browser.ts
 --- a/apps/worker/src/browser.ts
 +++ b/apps/worker/src/browser.ts
-@@ -303,7 +303,23 @@
-     create: (id: string, url: string) =>
-       serial("create", () => serial(id, () => createSession(id, url))),
+@@ -302,6 +302,21 @@
      navigate: (id: string, url: string) => serial(id, () => navigate(id, url)),
      closeSession: (id: string) => serial(id, () => closeSession(id)),
 +    deleteProfile: (id: string) =>
@@ -24,20 +22,19 @@ diff --git a/apps/worker/src/browser.ts b/apps/worker/src/browser.ts
      screenshot: (id: string) =>
        serial(id, () => active(id).page.screenshot({ type: "png", timeout: 10_000 })),
      read: (id: string) =>
+       serial(id, async () => {
 diff --git a/apps/worker/src/server.ts b/apps/worker/src/server.ts
 --- a/apps/worker/src/server.ts
 +++ b/apps/worker/src/server.ts
-@@ -73,7 +73,7 @@
-       }
+@@ -73,4 +73,4 @@
        const match =
 -        /^\/sessions\/([^/]+)\/(navigate|close|screenshot|read|input|downloads)(?:\/([^/]+))?$/.exec(
 +        /^\/sessions\/([^/]+)\/(navigate|close|screenshot|read|input|downloads|delete-profile)(?:\/([^/]+))?$/.exec(
            pathname,
          );
-@@ -90,4 +90,6 @@
-           });
+@@ -102,3 +102,5 @@
            response.end(result.bytes);
          }
-+      } else if (action === "delete-profile" && !downloadId && request.method === "DELETE")
++      } else if (action === "delete-profile" && !downloadId && request.method === "DELETE") {
 +        json(200, await browser.deleteProfile(id));
-       else throw new WorkerError("NOT_FOUND", "Worker endpoint not found.", 404);
+       } else throw new WorkerError("NOT_FOUND", "Worker endpoint not found.", 404);
