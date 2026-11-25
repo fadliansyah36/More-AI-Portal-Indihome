@@ -1032,6 +1032,14 @@ def _reduce_enum_type_history(history: list[dict[str, Any]]) -> tuple[str, dict[
         if operation == "ALTER" and node_tag == "AlterEnumStmt" and isinstance(payload, dict):
             if current is None:
                 return "NOT_VERIFIABLE", None, "ENUM_ALTER_WITHOUT_CREATE_BASE"
+            source_type = _strings(current.get("typeName"))
+            target_type = _strings(payload.get("typeName"))
+            if not source_type:
+                return "NOT_VERIFIABLE", None, "ENUM_CREATE_TYPE_IDENTITY_UNRESOLVED"
+            if not target_type:
+                return "NOT_VERIFIABLE", None, "ENUM_ALTER_TYPE_IDENTITY_UNRESOLVED"
+            if target_type != source_type:
+                return "NOT_VERIFIABLE", None, "ENUM_ALTER_TARGET_MISMATCH"
             new_values = _strings(payload.get("newVal"))
             old_values = _strings(payload.get("oldVal"))
             neighbor_values = _strings(payload.get("newValNeighbor"))
