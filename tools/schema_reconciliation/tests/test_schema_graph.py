@@ -470,5 +470,39 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reason, "ALTER_SUBTYPE_NOT_SUPPORTED_BY_COLUMN_REDUCER:AT_UnknownFutureSubtype")
 
 
+    def test_trigger_reducer_folds_named_enablement_modes(self):
+        create = {
+            "trigname": "audit_change",
+            "relation": {"RangeVar": {"schemaname": "public", "relname": "profiles"}},
+            "funcname": [{"String": {"sval": "audit_profile_change"}}],
+        }
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateTrigStmt": create}},
+            {"operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_DisableTrig", "name": "audit_change",
+            }}},
+            {"operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_EnableAlwaysTrig", "name": "audit_change",
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_trigger_history(history)
+        self.assertEqual(status, "REDUCED_TRIGGER_STATE")
+        self.assertEqual(reason, "TRIGGER_CREATE_ALTER_ENABLEMENT_REDUCED")
+        self.assertEqual(definition["Trigger"]["enabled_mode"], "ALWAYS")
+        self.assertIn("CreateTrigStmt", definition["Trigger"]["definition_ast"])
+
+    def test_trigger_reducer_fails_closed_for_unnamed_or_unsupported_alter(self):
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateTrigStmt": {"trigname": "audit_change"}}},
+            {"operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_EnableTrigAll", "name": None,
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_trigger_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "TRIGGER_ALTER_SUBTYPE_UNSUPPORTED:AT_EnableTrigAll")
+
+
 if __name__ == "__main__":
     unittest.main()
