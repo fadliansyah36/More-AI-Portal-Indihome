@@ -1086,19 +1086,30 @@ def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
 
 
 def _reduce_trigger_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
-    """Reduce CREATE TRIGGER plus named ENABLE/DISABLE mode transitions."""
+    """Reduce CREATE TRIGGER plus named enablement transitions with relation-bound identity."""
     current: dict[str, Any] | None = None
     enabled_mode: str | None = None
+    source_identity: str | None = None
     for event in history:
         operation = event.get("operation")
         tag, payload = _node_tag(event.get("normalized_ast") or {})
+        event_identity = event.get("object_name")
         if operation == "CREATE" and tag == "CreateTrigStmt" and isinstance(payload, dict):
+            trigger_name = payload.get("trigname")
+            relation_identity = _first_rangevar(payload.get("relation"))
+            if not isinstance(trigger_name, str) or not trigger_name:
+                return "NOT_VERIFIABLE", None, "TRIGGER_CREATE_NAME_UNRESOLVED"
+            if not relation_identity:
+                return "NOT_VERIFIABLE", None, "TRIGGER_CREATE_RELATION_UNRESOLVED"
+            source_identity = relation_identity + "." + trigger_name
+            if isinstance(event_identity, str) and event_identity != source_identity:
+                return "NOT_VERIFIABLE", None, "TRIGGER_CREATE_EVENT_IDENTITY_MISMATCH"
             current = json.loads(json.dumps(payload))
             # PostgreSQL creates ordinary triggers enabled in origin mode.
             enabled_mode = "ORIGIN"
             continue
         if operation == "ALTER" and tag == "AlterTableCmd" and isinstance(payload, dict):
-            if current is None:
+            if current is None or source_identity is None:
                 return "NOT_VERIFIABLE", None, "TRIGGER_ALTER_WITHOUT_SOURCE_CREATE"
             subtype = str(payload.get("subtype") or "")
             if subtype not in {"AT_EnableTrig", "AT_DisableTrig", "AT_EnableAlwaysTrig", "AT_EnableReplicaTrig"}:
@@ -1110,6 +1121,8 @@ def _reduce_trigger_history(history: list[dict[str, Any]]) -> tuple[str, dict[st
                 return "NOT_VERIFIABLE", None, "TRIGGER_CREATE_NAME_UNRESOLVED"
             if payload.get("name") != source_name:
                 return "NOT_VERIFIABLE", None, "TRIGGER_ALTER_TARGET_MISMATCH"
+            if isinstance(event_identity, str) and event_identity != source_identity:
+                return "NOT_VERIFIABLE", None, "TRIGGER_ALTER_RELATION_IDENTITY_MISMATCH"
             enabled_mode = {
                 "AT_EnableTrig": "ORIGIN",
                 "AT_DisableTrig": "DISABLED",
@@ -1122,7 +1135,7 @@ def _reduce_trigger_history(history: list[dict[str, Any]]) -> tuple[str, dict[st
         return "NOT_VERIFIABLE", None, "TRIGGER_CREATE_NOT_FOUND"
     return (
         "REDUCED_TRIGGER_STATE",
-        {"Trigger": {"definition_ast": {"CreateTrigStmt": current}, "enabled_mode": enabled_mode}},
+        {"Trigger": {"identity": source_identity, "definition_ast": {"CreateTrigStmt": current}, "enabled_mode": enabled_mode}},
         "TRIGGER_CREATE_ALTER_ENABLEMENT_REDUCED",
     )
 
