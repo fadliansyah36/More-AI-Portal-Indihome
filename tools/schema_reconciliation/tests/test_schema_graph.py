@@ -154,6 +154,61 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(status, "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED")
         self.assertEqual(definition["EffectiveACL"]["grants"], [])
 
+    def test_drop_table_targets_preserve_each_qualified_identity(self):
+        payload = {
+            "removeType": "OBJECT_TABLE",
+            "objects": [
+                {"List": [{"String": {"sval": "public"}}, {"String": {"sval": "profiles"}}]},
+                {"List": [{"String": {"sval": "billing"}}, {"String": {"sval": "invoices"}}]},
+            ],
+        }
+        self.assertEqual(
+            schema_graph._object_names("DropStmt", payload),
+            ["public.profiles", "billing.invoices"],
+        )
+        self.assertEqual(
+            schema_graph.DROP_OBJECT_CLASS[payload["removeType"]],
+            "TABLE",
+        )
+
+    def test_drop_function_preserves_signature_and_class(self):
+        payload = {
+            "removeType": "OBJECT_FUNCTION",
+            "objects": [{
+                "ObjectWithArgs": {
+                    "objname": [
+                        {"String": {"sval": "public"}},
+                        {"String": {"sval": "recalculate_invoice"}},
+                    ],
+                    "objargs": [{
+                        "TypeName": {
+                            "names": [{"String": {"sval": "uuid"}}],
+                        },
+                    }],
+                },
+            }],
+        }
+        self.assertEqual(
+            schema_graph._object_names("DropStmt", payload),
+            ["public.recalculate_invoice(uuid)"],
+        )
+        self.assertEqual(
+            schema_graph.DROP_OBJECT_CLASS[payload["removeType"]],
+            "FUNCTION",
+        )
+
+    def test_drop_targets_are_not_flattened_into_one_invalid_name(self):
+        payload = {
+            "removeType": "OBJECT_SEQUENCE",
+            "objects": [
+                {"List": [{"String": {"sval": "public"}}, {"String": {"sval": "invoice_id_seq"}}]},
+                {"List": [{"String": {"sval": "public"}}, {"String": {"sval": "event_id_seq"}}]},
+            ],
+        }
+        names = schema_graph._object_names("DropStmt", payload)
+        self.assertEqual(len(names), 2)
+        self.assertNotIn("public.invoice_id_seq.public.event_id_seq", names)
+
 
 if __name__ == "__main__":
     unittest.main()
