@@ -1021,9 +1021,16 @@ def _reduce_role_membership_history(history: list[dict[str, Any]]) -> tuple[str,
         behavior = str(payload.get("behavior") or "")
         if not is_grant and behavior not in {"DROP_RESTRICT", ""}:
             return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_REVOKE_CASCADE_UNRESOLVED"
-        for role in granted:
-            for member in grantees:
-                key = (str(member), str(role), grantor)
+        target = event.get("object_name")
+        pairs = [
+            (str(member), str(role))
+            for role in granted for member in grantees
+            if target == f"member:{member}->role:{role}"
+        ]
+        if len(pairs) != 1:
+            return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_EVENT_TARGET_NOT_UNIQUE"
+        for member, role in pairs:
+                key = (member, role, grantor)
                 if is_grant:
                     membership[key] = {
                         "admin_option": admin_option,
