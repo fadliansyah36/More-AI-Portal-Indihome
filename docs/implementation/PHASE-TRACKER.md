@@ -1951,3 +1951,13 @@ Phase 09 remains **IN PROGRESS**. Hook is not wired to Profile Settings; rendere
 - Tightened PostgreSQL trigger enablement reduction to match ALTER trigger names to the exact CREATE trigger identity. Commits: `ea74562c23b66fb4a74a988410a925cf5eca611e`, `b00e28b89d4d80ecda692db392043ac1f22e16e6`.
 - Regression source added but not executed. No test suite, build, lint, typecheck, migration apply, Supabase mutation, provider call, staging or deployment.
 - Phase 09 remains IN PROGRESS; Task 1 remains REVIEW_REQUIRED because global expected-schema baseline, full effective ACL/ownership evidence, remaining AST reducers and independent execution receipts are not yet complete.
+
+
+## 2026-11-25 — Read-only Supabase catalog and migration-history snapshot
+
+- Confirmed Supabase project `uunfgimtokhucegqbpce` is `ACTIVE_HEALTHY`, PostgreSQL 17.11.0.011, region `ap-southeast-2`.
+- Repository contains 121 active SQL migration files; Supabase migration history lists 116 versions. Every live history version has a matching active source file. Five corrected browser migration source versions are not present in live history: 20261116162500, 20261116162600, 20261116162700, 20261116162800, 20261116163000.
+- Read-only catalog aggregates across non-system namespaces: 146 relations, 332 functions, 157 user-defined composite/domain/enum/range/multirange types, 19 non-internal triggers, 99 RLS policies (62 permissive / 37 restrictive), 27 default ACL rows, 24 role memberships. ACL-bearing objects: 144 relations, 312 functions and 10 schemas. Typed dependency edges were counted separately; see `observed-catalog-snapshot-20261125.md`.
+- This is observed-state evidence only, not global expected-vs-observed semantic equivalence or independent migration execution provenance. Task 1 remains REVIEW_REQUIRED.
+- One broad catalog join was discarded after PostgreSQL reported temporary-file space exhaustion; no database state changed. Future catalog reads must remain bounded and separated by catalog family.
+- No tests, build, lint, typecheck, migration apply, data mutation, provider call, staging or deployment.
