@@ -145,8 +145,6 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
     })),
   ].sort((a, b) => (Number.isFinite(b.sortTime) ? b.sortTime : 0) - (Number.isFinite(a.sortTime) ? a.sortTime : 0));
   const filteredHistory = activeSubTab === 'semua' ? history : history.filter((item) => item.type === activeSubTab);
-  const handleTopUp = () => showToast('Top Up belum tersedia melalui backend pembayaran. Tidak ada saldo yang diubah.', 'info');
-
   return (
     <div className="space-y-4 pb-20 animate-fadeIn">
       {/* Title */}
@@ -189,13 +187,17 @@ export const BenefitCreditView: React.FC<BenefitCreditViewProps> = ({ onNavigate
               {loading ? 'Memuat Status…' : activeEntitlements.length ? 'Status Benefit Aktif' : 'Belum Ada Benefit'}
             </button>
             <button
-              onClick={handleTopUp}
-              className="px-4 py-2.5 rounded-xl bg-red-900/40 hover:bg-red-900/60 text-white font-bold text-xs border border-white/20 transition flex items-center gap-1"
+              type="button"
+              disabled
+              aria-disabled="true"
+              title="Top Up dinonaktifkan sampai payment gateway dan webhook settlement dikonfigurasi."
+              className="px-4 py-2.5 rounded-xl bg-red-900/40 text-white/60 font-bold text-xs border border-white/20 transition flex items-center gap-1 opacity-50 cursor-not-allowed"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Top Up</span>
             </button>
           </div>
+          <p className="text-[10px] text-white/75">Top Up belum tersedia. Saldo hanya berubah melalui transaksi pembayaran yang telah diverifikasi backend.</p>
         </div>
 
         {/* Ambient background decoration */}
