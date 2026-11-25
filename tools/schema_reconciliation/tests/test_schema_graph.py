@@ -23,6 +23,26 @@ class SemanticObjectGraphTests(unittest.TestCase):
             ["auth.users"],
         )
 
+    def test_grant_targets_keep_schema_and_function_signature_identity(self):
+        schema = schema_graph._object_names(
+            "GrantStmt",
+            {"objtype": "OBJECT_SCHEMA", "objects": [{"String": {"sval": "public"}}]},
+        )
+        function = schema_graph._object_names(
+            "GrantStmt",
+            {
+                "objtype": "OBJECT_FUNCTION",
+                "objects": [{
+                    "ObjectWithArgs": {
+                        "objname": [{"String": {"sval": "public"}}, {"String": {"sval": "lookup_user"}}],
+                        "objargs": [{"TypeName": {"names": [{"String": {"sval": "uuid"}}]}}],
+                    }
+                }],
+            },
+        )
+        self.assertEqual(schema, ["public"])
+        self.assertEqual(function, ["public.lookup_user(public.uuid)"])
+
     def test_create_table_emits_stable_column_and_constraint_events(self):
         payload = {
             "relation": {"schemaname": "public", "relname": "profiles", "relpersistence": "p"},
