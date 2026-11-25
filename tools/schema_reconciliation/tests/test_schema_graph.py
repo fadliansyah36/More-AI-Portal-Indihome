@@ -504,5 +504,48 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reason, "TRIGGER_ALTER_SUBTYPE_UNSUPPORTED:AT_EnableTrigAll")
 
 
+    def test_acl_reducer_does_not_claim_effective_acl_without_grantor(self):
+        grant = {
+            "objtype": "OBJECT_TABLE",
+            "privileges": [{"AccessPriv": {"priv_name": "select"}}],
+            "grantees": [{"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "analyst"}}],
+            "is_grant": True,
+            "grant_option": False,
+            "behavior": "DROP_RESTRICT",
+        }
+        status, definition, reason = schema_graph._reduce_acl_history([
+            {"operation": "GRANT_OR_REVOKE", "normalized_ast": {"GrantStmt": grant}},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "ACL_GRANTOR_UNRESOLVED_EFFECTIVE_ACL_NOT_COMPARABLE")
+
+    def test_acl_reducer_tracks_grant_option_revoke_for_explicit_grantor(self):
+        grantor = {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "owner_role"}}
+        grantee = {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "analyst"}}
+        grant = {
+            "objtype": "OBJECT_TABLE",
+            "privileges": [{"AccessPriv": {"priv_name": "select"}}],
+            "grantees": [grantee], "grantor": grantor,
+            "is_grant": True, "grant_option": True, "behavior": "DROP_RESTRICT",
+        }
+        revoke_option = {
+            "objtype": "OBJECT_TABLE",
+            "privileges": [{"AccessPriv": {"priv_name": "select"}}],
+            "grantees": [grantee], "grantor": grantor,
+            "is_grant": False, "grant_option": True, "behavior": "DROP_RESTRICT",
+        }
+        status, definition, reason = schema_graph._reduce_acl_history([
+            {"operation": "GRANT_OR_REVOKE", "normalized_ast": {"GrantStmt": grant}},
+            {"operation": "GRANT_OR_REVOKE", "normalized_ast": {"GrantStmt": revoke_option}},
+        ])
+        self.assertEqual(status, "REDUCED_EXPLICIT_EFFECTIVE_ACL")
+        self.assertEqual(reason, "ACL_EXPLICIT_GRANTOR_PRIVILEGE_SET_REDUCED")
+        self.assertEqual(definition["EffectiveACL"]["grants"], [{
+            "grantee": "analyst", "privilege": "select",
+            "grantor": "owner_role", "grant_option": False,
+        }])
+
+
 if __name__ == "__main__":
     unittest.main()
