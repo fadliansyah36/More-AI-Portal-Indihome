@@ -694,12 +694,12 @@ class DurableOpenManusRuntime:
             for index, call in enumerate(restored_calls):
                 if cancelled.is_set():
                     raise asyncio.CancelledError()
+                function = call.function
                 settled_key = f"openmanus.round.{round_no}.tool.{index}.settled"
                 settled = states.get(settled_key)
                 if isinstance(settled, dict) and isinstance(settled.get("observation"), str):
                     observation = settled["observation"]
                 else:
-                    function = call.function
                     try:
                         arguments = json.loads(function.arguments)
                     except json.JSONDecodeError as exc:
