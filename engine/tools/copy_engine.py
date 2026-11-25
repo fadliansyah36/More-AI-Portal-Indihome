@@ -15,6 +15,54 @@ class MeteredTextGateway(Protocol):
     ) -> dict[str, Any]: ...
 
 
+def _decode_structured_copy_output(raw: str, *, mode: str, forbidden_claims: list[str]) -> str:
+    """Validate the Copy Engine's promised structured response before it enters run output."""
+    candidate = raw.strip()
+    if candidate.startswith("```"):
+        lines = candidate.splitlines()
+        if len(lines) >= 3 and lines[-1].strip() == "```":
+            candidate = "\\n".join(lines[1:-1]).strip()
+    try:
+        payload = json.loads(candidate)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("copy_engine_output_not_valid_json") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError("copy_engine_output_must_be_object")
+
+    def nonempty_text(value: Any) -> bool:
+        return isinstance(value, str) and bool(value.strip())
+
+    if not (nonempty_text(payload.get("brand_voice_spec")) or isinstance(payload.get("brand_voice_spec"), dict)):
+        raise RuntimeError("copy_engine_output_brand_voice_spec_missing")
+    if not nonempty_text(payload.get("core_message")):
+        raise RuntimeError("copy_engine_output_core_message_missing")
+    variants = payload.get("variants")
+    if not isinstance(variants, list) or not 1 <= len(variants) <= 5:
+        raise RuntimeError("copy_engine_output_variants_invalid")
+    for index, variant in enumerate(variants):
+        if not isinstance(variant, dict):
+            raise RuntimeError(f"copy_engine_output_variant_{index}_invalid")
+        if any(not nonempty_text(variant.get(field)) for field in ("label", "strategic_delta", "headline", "body", "channel_fit")):
+            raise RuntimeError(f"copy_engine_output_variant_{index}_incomplete")
+        if not (nonempty_text(variant.get("CTA")) or nonempty_text(variant.get("cta"))):
+            raise RuntimeError(f"copy_engine_output_variant_{index}_cta_missing")
+    for field in ("factual_gaps", "compliance_notes"):
+        if not isinstance(payload.get(field), list) or any(not isinstance(item, str) for item in payload[field]):
+            raise RuntimeError(f"copy_engine_output_{field}_invalid")
+    if mode == "text_overlay":
+        overlay = payload.get("media_overlay_spec")
+        if not isinstance(overlay, dict) or overlay.get("renderer_status") != "spec_only":
+            raise RuntimeError("copy_engine_output_overlay_spec_invalid")
+        if not isinstance(overlay.get("missing_inputs"), list):
+            raise RuntimeError("copy_engine_output_overlay_missing_inputs_invalid")
+
+    serialized = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    folded = serialized.casefold()
+    if any(claim.casefold() in folded for claim in forbidden_claims if claim.strip()):
+        raise RuntimeError("copy_engine_output_contains_forbidden_claim")
+    return serialized
+
+
 class CopyEngineAdapter:
     """MoreAI-native copy generation on the existing metered OpenManus gateway.
 
@@ -127,4 +175,6 @@ class CopyEngineAdapter:
         output = result.get("text")
         if not isinstance(output, str) or not output.strip():
             raise RuntimeError("copy_engine_empty_provider_response")
-        return output
+        return _decode_structured_copy_output(
+            output, mode=mode, forbidden_claims=forbidden_claims,
+        )
