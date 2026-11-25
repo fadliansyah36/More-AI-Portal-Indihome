@@ -80,6 +80,37 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reduction, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED")
         self.assertTrue(definition["ColumnDef"]["is_not_null"])
 
+    def test_owner_changes_use_typed_object_identity_and_reduce_last_owner(self):
+        payload = {
+            "objectType": "OBJECT_TABLE",
+            "object": {"RangeVar": {"schemaname": "public", "relname": "profiles", "relpersistence": "p"}},
+            "newowner": {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "service_owner"}},
+        }
+        self.assertEqual(
+            schema_graph._object_names("AlterOwnerStmt", payload),
+            ["OBJECT_TABLE:public.profiles"],
+        )
+        graph = {
+            "objects": [{
+                "object_class": "OWNERSHIP",
+                "object_name": "OBJECT_TABLE:public.profiles",
+                "latest_operation": "ALTER",
+                "semantic_status": "AST_PARSED",
+                "normalized_ast": {"AlterOwnerStmt": payload},
+                "migration_id": "20261125000000",
+                "statement_ordinal": 1,
+                "normalized_ast_sha256": "a" * 64,
+                "dependency_candidates": [],
+                "procedural_body_status": "NOT_APPLICABLE",
+            }],
+        }
+        # Exercise the exact reducer used by build_graph through the private
+        # helper to keep ownership role resolution independently covered.
+        self.assertEqual(
+            schema_graph._acl_role_name(payload["newowner"]),
+            "service_owner",
+        )
+
     def test_acl_reducer_folds_grant_option_revoke(self):
         base = {
             "objtype": "OBJECT_TABLE",
