@@ -665,5 +665,51 @@ class SemanticObjectGraphTests(unittest.TestCase):
 
 
 
+    def test_function_reducer_folds_scalar_alter_options_and_preserves_body(self):
+        create = {
+            "CreateFunctionStmt": {
+                "options": [
+                    {"DefElem": {"defname": "language", "arg": {"String": {"sval": "sql"}}}},
+                    {"DefElem": {"defname": "volatility", "arg": {"String": {"sval": "VOLATILE"}}}},
+                    {"DefElem": {"defname": "as", "arg": {"String": {"sval": "select 1"}}}},
+                ],
+            },
+        }
+        alter = {
+            "AlterFunctionStmt": {
+                "actions": [
+                    {"DefElem": {"defname": "volatility", "arg": {"String": {"sval": "IMMUTABLE"}}}},
+                    {"DefElem": {"defname": "strict", "arg": {"Boolean": {"boolval": True}}}},
+                ],
+            },
+        }
+        status, definition, reason = schema_graph._reduce_function_history([
+            {"operation": "CREATE", "normalized_ast": create},
+            {"operation": "ALTER", "normalized_ast": alter},
+        ])
+        self.assertEqual(status, "REDUCED_FUNCTION_SCALAR_OPTIONS_PARTIAL")
+        self.assertEqual(reason, "FUNCTION_CREATE_ALTER_SCALAR_OPTIONS_REDUCED")
+        self.assertEqual(definition["FunctionAttributes"], {"volatility": "IMMUTABLE", "strict": True})
+        self.assertEqual(
+            definition["CreateFunctionStmt"]["options"][2]["DefElem"]["arg"]["String"]["sval"],
+            "select 1",
+        )
+        self.assertEqual(definition["body_semantics"], "OPAQUE_NOT_EXECUTED_OR_REPARSED")
+
+    def test_function_reducer_fails_closed_for_configuration_options(self):
+        create = {"CreateFunctionStmt": {"options": []}}
+        alter = {"AlterFunctionStmt": {"actions": [
+            {"DefElem": {"defname": "set", "arg": {"VariableSetStmt": {"name": "search_path"}}}},
+        ]}}
+        status, definition, reason = schema_graph._reduce_function_history([
+            {"operation": "CREATE", "normalized_ast": create},
+            {"operation": "ALTER", "normalized_ast": alter},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "FUNCTION_OPTION_UNSUPPORTED:set")
+
+
+
 if __name__ == "__main__":
     unittest.main()
