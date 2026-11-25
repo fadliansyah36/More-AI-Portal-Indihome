@@ -685,6 +685,19 @@ def _acl_role_name(value: Any) -> str | None:
     return None
 
 
+def _reduce_ownership_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Reduce the latest explicit ALTER OWNER transition; do not infer prior owners."""
+    if not history:
+        return "NOT_VERIFIABLE", None, "OWNER_HISTORY_EMPTY"
+    node_tag, payload = _node_tag(history[-1].get("normalized_ast") or {})
+    if node_tag != "AlterOwnerStmt" or not isinstance(payload, dict):
+        return "NOT_VERIFIABLE", None, "OWNER_EVENT_SHAPE_UNSUPPORTED"
+    owner = _acl_role_name(payload.get("newowner"))
+    if owner is None:
+        return "NOT_VERIFIABLE", None, "OWNER_ROLE_UNRESOLVED"
+    return "REDUCED_OWNER_STATE", {"Owner": {"role": owner}}, "OWNER_ROLE_REDUCED_FROM_AST"
+
+
 def _reduce_acl_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
     """Reduce explicit GRANT/REVOKE privilege transitions without inventing catalog grantors."""
     grants: dict[tuple[str, str, str], bool] = {}
@@ -855,13 +868,7 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         elif latest["object_class"] == "ACL":
             state, expected_definition, reduction_status = _reduce_acl_history(history)
         elif latest["object_class"] == "OWNERSHIP":
-            owner = _acl_role_name((_node_tag(latest.get("normalized_ast") or {}))[1].get("newowner"))
-            if owner is None:
-                state, reduction_status = "NOT_VERIFIABLE", "OWNER_ROLE_UNRESOLVED"
-            else:
-                state = "REDUCED_OWNER_STATE"
-                expected_definition = {"Owner": {"role": owner}}
-                reduction_status = "OWNER_ROLE_REDUCED_FROM_AST"
+            state, expected_definition, reduction_status = _reduce_ownership_history(history)
         elif last_operation in {"ALTER", "GRANT_OR_REVOKE", "RENAME", "ALTER_SCHEMA"}:
             state = "EVOLVED_STATE_REQUIRES_SEMANTIC_REDUCER"
         objects.append({
