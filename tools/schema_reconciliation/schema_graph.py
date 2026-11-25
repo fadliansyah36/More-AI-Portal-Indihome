@@ -914,10 +914,14 @@ def _sequence_options(options: Any) -> tuple[bool, dict[str, Any], str]:
 def _reduce_sequence_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
     """Fold explicit CREATE/ALTER SEQUENCE options; never infer defaults or runtime last_value."""
     current: dict[str, Any] | None = None
+    source_identity: str | None = None
     for event in history:
         operation = event.get("operation")
         tag, payload = _node_tag(event.get("normalized_ast") or {})
         if operation == "CREATE" and tag == "CreateSeqStmt" and isinstance(payload, dict):
+            source_identity = _first_rangevar(payload.get("sequence"))
+            if not source_identity:
+                return "NOT_VERIFIABLE", None, "SEQUENCE_CREATE_IDENTITY_UNRESOLVED"
             ok, options, reason = _sequence_options(payload.get("options") or [])
             if not ok:
                 return "NOT_VERIFIABLE", None, reason
@@ -926,6 +930,11 @@ def _reduce_sequence_history(history: list[dict[str, Any]]) -> tuple[str, dict[s
         if operation == "ALTER" and tag == "AlterSeqStmt" and isinstance(payload, dict):
             if current is None:
                 return "NOT_VERIFIABLE", None, "SEQUENCE_ALTER_WITHOUT_SOURCE_CREATE"
+            target_identity = _first_rangevar(payload.get("sequence"))
+            if not target_identity:
+                return "NOT_VERIFIABLE", None, "SEQUENCE_ALTER_IDENTITY_UNRESOLVED"
+            if target_identity != source_identity:
+                return "NOT_VERIFIABLE", None, "SEQUENCE_ALTER_TARGET_MISMATCH"
             ok, options, reason = _sequence_options(payload.get("options") or [])
             if not ok:
                 return "NOT_VERIFIABLE", None, reason
