@@ -1011,5 +1011,45 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reason, "DOMAIN_ALTER_TARGET_MISMATCH")
 
 
+    def test_range_type_reducer_preserves_explicit_subtype_parameters(self):
+        payload = {
+            "typeName": [{"String": {"sval": "price_range"}}],
+            "params": [
+                {"DefElem": {"defname": "subtype", "arg": {"TypeName": {"names": [{"String": {"sval": "numeric"}}]}}}},
+                {"DefElem": {"defname": "subtype_opclass", "arg": {"ObjectWithArgs": {"objname": [{"String": {"sval": "numeric_ops"} }], "objargs": []}}}},
+            ],
+        }
+        status, definition, reason = schema_graph._reduce_range_type_history([
+            {"operation": "CREATE", "object_name": "public.price_range", "normalized_ast": {"CreateRangeStmt": payload}},
+        ])
+        self.assertEqual(status, "REDUCED_RANGE_TYPE_DEFINITION")
+        self.assertEqual(reason, "RANGE_TYPE_CREATE_PARAMETERS_PRESERVED")
+        self.assertEqual(definition["CreateRangeStmt"]["params"], payload["params"])
+
+    def test_range_type_reducer_fails_closed_without_subtype(self):
+        payload = {
+            "typeName": [{"String": {"sval": "invalid_range"}}],
+            "params": [{"DefElem": {"defname": "canonical", "arg": {"String": {"sval": "normalize"}}}}],
+        }
+        status, definition, reason = schema_graph._reduce_range_type_history([
+            {"operation": "CREATE", "object_name": "public.invalid_range", "normalized_ast": {"CreateRangeStmt": payload}},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "RANGE_TYPE_SUBTYPE_NOT_DECLARED")
+
+    def test_range_type_reducer_rejects_identity_mismatch(self):
+        payload = {
+            "typeName": [{"String": {"sval": "actual_range"}}],
+            "params": [{"DefElem": {"defname": "subtype", "arg": {"TypeName": {"names": [{"String": {"sval": "int4"}}]}}}}],
+        }
+        status, definition, reason = schema_graph._reduce_range_type_history([
+            {"operation": "CREATE", "object_name": "public.other_range", "normalized_ast": {"CreateRangeStmt": payload}},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "RANGE_TYPE_IDENTITY_UNRESOLVED_OR_MISMATCHED")
+
+
 if __name__ == "__main__":
     unittest.main()
