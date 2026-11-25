@@ -196,6 +196,27 @@ def _object_names(tag: str, payload: Any) -> list[str]:
     if tag == "DropStmt":
         values = _strings(payload.get("objects"))
         return [".".join(values)] if values else []
+    if tag == "AlterOwnerStmt":
+        target = payload.get("object")
+        ranges = _rangevars(target)
+        if ranges:
+            return [str(payload.get("objectType") or "OBJECT") + ":" + item for item in ranges]
+        for node_tag, node_payload in _walk(target):
+            if node_tag == "ObjectWithArgs" and isinstance(node_payload, dict):
+                names = _strings(node_payload.get("objname"))
+                if names:
+                    signature = []
+                    for arg_tag, arg_payload in _walk(node_payload.get("objargs")):
+                        if arg_tag == "TypeName" and isinstance(arg_payload, dict):
+                            types = _strings(arg_payload.get("names"))
+                            if types:
+                                signature.append(_qualified_identifier(types))
+                    suffix = "(" + ", ".join(signature) + ")" if signature else "(signature-not-verifiable)"
+                    return [str(payload.get("objectType") or "OBJECT") + ":" + _qualified_identifier(names) + suffix]
+        names = _strings(target)
+        if names:
+            return [str(payload.get("objectType") or "OBJECT") + ":" + _qualified_identifier(names)]
+        return []
     if tag == "GrantStmt":
         # GrantStmt.objects contains typed PostgreSQL nodes (RangeVar,
         # ObjectWithArgs, TypeName, ...). Recursively collecting every string
@@ -833,6 +854,14 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state, expected_definition, reduction_status = _reduce_table_subobject_history(history)
         elif latest["object_class"] == "ACL":
             state, expected_definition, reduction_status = _reduce_acl_history(history)
+        elif latest["object_class"] == "OWNERSHIP":
+            owner = _acl_role_name((_node_tag(latest.get("normalized_ast") or {}))[1].get("newowner"))
+            if owner is None:
+                state, reduction_status = "NOT_VERIFIABLE", "OWNER_ROLE_UNRESOLVED"
+            else:
+                state = "REDUCED_OWNER_STATE"
+                expected_definition = {"Owner": {"role": owner}}
+                reduction_status = "OWNER_ROLE_REDUCED_FROM_AST"
         elif last_operation in {"ALTER", "GRANT_OR_REVOKE", "RENAME", "ALTER_SCHEMA"}:
             state = "EVOLVED_STATE_REQUIRES_SEMANTIC_REDUCER"
         objects.append({
