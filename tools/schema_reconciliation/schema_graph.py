@@ -738,10 +738,8 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
                 current["raw_default"] = definition
             elif subtype == "AT_DropColumnDefault":
                 current["raw_default"] = None
-            elif subtype in {"AT_ColumnNotNull", "AT_SetNotNull"}:
+            elif subtype == "AT_ColumnNotNull":
                 current["is_not_null"] = True
-            elif subtype == "AT_DropNotNull":
-                current["is_not_null"] = False
             elif subtype == "AT_CookedColumnDefault" and definition is not None:
                 current["cooked_default"] = definition
             elif subtype == "AT_ColumnOnUpdate" and definition is not None:
