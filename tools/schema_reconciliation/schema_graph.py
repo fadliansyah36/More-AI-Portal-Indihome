@@ -127,12 +127,28 @@ def _strings(value: Any) -> list[str]:
 
 def _rangevars(value: Any) -> list[str]:
     result: list[str] = []
-    for tag, payload in _walk(value):
-        if tag == "RangeVar" and isinstance(payload, dict):
-            schema = payload.get("schemaname")
-            relation = payload.get("relname")
-            if isinstance(relation, str):
-                result.append(f"{schema}.{relation}" if isinstance(schema, str) and schema else relation)
+
+    def visit(node: Any) -> None:
+        if isinstance(node, list):
+            for item in node:
+                visit(item)
+            return
+        if not isinstance(node, dict):
+            return
+        tag, payload = _node_tag(node)
+        relation_node = payload if tag == "RangeVar" and isinstance(payload, dict) else node if tag is None else None
+        if isinstance(relation_node, dict):
+            schema = relation_node.get("schemaname")
+            relation = relation_node.get("relname")
+            if isinstance(relation, str) and relation:
+                result.append(
+                    f"{schema}.{relation}"
+                    if isinstance(schema, str) and schema else relation
+                )
+        for child in node.values():
+            visit(child)
+
+    visit(value)
     return list(dict.fromkeys(result))
 
 
