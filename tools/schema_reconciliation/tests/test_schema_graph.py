@@ -41,7 +41,7 @@ class SemanticObjectGraphTests(unittest.TestCase):
             },
         )
         self.assertEqual(schema, ["public"])
-        self.assertEqual(function, ["public.lookup_user(public.uuid)"])
+        self.assertEqual(function, ["public.lookup_user(uuid)"])
 
     def test_create_table_emits_stable_column_and_constraint_events(self):
         payload = {
