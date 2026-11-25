@@ -75,9 +75,17 @@ jobs:
           from pathlib import Path
           p = Path("artifacts/expected-object-graph.json")
           if not p.exists():
-              raise SystemExit("AST graph output missing")
+              summary = {"graph_generation_status": "FAILED_BEFORE_GRAPH_OUTPUT"}
+              Path("artifacts/semantic-reconciliation-summary.json").write_text(json.dumps(summary, indent=2) + "\\n")
+              with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as f:
+                  f.write("## PostgreSQL AST reconstruction\\n\\n- **graph_generation_status**: FAILED_BEFORE_GRAPH_OUTPUT\\n")
+              raise SystemExit("AST graph output missing; see the focused parser/reducer step above")
           graph = json.loads(p.read_text())
           summary = {
+              "graph_generation_status": "SUCCEEDED",
+              "execution_provenance_status": graph.get("execution_provenance_status"),
+              "execution_provenance_reason": graph.get("execution_provenance_reason"),
+              "migration_lineage_object_count": sum(1 for item in graph.get("objects", []) if item.get("migration_lineage")),
               "active_migration_file_count": graph["active_migration_file_count"],
               "history_migration_record_count": graph["history_migration_record_count"],
               "history_archive_record_count": graph["history_archive_record_count"],
@@ -112,6 +120,10 @@ jobs:
               summary["reconciled_object_count"] = reconciliation["object_count"]
               summary["classification_counts"] = reconciliation["classification_counts"]
               summary["global_no_drift_claim"] = reconciliation["global_no_drift_claim"]
+              summary["dependency_binding_status_counts"] = dict(sorted(Counter(
+                  (item.get("dependency_evidence") or {}).get("comparison_status", "NOT_REPORTED")
+                  for item in reconciliation.get("objects", [])
+              ).items()))
               rows = reconciliation.get("objects", [])
               missing = [item for item in rows if item.get("classification") == "MISSING"]
               unverified = [item for item in rows if item.get("classification") == "NOT_VERIFIABLE"]
