@@ -504,6 +504,18 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reason, "TRIGGER_ALTER_SUBTYPE_UNSUPPORTED:AT_EnableTrigAll")
 
 
+    def test_trigger_reducer_rejects_alter_for_different_trigger_name(self):
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateTrigStmt": {"trigname": "audit_change"}}},
+            {"operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_DisableTrig", "name": "other_trigger",
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_trigger_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "TRIGGER_ALTER_TARGET_MISMATCH")
+
     def test_acl_reducer_does_not_claim_effective_acl_without_grantor(self):
         grant = {
             "objtype": "OBJECT_TABLE",
