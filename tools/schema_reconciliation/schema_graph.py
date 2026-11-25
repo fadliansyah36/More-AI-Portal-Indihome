@@ -738,6 +738,18 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
                 current["raw_default"] = definition
             elif subtype == "AT_DropColumnDefault":
                 current["raw_default"] = None
+            elif subtype in {"AT_ColumnNotNull", "AT_SetNotNull"}:
+                current["is_not_null"] = True
+            elif subtype == "AT_DropNotNull":
+                current["is_not_null"] = False
+            elif subtype == "AT_CookedColumnDefault" and definition is not None:
+                current["cooked_default"] = definition
+            elif subtype == "AT_ColumnOnUpdate" and definition is not None:
+                current["on_update"] = definition
+            elif subtype in {"AT_SetStatistics", "AT_SetStorage", "AT_SetCompression", "AT_SetOptions", "AT_ResetOptions"}:
+                # Preserve the exact parsed command payload instead of guessing
+                # catalog normalization or coercing PostgreSQL's DefElem values.
+                current.setdefault("column_options", {})[subtype] = definition
             else:
                 return "NOT_VERIFIABLE", None, "ALTER_SUBTYPE_NOT_SUPPORTED_BY_COLUMN_REDUCER:" + subtype
             continue
