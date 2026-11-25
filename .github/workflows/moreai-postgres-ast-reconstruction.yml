@@ -44,6 +44,9 @@ jobs:
       - name: Install pinned PostgreSQL AST parser
         run: python -m pip install --disable-pip-version-check -e ./tools/schema_reconciliation
 
+      - name: Run focused PostgreSQL AST reducer tests
+        run: python -m unittest discover -s tools/schema_reconciliation/tests -v
+
       - name: Parse active migrations and recorded history
         run: |
           mkdir -p artifacts
