@@ -6,15 +6,24 @@ from engine.tools.registry import PolicyEnforcedToolRegistry
 from engine.prompts.manus import SYSTEM_PROMPT
 
 
-def test_upstream_and_moreai_tool_inventory_is_complete_and_default_disabled():
+def test_upstream_and_moreai_tool_inventory_is_complete_and_permission_scoped():
     keys = {tool.key for tool in OPENMANUS_TOOL_CATALOG}
     assert keys == {
-        "bash", "browser_use", "create_chat_completion", "file_saver",
-        "google_search", "knowledge_ingest", "knowledge_search", "planning",
-        "python_execute", "run", "str_replace_editor", "terminate",
-        "workspace_read_file", "workspace_restore_version",
+        "answer_assess", "bash", "browser_use", "calendar_create_event",
+        "calendar_delete_event", "calendar_list_events", "calendar_update_event",
+        "copy_engine_generate", "create_chat_completion", "file_saver",
+        "gmail_search", "gmail_send", "google_search", "image_generate",
+        "knowledge_ingest", "knowledge_search", "learning_path_create",
+        "learning_progress_update", "lesson_generate", "planning",
+        "python_execute", "quiz_generate", "run", "str_replace_editor",
+        "terminate", "video_generate", "workspace_read_file",
+        "workspace_restore_version",
     }
-    assert all(item["enabled_by_default"] is False for item in tool_catalog())
+    catalog = tool_catalog()
+    assert {item["key"] for item in catalog} == keys
+    assert all(isinstance(item["enabled_by_default"], bool) for item in catalog)
+    assert all(isinstance(item["permission_scope"], str) and item["permission_scope"] for item in catalog)
+    assert all(isinstance(item["risk"], str) and item["risk"] for item in catalog)
 
 
 def test_policy_registry_never_exposes_unapproved_tools():
