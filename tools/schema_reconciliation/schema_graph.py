@@ -180,8 +180,29 @@ def _object_names(tag: str, payload: Any) -> list[str]:
     if tag == "DropStmt":
         values = _strings(payload.get("objects"))
         return [".".join(values)] if values else []
-    if tag in {"GrantStmt", "GrantRoleStmt", "AlterDefaultPrivilegesStmt"}:
-        values = _strings(payload.get("objects"))
+    if tag == "GrantStmt":
+        # GrantStmt.objects contains typed PostgreSQL nodes (RangeVar,
+        # ObjectWithArgs, TypeName, ...). Recursively collecting every string
+        # also captures relpersistence ("p") and silently merges distinct
+        # targets into one invalid ACL identity.
+        ranges = _rangevars(payload.get("objects"))
+        if ranges:
+            return ranges
+        targets: list[str] = []
+        for node_tag, node_payload in _walk(payload.get("objects")):
+            if node_tag == "ObjectWithArgs" and isinstance(node_payload, dict):
+                names = _strings(node_payload.get("objname"))
+                if names:
+                    targets.append(_qualified_identifier(names))
+            elif node_tag == "TypeName" and isinstance(node_payload, dict):
+                names = _strings(node_payload.get("names"))
+                if names:
+                    targets.append(_qualified_identifier(names))
+        return list(dict.fromkeys(targets)) or [str(payload.get("objtype") or tag)]
+    if tag in {"GrantRoleStmt", "AlterDefaultPrivilegesStmt"}:
+        # These statements target roles or a default-privilege scope rather
+        # than one concrete relation; retain a conservative explicit scope.
+        values = _strings(payload.get("roles") or payload.get("grantees") or payload.get("schemas"))
         return [".".join(values)] if values else [str(payload.get("objtype") or tag)]
     if tag == "CreateTableAsStmt":
         return _rangevars(payload.get("into") or payload)
@@ -381,36 +402,37 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
         ast_json = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         ast_sha256 = hashlib.sha256(ast_json.encode("utf-8")).hexdigest()
         names = _object_names(tag, payload)
-        target = names[0] if names else None
-        dependencies = _dependency_candidates(payload, target)
+        event_targets = names if tag == "GrantStmt" and names else [names[0] if names else None]
         event_status = "AST_PARSED"
         if not names:
             event_status = "NOT_VERIFIABLE"
-        events.append({
-            "migration_id": migration_id,
-            "source_kind": "ACTIVE_GIT_MIGRATION_FILE",
-            "source_path": relative,
-            "source_sha256": source_sha256,
-            "git_blob_sha1": git_blob_sha1,
-            "statement_ordinal": ordinal,
-            "ast_node_tag": tag,
-            "object_class": object_class,
-            "operation": operation,
-            "object_name": target,
-            "object_names": names,
-            "expected_effect": operation,
-            "normalized_ast_sha256": ast_sha256,
-            "normalized_ast": normalized,
-            "dependency_candidates": dependencies,
-            "dependency_status": "AST_REFERENCE_CANDIDATES_NOT_FULL_SEMANTIC_BINDING",
-            "procedural_body_status": _procedural_body_status(tag, payload),
-            "semantic_status": event_status,
-        })
-        events.extend(_table_subobject_events(
-            tag, payload, migration_id=migration_id, relative=relative,
-            source_sha256=source_sha256, git_blob_sha1=git_blob_sha1,
-            statement_ordinal=ordinal, parent_name=target, operation=operation,
-        ))
+        for target in event_targets:
+            dependencies = _dependency_candidates(payload, target)
+            events.append({
+                "migration_id": migration_id,
+                "source_kind": "ACTIVE_GIT_MIGRATION_FILE",
+                "source_path": relative,
+                "source_sha256": source_sha256,
+                "git_blob_sha1": git_blob_sha1,
+                "statement_ordinal": ordinal,
+                "ast_node_tag": tag,
+                "object_class": object_class,
+                "operation": operation,
+                "object_name": target,
+                "object_names": [target] if target else [],
+                "expected_effect": operation,
+                "normalized_ast_sha256": ast_sha256,
+                "normalized_ast": normalized,
+                "dependency_candidates": dependencies,
+                "dependency_status": "AST_REFERENCE_CANDIDATES_NOT_FULL_SEMANTIC_BINDING",
+                "procedural_body_status": _procedural_body_status(tag, payload),
+                "semantic_status": event_status,
+            })
+            events.extend(_table_subobject_events(
+                tag, payload, migration_id=migration_id, relative=relative,
+                source_sha256=source_sha256, git_blob_sha1=git_blob_sha1,
+                statement_ordinal=ordinal, parent_name=target, operation=operation,
+            ))
 
     source_record = {
         "migration_id": migration_id,
