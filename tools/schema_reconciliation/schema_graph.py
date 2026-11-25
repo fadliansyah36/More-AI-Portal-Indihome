@@ -9,6 +9,7 @@ import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
+from importlib.metadata import version as package_version
 
 from pglast.parser import parse_sql_json
 
@@ -618,7 +619,7 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             source["execution_evidence_status"] = "SOURCE_EXISTENCE_ONLY"
     return {
         "format": "moreai.postgresql.expected-object-graph.v1",
-        "parser": {"name": "pglast", "version": "7.10", "postgresql_grammar": "pglast-bundled-server-parser", "authority": "PostgreSQL parser AST"},
+        "parser": {"name": "pglast", "version": package_version("pglast"), "postgresql_grammar": "pglast-bundled-server-parser", "authority": "PostgreSQL parser AST"},
         "execution_provenance_status": "EXECUTION_PROVENANCE_UNVERIFIABLE",
         "execution_provenance_reason": "Migration history rows and observed catalog are not independent exact-byte deployment receipts.",
         "source_root": str(root), "archive_source_file_count": len(archive_sources),
@@ -637,6 +638,7 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         "ddl_event_count": len(events), "object_key_count": len(objects),
         "archive_ddl_event_count": len(archive_events),
         "sources": sources, "events": events, "historical_archive_events": archive_events, "objects": objects,
+        "parse_failures": parse_failures,
         "limitations": [
             "AST parsing proves grammar recognition, not migration execution.",
             "ALTER event folding into complete final definitions is not inferred; affected objects remain NOT_VERIFIABLE until a supported reducer exists.",
