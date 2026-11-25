@@ -437,7 +437,7 @@ def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relati
     PostgreSQL's AlterTableCmd subtype is the semantic authority for add/drop/
     alter operations. Unsupported subtypes are deliberately not guessed.
     """
-    if tag not in {"CreateStmt", "AlterTableStmt"} or not isinstance(payload, dict) or not parent_name:
+    if tag not in {"CreateStmt", "AlterTableStmt", "CompositeTypeStmt"} or not isinstance(payload, dict) or not parent_name:
         return []
     output: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str]] = set()
@@ -462,6 +462,14 @@ def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relati
             "procedural_body_status": "NOT_APPLICABLE", "semantic_status": status,
         })
 
+    if tag == "CompositeTypeStmt":
+        for child_tag, child_payload in _walk(payload.get("coldeflist")):
+            if child_tag == "ColumnDef" and isinstance(child_payload, dict):
+                name = child_payload.get("colname")
+                if isinstance(name, str) and name:
+                    emit("TYPE_ATTRIBUTE", parent_name + "." + name, "CREATE", child_tag, child_payload)
+        return output
+
     if tag == "CreateStmt":
         for child_tag, child_payload in _walk(payload.get("tableElts")):
             if not isinstance(child_payload, dict):
@@ -477,6 +485,7 @@ def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relati
                 emit("CONSTRAINT", parent_name + "." + name, "CREATE", child_tag, child_payload)
         return output
 
+    attribute_class = "TYPE_ATTRIBUTE" if payload.get("objtype") == "OBJECT_TYPE" else "COLUMN"
     commands = payload.get("cmds") or []
     for command in commands:
         if not isinstance(command, dict) or not isinstance(command.get("AlterTableCmd"), dict):
@@ -492,7 +501,7 @@ def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relati
             if subtype in {"AT_DropColumn", "AT_DropColumnRecurse"}:
                 event_operation = "DROP"
             if isinstance(name, str) and name:
-                emit("COLUMN", parent_name + "." + name, event_operation, def_tag, def_payload)
+                emit(attribute_class, parent_name + "." + name, event_operation, def_tag, def_payload)
             continue
         if def_tag == "Constraint" and isinstance(def_payload, dict):
             name = def_payload.get("conname") or name
@@ -501,7 +510,7 @@ def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relati
                 emit("CONSTRAINT", parent_name + "." + name, event_operation, def_tag, def_payload)
             continue
         if subtype in {"AT_DropColumn", "AT_DropColumnRecurse"} and isinstance(name, str) and name:
-            emit("COLUMN", parent_name + "." + name, "DROP", "AlterTableCmd", cmd)
+            emit(attribute_class, parent_name + "." + name, "DROP", "AlterTableCmd", cmd)
         elif subtype in {"AT_DropConstraint"} and isinstance(name, str) and name:
             emit("CONSTRAINT", parent_name + "." + name, "DROP", "AlterTableCmd", cmd)
         elif subtype in {"AT_ValidateConstraint"} and isinstance(name, str) and name:
@@ -509,7 +518,7 @@ def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relati
             # existing constraint; preserve it as a first-class evolution event.
             emit("CONSTRAINT", parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
         elif subtype in {"AT_AlterColumnType", "AT_ColumnDefault", "AT_CookedColumnDefault", "AT_ColumnOnUpdate", "AT_ColumnNotNull", "AT_DropNotNull", "AT_SetNotNull", "AT_DropColumnDefault", "AT_SetStatistics", "AT_SetStorage", "AT_SetCompression", "AT_SetOptions", "AT_ResetOptions"} and isinstance(name, str) and name:
-            emit("COLUMN", parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
+            emit(attribute_class, parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
         elif subtype in {"AT_EnableTrig", "AT_DisableTrig", "AT_EnableAlwaysTrig", "AT_EnableReplicaTrig"} and isinstance(name, str) and name:
             emit("TRIGGER", parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
         elif subtype in {"AT_RenameColumn", "AT_RenameConstraint"} and isinstance(name, str) and name:
@@ -551,6 +560,8 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
             continue
         tag, payload = classified
         object_class, operation = DDL_TAGS[tag]
+        if tag == "AlterTableStmt" and isinstance(payload, dict) and payload.get("objtype") == "OBJECT_TYPE":
+            object_class = "TYPE"
         if tag == "DropStmt" and isinstance(payload, dict):
             # Match DROP lineage to the same semantic class used by CREATE.
             # Unknown PostgreSQL object kinds remain generic and unverifiable.
@@ -722,7 +733,7 @@ def parse_history_record(record: dict[str, Any], temp_root: Path, hash_manifest:
 def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str, Any | None, str]:
     """Fold only table-subobject changes whose final AST can be reconstructed safely."""
     object_class = history[-1].get("object_class") if history else None
-    if object_class not in {"COLUMN", "CONSTRAINT"}:
+    if object_class not in {"COLUMN", "TYPE_ATTRIBUTE", "CONSTRAINT"}:
         return "NOT_APPLICABLE", None, "NOT_APPLICABLE"
     current: dict[str, Any] | None = None
     saw_create = False
@@ -735,7 +746,7 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
             saw_create = False
             continue
         if operation == "CREATE":
-            if object_class == "COLUMN" and node_tag == "ColumnDef" and isinstance(payload, dict):
+            if object_class in {"COLUMN", "TYPE_ATTRIBUTE"} and node_tag == "ColumnDef" and isinstance(payload, dict):
                 current = json.loads(json.dumps(payload))
                 saw_create = True
                 continue
@@ -746,7 +757,7 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
             return "NOT_VERIFIABLE", None, "CREATE_EVENT_SHAPE_UNSUPPORTED"
         if operation == "RENAME":
             return "NOT_VERIFIABLE", None, "RENAME_REQUIRES_IDENTITY_REBINDING"
-        if operation == "ALTER" and object_class == "COLUMN":
+        if operation == "ALTER" and object_class in {"COLUMN", "TYPE_ATTRIBUTE"}:
             if not saw_create or current is None or node_tag != "AlterTableCmd" or not isinstance(payload, dict):
                 return "NOT_VERIFIABLE", None, "ALTER_WITHOUT_REDUCIBLE_COLUMN_BASE"
             subtype = str(payload.get("subtype") or "")
@@ -824,7 +835,7 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
         return "DROPPED_IN_SOURCE_LINEAGE", None, "TABLE_SUBOBJECT_DROP_REDUCED"
     if not saw_create:
         return "NOT_VERIFIABLE", None, "TABLE_SUBOBJECT_CREATE_NOT_FOUND"
-    return "REDUCED_TABLE_SUBOBJECT_DEFINITION", {("ColumnDef" if object_class == "COLUMN" else "Constraint"): current}, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED"
+    return "REDUCED_TABLE_SUBOBJECT_DEFINITION", {("ColumnDef" if object_class in {"COLUMN", "TYPE_ATTRIBUTE"} else "Constraint"): current}, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED"
 
 
 
