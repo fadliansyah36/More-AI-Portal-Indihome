@@ -1267,6 +1267,7 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         "limitations": [
             "AST parsing proves grammar recognition, not migration execution.",
             "Column and constraint ALTER folding is limited to explicitly supported PostgreSQL AlterTableCmd subtypes; rename and unsupported subtype chains remain NOT_VERIFIABLE.",
+            "Named trigger enablement modes are reduced for CREATE plus ENABLE/DISABLE transitions; trigger renames, DROP identity binding, bulk trigger modes and other trigger DDL remain NOT_VERIFIABLE.",
             "Sequence CREATE/ALTER folding captures explicit scalar options only; PostgreSQL defaults, OWNED BY dependencies and RESTART runtime state remain outside the reducer.",
             "Explicit GRANT/REVOKE and ALL PRIVILEGES are reduced by PostgreSQL object class; implicit grantors remain unresolved unless the AST supplies a grantor.",
             "ALTER OWNER records the latest explicit owner role; ownership execution and catalog parity still require independent observed evidence.",
