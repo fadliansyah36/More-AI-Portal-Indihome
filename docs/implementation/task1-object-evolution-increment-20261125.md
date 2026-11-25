@@ -19,7 +19,7 @@ Starting HEAD: `bdd62195a0997ed2789cff52d15cf55d9b7166ce`
 - `tools/schema_reconciliation/schema_graph.py`
 - `tools/schema_reconciliation/tests/test_dependency_identity_binding.py`
 - `tools/schema_reconciliation/tests/test_schema_graph.py`
-- `components/views/benefit-credit-view.tsx`\n- `tools/schema_reconciliation/schema_graph.py` (sequence reducer and explicit limitations)\n- `tools/schema_reconciliation/tests/test_schema_graph.py` (sequence regression source)
+- `components/views/benefit-credit-view.tsx`\n- `tools/schema_reconciliation/schema_graph.py` (sequence, expanded column and named trigger reducers)\n- `tools/schema_reconciliation/tests/test_schema_graph.py` (sequence, column and trigger regression source)\n- `tools/schema_reconciliation/schema_graph.py` (sequence reducer and explicit limitations)\n- `tools/schema_reconciliation/tests/test_schema_graph.py` (sequence regression source)
 - `docs/implementation/task1-dependency-binding-hardening-20261125.md`
 - `docs/implementation/task1-typed-drop-lineage-20261125.md`
 - `docs/implementation/task1-rls-policy-reducer-20261125.md`
@@ -35,7 +35,7 @@ Starting HEAD: `bdd62195a0997ed2789cff52d15cf55d9b7166ce`
 
 ## Remaining
 
-- Full sequence semantics still require PostgreSQL default resolution, OWNED BY dependency lineage and runtime RESTART handling; composite/range/domain types, function/procedure option evolution, trigger changes and remaining ALTER TABLE subtypes remain outstanding.
+- Full sequence semantics still require PostgreSQL default resolution, OWNED BY dependency lineage and runtime RESTART handling; composite/range/domain types, function/procedure option evolution, trigger rename/drop/bulk-mode evolution and remaining ALTER TABLE subtypes remain outstanding.
 - Complete ACL effective state with grantor/role membership/default ACL/ownership and observed catalog binding.
 - Search-path-aware dependency resolution and exact pg_depend coverage.
 - Fresh full catalog/security/dependency snapshots and independent migration execution receipts.
