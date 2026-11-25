@@ -489,6 +489,8 @@ def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relati
             emit("CONSTRAINT", parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
         elif subtype in {"AT_AlterColumnType", "AT_ColumnDefault", "AT_CookedColumnDefault", "AT_ColumnOnUpdate", "AT_ColumnNotNull", "AT_DropNotNull", "AT_SetNotNull", "AT_DropColumnDefault", "AT_SetStatistics", "AT_SetStorage", "AT_SetCompression", "AT_SetOptions", "AT_ResetOptions"} and isinstance(name, str) and name:
             emit("COLUMN", parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
+        elif subtype in {"AT_EnableTrig", "AT_DisableTrig", "AT_EnableAlwaysTrig", "AT_EnableReplicaTrig"} and isinstance(name, str) and name:
+            emit("TRIGGER", parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
         elif subtype in {"AT_RenameColumn", "AT_RenameConstraint"} and isinstance(name, str) and name:
             # Rename changes identity; preserve it as an explicit unbound event.
             object_class = "COLUMN" if subtype == "AT_RenameColumn" else "CONSTRAINT"
@@ -769,6 +771,45 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
     return "REDUCED_TABLE_SUBOBJECT_DEFINITION", {("ColumnDef" if object_class == "COLUMN" else "Constraint"): current}, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED"
 
 
+
+
+
+
+def _reduce_trigger_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Reduce CREATE TRIGGER plus named ENABLE/DISABLE mode transitions."""
+    current: dict[str, Any] | None = None
+    enabled_mode: str | None = None
+    for event in history:
+        operation = event.get("operation")
+        tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if operation == "CREATE" and tag == "CreateTrigStmt" and isinstance(payload, dict):
+            current = json.loads(json.dumps(payload))
+            # PostgreSQL creates ordinary triggers enabled in origin mode.
+            enabled_mode = "ORIGIN"
+            continue
+        if operation == "ALTER" and tag == "AlterTableCmd" and isinstance(payload, dict):
+            if current is None:
+                return "NOT_VERIFIABLE", None, "TRIGGER_ALTER_WITHOUT_SOURCE_CREATE"
+            subtype = str(payload.get("subtype") or "")
+            if subtype not in {"AT_EnableTrig", "AT_DisableTrig", "AT_EnableAlwaysTrig", "AT_EnableReplicaTrig"}:
+                return "NOT_VERIFIABLE", None, "TRIGGER_ALTER_SUBTYPE_UNSUPPORTED:" + subtype
+            if not isinstance(payload.get("name"), str) or not payload.get("name"):
+                return "NOT_VERIFIABLE", None, "TRIGGER_ALTER_NAME_UNRESOLVED"
+            enabled_mode = {
+                "AT_EnableTrig": "ORIGIN",
+                "AT_DisableTrig": "DISABLED",
+                "AT_EnableAlwaysTrig": "ALWAYS",
+                "AT_EnableReplicaTrig": "REPLICA",
+            }[subtype]
+            continue
+        return "NOT_VERIFIABLE", None, "TRIGGER_EVENT_SHAPE_UNSUPPORTED"
+    if current is None:
+        return "NOT_VERIFIABLE", None, "TRIGGER_CREATE_NOT_FOUND"
+    return (
+        "REDUCED_TRIGGER_STATE",
+        {"Trigger": {"definition_ast": {"CreateTrigStmt": current}, "enabled_mode": enabled_mode}},
+        "TRIGGER_CREATE_ALTER_ENABLEMENT_REDUCED",
+    )
 
 
 
@@ -1148,6 +1189,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state, expected_definition, reduction_status = _reduce_policy_history(history)
         elif latest["object_class"] == "SEQUENCE" and any(item.get("operation") == "ALTER" for item in history):
             state, expected_definition, reduction_status = _reduce_sequence_history(history)
+        elif latest["object_class"] == "TRIGGER" and any(item.get("operation") == "ALTER" for item in history):
+            state, expected_definition, reduction_status = _reduce_trigger_history(history)
         elif latest["object_class"] == "TYPE" and all(
             _node_tag(item.get("normalized_ast") or {})[0] in {"CreateEnumStmt", "AlterEnumStmt"}
             for item in history
