@@ -63,3 +63,11 @@ Source integration is committed. Database activation is intentionally not perfor
 ## Database and deployment boundary
 
 No Supabase write, migration apply, staging, runtime test or deployment was performed. No database activation is claimed. Existing Agent Studio UI was not redesigned.
+
+
+## Create Studio handoff integration
+
+- Added a Copy Engine entry to the existing Create Studio text category without changing the page layout or design system.
+- The entry hands off to the existing Chat → FastAPI → durable Agent Run → OpenManus tool loop and explicitly requests the registered `copy_engine_generate` tool.
+- The prompt advertises all nine supported operation modes and preserves the adapter's factual-claim and text-overlay limitations.
+- This is an entrypoint integration through the existing typed Chat/Agent Run API, not a separate Copy Engine endpoint or runtime. Actual execution remains subject to saved-agent tool selection, provider readiness, entitlements, quota and the runtime policy.
