@@ -919,5 +919,87 @@ class SemanticObjectGraphTests(unittest.TestCase):
 
 
 
+    def test_domain_identity_uses_domainname_not_base_type(self):
+        create = {
+            "domainname": [{"String": {"sval": "email_address"}}],
+            "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}},
+        }
+        alter = {"typeName": [{"String": {"sval": "email_address"}}]}
+        self.assertEqual(schema_graph._object_names("CreateDomainStmt", create), ["public.email_address"])
+        self.assertEqual(schema_graph._object_names("AlterDomainStmt", alter), ["public.email_address"])
+
+    def test_domain_reducer_folds_validation_not_null_and_default(self):
+        create = {"CreateDomainStmt": {
+            "domainname": [{"String": {"sval": "email_address"}}],
+            "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}},
+            "constraints": [{"Constraint": {
+                "conname": "email_address_check",
+                "contype": "CONSTR_CHECK",
+                "skip_validation": True,
+            }}],
+        }}
+        def alter(subtype, definition=None):
+            return {"AlterDomainStmt": {
+                "typeName": [{"String": {"sval": "email_address"}}],
+                "subtype": subtype,
+                "def": definition,
+            }}
+        history = [
+            {"operation": "CREATE", "normalized_ast": create},
+            {"operation": "ALTER", "normalized_ast": alter("T_ValidateConstraint", {"String": {"sval": "email_address_check"}})},
+            {"operation": "ALTER", "normalized_ast": alter("T_SetNotNull")},
+            {"operation": "ALTER", "normalized_ast": alter("T_SetDefault", {"A_Const": {"val": {"String": {"sval": "unknown@example.test"}}}})},
+        ]
+        status, definition, reason = schema_graph._reduce_domain_history(history)
+        self.assertEqual(status, "REDUCED_DOMAIN_EXPLICIT_STATE_PARTIAL")
+        self.assertEqual(reason, "DOMAIN_CREATE_ALTER_EXPLICIT_STATE_REDUCED")
+        constraint = definition["CreateDomainStmt"]["constraints"][0]["Constraint"]
+        self.assertFalse(constraint["skip_validation"])
+        self.assertTrue(definition["CreateDomainStmt"]["domain_not_null"])
+        self.assertIsNotNone(definition["CreateDomainStmt"]["domain_default"])
+
+    def test_domain_reducer_adds_and_drops_named_constraints(self):
+        create = {"CreateDomainStmt": {
+            "domainname": [{"String": {"sval": "positive_int"}}],
+            "typeName": {"TypeName": {"names": [{"String": {"sval": "integer"}}]}},
+            "constraints": [],
+        }}
+        alter_add = {"AlterDomainStmt": {
+            "typeName": [{"String": {"sval": "positive_int"}}],
+            "subtype": "T_AddConstraint",
+            "def": {"Constraint": {"conname": "positive_int_check", "contype": "CONSTR_CHECK"}},
+        }}
+        alter_drop = {"AlterDomainStmt": {
+            "typeName": [{"String": {"sval": "positive_int"}}],
+            "subtype": "T_DropConstraint",
+            "def": {"String": {"sval": "positive_int_check"}},
+        }}
+        status, definition, _ = schema_graph._reduce_domain_history([
+            {"operation": "CREATE", "normalized_ast": create},
+            {"operation": "ALTER", "normalized_ast": alter_add},
+            {"operation": "ALTER", "normalized_ast": alter_drop},
+        ])
+        self.assertEqual(status, "REDUCED_DOMAIN_EXPLICIT_STATE_PARTIAL")
+        self.assertEqual(definition["CreateDomainStmt"]["constraints"], [])
+
+    def test_domain_reducer_rejects_alter_for_different_domain(self):
+        create = {"CreateDomainStmt": {
+            "domainname": [{"String": {"sval": "first_domain"}}],
+            "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}},
+            "constraints": [],
+        }}
+        alter = {"AlterDomainStmt": {
+            "typeName": [{"String": {"sval": "other_domain"}}],
+            "subtype": "T_SetNotNull",
+        }}
+        status, definition, reason = schema_graph._reduce_domain_history([
+            {"operation": "CREATE", "normalized_ast": create},
+            {"operation": "ALTER", "normalized_ast": alter},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "DOMAIN_ALTER_TARGET_MISMATCH")
+
+
 if __name__ == "__main__":
     unittest.main()
