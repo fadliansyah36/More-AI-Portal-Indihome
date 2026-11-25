@@ -547,5 +547,63 @@ class SemanticObjectGraphTests(unittest.TestCase):
         }])
 
 
+    def test_role_membership_identity_pairs_each_member_with_granted_role(self):
+        payload = {
+            "granted_roles": [
+                {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "analyst"}},
+                {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "report_reader"}},
+            ],
+            "grantee_roles": [
+                {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "alice"}},
+                {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "bob"}},
+            ],
+        }
+        self.assertEqual(
+            schema_graph._object_names("GrantRoleStmt", payload),
+            [
+                "member:alice->role:analyst",
+                "member:alice->role:report_reader",
+                "member:bob->role:analyst",
+                "member:bob->role:report_reader",
+            ],
+        )
+
+    def test_role_membership_reducer_folds_explicit_grant_and_revoke(self):
+        role = {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "analyst"}}
+        member = {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "alice"}}
+        grantor = {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "security_admin"}}
+        grant = {
+            "granted_roles": [role], "grantee_roles": [member], "grantor": grantor,
+            "is_grant": True, "admin_opt": True, "inherit_opt": True,
+            "set_opt": True, "behavior": "DROP_RESTRICT",
+        }
+        revoke = {**grant, "is_grant": False, "admin_opt": False}
+        status, definition, reason = schema_graph._reduce_role_membership_history([
+            {"normalized_ast": {"GrantRoleStmt": grant}},
+            {"normalized_ast": {"GrantRoleStmt": revoke}},
+        ])
+        self.assertEqual(status, "REDUCED_EXPLICIT_ROLE_MEMBERSHIP")
+        self.assertEqual(reason, "ROLE_MEMBERSHIP_EXPLICIT_GRANT_REVOKE_REDUCED")
+        self.assertEqual(definition["RoleMembership"]["memberships"], [{
+            "member": "alice", "role": "analyst", "grantor": "security_admin",
+            "admin_option": False, "inherit_option": True, "set_option": True,
+        }])
+
+    def test_role_membership_reducer_fails_closed_when_role_options_are_implicit(self):
+        payload = {
+            "granted_roles": [{"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "analyst"}}],
+            "grantee_roles": [{"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "alice"}}],
+            "grantor": {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "security_admin"}},
+            "is_grant": True, "admin_opt": False, "inherit_opt": None, "set_opt": None,
+        }
+        status, definition, reason = schema_graph._reduce_role_membership_history([
+            {"normalized_ast": {"GrantRoleStmt": payload}},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "ROLE_MEMBERSHIP_OPTIONS_REQUIRE_ROLE_CATALOG")
+
+
+
 if __name__ == "__main__":
     unittest.main()
