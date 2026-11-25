@@ -415,6 +415,37 @@ class SemanticObjectGraphTests(unittest.TestCase):
         labels = [item["String"]["sval"] for item in definition["CreateEnumStmt"]["vals"]]
         self.assertEqual(labels, ["queued", "blocked", "running", "paused", "completed"])
 
+    def test_enum_reducer_rejects_alter_for_different_type_identity(self):
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateEnumStmt": {
+                "typeName": [{"String": {"sval": "public"}}, {"String": {"sval": "job_state"}}],
+                "vals": [{"String": {"sval": "queued"}}],
+            }}},
+            {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "typeName": [{"String": {"sval": "public"}}, {"String": {"sval": "other_state"}}],
+                "newVal": {"String": {"sval": "blocked"}},
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_enum_type_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "ENUM_ALTER_TARGET_MISMATCH")
+
+    def test_enum_reducer_fails_closed_when_alter_type_identity_is_missing(self):
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateEnumStmt": {
+                "typeName": [{"String": {"sval": "public"}}, {"String": {"sval": "job_state"}}],
+                "vals": [{"String": {"sval": "queued"}}],
+            }}},
+            {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "newVal": {"String": {"sval": "blocked"}},
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_enum_type_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "ENUM_ALTER_TYPE_IDENTITY_UNRESOLVED")
+
     def test_enum_reducer_fails_closed_when_add_value_neighbor_is_unknown(self):
         history = [
             {"operation": "CREATE", "normalized_ast": {"CreateEnumStmt": {
