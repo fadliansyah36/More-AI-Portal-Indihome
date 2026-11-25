@@ -31,6 +31,9 @@ class FakeHttp:
             return FakeResponse(payload={"public": False})
         return FakeResponse(content=self.raw)
 
+    async def post(self, url, **kwargs):
+        return FakeResponse()
+
 
 class FakeWorkspaceClient:
     def __init__(self, raw, metadata):
@@ -119,7 +122,10 @@ class FakeLifecycleClient(FakeWorkspaceClient):
         self.lifecycle_calls.append(("delete", path, expected_version))
         return {"path": path, "version": expected_version, "deleted": True}
 
-    async def workspace_restore_deleted_file(self, run_id, user_id, workspace_id, path, expected_version):
+    async def workspace_restore_deleted_file(
+        self, run_id, user_id, workspace_id, path, expected_version,
+        storage_path, sha256, size_bytes, bucket,
+    ):
         self.lifecycle_calls.append(("restore_deleted", path, expected_version))
         return {"path": path, "version": expected_version + 1, "restored": True}
 
@@ -177,7 +183,9 @@ def test_workspace_restore_deleted_requires_deleted_state_and_expected_version()
     client = FakeLifecycleClient({
         "src/deleted.py": {
             "version": 5,
-            "storage_path": "user/workspaces/ws/versions/5/src/deleted.py",
+            "storage_path": "user-1/workspaces/workspace-1/versions/5/src/deleted.py",
+            "sha256": hashlib.sha256(b"").hexdigest(),
+            "size_bytes": 0,
             "deleted_at": "2026-11-12T07:00:00Z",
         },
     })
