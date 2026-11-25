@@ -328,6 +328,10 @@ def _table_subobject_events(tag: str, payload: Any, *, migration_id: str, relati
             emit("COLUMN", parent_name + "." + name, "DROP", "AlterTableCmd", cmd)
         elif subtype in {"AT_DropConstraint"} and isinstance(name, str) and name:
             emit("CONSTRAINT", parent_name + "." + name, "DROP", "AlterTableCmd", cmd)
+        elif subtype in {"AT_ValidateConstraint"} and isinstance(name, str) and name:
+            # VALIDATE CONSTRAINT changes the persisted validation state of an
+            # existing constraint; preserve it as a first-class evolution event.
+            emit("CONSTRAINT", parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
         elif subtype in {"AT_AlterColumnType", "AT_ColumnDefault", "AT_CookedColumnDefault", "AT_ColumnOnUpdate", "AT_ColumnNotNull", "AT_DropNotNull", "AT_SetNotNull", "AT_DropColumnDefault", "AT_SetStatistics", "AT_SetStorage", "AT_SetCompression", "AT_SetOptions", "AT_ResetOptions"} and isinstance(name, str) and name:
             emit("COLUMN", parent_name + "." + name, "ALTER", "AlterTableCmd", cmd)
         elif subtype in {"AT_RenameColumn", "AT_RenameConstraint"} and isinstance(name, str) and name:
@@ -578,7 +582,15 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
                 return "NOT_VERIFIABLE", None, "ALTER_SUBTYPE_NOT_SUPPORTED_BY_COLUMN_REDUCER:" + subtype
             continue
         if operation == "ALTER" and object_class == "CONSTRAINT":
-            return "NOT_VERIFIABLE", None, "CONSTRAINT_ALTER_REQUIRES_VALIDATION_STATE_REDUCER"
+            if not saw_create or current is None or node_tag != "AlterTableCmd" or not isinstance(payload, dict):
+                return "NOT_VERIFIABLE", None, "ALTER_WITHOUT_REDUCIBLE_CONSTRAINT_BASE"
+            subtype = str(payload.get("subtype") or "")
+            if subtype == "AT_ValidateConstraint":
+                # PostgreSQL's Constraint AST records NOT VALID as
+                # skip_validation=true. VALIDATE CONSTRAINT clears that bit.
+                current["skip_validation"] = False
+                continue
+            return "NOT_VERIFIABLE", None, "UNSUPPORTED_CONSTRAINT_ALTER_SUBTYPE:" + subtype
         return "NOT_VERIFIABLE", None, "EVENT_OPERATION_NOT_SUPPORTED"
     if current is None:
         return "DROPPED_IN_SOURCE_LINEAGE", None, "TABLE_SUBOBJECT_DROP_REDUCED"
