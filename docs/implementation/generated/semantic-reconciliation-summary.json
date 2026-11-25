@@ -8,26 +8,32 @@
   "history_archive_statement_hash_variant_count": 0,
   "history_archive_statement_hash_not_verifiable_count": 0,
   "archive_source_file_count": 8,
-  "archive_ddl_event_count": 117,
+  "archive_ddl_event_count": 187,
   "history_statement_source_count": 150,
   "source_record_count": 279,
   "parsed_source_record_count": 275,
   "parse_failure_count": 4,
   "statement_count": 2404,
-  "ddl_event_count": 1735,
-  "object_key_count": 670,
+  "ddl_event_count": 3841,
+  "object_key_count": 2544,
   "expected_object_class_counts": {
     "ACL": 163,
+    "COLUMN": 954,
     "COMMENT": 10,
+    "CONSTRAINT": 1018,
     "EXTENSION": 1,
     "FUNCTION": 105,
     "INDEX": 97,
     "OBJECT": 46,
     "RLS_POLICY": 42,
     "SCHEMA": 1,
-    "TABLE": 195,
+    "TABLE": 97,
     "TRIGGER": 9,
     "VIEW": 1
+  },
+  "semantic_reduction_status_counts": {
+    "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING": 157,
+    "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED": 6
   },
   "parse_failure_samples": [
     {
@@ -94,730 +100,306 @@
       "execution_evidence_status": "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT"
     }
   ],
-  "reconciled_object_count": 8461,
+  "reconciled_object_count": 9204,
   "classification_counts": {
     "DEFINITION_MISMATCH": 0,
     "DEPENDENCY_MISMATCH": 0,
-    "MATCH": 41,
-    "MISSING": 320,
-    "NOT_VERIFIABLE": 8100,
+    "MATCH": 42,
+    "MISSING": 40,
+    "NOT_VERIFIABLE": 9122,
     "SECURITY_MISMATCH": 0,
     "UNEXPECTED": 0
   },
   "global_no_drift_claim": false,
   "missing_object_class_counts": {
-    "INDEX": 92,
-    "RLS_POLICY": 40,
-    "TABLE": 181,
-    "TRIGGER": 6,
-    "VIEW": 1
+    "RLS_POLICY": 40
   },
   "not_verifiable_reason_counts": {
-    "Expected and observed definitions use different AST roots; object-specific normalization is required.": 2,
-    "No source object is mapped, but expected-source coverage is incomplete; platform or historical origin cannot be excluded.": 7791,
-    "Object is present on both sides, but one or both sides lack a complete normalized definition/security/dependency fingerprint.": 8,
+    "Expected and observed definitions use different AST roots; object-specific normalization is required.": 1090,
+    "No source object is mapped, but expected-source coverage is incomplete; platform or historical origin cannot be excluded.": 6660,
+    "Object is present on both sides, but one or both sides lack a complete normalized definition/security/dependency fingerprint.": 51,
     "The DROP source event is not proven applied; live presence or absence is not classified as drift.": 5,
-    "The latest source event is not proven applied; absence is not classified as live drift.": 27,
-    "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance.": 267
+    "The latest source event is not proven applied; absence is not classified as live drift.": 57,
+    "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance.": 1259
   },
   "missing_samples": [
     {
-      "object_key": "INDEX:agent_events_run_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
+      "object_key": "RLS_POLICY:admin_mutation_requests_server_only",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261111083342",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:agent_run_approval_pauses_pending_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:agent_run_approval_pauses_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261111122750",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:agent_runs_lease_expiry_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102082504",
+      "object_key": "RLS_POLICY:agent_run_event_counters_server_only",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261111091531",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:agent_runs_tenant_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
+      "object_key": "RLS_POLICY:agent_workspace_execution_commits_server_only",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261113002624",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:agent_runs_worker_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:agent_tool_approvals_one_pending_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261111061443",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:agent_tool_approvals_run_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261111061443",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:agent_tool_approvals_user_status_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261111061443",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:agent_workspace_file_versions_owner_path_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:agent_workspace_file_versions_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261113002544",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:agent_workspace_files_active_workspace_updated_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261112073357",
+      "object_key": "RLS_POLICY:agent_workspace_files_server_only",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261111140255",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:artifacts_owner_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:campaign_partner_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:conversation_message_attachments_conversation_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:conversation_message_attachments_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261113003132",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:conversation_message_attachments_run_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261113003132",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:conversations_user_updated_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:credit_ledger_wallet_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:customer_learning_progress_user_completed_id_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261113134251",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:customer_learning_progress_user_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:customer_learning_progress_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261113002555",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:customer_learning_progress_user_module_completed_id_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261113134251",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:customer_workspace_upload_idempotency_workspace_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:customer_workspace_upload_idempotency_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261113002613",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:entitlements_user_status_expiry_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:knowledge_chunks_embedding_ivfflat_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:knowledge_chunks_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261113002601",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:knowledge_chunks_owner_workspace_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:knowledge_documents_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261113002601",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:knowledge_documents_ingestion_claim_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261113002607",
+      "object_key": "RLS_POLICY:llm_request_records_server_only",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261102084950",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:knowledge_documents_owner_scope_digest_uidx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261113002601",
+      "object_key": "RLS_POLICY:moreai_artifacts_storage_server_only",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261116083506",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:knowledge_documents_owner_workspace_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261113002601",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_assessments_run_quiz_unique",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065844",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_assessments_user_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065521",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_enrollments_user_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065521",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_lessons_module_order_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065521",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_modules_path_order_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065521",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_paths_created_run_unique",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065844",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_paths_owner_updated_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065521",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_progress_user_updated_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065521",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_quiz_attempts_user_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065521",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_quizzes_lesson_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065521",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_quizzes_source_run_lesson_unique",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065844",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:learning_run_artifacts_user_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114065521",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:llm_request_reconcile_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102084310",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:llm_usage_run_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:llm_usage_user_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:messages_conversation_created_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_browser_action_receipts_result_expiry_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261115100615",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_browser_action_receipts_session_requested_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261115095114",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_browser_action_receipts_user_requested_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261115095114",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_browser_capacity_leases_active_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261116083856",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_browser_session_events_owner_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261115084424",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_browser_sessions_owner_active_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261115084424",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_browser_sessions_profile_retention_claim_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261116083510",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_browser_sessions_profile_retention_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261116083458",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_computer_action_receipts_result_expiry_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261115101318",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_computer_action_receipts_user_requested_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261115101318",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_connection_actions_connection_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_connection_actions_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261115084417",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:moreai_connection_audit_owner_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_connection_audit_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261115084413",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:moreai_connections_owner_provider_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_connections_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261115084413",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:moreai_customer_agent_configs_owner_name_uq",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114034343",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_customer_agent_configs_owner_updated_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261114034343",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_customer_agent_configs_preferred_model_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261115084819",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_customer_memories_owner_expiry_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_customer_memories_owner_all",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261114033138",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:moreai_oauth_states_expiry_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_customer_memory_preferences_owner_all",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261114033138",
+      "latest_operation": "CREATE",
+      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
+    },
+    {
+      "object_key": "RLS_POLICY:moreai_deny_client_browser_capacity_leases",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261116083856",
+      "latest_operation": "CREATE",
+      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
+    },
+    {
+      "object_key": "RLS_POLICY:moreai_knowledge_storage_server_only",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261113002607",
+      "latest_operation": "CREATE",
+      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
+    },
+    {
+      "object_key": "RLS_POLICY:moreai_oauth_states_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261115084413",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:moreai_skill_execution_audit_run_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_skill_execution_audit_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261115084355",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:moreai_skill_installs_owner_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_skill_installs_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261115084346",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:moreai_skill_packages_owner_updated_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_skill_packages_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261115084346",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:moreai_skill_packages_public_catalog_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261115084346",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:moreai_skill_registry_audit_package_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_skill_registry_audit_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261115084405",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:moreai_skill_source_files_owner_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:moreai_skill_source_files_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261115084355",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:network_gateway_nonces_expiry_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261103100442",
+      "object_key": "RLS_POLICY:network_sessions_read_own",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261102074504",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:network_sessions_user_status_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102073850",
+      "object_key": "RLS_POLICY:network_verification_attempts_read_own",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261102074504",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:network_verification_configs_one_enabled_per_network",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261103100442",
+      "object_key": "RLS_POLICY:network_verification_sessions_read_own",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261102074504",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:notifications_unread_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:notification_preferences_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261111083146",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:notifications_user_created_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:notifications_server_only",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261111083146",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:notifications_user_dedupe_uidx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261111083146",
+      "object_key": "RLS_POLICY:partner_locations_read_member",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261102074504",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:outbox_dispatch_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:outbox_events_run_event_key_uq",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261111091531",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:outbox_events_run_sequence_uq",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261111091531",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:outbox_events_worker_lease_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261111091531",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:partner_access_code_redemptions_code_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261105095527",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:partner_access_codes_active_expiry_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261105095527",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:partner_access_codes_partner_created_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261105095527",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:partner_locations_partner_status_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:partner_members_read_self",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261102073850",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:partner_members_user_status_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:partner_networks_read_member",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261102074504",
+      "latest_operation": "CREATE",
+      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
+    },
+    {
+      "object_key": "RLS_POLICY:partner_organizations_read_member",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261102074504",
+      "latest_operation": "CREATE",
+      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
+    },
+    {
+      "object_key": "RLS_POLICY:profiles_read_own",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261102073850",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:partner_networks_active_verification_method_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261103100442",
+      "object_key": "RLS_POLICY:profiles_update_own",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261112084047",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:partner_networks_partner_status_idx",
-      "object_class": "INDEX",
+      "object_key": "RLS_POLICY:user_entitlements_read_own",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261102074504",
+      "latest_operation": "CREATE",
+      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
+    },
+    {
+      "object_key": "RLS_POLICY:workspace_members_read_self",
+      "object_class": "RLS_POLICY",
       "latest_migration_id": "20261102073850",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     },
     {
-      "object_key": "INDEX:quota_usage_lookup_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:reservations_due_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:reward_claims_user_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:tool_executions_run_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102075825",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:user_role_assignments_scope_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:verification_attempts_user_created_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:workspace_members_customer_active_user_workspace_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261113133346",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:workspace_members_user_status_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "INDEX:workspaces_customer_owner_active_updated_idx",
-      "object_class": "INDEX",
-      "latest_migration_id": "20261113133346",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "NOT_VERIFIABLE:20261102073850:1",
-      "object_class": "TABLE",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "NOT_VERIFIABLE:20261102073850:10",
-      "object_class": "TABLE",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "NOT_VERIFIABLE:20261102073850:11",
-      "object_class": "TABLE",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "NOT_VERIFIABLE:20261102073850:12",
-      "object_class": "TABLE",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "NOT_VERIFIABLE:20261102073850:13",
-      "object_class": "TABLE",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "NOT_VERIFIABLE:20261102073850:14",
-      "object_class": "TABLE",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "ALTER",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "NOT_VERIFIABLE:20261102073850:15",
-      "object_class": "TABLE",
-      "latest_migration_id": "20261102073850",
-      "latest_operation": "CREATE",
-      "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
-    },
-    {
-      "object_key": "NOT_VERIFIABLE:20261102073850:16",
-      "object_class": "TABLE",
-      "latest_migration_id": "20261102073850",
+      "object_key": "RLS_POLICY:workspaces_read_member",
+      "object_class": "RLS_POLICY",
+      "latest_migration_id": "20261102074028",
       "latest_operation": "CREATE",
       "reason": "Source lineage is recorded as applied but the object key is absent from the observed catalog."
     }
