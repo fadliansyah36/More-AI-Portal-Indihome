@@ -183,6 +183,23 @@ DROP_OBJECT_CLASS = {
 }
 
 
+
+def _object_with_args_identity(payload: dict[str, Any]) -> str | None:
+    names = _strings(payload.get("objname"))
+    if not names:
+        return None
+    argument_types: list[str] = []
+    for arg_tag, arg_payload in _walk(payload.get("objargs") or []):
+        if arg_tag == "TypeName" and isinstance(arg_payload, dict):
+            type_names = _strings(arg_payload.get("names"))
+            if type_names:
+                argument_types.append(".".join(type_names))
+    # Function/procedure DROP and GRANT syntax always carries a signature.
+    # An empty argument list is the exact zero-argument signature, not an
+    # unknown signature.
+    return _qualified_identifier(names) + "(" + ", ".join(argument_types) + ")"
+
+
 def _drop_object_names(payload: dict[str, Any]) -> list[str]:
     """Return one stable identity per DROP target; never flatten a target list.
 
@@ -198,17 +215,9 @@ def _drop_object_names(payload: dict[str, Any]) -> list[str]:
     for item in objects:
         node_tag, node_payload = _node_tag(item)
         if node_tag == "ObjectWithArgs" and isinstance(node_payload, dict):
-            names = _strings(node_payload.get("objname"))
-            if not names:
-                continue
-            argument_types: list[str] = []
-            for arg_tag, arg_payload in _walk(node_payload.get("objargs")):
-                if arg_tag == "TypeName" and isinstance(arg_payload, dict):
-                    type_names = _strings(arg_payload.get("names"))
-                    if type_names:
-                        argument_types.append(".".join(type_names))
-            signature = "(" + ", ".join(argument_types) + ")" if argument_types else "(signature-not-verifiable)"
-            identities.append(_qualified_identifier(names) + signature)
+            identity = _object_with_args_identity(node_payload)
+            if identity:
+                identities.append(identity)
             continue
         if node_tag == "TypeName" and isinstance(node_payload, dict):
             names = _strings(node_payload.get("names"))
@@ -267,16 +276,9 @@ def _object_names(tag: str, payload: Any) -> list[str]:
             return [str(payload.get("objectType") or "OBJECT") + ":" + item for item in ranges]
         for node_tag, node_payload in _walk(target):
             if node_tag == "ObjectWithArgs" and isinstance(node_payload, dict):
-                names = _strings(node_payload.get("objname"))
-                if names:
-                    signature = []
-                    for arg_tag, arg_payload in _walk(node_payload.get("objargs")):
-                        if arg_tag == "TypeName" and isinstance(arg_payload, dict):
-                            types = _strings(arg_payload.get("names"))
-                            if types:
-                                signature.append(_qualified_identifier(types))
-                    suffix = "(" + ", ".join(signature) + ")" if signature else "(signature-not-verifiable)"
-                    return [str(payload.get("objectType") or "OBJECT") + ":" + _qualified_identifier(names) + suffix]
+                identity = _object_with_args_identity(node_payload)
+                if identity:
+                    return [str(payload.get("objectType") or "OBJECT") + ":" + identity]
         names = _strings(target)
         if names:
             return [str(payload.get("objectType") or "OBJECT") + ":" + _qualified_identifier(names)]
@@ -292,17 +294,8 @@ def _object_names(tag: str, payload: Any) -> list[str]:
         targets: list[str] = []
         for node_tag, node_payload in _walk(payload.get("objects")):
             if node_tag == "ObjectWithArgs" and isinstance(node_payload, dict):
-                names = _strings(node_payload.get("objname"))
-                if names:
-                    identity = _qualified_identifier(names)
-                    argument_types: list[str] = []
-                    for arg_tag, arg_payload in _walk(node_payload.get("objargs")):
-                        if arg_tag == "TypeName" and isinstance(arg_payload, dict):
-                            type_names = _strings(arg_payload.get("names"))
-                            if type_names:
-                                argument_types.append(".".join(type_names))
-                    if argument_types:
-                        identity += "(" + ", ".join(argument_types) + ")"
+                identity = _object_with_args_identity(node_payload)
+                if identity:
                     targets.append(identity)
             elif node_tag == "TypeName" and object_type not in {"OBJECT_FUNCTION", "OBJECT_PROCEDURE"} and isinstance(node_payload, dict):
                 names = _strings(node_payload.get("names"))
