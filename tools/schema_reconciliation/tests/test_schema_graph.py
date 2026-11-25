@@ -382,5 +382,52 @@ class SemanticObjectGraphTests(unittest.TestCase):
         )
 
 
+    def test_sequence_reducer_folds_explicit_create_and_alter_options(self):
+        create = {
+            "sequence": {"RangeVar": {"schemaname": "public", "relname": "invoice_seq"}},
+            "options": [
+                {"DefElem": {"defname": "increment", "arg": {"A_Const": {"val": {"Integer": {"ival": 1}}}}}},
+                {"DefElem": {"defname": "cache", "arg": {"A_Const": {"val": {"Integer": {"ival": 1}}}}}},
+            ],
+        }
+        alter = {
+            "sequence": {"RangeVar": {"schemaname": "public", "relname": "invoice_seq"}},
+            "options": [
+                {"DefElem": {"defname": "increment", "arg": {"A_Const": {"val": {"Integer": {"ival": 5}}}}}},
+                {"DefElem": {"defname": "cycle", "arg": {"A_Const": {"val": {"Boolean": {"boolval": True}}}}}},
+            ],
+        }
+        status, definition, reason = schema_graph._reduce_sequence_history([
+            {"operation": "CREATE", "normalized_ast": {"CreateSeqStmt": create}},
+            {"operation": "ALTER", "normalized_ast": {"AlterSeqStmt": alter}},
+        ])
+        self.assertEqual(status, "REDUCED_SEQUENCE_EXPLICIT_OPTIONS_PARTIAL")
+        self.assertEqual(reason, "SEQUENCE_CREATE_ALTER_EXPLICIT_OPTIONS_REDUCED")
+        self.assertEqual(definition["SequenceOptions"]["explicit"], {
+            "increment": 5, "cache": 1, "cycle": True,
+        })
+        self.assertEqual(definition["SequenceOptions"]["runtime_state"], "NOT_INCLUDED")
+
+    def test_sequence_reducer_fails_closed_for_restart_runtime_state(self):
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateSeqStmt": {"options": []}}},
+            {"operation": "ALTER", "normalized_ast": {"AlterSeqStmt": {
+                "options": [{"DefElem": {"defname": "restart", "arg": {"A_Const": {"val": {"Integer": {"ival": 20}}}}}}],
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_sequence_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "SEQUENCE_OPTION_UNSUPPORTED:restart")
+
+    def test_sequence_reducer_requires_source_create(self):
+        status, definition, reason = schema_graph._reduce_sequence_history([
+            {"operation": "ALTER", "normalized_ast": {"AlterSeqStmt": {"options": []}}},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "SEQUENCE_ALTER_WITHOUT_SOURCE_CREATE")
+
+
 if __name__ == "__main__":
     unittest.main()
