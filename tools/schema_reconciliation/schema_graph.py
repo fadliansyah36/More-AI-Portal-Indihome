@@ -204,17 +204,30 @@ def _object_names(tag: str, payload: Any) -> list[str]:
         ranges = _rangevars(payload.get("objects"))
         if ranges:
             return ranges
+        object_type = str(payload.get("objtype") or "")
+        if object_type == "OBJECT_SCHEMA":
+            schema_names = _strings(payload.get("objects"))
+            return list(dict.fromkeys(schema_names)) or [object_type]
         targets: list[str] = []
         for node_tag, node_payload in _walk(payload.get("objects")):
             if node_tag == "ObjectWithArgs" and isinstance(node_payload, dict):
                 names = _strings(node_payload.get("objname"))
                 if names:
-                    targets.append(_qualified_identifier(names))
+                    identity = _qualified_identifier(names)
+                    argument_types: list[str] = []
+                    for arg_tag, arg_payload in _walk(node_payload.get("objargs")):
+                        if arg_tag == "TypeName" and isinstance(arg_payload, dict):
+                            type_names = _strings(arg_payload.get("names"))
+                            if type_names:
+                                argument_types.append(_qualified_identifier(type_names))
+                    if argument_types:
+                        identity += "(" + ",".join(argument_types) + ")"
+                    targets.append(identity)
             elif node_tag == "TypeName" and isinstance(node_payload, dict):
                 names = _strings(node_payload.get("names"))
                 if names:
                     targets.append(_qualified_identifier(names))
-        return list(dict.fromkeys(targets)) or [str(payload.get("objtype") or tag)]
+        return list(dict.fromkeys(targets)) or [object_type or tag]
     if tag in {"GrantRoleStmt", "AlterDefaultPrivilegesStmt"}:
         # These statements target roles or a default-privilege scope rather
         # than one concrete relation; retain a conservative explicit scope.
