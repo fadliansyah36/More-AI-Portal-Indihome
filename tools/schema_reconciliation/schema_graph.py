@@ -902,6 +902,75 @@ def _reduce_sequence_history(history: list[dict[str, Any]]) -> tuple[str, dict[s
 
 
 
+def _function_option_entries(value: Any) -> tuple[bool, dict[str, Any], str]:
+    """Decode only ALTER FUNCTION options with scalar, explicit AST values."""
+    if not isinstance(value, list):
+        return False, {}, "FUNCTION_OPTIONS_SHAPE_UNSUPPORTED"
+    allowed = {"volatility", "strict", "security", "leakproof", "cost", "rows", "parallel"}
+    result: dict[str, Any] = {}
+    for item in value:
+        tag, payload = _node_tag(item)
+        if tag != "DefElem" or not isinstance(payload, dict):
+            return False, {}, "FUNCTION_OPTION_NODE_UNSUPPORTED"
+        name = payload.get("defname")
+        if not isinstance(name, str) or name.lower() not in allowed:
+            return False, {}, "FUNCTION_OPTION_UNSUPPORTED:" + str(name)
+        arg = payload.get("arg")
+        if arg is None:
+            return False, {}, "FUNCTION_OPTION_VALUE_MISSING:" + name
+        ok, decoded = _sequence_option_value(arg)
+        if not ok:
+            return False, {}, "FUNCTION_OPTION_VALUE_UNRESOLVED:" + name
+        if name.lower() in result and result[name.lower()] != decoded:
+            return False, {}, "FUNCTION_OPTION_DUPLICATE_CONFLICT:" + name
+        result[name.lower()] = decoded
+    return True, result, "FUNCTION_OPTIONS_DECODED"
+
+
+def _reduce_function_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Fold CREATE FUNCTION and scalar ALTER FUNCTION options; preserve opaque body unchanged."""
+    current: dict[str, Any] | None = None
+    options: dict[str, Any] = {}
+    for event in history:
+        operation = event.get("operation")
+        tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if operation == "CREATE" and tag == "CreateFunctionStmt" and isinstance(payload, dict):
+            current = json.loads(json.dumps(payload))
+            # CREATE options contain language/body metadata as well as attributes.
+            # Only the allowlisted scalar attributes are reduced for later ALTER.
+            create_options = payload.get("options") or []
+            if not isinstance(create_options, list):
+                return "NOT_VERIFIABLE", None, "FUNCTION_CREATE_OPTIONS_SHAPE_UNSUPPORTED"
+            for item in create_options:
+                option_tag, option = _node_tag(item)
+                if option_tag != "DefElem" or not isinstance(option, dict):
+                    continue
+                name = option.get("defname")
+                if isinstance(name, str) and name.lower() in {"volatility", "strict", "security", "leakproof", "cost", "rows", "parallel"}:
+                    ok, decoded, reason = _function_option_entries([item])
+                    if not ok:
+                        return "NOT_VERIFIABLE", None, reason
+                    options.update(decoded)
+            continue
+        if operation == "ALTER" and tag == "AlterFunctionStmt" and isinstance(payload, dict):
+            if current is None:
+                return "NOT_VERIFIABLE", None, "FUNCTION_ALTER_WITHOUT_SOURCE_CREATE"
+            ok, changes, reason = _function_option_entries(payload.get("actions") or [])
+            if not ok:
+                return "NOT_VERIFIABLE", None, reason
+            options.update(changes)
+            continue
+        return "NOT_VERIFIABLE", None, "FUNCTION_EVENT_SHAPE_OR_OPERATION_UNSUPPORTED"
+    if current is None:
+        return "NOT_VERIFIABLE", None, "FUNCTION_CREATE_NOT_FOUND"
+    return (
+        "REDUCED_FUNCTION_SCALAR_OPTIONS_PARTIAL",
+        {"CreateFunctionStmt": current, "FunctionAttributes": options,
+         "body_semantics": "OPAQUE_NOT_EXECUTED_OR_REPARSED"},
+        "FUNCTION_CREATE_ALTER_SCALAR_OPTIONS_REDUCED",
+    )
+
+
 def _reduce_enum_type_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
     """Fold CREATE TYPE AS ENUM with ADD VALUE and RENAME VALUE events."""
     current: dict[str, Any] | None = None
@@ -1353,6 +1422,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state, expected_definition, reduction_status = _reduce_sequence_history(history)
         elif latest["object_class"] == "TRIGGER" and any(item.get("operation") == "ALTER" for item in history):
             state, expected_definition, reduction_status = _reduce_trigger_history(history)
+        elif latest["object_class"] == "FUNCTION" and any(item.get("operation") == "ALTER" for item in history):
+            state, expected_definition, reduction_status = _reduce_function_history(history)
         elif latest["object_class"] == "TYPE" and all(
             _node_tag(item.get("normalized_ast") or {})[0] in {"CreateEnumStmt", "AlterEnumStmt"}
             for item in history
