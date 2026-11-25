@@ -63,3 +63,13 @@ Task 1 remains IN PROGRESS. This document records source implementation only; it
 - Added regression source for multi-schema identity, explicit GRANT/REVOKE and implicit owner.
 - Centralized Super Admin dashboard reads and mutations through the shared authenticated `platformAdminApi` transport. Removed the dashboard-local fetch/auth implementation so admin API requests share the same token refresh, error normalization and safe-read fallback rules as the rest of MoreAI.
 - This is an API transport integration only; it does not expand the set of admin capabilities or claim frontend E2E verification.
+
+
+## Additional increment — CREATE/ALTER FUNCTION scalar attributes
+
+- Added a reducer for CREATE FUNCTION followed by ALTER FUNCTION.
+- Scalar function attributes are folded only for volatility, strictness, security-definer, leakproof, cost, rows and parallel mode.
+- Original CREATE AST and body remain preserved; function body and dynamic SQL are not executed or interpreted.
+- Unsupported SET/RESET configuration and support-function options return `NOT_VERIFIABLE`.
+- Added regression source for scalar option override, body preservation and fail-closed configuration handling.
+- Regression source was not executed under the active Section 37 restriction.
