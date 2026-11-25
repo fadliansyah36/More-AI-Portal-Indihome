@@ -275,11 +275,16 @@ def _object_names(tag: str, payload: Any) -> list[str]:
             return [f"{relation}.{'.'.join(names)}"]
         return names[:1]
     if tag in {"CreateFunctionStmt", "AlterFunctionStmt"}:
-        names = _strings(payload.get("funcname") or payload.get("func"))
+        if tag == "AlterFunctionStmt":
+            function_node_tag, function_payload = _node_tag(payload.get("func"))
+            if function_node_tag == "ObjectWithArgs" and isinstance(function_payload, dict):
+                identity = _object_with_args_identity(function_payload)
+                return [identity] if identity else []
+            names = _strings(payload.get("func"))
+            return [_qualified_identifier(names) + "#signature-not-verifiable"] if names else []
+        names = _strings(payload.get("funcname"))
         if not names:
             return []
-        if tag == "AlterFunctionStmt":
-            return [_qualified_identifier(names) + "#signature-not-verifiable"]
         parameters = payload.get("parameters") or []
         argument_types: list[str] = []
         for node_tag, node_payload in _walk(parameters):
