@@ -302,6 +302,21 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertIsNone(definition)
         self.assertEqual(reason, "POLICY_TABLE_IDENTITY_CHANGED")
 
+    def test_policy_object_identity_uses_postgresql_table_field(self):
+        payload = {
+            "policy_name": "documents_read",
+            "table": {"RangeVar": {"schemaname": "public", "relname": "documents"}},
+            "roles": [],
+        }
+        self.assertEqual(
+            schema_graph._object_names("CreatePolicyStmt", payload),
+            ["public.documents.documents_read"],
+        )
+        self.assertEqual(
+            schema_graph._object_names("AlterPolicyStmt", payload),
+            ["public.documents.documents_read"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
