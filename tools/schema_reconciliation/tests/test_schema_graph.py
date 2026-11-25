@@ -64,6 +64,58 @@ class SemanticObjectGraphTests(unittest.TestCase):
             },
         )
 
+    def test_column_reducer_preserves_using_expression_for_type_change(self):
+        using_expression = {
+            "FuncCall": {
+                "funcname": [{"String": {"sval": "public"}}, {"String": {"sval": "normalize_code"}}],
+                "args": [{"ColumnRef": {"fields": [{"String": {"sval": "code"}}]}}],
+            },
+        }
+        history = [
+            {
+                "object_class": "COLUMN", "operation": "CREATE",
+                "normalized_ast": {"ColumnDef": {
+                    "colname": "code",
+                    "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}},
+                }},
+            },
+            {
+                "object_class": "COLUMN", "operation": "ALTER",
+                "normalized_ast": {"AlterTableCmd": {
+                    "subtype": "AT_AlterColumnType",
+                    "def": {"TypeName": {"names": [{"String": {"sval": "varchar"}}, {"String": {"sval": "64"}}]}},
+                    "transform": using_expression,
+                }},
+            },
+        ]
+        status, definition, reason = schema_graph._reduce_table_subobject_history(history)
+        self.assertEqual(status, "REDUCED_TABLE_SUBOBJECT_DEFINITION")
+        self.assertEqual(reason, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED")
+        self.assertEqual(definition["ColumnDef"]["type_change_using"], using_expression)
+        self.assertEqual(
+            definition["ColumnDef"]["typeName"],
+            {"TypeName": {"names": [{"String": {"sval": "varchar"}}, {"String": {"sval": "64"}}]}},
+        )
+
+    def test_column_reducer_clears_stale_using_expression_on_later_plain_type_change(self):
+        first_transform = {"A_Const": {"val": {"Integer": {"ival": 1}}}}
+        history = [
+            {"object_class": "COLUMN", "operation": "CREATE", "normalized_ast": {"ColumnDef": {"colname": "code"}}},
+            {"object_class": "COLUMN", "operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_AlterColumnType",
+                "def": {"TypeName": {"names": [{"String": {"sval": "integer"}}]}},
+                "transform": first_transform,
+            }}},
+            {"object_class": "COLUMN", "operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_AlterColumnType",
+                "def": {"TypeName": {"names": [{"String": {"sval": "bigint"}}]}},
+                "transform": None,
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_table_subobject_history(history)
+        self.assertEqual(status, "REDUCED_TABLE_SUBOBJECT_DEFINITION")
+        self.assertNotIn("type_change_using", definition["ColumnDef"])
+
     def test_column_reducer_folds_not_null_transition(self):
         history = [
             {
