@@ -1086,12 +1086,17 @@ def _reduce_acl_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, A
                         grants[key] = False
                 else:
                     grants.pop(key, None)
+    if grantor_unresolved:
+        # A missing GRANT/REVOKE grantor is not safely interchangeable with
+        # another grantor: PostgreSQL ACL entries are grantor-specific.
+        # Keep the source events in lineage, but do not publish a misleading
+        # effective ACL definition that could be compared as a global MATCH.
+        return "NOT_VERIFIABLE", None, "ACL_GRANTOR_UNRESOLVED_EFFECTIVE_ACL_NOT_COMPARABLE"
     rows = [
         {"grantee": grantee, "privilege": privilege, "grantor": grantor, "grant_option": option}
         for (grantee, privilege, grantor), option in sorted(grants.items())
     ]
-    status = "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED" if grantor_unresolved else "REDUCED_EXPLICIT_EFFECTIVE_ACL"
-    return status, {"EffectiveACL": {"grants": rows}}, status
+    return "REDUCED_EXPLICIT_EFFECTIVE_ACL", {"EffectiveACL": {"grants": rows}}, "ACL_EXPLICIT_GRANTOR_PRIVILEGE_SET_REDUCED"
 
 
 
