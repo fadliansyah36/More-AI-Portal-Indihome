@@ -1725,7 +1725,7 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             expected_definition = latest.get("normalized_ast")
         elif last_operation == "DROP":
             state = "DROPPED_IN_SOURCE_LINEAGE"
-        elif latest["object_class"] in {"COLUMN", "CONSTRAINT"}:
+        elif latest["object_class"] in {"COLUMN", "TYPE_ATTRIBUTE", "CONSTRAINT"}:
             state, expected_definition, reduction_status = _reduce_table_subobject_history(history)
         elif latest["object_class"] == "ACL":
             state, expected_definition, reduction_status = _reduce_acl_history(history)
