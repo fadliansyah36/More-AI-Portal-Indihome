@@ -942,17 +942,18 @@ class SemanticObjectGraphTests(unittest.TestCase):
                 {"Constraint": {"contype": "CONSTR_DEFAULT", "raw_expr": {"A_Const": {"val": {"String": {"sval": "old"}}}}}},
             ],
         }}
-        def alter(subtype, definition=None):
+        def alter(subtype, definition=None, name=None):
             return {"AlterDomainStmt": {
                 "typeName": [{"String": {"sval": "email_address"}}],
                 "subtype": subtype,
+                "name": name,
                 "def": definition,
             }}
         history = [
             {"operation": "CREATE", "normalized_ast": create},
-            {"operation": "ALTER", "normalized_ast": alter("T_ValidateConstraint", {"String": {"sval": "email_address_check"}})},
-            {"operation": "ALTER", "normalized_ast": alter("T_SetNotNull")},
-            {"operation": "ALTER", "normalized_ast": alter("T_SetDefault", {"A_Const": {"val": {"String": {"sval": "unknown@example.test"}}}})},
+            {"operation": "ALTER", "normalized_ast": alter("V", name="email_address_check")},
+            {"operation": "ALTER", "normalized_ast": alter("O")},
+            {"operation": "ALTER", "normalized_ast": alter("T", {"A_Const": {"val": {"String": {"sval": "unknown@example.test"}}}})},
         ]
         status, definition, reason = schema_graph._reduce_domain_history(history)
         self.assertEqual(status, "REDUCED_DOMAIN_EXPLICIT_STATE_PARTIAL")
@@ -976,13 +977,13 @@ class SemanticObjectGraphTests(unittest.TestCase):
         }}
         alter_add = {"AlterDomainStmt": {
             "typeName": [{"String": {"sval": "positive_int"}}],
-            "subtype": "T_AddConstraint",
+            "subtype": "C",
             "def": {"Constraint": {"conname": "positive_int_check", "contype": "CONSTR_CHECK"}},
         }}
         alter_drop = {"AlterDomainStmt": {
             "typeName": [{"String": {"sval": "positive_int"}}],
-            "subtype": "T_DropConstraint",
-            "def": {"String": {"sval": "positive_int_check"}},
+            "subtype": "X",
+            "name": "positive_int_check",
         }}
         status, definition, _ = schema_graph._reduce_domain_history([
             {"operation": "CREATE", "normalized_ast": create},
@@ -1000,7 +1001,7 @@ class SemanticObjectGraphTests(unittest.TestCase):
         }}
         alter = {"AlterDomainStmt": {
             "typeName": [{"String": {"sval": "other_domain"}}],
-            "subtype": "T_SetNotNull",
+            "subtype": "O",
         }}
         status, definition, reason = schema_graph._reduce_domain_history([
             {"operation": "CREATE", "normalized_ast": create},
