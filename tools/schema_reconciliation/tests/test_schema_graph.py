@@ -932,11 +932,15 @@ class SemanticObjectGraphTests(unittest.TestCase):
         create = {"CreateDomainStmt": {
             "domainname": [{"String": {"sval": "email_address"}}],
             "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}},
-            "constraints": [{"Constraint": {
-                "conname": "email_address_check",
-                "contype": "CONSTR_CHECK",
-                "skip_validation": True,
-            }}],
+            "constraints": [
+                {"Constraint": {
+                    "conname": "email_address_check",
+                    "contype": "CONSTR_CHECK",
+                    "skip_validation": True,
+                }},
+                {"Constraint": {"contype": "CONSTR_NOTNULL"}},
+                {"Constraint": {"contype": "CONSTR_DEFAULT", "raw_expr": {"A_Const": {"val": {"String": {"sval": "old"}}}}}},
+            ],
         }}
         def alter(subtype, definition=None):
             return {"AlterDomainStmt": {
@@ -957,6 +961,12 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertFalse(constraint["skip_validation"])
         self.assertTrue(definition["CreateDomainStmt"]["domain_not_null"])
         self.assertIsNotNone(definition["CreateDomainStmt"]["domain_default"])
+        remaining_types = [
+            item["Constraint"].get("contype")
+            for item in definition["CreateDomainStmt"]["constraints"]
+            if "Constraint" in item
+        ]
+        self.assertEqual(remaining_types, ["CONSTR_CHECK"])
 
     def test_domain_reducer_adds_and_drops_named_constraints(self):
         create = {"CreateDomainStmt": {
