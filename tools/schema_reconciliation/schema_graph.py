@@ -683,7 +683,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             "last_migration_id": latest["migration_id"],
             "latest_operation": last_operation, "expected_state_status": state,
             "latest_ast_sha256": latest["normalized_ast_sha256"],
-            "expected_definition": expected_definition,\n            "semantic_reduction_status": reduction_status,
+            "expected_definition": expected_definition,
+            "semantic_reduction_status": reduction_status,
             "dependency_candidates": sorted({candidate for item in history for candidate in (item.get("dependency_candidates") or [])}),
             "dependency_candidate_count": len({candidate for item in history for candidate in (item.get("dependency_candidates") or [])}),
             "migration_lineage": [
