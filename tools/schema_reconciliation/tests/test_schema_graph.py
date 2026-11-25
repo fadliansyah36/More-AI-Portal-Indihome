@@ -602,5 +602,68 @@ class SemanticObjectGraphTests(unittest.TestCase):
 
 
 
+    def test_default_acl_identity_is_scoped_by_owner_schema_and_object_type(self):
+        payload = {
+            "defaclrole": {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "app_owner"}},
+            "defaclnamespace": [{"String": {"sval": "public"}}, {"String": {"sval": "reporting"}}],
+            "action": {"GrantStmt": {"objtype": "OBJECT_TABLE"}},
+        }
+        self.assertEqual(
+            schema_graph._object_names("AlterDefaultPrivilegesStmt", payload),
+            [
+                "role:app_owner|schema:public|object:OBJECT_TABLE",
+                "role:app_owner|schema:reporting|object:OBJECT_TABLE",
+            ],
+        )
+
+    def test_default_acl_reducer_folds_explicit_grant_and_revoke(self):
+        owner = {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "app_owner"}}
+        analyst = {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "analyst"}}
+        action = {
+            "objtype": "OBJECT_TABLE",
+            "privileges": [{"AccessPriv": {"priv_name": "select"}}],
+            "grantees": [analyst],
+            "is_grant": True,
+            "grant_option": True,
+            "behavior": "DROP_RESTRICT",
+        }
+        defacl = {
+            "defaclrole": owner,
+            "defaclnamespace": [{"String": {"sval": "public"}}],
+            "action": {"GrantStmt": action},
+        }
+        revoke = {
+            **defacl,
+            "action": {"GrantStmt": {**action, "is_grant": False, "grant_option": False}},
+        }
+        target = "role:app_owner|schema:public|object:OBJECT_TABLE"
+        status, definition, reason = schema_graph._reduce_default_acl_history([
+            {"object_name": target, "normalized_ast": {"AlterDefaultPrivilegesStmt": defacl}},
+            {"object_name": target, "normalized_ast": {"AlterDefaultPrivilegesStmt": revoke}},
+        ])
+        self.assertEqual(status, "REDUCED_EXPLICIT_DEFAULT_ACL")
+        self.assertEqual(reason, "DEFAULT_ACL_EXPLICIT_GRANT_REVOKE_REDUCED")
+        self.assertEqual(definition["DefaultACL"], {
+            "owner": "app_owner", "schema": "public", "object_type": "OBJECT_TABLE", "grants": [],
+        })
+
+    def test_default_acl_reducer_fails_closed_for_implicit_owner(self):
+        payload = {
+            "defaclnamespace": [{"String": {"sval": "public"}}],
+            "action": {"GrantStmt": {
+                "objtype": "OBJECT_TABLE", "grantees": [
+                    {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "analyst"}}
+                ], "is_grant": True,
+            }},
+        }
+        status, definition, reason = schema_graph._reduce_default_acl_history([
+            {"object_name": "DEFAULT_ACL:IDENTITY_NOT_VERIFIABLE", "normalized_ast": {"AlterDefaultPrivilegesStmt": payload}},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "DEFAULT_ACL_OWNER_ROLE_UNRESOLVED")
+
+
+
 if __name__ == "__main__":
     unittest.main()
