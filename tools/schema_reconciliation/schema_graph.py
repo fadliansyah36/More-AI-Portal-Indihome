@@ -775,6 +775,17 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
                 # skip_validation=true. VALIDATE CONSTRAINT clears that bit.
                 current["skip_validation"] = False
                 continue
+            if subtype == "AT_AlterConstraint":
+                # ALTER CONSTRAINT changes deferrability, not the constraint
+                # expression or validation state. Require both explicit flags;
+                # never infer omitted/default values from the command.
+                deferrable = payload.get("deferrable")
+                initially_deferred = payload.get("initdeferred")
+                if not isinstance(deferrable, bool) or not isinstance(initially_deferred, bool):
+                    return "NOT_VERIFIABLE", None, "CONSTRAINT_DEFERRABILITY_FLAGS_UNRESOLVED"
+                current["deferrable"] = deferrable
+                current["initdeferred"] = initially_deferred
+                continue
             return "NOT_VERIFIABLE", None, "UNSUPPORTED_CONSTRAINT_ALTER_SUBTYPE:" + subtype
         return "NOT_VERIFIABLE", None, "EVENT_OPERATION_NOT_SUPPORTED"
     if current is None:
