@@ -761,6 +761,83 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
 
 
 
+
+def _sequence_option_value(value: Any) -> tuple[bool, Any]:
+    """Decode only scalar PostgreSQL sequence option values from pglast JSON."""
+    tag, payload = _node_tag(value)
+    if tag == "A_Const" and isinstance(payload, dict):
+        return _sequence_option_value(payload.get("val"))
+    if tag == "Integer" and isinstance(payload, dict):
+        return (True, payload.get("ival")) if isinstance(payload.get("ival"), int) else (False, None)
+    if tag == "Float" and isinstance(payload, dict):
+        raw = payload.get("fval")
+        if isinstance(raw, str):
+            try:
+                return True, float(raw)
+            except ValueError:
+                return False, None
+    if tag == "String" and isinstance(payload, dict):
+        return (True, payload.get("sval")) if isinstance(payload.get("sval"), str) else (False, None)
+    if tag == "Boolean" and isinstance(payload, dict):
+        return (True, payload.get("boolval")) if isinstance(payload.get("boolval"), bool) else (False, None)
+    if isinstance(value, bool) or isinstance(value, (int, float, str)):
+        return True, value
+    return False, None
+
+
+def _sequence_options(options: Any) -> tuple[bool, dict[str, Any], str]:
+    if not isinstance(options, list):
+        return False, {}, "SEQUENCE_OPTIONS_SHAPE_UNSUPPORTED"
+    allowed = {"as", "increment", "minvalue", "maxvalue", "start", "cache", "cycle"}
+    decoded: dict[str, Any] = {}
+    for item in options:
+        tag, payload = _node_tag(item)
+        if tag != "DefElem" or not isinstance(payload, dict):
+            return False, {}, "SEQUENCE_OPTION_NODE_UNSUPPORTED"
+        name = payload.get("defname")
+        if not isinstance(name, str) or name.lower() not in allowed:
+            return False, {}, "SEQUENCE_OPTION_UNSUPPORTED:" + str(name)
+        name = name.lower()
+        ok, value = _sequence_option_value(payload.get("arg"))
+        if not ok:
+            return False, {}, "SEQUENCE_OPTION_VALUE_UNRESOLVED:" + name
+        if name in decoded and decoded[name] != value:
+            return False, {}, "SEQUENCE_OPTION_DUPLICATE_CONFLICT:" + name
+        decoded[name] = value
+    return True, decoded, "SEQUENCE_EXPLICIT_OPTIONS_DECODED"
+
+
+def _reduce_sequence_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Fold explicit CREATE/ALTER SEQUENCE options; never infer defaults or runtime last_value."""
+    current: dict[str, Any] | None = None
+    for event in history:
+        operation = event.get("operation")
+        tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if operation == "CREATE" and tag == "CreateSeqStmt" and isinstance(payload, dict):
+            ok, options, reason = _sequence_options(payload.get("options") or [])
+            if not ok:
+                return "NOT_VERIFIABLE", None, reason
+            current = options
+            continue
+        if operation == "ALTER" and tag == "AlterSeqStmt" and isinstance(payload, dict):
+            if current is None:
+                return "NOT_VERIFIABLE", None, "SEQUENCE_ALTER_WITHOUT_SOURCE_CREATE"
+            ok, options, reason = _sequence_options(payload.get("options") or [])
+            if not ok:
+                return "NOT_VERIFIABLE", None, reason
+            current.update(options)
+            continue
+        return "NOT_VERIFIABLE", None, "SEQUENCE_EVENT_SHAPE_UNSUPPORTED"
+    if current is None:
+        return "NOT_VERIFIABLE", None, "SEQUENCE_CREATE_NOT_FOUND"
+    return (
+        "REDUCED_SEQUENCE_EXPLICIT_OPTIONS_PARTIAL",
+        {"SequenceOptions": {"explicit": current, "defaults": "UNRESOLVED_FROM_SOURCE_AST", "runtime_state": "NOT_INCLUDED"}},
+        "SEQUENCE_CREATE_ALTER_EXPLICIT_OPTIONS_REDUCED",
+    )
+
+
+
 def _reduce_enum_type_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
     """Fold CREATE TYPE AS ENUM with ADD VALUE and RENAME VALUE events."""
     current: dict[str, Any] | None = None
@@ -1059,6 +1136,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state, expected_definition, reduction_status = _reduce_ownership_history(history)
         elif latest["object_class"] == "RLS_POLICY":
             state, expected_definition, reduction_status = _reduce_policy_history(history)
+        elif latest["object_class"] == "SEQUENCE" and any(item.get("operation") == "ALTER" for item in history):
+            state, expected_definition, reduction_status = _reduce_sequence_history(history)
         elif latest["object_class"] == "TYPE" and all(
             _node_tag(item.get("normalized_ast") or {})[0] in {"CreateEnumStmt", "AlterEnumStmt"}
             for item in history
