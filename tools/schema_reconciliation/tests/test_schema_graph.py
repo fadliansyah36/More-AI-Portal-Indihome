@@ -90,26 +90,12 @@ class SemanticObjectGraphTests(unittest.TestCase):
             schema_graph._object_names("AlterOwnerStmt", payload),
             ["OBJECT_TABLE:public.profiles"],
         )
-        graph = {
-            "objects": [{
-                "object_class": "OWNERSHIP",
-                "object_name": "OBJECT_TABLE:public.profiles",
-                "latest_operation": "ALTER",
-                "semantic_status": "AST_PARSED",
-                "normalized_ast": {"AlterOwnerStmt": payload},
-                "migration_id": "20261125000000",
-                "statement_ordinal": 1,
-                "normalized_ast_sha256": "a" * 64,
-                "dependency_candidates": [],
-                "procedural_body_status": "NOT_APPLICABLE",
-            }],
-        }
-        # Exercise the exact reducer used by build_graph through the private
-        # helper to keep ownership role resolution independently covered.
-        self.assertEqual(
-            schema_graph._acl_role_name(payload["newowner"]),
-            "service_owner",
-        )
+        status, definition, reduction = schema_graph._reduce_ownership_history([
+            {"normalized_ast": {"AlterOwnerStmt": payload}},
+        ])
+        self.assertEqual(status, "REDUCED_OWNER_STATE")
+        self.assertEqual(reduction, "OWNER_ROLE_REDUCED_FROM_AST")
+        self.assertEqual(definition, {"Owner": {"role": "service_owner"}})
 
     def test_acl_reducer_folds_grant_option_revoke(self):
         base = {
