@@ -897,19 +897,35 @@ def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
                         return "NOT_VERIFIABLE", None, "DOMAIN_VALIDATE_STATE_NOT_EXPLICITLY_UNVALIDATED"
                     item_payload["skip_validation"] = False
                 continue
-            if subtype == "T_SetNotNull":
-                current["domain_not_null"] = True
+            if subtype in {"T_SetNotNull", "T_DropNotNull"}:
+                # ALTER DOMAIN toggles the domain-level NOT NULL property. Remove
+                # its CREATE-time constraint node and represent the final explicit
+                # state once, avoiding contradictory stale AST plus override data.
+                current["constraints"] = [
+                    item for item in constraints
+                    if not (
+                        _node_tag(item)[0] == "Constraint"
+                        and isinstance(_node_tag(item)[1], dict)
+                        and _node_tag(item)[1].get("contype") == "CONSTR_NOTNULL"
+                    )
+                ]
+                current["domain_not_null"] = subtype == "T_SetNotNull"
                 continue
-            if subtype == "T_DropNotNull":
-                current["domain_not_null"] = False
-                continue
-            if subtype == "T_SetDefault":
-                if definition is None:
-                    return "NOT_VERIFIABLE", None, "DOMAIN_SET_DEFAULT_EXPRESSION_MISSING"
-                current["domain_default"] = json.loads(json.dumps(definition))
-                continue
-            if subtype == "T_DropDefault":
-                current["domain_default"] = None
+            if subtype in {"T_SetDefault", "T_DropDefault"}:
+                current["constraints"] = [
+                    item for item in constraints
+                    if not (
+                        _node_tag(item)[0] == "Constraint"
+                        and isinstance(_node_tag(item)[1], dict)
+                        and _node_tag(item)[1].get("contype") == "CONSTR_DEFAULT"
+                    )
+                ]
+                if subtype == "T_SetDefault":
+                    if definition is None:
+                        return "NOT_VERIFIABLE", None, "DOMAIN_SET_DEFAULT_EXPRESSION_MISSING"
+                    current["domain_default"] = json.loads(json.dumps(definition))
+                else:
+                    current["domain_default"] = None
                 continue
             return "NOT_VERIFIABLE", None, "DOMAIN_ALTER_SUBTYPE_UNSUPPORTED:" + subtype
         return "NOT_VERIFIABLE", None, "DOMAIN_EVENT_SHAPE_OR_OPERATION_UNSUPPORTED"
