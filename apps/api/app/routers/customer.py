@@ -429,7 +429,7 @@ async def _customer_conversation_message_citations(
     return hydrated
 
 
-def _customer_conversation_message_attachments(
+async def _customer_conversation_message_attachments(
     repo: Any, user_id: str, conversation_id: UUID, messages: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     message_ids = [str(row["id"]) for row in messages if row.get("id")]
