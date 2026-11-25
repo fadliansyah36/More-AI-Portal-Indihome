@@ -250,7 +250,7 @@ class MeteredGateway:
     async def _candidates(self, task_type: str, *, user_id: str, workspace_id: str | None, partner_id: str | None, required_capabilities: set[str] | None = None, preferred_model_id: str | None = None):
         resolver = getattr(self.router, "resolve_candidates", None)
         if resolver:
-            return await resolver(task_type, required_capabilities, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id, preferred_model_id=preferred_model_id)
+            return await resolver(task_type, required_capabilities=required_capabilities, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id, preferred_model_id=preferred_model_id)
         return [await self.router.resolve(task_type, required_capabilities, user_id=user_id, workspace_id=workspace_id, partner_id=partner_id, preferred_model_id=preferred_model_id)]
 
     async def _reserve_maximum(
