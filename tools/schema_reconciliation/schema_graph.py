@@ -808,6 +808,11 @@ def _reduce_trigger_history(history: list[dict[str, Any]]) -> tuple[str, dict[st
                 return "NOT_VERIFIABLE", None, "TRIGGER_ALTER_SUBTYPE_UNSUPPORTED:" + subtype
             if not isinstance(payload.get("name"), str) or not payload.get("name"):
                 return "NOT_VERIFIABLE", None, "TRIGGER_ALTER_NAME_UNRESOLVED"
+            source_name = current.get("trigname")
+            if not isinstance(source_name, str) or not source_name:
+                return "NOT_VERIFIABLE", None, "TRIGGER_CREATE_NAME_UNRESOLVED"
+            if payload.get("name") != source_name:
+                return "NOT_VERIFIABLE", None, "TRIGGER_ALTER_TARGET_MISMATCH"
             enabled_mode = {
                 "AT_EnableTrig": "ORIGIN",
                 "AT_DisableTrig": "DISABLED",
