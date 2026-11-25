@@ -164,6 +164,35 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reduction, "OWNER_ROLE_REDUCED_FROM_AST")
         self.assertEqual(definition, {"Owner": {"role": "service_owner"}})
 
+    def test_owner_reducer_rejects_event_identity_mismatch(self):
+        payload = {
+            "objectType": "OBJECT_TABLE",
+            "object": {"RangeVar": {"schemaname": "public", "relname": "profiles"}},
+            "newowner": {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "service_owner"}},
+        }
+        status, definition, reason = schema_graph._reduce_ownership_history([
+            {"operation": "ALTER", "object_name": "OBJECT_TABLE:public.other_table",
+             "normalized_ast": {"AlterOwnerStmt": payload}},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "OWNER_EVENT_IDENTITY_MISMATCH")
+
+    def test_owner_reducer_rejects_target_change_within_history(self):
+        def owner_event(table, role):
+            return {"operation": "ALTER", "normalized_ast": {"AlterOwnerStmt": {
+                "objectType": "OBJECT_TABLE",
+                "object": {"RangeVar": {"schemaname": "public", "relname": table}},
+                "newowner": {"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": role}},
+            }}}
+        status, definition, reason = schema_graph._reduce_ownership_history([
+            owner_event("profiles", "service_owner"),
+            owner_event("audit_log", "service_owner"),
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "OWNER_TARGET_CHANGED_WITHIN_HISTORY")
+
     def test_acl_reducer_folds_grant_option_revoke(self):
         base = {
             "objtype": "OBJECT_TABLE",
