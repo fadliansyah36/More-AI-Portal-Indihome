@@ -100,6 +100,20 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(grants[0]["privilege"], "select")
         self.assertFalse(grants[0]["grant_option"])
 
+    def test_acl_reducer_expands_all_table_privileges_for_grant_and_revoke(self):
+        base = {
+            "objtype": "OBJECT_TABLE",
+            "grantees": [{"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "service_role"}}],
+            "behavior": "DROP_RESTRICT",
+        }
+        history = [
+            {"normalized_ast": {"GrantStmt": {**base, "is_grant": True}}},
+            {"normalized_ast": {"GrantStmt": {**base, "is_grant": False}}},
+        ]
+        status, definition, _ = schema_graph._reduce_acl_history(history)
+        self.assertEqual(status, "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED")
+        self.assertEqual(definition["EffectiveACL"]["grants"], [])
+
     def test_acl_reducer_removes_explicitly_revoked_privilege(self):
         base = {
             "objtype": "OBJECT_TABLE",
