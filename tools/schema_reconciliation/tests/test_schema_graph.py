@@ -392,16 +392,19 @@ class SemanticObjectGraphTests(unittest.TestCase):
         history = [
             {"operation": "CREATE", "normalized_ast": {"CreateEnumStmt": create}},
             {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "typeName": [{"String": {"sval": "public"}}, {"String": {"sval": "job_state"}}],
                 "newVal": {"String": {"sval": "blocked"}},
                 "newValNeighbor": {"String": {"sval": "running"}},
                 "newValIsAfter": False,
             }}},
             {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "typeName": [{"String": {"sval": "public"}}, {"String": {"sval": "job_state"}}],
                 "newVal": {"String": {"sval": "paused"}},
                 "newValNeighbor": {"String": {"sval": "running"}},
                 "newValIsAfter": True,
             }}},
             {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "typeName": [{"String": {"sval": "public"}}, {"String": {"sval": "job_state"}}],
                 "oldVal": {"String": {"sval": "done"}},
                 "newVal": {"String": {"sval": "completed"}},
             }}},
@@ -419,6 +422,7 @@ class SemanticObjectGraphTests(unittest.TestCase):
                 "vals": [{"String": {"sval": "queued"}}],
             }}},
             {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "typeName": [{"String": {"sval": "public"}}, {"String": {"sval": "job_state"}}],
                 "newVal": {"String": {"sval": "blocked"}},
                 "newValNeighbor": {"String": {"sval": "missing"}},
                 "newValIsAfter": True,
