@@ -114,7 +114,7 @@ jobs:
         shell: bash
         run: |
           for attempt in $(seq 1 30); do
-            if docker compose -f apps/sandbox/compose.browser.yml exec -T browser-egress-proxy python -c 'import socket; socket.create_connection(("browser-supervisor",8080),2).close()' 2>/dev/null; then
+            if docker compose -f apps/sandbox/compose.browser.yml exec -T browser-egress-proxy python -c 'import socket; socket.create_connection(("browser-supervisor",8790),2).close()' 2>/dev/null; then
               exit 0
             fi
             sleep 2
@@ -134,11 +134,13 @@ jobs:
           async def main():
               async with httpx.AsyncClient() as client:
                   supervisor = BrowserSupervisor(
-                      service_url="http://browser-supervisor:8080",
+                      service_url="http://browser-supervisor:8790",
                       service_token=os.environ["MOREAI_BROWSER_SERVICE_TOKEN"],
                       egress_enforced=True,
                       allow_private_http=True,
                       http=client,
+                      api_url="https://api.example.com",
+                      internal_token="ci-worker-internal-token-0123456789abcdef",
                   )
                   result = await supervisor.check_ready()
                   assert result["status"] == "ready"
