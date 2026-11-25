@@ -689,7 +689,10 @@ class SemanticObjectGraphTests(unittest.TestCase):
 
     def test_trigger_reducer_fails_closed_for_unnamed_or_unsupported_alter(self):
         history = [
-            {"operation": "CREATE", "normalized_ast": {"CreateTrigStmt": {"trigname": "audit_change"}}},
+            {"operation": "CREATE", "normalized_ast": {"CreateTrigStmt": {
+                "trigname": "audit_change",
+                "relation": {"RangeVar": {"schemaname": "public", "relname": "profiles"}},
+            }}},
             {"operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
                 "subtype": "AT_EnableTrigAll", "name": None,
             }}},
@@ -732,7 +735,10 @@ class SemanticObjectGraphTests(unittest.TestCase):
 
     def test_trigger_reducer_rejects_alter_for_different_trigger_name(self):
         history = [
-            {"operation": "CREATE", "normalized_ast": {"CreateTrigStmt": {"trigname": "audit_change"}}},
+            {"operation": "CREATE", "normalized_ast": {"CreateTrigStmt": {
+                "trigname": "audit_change",
+                "relation": {"RangeVar": {"schemaname": "public", "relname": "profiles"}},
+            }}},
             {"operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
                 "subtype": "AT_DisableTrig", "name": "other_trigger",
             }}},
