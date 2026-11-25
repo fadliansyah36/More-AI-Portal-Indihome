@@ -163,6 +163,71 @@ def _qualified_identifier(names: list[str]) -> str:
     return ".".join(names)
 
 
+DROP_OBJECT_CLASS = {
+    "OBJECT_TABLE": "TABLE",
+    "OBJECT_INDEX": "INDEX",
+    "OBJECT_FUNCTION": "FUNCTION",
+    "OBJECT_PROCEDURE": "PROCEDURE",
+    "OBJECT_SEQUENCE": "SEQUENCE",
+    "OBJECT_VIEW": "VIEW",
+    "OBJECT_MATVIEW": "TABLE_OR_MATERIALIZED_VIEW",
+    "OBJECT_TYPE": "TYPE",
+    "OBJECT_DOMAIN": "DOMAIN",
+    "OBJECT_SCHEMA": "SCHEMA",
+    "OBJECT_EXTENSION": "EXTENSION",
+    "OBJECT_ROLE": "ROLE",
+    "OBJECT_DATABASE": "DATABASE",
+    "OBJECT_PUBLICATION": "PUBLICATION",
+    "OBJECT_SUBSCRIPTION": "SUBSCRIPTION",
+    "OBJECT_FOREIGN_TABLE": "FOREIGN_TABLE",
+}
+
+
+def _drop_object_names(payload: dict[str, Any]) -> list[str]:
+    """Return one stable identity per DROP target; never flatten a target list.
+
+    PostgreSQL encodes DROP targets as typed AST nodes. In particular,
+    ObjectWithArgs carries function/procedure signatures, while each List node
+    represents a separate relation-like target. Flattening all String nodes
+    merges multi-target DROP statements and can corrupt migration lineage.
+    """
+    objects = payload.get("objects")
+    if not isinstance(objects, list):
+        return []
+    identities: list[str] = []
+    for item in objects:
+        node_tag, node_payload = _node_tag(item)
+        if node_tag == "ObjectWithArgs" and isinstance(node_payload, dict):
+            names = _strings(node_payload.get("objname"))
+            if not names:
+                continue
+            argument_types: list[str] = []
+            for arg_tag, arg_payload in _walk(node_payload.get("objargs")):
+                if arg_tag == "TypeName" and isinstance(arg_payload, dict):
+                    type_names = _strings(arg_payload.get("names"))
+                    if type_names:
+                        argument_types.append(".".join(type_names))
+            signature = "(" + ", ".join(argument_types) + ")" if argument_types else "(signature-not-verifiable)"
+            identities.append(_qualified_identifier(names) + signature)
+            continue
+        if node_tag == "TypeName" and isinstance(node_payload, dict):
+            names = _strings(node_payload.get("names"))
+            if names:
+                identities.append(_qualified_identifier(names))
+            continue
+        if node_tag == "RangeVar" and isinstance(node_payload, dict):
+            relation = _rangevars(item)
+            if relation:
+                identities.extend(relation)
+            continue
+        # A PostgreSQL List target contains the identifiers for exactly one
+        # object. Keep each top-level target separate.
+        names = _strings(item)
+        if names:
+            identities.append(_qualified_identifier(names))
+    return list(dict.fromkeys(identities))
+
+
 def _object_names(tag: str, payload: Any) -> list[str]:
     if not isinstance(payload, dict):
         return []
@@ -194,8 +259,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
         if values:
             return [_qualified_identifier(values)]
     if tag == "DropStmt":
-        values = _strings(payload.get("objects"))
-        return [".".join(values)] if values else []
+        return _drop_object_names(payload)
     if tag == "AlterOwnerStmt":
         target = payload.get("object")
         ranges = _rangevars(target)
@@ -218,10 +282,6 @@ def _object_names(tag: str, payload: Any) -> list[str]:
             return [str(payload.get("objectType") or "OBJECT") + ":" + _qualified_identifier(names)]
         return []
     if tag == "GrantStmt":
-        # GrantStmt.objects contains typed PostgreSQL nodes (RangeVar,
-        # ObjectWithArgs, TypeName, ...). Recursively collecting every string
-        # also captures relpersistence ("p") and silently merges distinct
-        # targets into one invalid ACL identity.
         ranges = _rangevars(payload.get("objects"))
         if ranges:
             return ranges
@@ -242,7 +302,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
                             if type_names:
                                 argument_types.append(".".join(type_names))
                     if argument_types:
-                        identity += "(" + ",".join(argument_types) + ")"
+                        identity += "(" + ", ".join(argument_types) + ")"
                     targets.append(identity)
             elif node_tag == "TypeName" and object_type not in {"OBJECT_FUNCTION", "OBJECT_PROCEDURE"} and isinstance(node_payload, dict):
                 names = _strings(node_payload.get("names"))
@@ -250,8 +310,6 @@ def _object_names(tag: str, payload: Any) -> list[str]:
                     targets.append(_qualified_identifier(names))
         return list(dict.fromkeys(targets)) or [object_type or tag]
     if tag in {"GrantRoleStmt", "AlterDefaultPrivilegesStmt"}:
-        # These statements target roles or a default-privilege scope rather
-        # than one concrete relation; retain a conservative explicit scope.
         values = _strings(payload.get("roles") or payload.get("grantees") or payload.get("schemas"))
         return [".".join(values)] if values else [str(payload.get("objtype") or tag)]
     if tag == "CreateTableAsStmt":
@@ -270,6 +328,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
                 return [_qualified_identifier(values)]
     ranges = _rangevars(payload)
     return ranges[:1]
+
 def _classify_statement(stmt: Any) -> tuple[str, Any] | None:
     tag, payload = _node_tag(stmt)
     if tag in DDL_TAGS:
@@ -444,6 +503,10 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
             continue
         tag, payload = classified
         object_class, operation = DDL_TAGS[tag]
+        if tag == "DropStmt" and isinstance(payload, dict):
+            # Match DROP lineage to the same semantic class used by CREATE.
+            # Unknown PostgreSQL object kinds remain generic and unverifiable.
+            object_class = DROP_OBJECT_CLASS.get(str(payload.get("removeType") or ""), "OBJECT")
         if tag == "CreateFunctionStmt" and isinstance(payload, dict) and payload.get("is_procedure"):
             object_class = "PROCEDURE"
         elif tag == "AlterFunctionStmt" and isinstance(payload, dict) and payload.get("objtype") in {"OBJECT_PROCEDURE", "PROCEDURE"}:
@@ -452,7 +515,7 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
         ast_json = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         ast_sha256 = hashlib.sha256(ast_json.encode("utf-8")).hexdigest()
         names = _object_names(tag, payload)
-        event_targets = names if tag == "GrantStmt" and names else [names[0] if names else None]
+        event_targets = names if tag in {"GrantStmt", "DropStmt"} and names else [names[0] if names else None]
         event_status = "AST_PARSED"
         if not names:
             event_status = "NOT_VERIFIABLE"
