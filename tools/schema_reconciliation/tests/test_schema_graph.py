@@ -83,6 +83,7 @@ class SemanticObjectGraphTests(unittest.TestCase):
                 "object_class": "COLUMN", "operation": "ALTER",
                 "normalized_ast": {"AlterTableCmd": {
                     "subtype": "AT_AlterColumnType",
+                    "name": "code",
                     "def": {"TypeName": {"names": [{"String": {"sval": "varchar"}}, {"String": {"sval": "64"}}]}},
                     "transform": using_expression,
                 }},
@@ -103,6 +104,7 @@ class SemanticObjectGraphTests(unittest.TestCase):
             {"object_class": "COLUMN", "operation": "CREATE", "normalized_ast": {"ColumnDef": {"colname": "code"}}},
             {"object_class": "COLUMN", "operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
                 "subtype": "AT_AlterColumnType",
+                "name": "code",
                 "def": {"TypeName": {"names": [{"String": {"sval": "integer"}}]}},
                 "transform": first_transform,
             }}},
@@ -116,6 +118,19 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(status, "REDUCED_TABLE_SUBOBJECT_DEFINITION")
         self.assertNotIn("type_change_using", definition["ColumnDef"])
 
+    def test_column_reducer_rejects_alter_for_different_column_name(self):
+        history = [
+            {"object_class": "COLUMN", "operation": "CREATE", "normalized_ast": {"ColumnDef": {"colname": "status"}}},
+            {"object_class": "COLUMN", "operation": "ALTER", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_SetNotNull",
+                "name": "another_column",
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_table_subobject_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "COLUMN_ALTER_TARGET_MISMATCH")
+
     def test_column_reducer_folds_not_null_transition(self):
         history = [
             {
@@ -124,7 +139,7 @@ class SemanticObjectGraphTests(unittest.TestCase):
             },
             {
                 "object_class": "COLUMN", "operation": "ALTER",
-                "normalized_ast": {"AlterTableCmd": {"subtype": "AT_SetNotNull"}},
+                "normalized_ast": {"AlterTableCmd": {"subtype": "AT_SetNotNull", "name": "id"}},
             },
         ]
         status, definition, reduction = schema_graph._reduce_table_subobject_history(history)
