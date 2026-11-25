@@ -67,6 +67,17 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
       samplePrompt: 'Buat outline artikel tentang pentingnya koneksi Wi-Fi stabil bagi produktivitas kerja jarak jauh.',
     },
     {
+      id: 'copy-engine',
+      agentKey: 'manus' as const,
+      name: 'Copy Engine',
+      altName: 'Copywriting AI',
+      category: 'teks',
+      desc: 'Buat brand voice, campaign, iklan, caption, landing page, deskripsi produk, email, headline dan text-overlay melalui Agent Runtime.',
+      icon: FileText,
+      color: 'bg-rose-50 text-rose-600 border-rose-200',
+      samplePrompt: 'Gunakan Copy Engine MoreAI melalui tool copy_engine_generate. Pilih satu mode yang paling sesuai dari: brand_voice, campaign_concept, ad_variant, social_caption, landing_page, product_description, email, headline, text_overlay. Mode: campaign_concept. Brief: Buat konsep kampanye berdasarkan informasi yang saya berikan. Jangan mengarang harga, diskon, sertifikasi, hasil, testimoni atau klaim produk. Pisahkan fakta terverifikasi dari asumsi dan catat factual_gaps serta compliance_notes. Tampilkan hasil terstruktur dari tool.',
+    },
+    {
       id: 'img-gen',
       agentKey: 'manus' as const,
       name: 'Generate Gambar',
@@ -153,6 +164,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
     const isImageGeneration = selected.category === 'gambar';
     const isVideoGeneration = selected.category === 'video';
     const isFileGeneration = selected.category === 'file';
+    const isCopyEngine = selected.id === 'copy-engine';
     if (mediaCapabilitiesLoading || !mediaCapabilities) {
       if (isImageGeneration || isFileGeneration) {
         setHandoffNotice('Status provider belum dapat dipastikan dari worker. Tidak ada proses atau pemotongan kredit yang dilakukan.');
@@ -182,7 +194,9 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
           ? 'Buat naskah, storyboard per adegan, arahan visual, voice-over, dan timing untuk video. Hasilkan dokumen teks saja; jangan mengklaim membuat atau merender file video.'
           : isFileGeneration
             ? 'Buat artifact file nyata berdasarkan instruksi pengguna. Gunakan tool file_saver dengan nama file dan MIME type yang sesuai. Pastikan hasil tool mengonfirmasi penyimpanan sebelum menyatakan file selesai.'
-            : 'Gunakan kemampuan AI MoreAI untuk tugas ' + selected.name + '.';
+            : isCopyEngine
+              ? 'Jalankan tool copy_engine_generate pada OpenManus Agent Runtime. Gunakan mode yang diminta pengguna (brand_voice, campaign_concept, ad_variant, social_caption, landing_page, product_description, email, headline, atau text_overlay), kirim brief dan fakta sumber yang tersedia, lalu tampilkan output terstruktur dari tool. Jangan mengganti tool dengan teks buatan sendiri jika tool gagal; jangan mengarang fakta, klaim, harga, diskon, sertifikasi atau hasil. Text overlay hanya spesifikasi, bukan hasil render.'
+              : 'Gunakan kemampuan AI MoreAI untuk tugas ' + selected.name + '.';
     setHandoffNotice(
       isVideoScript
         ? 'Provider video belum terdaftar. Brief naskah dan storyboard dibuka di Chat AI; file video tidak dirender.'
@@ -192,7 +206,9 @@ export const CreateView: React.FC<CreateViewProps> = ({ onNavigateToChat }) => {
             ? 'Brief video dibuka di Chat AI menggunakan adapter Video yang dilaporkan worker.'
             : isFileGeneration
               ? 'Brief pembuatan file dibuka di Chat AI. Agent menyimpan artifact hanya jika tool storage berhasil.'
-              : 'Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.'
+              : isCopyEngine
+                ? 'Brief Copy Engine dibuka di Chat AI. Eksekusi tetap melalui tool terdaftar, metered LLM gateway dan policy Agent Runtime.'
+                : 'Prompt dibuka di Chat AI. Periksa instruksi lalu kirim pesan untuk menjalankan Agent.'
     );
     onNavigateToChat(taskInstruction + '\n\nInstruksi pengguna:\n' + customPrompt.trim(), selected.agentKey, isVideoGeneration ? selectedMotionSkillIds : []);
   };
