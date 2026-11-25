@@ -46,16 +46,32 @@ def _root_tag(value: Any) -> str | None:
 
 
 def _candidate_matches_observed_reference(candidate: str, reference: str) -> bool:
+    """Bind only identities proven equal by the source and observed catalog.
+
+    PostgreSQL resolves unqualified names through search_path. Unless that
+    search_path is captured as evidence, an unqualified AST reference cannot
+    be assigned to an arbitrary schema-qualified pg_depend identity. Likewise,
+    suffix matching can bind unrelated objects from different schemas.
+    """
     value = candidate.strip()
     observed = reference.strip()
+    if not value or not observed:
+        return False
+
     if value.startswith("function:"):
-        name = value[len("function:"):]
-        leaf = name.split(".")[-1]
-        return observed == name or observed.startswith(name + "(") or observed.endswith("." + leaf + "(") or ("." + leaf + "(") in observed
+        name = value[len("function:"):].strip()
+        # pg_depend identities may append a rendered argument signature.
+        # Compare the complete qualified function name, never only its leaf.
+        observed_name = observed.split("(", 1)[0].strip()
+        return bool(name) and observed_name == name
+
     if value.startswith("type:"):
-        name = value[len("type:"):]
-        return observed == name or observed.endswith("." + name.split(".")[-1])
-    return observed == value or observed.startswith(value + ".")
+        name = value[len("type:"):].strip()
+        return bool(name) and observed == name
+
+    # Relation and other catalog identities must be exact. A dotted suffix
+    # can denote a different schema or a column, not the same relation.
+    return observed == value
 
 
 def _dependency_binding_evidence(expected_item: dict[str, Any], dependency_map: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
