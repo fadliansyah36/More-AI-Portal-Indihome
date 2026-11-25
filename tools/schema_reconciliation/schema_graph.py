@@ -872,7 +872,7 @@ def _reduce_range_type_history(history: list[dict[str, Any]]) -> tuple[str, dict
 
 
 def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
-    """Fold explicit CREATE/ALTER DOMAIN changes with exact type/constraint identity."""
+    """Fold explicit CREATE/ALTER DOMAIN changes using PostgreSQL raw AST fields."""
     current: dict[str, Any] | None = None
     source_identity: str | None = None
     for event in history:
@@ -899,12 +899,15 @@ def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
                 return "NOT_VERIFIABLE", None, "DOMAIN_ALTER_IDENTITY_UNRESOLVED"
             if _qualified_identifier(target_names) != source_identity:
                 return "NOT_VERIFIABLE", None, "DOMAIN_ALTER_TARGET_MISMATCH"
+            # pglast exposes the raw parser node's def/name fields. The JSON
+            # serializer may retain the key def; accept def_ for AST adapters.
+            definition = payload.get("def") if "def" in payload else payload.get("def_")
+            constraint_name = payload.get("name")
             subtype = str(payload.get("subtype") or "")
-            definition = payload.get("def")
             constraints = current.setdefault("constraints", [])
             if not isinstance(constraints, list):
                 return "NOT_VERIFIABLE", None, "DOMAIN_CONSTRAINTS_SHAPE_UNSUPPORTED"
-            if subtype == "T_AddConstraint":
+            if subtype == "C":
                 def_tag, constraint = _node_tag(definition)
                 if def_tag != "Constraint" or not isinstance(constraint, dict):
                     return "NOT_VERIFIABLE", None, "DOMAIN_ADD_CONSTRAINT_DEFINITION_UNRESOLVED"
@@ -917,19 +920,18 @@ def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
                         return "NOT_VERIFIABLE", None, "DOMAIN_ADD_CONSTRAINT_DUPLICATE_NAME"
                 constraints.append(json.loads(json.dumps(definition)))
                 continue
-            if subtype in {"T_DropConstraint", "T_ValidateConstraint"}:
-                names = _strings(definition)
-                if len(names) != 1:
+            if subtype in {"X", "V"}:
+                if not isinstance(constraint_name, str) or not constraint_name:
                     return "NOT_VERIFIABLE", None, "DOMAIN_CONSTRAINT_TARGET_UNRESOLVED"
                 matches = []
                 for index, item in enumerate(constraints):
                     item_tag, item_payload = _node_tag(item)
-                    if item_tag == "Constraint" and isinstance(item_payload, dict) and item_payload.get("conname") == names[0]:
+                    if item_tag == "Constraint" and isinstance(item_payload, dict) and item_payload.get("conname") == constraint_name:
                         matches.append(index)
                 if len(matches) != 1:
                     return "NOT_VERIFIABLE", None, "DOMAIN_CONSTRAINT_TARGET_NOT_UNIQUE"
                 index = matches[0]
-                if subtype == "T_DropConstraint":
+                if subtype == "X":
                     constraints.pop(index)
                 else:
                     item_tag, item_payload = _node_tag(constraints[index])
@@ -937,10 +939,8 @@ def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
                         return "NOT_VERIFIABLE", None, "DOMAIN_VALIDATE_STATE_NOT_EXPLICITLY_UNVALIDATED"
                     item_payload["skip_validation"] = False
                 continue
-            if subtype in {"T_SetNotNull", "T_DropNotNull"}:
-                # ALTER DOMAIN toggles the domain-level NOT NULL property. Remove
-                # its CREATE-time constraint node and represent the final explicit
-                # state once, avoiding contradictory stale AST plus override data.
+            if subtype in {"O", "N"}:
+                # O = SET NOT NULL; N = DROP NOT NULL.
                 current["constraints"] = [
                     item for item in constraints
                     if not (
@@ -949,9 +949,11 @@ def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
                         and _node_tag(item)[1].get("contype") == "CONSTR_NOTNULL"
                     )
                 ]
-                current["domain_not_null"] = subtype == "T_SetNotNull"
+                current["domain_not_null"] = subtype == "O"
                 continue
-            if subtype in {"T_SetDefault", "T_DropDefault"}:
+            if subtype == "T":
+                # T carries SET DEFAULT when def is present and DROP DEFAULT
+                # when it is absent in PostgreSQL's AlterDomainStmt contract.
                 current["constraints"] = [
                     item for item in constraints
                     if not (
@@ -960,12 +962,9 @@ def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
                         and _node_tag(item)[1].get("contype") == "CONSTR_DEFAULT"
                     )
                 ]
-                if subtype == "T_SetDefault":
-                    if definition is None:
-                        return "NOT_VERIFIABLE", None, "DOMAIN_SET_DEFAULT_EXPRESSION_MISSING"
-                    current["domain_default"] = json.loads(json.dumps(definition))
-                else:
-                    current["domain_default"] = None
+                current["domain_default"] = (
+                    json.loads(json.dumps(definition)) if definition is not None else None
+                )
                 continue
             return "NOT_VERIFIABLE", None, "DOMAIN_ALTER_SUBTYPE_UNSUPPORTED:" + subtype
         return "NOT_VERIFIABLE", None, "DOMAIN_EVENT_SHAPE_OR_OPERATION_UNSUPPORTED"
@@ -974,6 +973,7 @@ def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
     if source_identity is None:
         return "NOT_VERIFIABLE", None, "DOMAIN_CREATE_NOT_FOUND"
     return "REDUCED_DOMAIN_EXPLICIT_STATE_PARTIAL", {"CreateDomainStmt": current}, "DOMAIN_CREATE_ALTER_EXPLICIT_STATE_REDUCED"
+
 
 
 def _reduce_trigger_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
