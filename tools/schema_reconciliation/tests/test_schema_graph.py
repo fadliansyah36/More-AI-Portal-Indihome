@@ -579,8 +579,8 @@ class SemanticObjectGraphTests(unittest.TestCase):
         }
         revoke = {**grant, "is_grant": False, "admin_opt": False}
         status, definition, reason = schema_graph._reduce_role_membership_history([
-            {"normalized_ast": {"GrantRoleStmt": grant}},
-            {"normalized_ast": {"GrantRoleStmt": revoke}},
+            {"object_name": "member:alice->role:analyst", "normalized_ast": {"GrantRoleStmt": grant}},
+            {"object_name": "member:alice->role:analyst", "normalized_ast": {"GrantRoleStmt": revoke}},
         ])
         self.assertEqual(status, "REDUCED_EXPLICIT_ROLE_MEMBERSHIP")
         self.assertEqual(reason, "ROLE_MEMBERSHIP_EXPLICIT_GRANT_REVOKE_REDUCED")
@@ -597,7 +597,7 @@ class SemanticObjectGraphTests(unittest.TestCase):
             "is_grant": True, "admin_opt": False, "inherit_opt": None, "set_opt": None,
         }
         status, definition, reason = schema_graph._reduce_role_membership_history([
-            {"normalized_ast": {"GrantRoleStmt": payload}},
+            {"object_name": "member:alice->role:analyst", "normalized_ast": {"GrantRoleStmt": payload}},
         ])
         self.assertEqual(status, "NOT_VERIFIABLE")
         self.assertIsNone(definition)
