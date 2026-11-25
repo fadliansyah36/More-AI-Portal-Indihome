@@ -26,6 +26,7 @@ DDL_TAGS = {
     "AlterSeqStmt": ("SEQUENCE", "ALTER"),
     "CreateEnumStmt": ("TYPE", "CREATE"),
     "CreateDomainStmt": ("DOMAIN", "CREATE"),
+    "AlterDomainStmt": ("DOMAIN", "ALTER"),
     "CompositeTypeStmt": ("TYPE", "CREATE"),
     "CreateRangeStmt": ("TYPE", "CREATE"),
     "CreateSchemaStmt": ("SCHEMA", "CREATE"),
@@ -295,7 +296,14 @@ def _object_names(tag: str, payload: Any) -> list[str]:
         if not argument_types and parameters:
             return [_qualified_identifier(names) + "#signature-not-verifiable"]
         return [_qualified_identifier(names) + "(" + ", ".join(argument_types) + ")"]
-    if tag in {"CreateEnumStmt", "CreateDomainStmt", "CompositeTypeStmt", "CreateRangeStmt", "AlterTypeStmt", "AlterEnumStmt"}:
+    if tag == "CreateDomainStmt":
+        # CreateDomainStmt.domainname is the object being created; typeName is
+        # only its underlying base type and must never be used as the identity.
+        values = _strings(payload.get("domainname"))
+        if values:
+            return [_qualified_identifier(values)]
+        return []
+    if tag in {"CreateEnumStmt", "CompositeTypeStmt", "CreateRangeStmt", "AlterTypeStmt", "AlterEnumStmt", "AlterDomainStmt"}:
         values = _strings(payload.get("typeName") or payload.get("typevar"))
         if values:
             return [_qualified_identifier(values)]
@@ -821,6 +829,95 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
 
 
 
+
+
+def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Fold explicit CREATE/ALTER DOMAIN changes with exact type/constraint identity."""
+    current: dict[str, Any] | None = None
+    source_identity: str | None = None
+    for event in history:
+        operation = event.get("operation")
+        tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if operation == "DROP":
+            current = None
+            continue
+        if operation == "CREATE" and tag == "CreateDomainStmt" and isinstance(payload, dict):
+            names = _strings(payload.get("domainname"))
+            if not names:
+                return "NOT_VERIFIABLE", None, "DOMAIN_CREATE_IDENTITY_UNRESOLVED"
+            source_identity = _qualified_identifier(names)
+            current = json.loads(json.dumps(payload))
+            constraints = current.get("constraints")
+            if constraints is not None and not isinstance(constraints, list):
+                return "NOT_VERIFIABLE", None, "DOMAIN_CREATE_CONSTRAINTS_SHAPE_UNSUPPORTED"
+            continue
+        if operation == "ALTER" and tag == "AlterDomainStmt" and isinstance(payload, dict):
+            if current is None:
+                return "NOT_VERIFIABLE", None, "DOMAIN_ALTER_WITHOUT_SOURCE_CREATE"
+            target_names = _strings(payload.get("typeName"))
+            if not target_names:
+                return "NOT_VERIFIABLE", None, "DOMAIN_ALTER_IDENTITY_UNRESOLVED"
+            if _qualified_identifier(target_names) != source_identity:
+                return "NOT_VERIFIABLE", None, "DOMAIN_ALTER_TARGET_MISMATCH"
+            subtype = str(payload.get("subtype") or "")
+            definition = payload.get("def")
+            constraints = current.setdefault("constraints", [])
+            if not isinstance(constraints, list):
+                return "NOT_VERIFIABLE", None, "DOMAIN_CONSTRAINTS_SHAPE_UNSUPPORTED"
+            if subtype == "T_AddConstraint":
+                def_tag, constraint = _node_tag(definition)
+                if def_tag != "Constraint" or not isinstance(constraint, dict):
+                    return "NOT_VERIFIABLE", None, "DOMAIN_ADD_CONSTRAINT_DEFINITION_UNRESOLVED"
+                name = constraint.get("conname")
+                if not isinstance(name, str) or not name:
+                    return "NOT_VERIFIABLE", None, "DOMAIN_ADD_CONSTRAINT_NAME_UNRESOLVED"
+                for item in constraints:
+                    item_tag, item_payload = _node_tag(item)
+                    if item_tag == "Constraint" and isinstance(item_payload, dict) and item_payload.get("conname") == name:
+                        return "NOT_VERIFIABLE", None, "DOMAIN_ADD_CONSTRAINT_DUPLICATE_NAME"
+                constraints.append(json.loads(json.dumps(definition)))
+                continue
+            if subtype in {"T_DropConstraint", "T_ValidateConstraint"}:
+                names = _strings(definition)
+                if len(names) != 1:
+                    return "NOT_VERIFIABLE", None, "DOMAIN_CONSTRAINT_TARGET_UNRESOLVED"
+                matches = []
+                for index, item in enumerate(constraints):
+                    item_tag, item_payload = _node_tag(item)
+                    if item_tag == "Constraint" and isinstance(item_payload, dict) and item_payload.get("conname") == names[0]:
+                        matches.append(index)
+                if len(matches) != 1:
+                    return "NOT_VERIFIABLE", None, "DOMAIN_CONSTRAINT_TARGET_NOT_UNIQUE"
+                index = matches[0]
+                if subtype == "T_DropConstraint":
+                    constraints.pop(index)
+                else:
+                    item_tag, item_payload = _node_tag(constraints[index])
+                    if item_payload.get("skip_validation") is not True:
+                        return "NOT_VERIFIABLE", None, "DOMAIN_VALIDATE_STATE_NOT_EXPLICITLY_UNVALIDATED"
+                    item_payload["skip_validation"] = False
+                continue
+            if subtype == "T_SetNotNull":
+                current["domain_not_null"] = True
+                continue
+            if subtype == "T_DropNotNull":
+                current["domain_not_null"] = False
+                continue
+            if subtype == "T_SetDefault":
+                if definition is None:
+                    return "NOT_VERIFIABLE", None, "DOMAIN_SET_DEFAULT_EXPRESSION_MISSING"
+                current["domain_default"] = json.loads(json.dumps(definition))
+                continue
+            if subtype == "T_DropDefault":
+                current["domain_default"] = None
+                continue
+            return "NOT_VERIFIABLE", None, "DOMAIN_ALTER_SUBTYPE_UNSUPPORTED:" + subtype
+        return "NOT_VERIFIABLE", None, "DOMAIN_EVENT_SHAPE_OR_OPERATION_UNSUPPORTED"
+    if current is None:
+        return "DROPPED_IN_SOURCE_LINEAGE", None, "DOMAIN_DROP_REDUCED"
+    if source_identity is None:
+        return "NOT_VERIFIABLE", None, "DOMAIN_CREATE_NOT_FOUND"
+    return "REDUCED_DOMAIN_EXPLICIT_STATE_PARTIAL", {"CreateDomainStmt": current}, "DOMAIN_CREATE_ALTER_EXPLICIT_STATE_REDUCED"
 
 
 def _reduce_trigger_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
@@ -1475,6 +1572,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state, expected_definition, reduction_status = _reduce_ownership_history(history)
         elif latest["object_class"] == "RLS_POLICY":
             state, expected_definition, reduction_status = _reduce_policy_history(history)
+        elif latest["object_class"] == "DOMAIN" and any(item.get("operation") == "ALTER" for item in history):
+            state, expected_definition, reduction_status = _reduce_domain_history(history)
         elif latest["object_class"] == "SEQUENCE" and any(item.get("operation") == "ALTER" for item in history):
             state, expected_definition, reduction_status = _reduce_sequence_history(history)
         elif latest["object_class"] == "TRIGGER" and any(item.get("operation") == "ALTER" for item in history):
