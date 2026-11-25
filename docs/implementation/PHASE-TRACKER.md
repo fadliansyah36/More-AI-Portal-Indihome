@@ -1,5 +1,7 @@
 # MoreAI Implementation Phase Tracker
 
+**Task 1 continuation — 2026-11-25 (enum type identity):** `AlterEnumStmt.typeName` must now exactly match the preceding `CreateEnumStmt.typeName`; missing or mismatched identities fail closed. Regression source added, not executed. Commits `d0e090cd247bc3742b50cef97c42c14e6b63944a`, `4fc2c6815c281726a1ecda0e927127747b666a0b` and `11c9d94212ee092a24e22a4d0c145d30fc1ed510`. Task 1 remains `REVIEW_REQUIRED`; see [enum identity reducer report](./TASK1-ENUM-IDENTITY-BINDING-20261125.md).
+
 **Task 1 continuation — 2026-11-25 (column identity):** Column ALTER reducer now requires exact `ColumnDef.colname` ↔ `AlterTableCmd.name` identity; missing/mismatched names fail closed. Regression source and explicit-name fixtures added, not executed. Commits `a286ddd055871b2bf1aa8b43c76bfa0f1f73993c` and `6417e047e4184fb1960cfd99397bf2c241790022`. Task 1 remains `REVIEW_REQUIRED`; see [column identity reducer report](./TASK1-COLUMN-IDENTITY-BINDING-20261125.md).
 
 **Task 1 continuation — 2026-11-25 (column USING expression):** `AT_AlterColumnType` now preserves normalized `AlterTableCmd.transform` as `ColumnDef.type_change_using` and clears stale transform state on a later plain type change. Regression source added; not executed. Commits `a0442c77eba5e4efb15ff86a29ed99a4bef21312` and `3637238f77752644dbfc8a29a9f2a834e407f5e7`. Task 1 remains `REVIEW_REQUIRED`; see [column USING reducer report](./TASK1-COLUMN-USING-EXPRESSION-20261125.md).
