@@ -1556,16 +1556,37 @@ def _acl_role_name(value: Any) -> str | None:
 
 
 def _reduce_ownership_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
-    """Reduce the latest explicit ALTER OWNER transition; do not infer prior owners."""
+    """Fold explicit ALTER OWNER events only when every event targets one exact object."""
     if not history:
         return "NOT_VERIFIABLE", None, "OWNER_HISTORY_EMPTY"
-    node_tag, payload = _node_tag(history[-1].get("normalized_ast") or {})
-    if node_tag != "AlterOwnerStmt" or not isinstance(payload, dict):
-        return "NOT_VERIFIABLE", None, "OWNER_EVENT_SHAPE_UNSUPPORTED"
-    owner = _acl_role_name(payload.get("newowner"))
-    if owner is None:
-        return "NOT_VERIFIABLE", None, "OWNER_ROLE_UNRESOLVED"
-    return "REDUCED_OWNER_STATE", {"Owner": {"role": owner}}, "OWNER_ROLE_REDUCED_FROM_AST"
+    source_identity: str | None = None
+    owner: str | None = None
+    for event in history:
+        if event.get("operation") not in {None, "ALTER"}:
+            return "NOT_VERIFIABLE", None, "OWNER_EVENT_OPERATION_UNSUPPORTED"
+        node_tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if node_tag != "AlterOwnerStmt" or not isinstance(payload, dict):
+            return "NOT_VERIFIABLE", None, "OWNER_EVENT_SHAPE_UNSUPPORTED"
+        identities = _object_names("AlterOwnerStmt", payload)
+        if len(identities) != 1 or not identities[0] or identities[0].endswith(":"):
+            return "NOT_VERIFIABLE", None, "OWNER_OBJECT_IDENTITY_UNRESOLVED"
+        event_identity = identities[0]
+        recorded_identity = event.get("object_name")
+        if isinstance(recorded_identity, str) and recorded_identity != event_identity:
+            return "NOT_VERIFIABLE", None, "OWNER_EVENT_IDENTITY_MISMATCH"
+        if source_identity is not None and event_identity != source_identity:
+            return "NOT_VERIFIABLE", None, "OWNER_TARGET_CHANGED_WITHIN_HISTORY"
+        source_identity = event_identity
+        owner = _acl_role_name(payload.get("newowner"))
+        if owner is None:
+            return "NOT_VERIFIABLE", None, "OWNER_ROLE_UNRESOLVED"
+    if owner is None or source_identity is None:
+        return "NOT_VERIFIABLE", None, "OWNER_EFFECTIVE_STATE_UNRESOLVED"
+    return (
+        "REDUCED_OWNER_STATE",
+        {"Owner": {"object_identity": source_identity, "role": owner}},
+        "OWNER_ROLE_AND_OBJECT_IDENTITY_REDUCED",
+    )
 
 
 def _reduce_acl_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
