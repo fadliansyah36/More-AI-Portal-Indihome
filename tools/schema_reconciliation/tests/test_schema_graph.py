@@ -317,6 +317,51 @@ class SemanticObjectGraphTests(unittest.TestCase):
             ["public.documents.documents_read"],
         )
 
+    def test_enum_reducer_folds_add_before_after_and_rename_value(self):
+        create = {
+            "typeName": [{"String": {"sval": "public"}}, {"String": {"sval": "job_state"}}],
+            "vals": [{"String": {"sval": "queued"}}, {"String": {"sval": "running"}}, {"String": {"sval": "done"}}],
+        }
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateEnumStmt": create}},
+            {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "newVal": {"String": {"sval": "blocked"}},
+                "newValNeighbor": {"String": {"sval": "running"}},
+                "newValIsAfter": False,
+            }}},
+            {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "newVal": {"String": {"sval": "paused"}},
+                "newValNeighbor": {"String": {"sval": "running"}},
+                "newValIsAfter": True,
+            }}},
+            {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "oldVal": {"String": {"sval": "done"}},
+                "newVal": {"String": {"sval": "completed"}},
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_enum_type_history(history)
+        self.assertEqual(status, "REDUCED_ENUM_TYPE_STATE")
+        self.assertEqual(reason, "ENUM_CREATE_ALTER_CHAIN_REDUCED")
+        labels = [item["String"]["sval"] for item in definition["CreateEnumStmt"]["vals"]]
+        self.assertEqual(labels, ["queued", "blocked", "running", "paused", "completed"])
+
+    def test_enum_reducer_fails_closed_when_add_value_neighbor_is_unknown(self):
+        history = [
+            {"operation": "CREATE", "normalized_ast": {"CreateEnumStmt": {
+                "typeName": [{"String": {"sval": "public"}}, {"String": {"sval": "job_state"}}],
+                "vals": [{"String": {"sval": "queued"}}],
+            }}},
+            {"operation": "ALTER", "normalized_ast": {"AlterEnumStmt": {
+                "newVal": {"String": {"sval": "blocked"}},
+                "newValNeighbor": {"String": {"sval": "missing"}},
+                "newValIsAfter": True,
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_enum_type_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "ENUM_ADD_NEIGHBOR_NOT_FOUND")
+
 
 if __name__ == "__main__":
     unittest.main()
