@@ -4,6 +4,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import re
 from uuid import uuid4
 from urllib.parse import urlsplit
 from typing import Any
