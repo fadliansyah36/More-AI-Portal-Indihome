@@ -1,5 +1,8 @@
 # MoreAI Implementation Phase Tracker
 
+**Execution authorization — 2026-11-25:** Project owner explicitly authorized source implementation for Task 1 and Phase 04–09 on `main`; written exception: [ENGINEERING-EXECUTION-EXCEPTION-20261125.md](./ENGINEERING-EXECUTION-EXCEPTION-20261125.md). Master PRD §37 now records this exception. Test/build/lint/type-check execution, provider calls, migration apply, Supabase mutation, staging and deployment remain prohibited; source implementation and focused regression-source additions are allowed. This exception does not certify any phase as complete.
+
+
 **Task 1 continuation — 2026-11-25 (enum type identity):** `AlterEnumStmt.typeName` must now exactly match the preceding `CreateEnumStmt.typeName`; missing or mismatched identities fail closed. Regression source added, not executed. Commits `d0e090cd247bc3742b50cef97c42c14e6b63944a`, `4fc2c6815c281726a1ecda0e927127747b666a0b` and `11c9d94212ee092a24e22a4d0c145d30fc1ed510`. Task 1 remains `REVIEW_REQUIRED`; see [enum identity reducer report](./TASK1-ENUM-IDENTITY-BINDING-20261125.md).
 
 **Task 1 continuation — 2026-11-25 (enum and sequence identity):** Enum ALTER now requires exact `CreateEnumStmt.typeName` ↔ `AlterEnumStmt.typeName`; sequence ALTER now requires exact `CreateSeqStmt.sequence` ↔ `AlterSeqStmt.sequence`. Missing/mismatched identities fail closed. Regression source added, not executed. Commits `d0e090cd247bc3742b50cef97c42c14e6b63944a`, `4fc2c6815c281726a1ecda0e927127747b666a0b`, `11c9d94212ee092a24e22a4d0c145d30fc1ed510`, `6682d12340a90a0b25e129b56dc50310aef5729c` and `e15e0fb9a99202eea020e0fa7d0e2a075f37bb48`. Task 1 remains `REVIEW_REQUIRED`; see [enum and sequence identity report](./TASK1-ENUM-SEQUENCE-IDENTITY-20261125.md).
