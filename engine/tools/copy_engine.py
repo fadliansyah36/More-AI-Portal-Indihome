@@ -21,7 +21,7 @@ def _decode_structured_copy_output(raw: str, *, mode: str, forbidden_claims: lis
     if candidate.startswith("```"):
         lines = candidate.splitlines()
         if len(lines) >= 3 and lines[-1].strip() == "```":
-            candidate = "\\n".join(lines[1:-1]).strip()
+            candidate = "\n".join(lines[1:-1]).strip()
     try:
         payload = json.loads(candidate)
     except (TypeError, json.JSONDecodeError) as exc:
