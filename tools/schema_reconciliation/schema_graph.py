@@ -219,7 +219,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
                         if arg_tag == "TypeName" and isinstance(arg_payload, dict):
                             type_names = _strings(arg_payload.get("names"))
                             if type_names:
-                                argument_types.append(_qualified_identifier(type_names))
+                                argument_types.append(".".join(type_names))
                     if argument_types:
                         identity += "(" + ",".join(argument_types) + ")"
                     targets.append(identity)
