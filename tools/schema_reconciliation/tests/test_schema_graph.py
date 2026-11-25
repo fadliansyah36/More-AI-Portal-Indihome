@@ -429,5 +429,46 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reason, "SEQUENCE_ALTER_WITHOUT_SOURCE_CREATE")
 
 
+    def test_column_reducer_folds_cooked_default_on_update_and_storage_options(self):
+        base = {"colname": "status", "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}}}
+        events = [
+            {"operation": "CREATE", "object_class": "COLUMN", "normalized_ast": {"ColumnDef": base}},
+            {"operation": "ALTER", "object_class": "COLUMN", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_CookedColumnDefault",
+                "name": "status",
+                "def": {"A_Const": {"val": {"String": {"sval": "draft"}}}},
+            }}},
+            {"operation": "ALTER", "object_class": "COLUMN", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_ColumnOnUpdate",
+                "name": "status",
+                "def": {"FuncCall": {"funcname": [{"String": {"sval": "now"}}]}},
+            }}},
+            {"operation": "ALTER", "object_class": "COLUMN", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_SetStorage",
+                "name": "status",
+                "def": {"String": {"sval": "EXTENDED"}},
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_table_subobject_history(events)
+        self.assertEqual(status, "REDUCED_TABLE_SUBOBJECT_DEFINITION")
+        self.assertEqual(reason, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED")
+        column = definition["ColumnDef"]
+        self.assertIn("cooked_default", column)
+        self.assertIn("on_update", column)
+        self.assertEqual(column["column_options"]["AT_SetStorage"], {"String": {"sval": "EXTENDED"}})
+
+    def test_column_reducer_keeps_unknown_alter_subtype_unverifiable(self):
+        events = [
+            {"operation": "CREATE", "object_class": "COLUMN", "normalized_ast": {"ColumnDef": {"colname": "status"}}},
+            {"operation": "ALTER", "object_class": "COLUMN", "normalized_ast": {"AlterTableCmd": {
+                "subtype": "AT_UnknownFutureSubtype", "name": "status",
+            }}},
+        ]
+        status, definition, reason = schema_graph._reduce_table_subobject_history(events)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "ALTER_SUBTYPE_NOT_SUPPORTED_BY_COLUMN_REDUCER:AT_UnknownFutureSubtype")
+
+
 if __name__ == "__main__":
     unittest.main()
