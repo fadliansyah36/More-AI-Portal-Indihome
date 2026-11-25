@@ -680,16 +680,37 @@ def _reduce_acl_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, A
             return "NOT_VERIFIABLE", None, "ACL_OBJECT_TYPE_UNSUPPORTED"
         privileges = payload.get("privileges")
         grantees = payload.get("grantees")
-        if not isinstance(privileges, list) or not privileges or not isinstance(grantees, list) or not grantees:
-            return "NOT_VERIFIABLE", None, "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING"
+        if not isinstance(grantees, list) or not grantees:
+            return "NOT_VERIFIABLE", None, "ACL_GRANTEE_LIST_MISSING"
+        all_privileges = {
+            "OBJECT_TABLE": ["delete", "insert", "references", "select", "trigger", "truncate", "update"],
+            "OBJECT_SEQUENCE": ["select", "update", "usage"],
+            "OBJECT_FUNCTION": ["execute"],
+            "OBJECT_PROCEDURE": ["execute"],
+            "OBJECT_SCHEMA": ["create", "usage"],
+            "OBJECT_DATABASE": ["connect", "create", "temporary"],
+            "OBJECT_TYPE": ["usage"],
+            "OBJECT_DOMAIN": ["usage"],
+        }
         privilege_names: list[str] = []
-        for item in privileges:
-            tag, value = _node_tag(item)
-            if tag != "AccessPriv" or not isinstance(value, dict) or not isinstance(value.get("priv_name"), str):
-                # ALL PRIVILEGES and column-level privilege expansion require
-                # object-specific catalog knowledge; do not approximate them.
-                return "NOT_VERIFIABLE", None, "ACL_ALL_OR_UNSUPPORTED_PRIVILEGE"
-            privilege_names.append(value["priv_name"].lower())
+        if not isinstance(privileges, list) or not privileges:
+            privilege_names = all_privileges.get(object_type, [])
+            if not privilege_names:
+                return "NOT_VERIFIABLE", None, "ACL_ALL_PRIVILEGES_OBJECT_TYPE_UNSUPPORTED"
+        else:
+            for item in privileges:
+                tag, value = _node_tag(item)
+                if tag != "AccessPriv" or not isinstance(value, dict):
+                    return "NOT_VERIFIABLE", None, "ACL_PRIVILEGE_AST_UNSUPPORTED"
+                privilege = value.get("priv_name")
+                if privilege is None:
+                    privilege_names = all_privileges.get(object_type, [])
+                    if not privilege_names:
+                        return "NOT_VERIFIABLE", None, "ACL_ALL_PRIVILEGES_OBJECT_TYPE_UNSUPPORTED"
+                    break
+                if not isinstance(privilege, str) or not privilege:
+                    return "NOT_VERIFIABLE", None, "ACL_PRIVILEGE_NAME_UNRESOLVED"
+                privilege_names.append(privilege.lower())
         grantee_names = [_acl_role_name(item) for item in grantees]
         if any(name is None for name in grantee_names):
             return "NOT_VERIFIABLE", None, "ACL_GRANTEE_ROLE_UNRESOLVED"
