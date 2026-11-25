@@ -531,6 +531,63 @@ def parse_history_record(record: dict[str, Any], temp_root: Path, hash_manifest:
     return events, sources
 
 
+
+def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str, Any | None, str]:
+    """Fold only table-subobject changes whose final AST can be reconstructed safely."""
+    object_class = history[-1].get("object_class") if history else None
+    if object_class not in {"COLUMN", "CONSTRAINT"}:
+        return "NOT_APPLICABLE", None, "NOT_APPLICABLE"
+    current: dict[str, Any] | None = None
+    saw_create = False
+    for event in history:
+        operation = event.get("operation")
+        ast = event.get("normalized_ast") or {}
+        node_tag, payload = _node_tag(ast)
+        if operation == "DROP":
+            current = None
+            saw_create = False
+            continue
+        if operation == "CREATE":
+            if object_class == "COLUMN" and node_tag == "ColumnDef" and isinstance(payload, dict):
+                current = json.loads(json.dumps(payload))
+                saw_create = True
+                continue
+            if object_class == "CONSTRAINT" and node_tag == "Constraint" and isinstance(payload, dict):
+                current = json.loads(json.dumps(payload))
+                saw_create = True
+                continue
+            return "NOT_VERIFIABLE", None, "CREATE_EVENT_SHAPE_UNSUPPORTED"
+        if operation == "RENAME":
+            return "NOT_VERIFIABLE", None, "RENAME_REQUIRES_IDENTITY_REBINDING"
+        if operation == "ALTER" and object_class == "COLUMN":
+            if not saw_create or current is None or node_tag != "AlterTableCmd" or not isinstance(payload, dict):
+                return "NOT_VERIFIABLE", None, "ALTER_WITHOUT_REDUCIBLE_COLUMN_BASE"
+            subtype = str(payload.get("subtype") or "")
+            definition = payload.get("def")
+            if subtype == "AT_AlterColumnType" and definition is not None:
+                current["typeName"] = definition
+            elif subtype == "AT_SetNotNull":
+                current["is_not_null"] = True
+            elif subtype == "AT_DropNotNull":
+                current["is_not_null"] = False
+            elif subtype == "AT_ColumnDefault" and definition is not None:
+                current["raw_default"] = definition
+            elif subtype == "AT_DropColumnDefault":
+                current["raw_default"] = None
+            else:
+                return "NOT_VERIFIABLE", None, "ALTER_SUBTYPE_NOT_SUPPORTED_BY_COLUMN_REDUCER:" + subtype
+            continue
+        if operation == "ALTER" and object_class == "CONSTRAINT":
+            return "NOT_VERIFIABLE", None, "CONSTRAINT_ALTER_REQUIRES_VALIDATION_STATE_REDUCER"
+        return "NOT_VERIFIABLE", None, "EVENT_OPERATION_NOT_SUPPORTED"
+    if current is None:
+        return "DROPPED_IN_SOURCE_LINEAGE", None, "TABLE_SUBOBJECT_DROP_REDUCED"
+    if not saw_create:
+        return "NOT_VERIFIABLE", None, "TABLE_SUBOBJECT_CREATE_NOT_FOUND"
+    return "REDUCED_TABLE_SUBOBJECT_DEFINITION", {("ColumnDef" if object_class == "COLUMN" else "Constraint"): current}, "TABLE_SUBOBJECT_EVENT_CHAIN_REDUCED"
+
+
+
 def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path | None = None, history_hash_manifest_path: Path | None = None, history_archive_dir: Path | None = None) -> dict[str, Any]:
     files = sorted(root.rglob("*.sql"), key=lambda p: p.relative_to(root).as_posix())
     events: list[dict[str, Any]] = []
@@ -604,14 +661,19 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         latest = history[-1]
         last_operation = latest["operation"]
         state = "NOT_VERIFIABLE"
+        expected_definition = None
+        reduction_status = "NOT_APPLICABLE"
         if latest.get("source_conflict"):
             state = "SOURCE_CONFLICT_NOT_VERIFIABLE"
         elif latest.get("procedural_body_status") not in {None, "NOT_APPLICABLE"}:
             state = "FUNCTION_BODY_NOT_VERIFIABLE"
         elif latest["semantic_status"] == "AST_PARSED" and last_operation == "CREATE":
             state = "CREATE_DEFINITION_AST_AVAILABLE"
+            expected_definition = latest.get("normalized_ast")
         elif last_operation == "DROP":
             state = "DROPPED_IN_SOURCE_LINEAGE"
+        elif latest["object_class"] in {"COLUMN", "CONSTRAINT"}:
+            state, expected_definition, reduction_status = _reduce_table_subobject_history(history)
         elif last_operation in {"ALTER", "GRANT_OR_REVOKE", "RENAME", "ALTER_SCHEMA"}:
             state = "EVOLVED_STATE_REQUIRES_SEMANTIC_REDUCER"
         objects.append({
@@ -621,7 +683,7 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             "last_migration_id": latest["migration_id"],
             "latest_operation": last_operation, "expected_state_status": state,
             "latest_ast_sha256": latest["normalized_ast_sha256"],
-            "expected_definition": latest.get("normalized_ast") if state == "CREATE_DEFINITION_AST_AVAILABLE" else None,
+            "expected_definition": expected_definition,\n            "semantic_reduction_status": reduction_status,
             "dependency_candidates": sorted({candidate for item in history for candidate in (item.get("dependency_candidates") or [])}),
             "dependency_candidate_count": len({candidate for item in history for candidate in (item.get("dependency_candidates") or [])}),
             "migration_lineage": [
