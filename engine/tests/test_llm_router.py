@@ -31,7 +31,8 @@ def test_router_passes_tenant_scope_to_repository():
     assert repository.scope == ("u1", "w1", "p1")
 
 
-def test_router_uses_fallback_model_when_primary_is_unavailable():
+def test_router_uses_fallback_model_when_primary_is_unavailable(monkeypatch):
+    monkeypatch.setenv("MOREAI_PROVIDER_TEST_API_KEY", "test-provider-secret")
     class FallbackRepository:
         async def list_enabled_routes(self, task_type, *, user_id=None, workspace_id=None, partner_id=None):
             return [{"model_id": "primary", "fallback_model_id": "fallback", "priority": 10}]
