@@ -678,6 +678,7 @@ def _reduce_acl_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, A
             "OBJECT_SCHEMA", "OBJECT_DATABASE", "OBJECT_TYPE", "OBJECT_DOMAIN",
         }:
             return "NOT_VERIFIABLE", None, "ACL_OBJECT_TYPE_UNSUPPORTED"
+        object_type = str(payload.get("objtype") or "")
         privileges = payload.get("privileges")
         grantees = payload.get("grantees")
         if not isinstance(grantees, list) or not grantees:
