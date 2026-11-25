@@ -1052,5 +1052,95 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reason, "RANGE_TYPE_IDENTITY_UNRESOLVED_OR_MISMATCHED")
 
 
+    def test_composite_type_and_alter_type_identity_are_schema_qualified(self):
+        composite = {
+            "typevar": {"RangeVar": {"relname": "contact_info", "relpersistence": "p"}},
+            "coldeflist": [],
+        }
+        alter = {
+            "objtype": "OBJECT_TYPE",
+            "relation": {"RangeVar": {"relname": "contact_info", "relpersistence": "p"}},
+            "cmds": [],
+        }
+        self.assertEqual(schema_graph._object_names("CompositeTypeStmt", composite), ["public.contact_info"])
+        self.assertEqual(schema_graph._object_names("AlterTableStmt", alter), ["public.contact_info"])
+
+    def test_composite_type_attribute_events_are_identity_stable(self):
+        create = {
+            "typevar": {"RangeVar": {"relname": "contact_info", "relpersistence": "p"}},
+            "coldeflist": [{"ColumnDef": {"colname": "email", "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}}}}],
+        }
+        events = schema_graph._table_subobject_events(
+            "CompositeTypeStmt", create, migration_id="20261125000001",
+            relative="fixture.sql", source_sha256="a" * 64, git_blob_sha1="b" * 40,
+            statement_ordinal=1, parent_name="public.contact_info", operation="CREATE",
+        )
+        self.assertEqual(
+            [(item["object_class"], item["object_name"], item["operation"]) for item in events],
+            [("TYPE_ATTRIBUTE", "public.contact_info.email", "CREATE")],
+        )
+
+    def test_composite_type_reducer_folds_add_alter_and_drop_attribute(self):
+        relation = {"RangeVar": {"relname": "contact_info", "relpersistence": "p"}}
+        create = {"CompositeTypeStmt": {
+            "typevar": relation,
+            "coldeflist": [
+                {"ColumnDef": {"colname": "email", "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}}}},
+            ],
+        }}
+        add = {"AlterTableStmt": {
+            "objtype": "OBJECT_TYPE", "relation": relation,
+            "cmds": [{"AlterTableCmd": {
+                "subtype": "AT_AddColumn",
+                "def": {"ColumnDef": {"colname": "display_name", "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}}}},
+            }}],
+        }}
+        alter = {"AlterTableStmt": {
+            "objtype": "OBJECT_TYPE", "relation": relation,
+            "cmds": [{"AlterTableCmd": {
+                "subtype": "AT_AlterColumnType", "name": "email",
+                "def": {"TypeName": {"names": [{"String": {"sval": "varchar"}}, {"String": {"sval": "120"}}]}},
+            }}],
+        }}
+        drop = {"AlterTableStmt": {
+            "objtype": "OBJECT_TYPE", "relation": relation,
+            "cmds": [{"AlterTableCmd": {"subtype": "AT_DropColumn", "name": "display_name"}}],
+        }}
+        history = [
+            {"operation": "CREATE", "object_name": "public.contact_info", "normalized_ast": create},
+            {"operation": "ALTER", "object_name": "public.contact_info", "normalized_ast": add},
+            {"operation": "ALTER", "object_name": "public.contact_info", "normalized_ast": alter},
+            {"operation": "ALTER", "object_name": "public.contact_info", "normalized_ast": drop},
+        ]
+        status, definition, reason = schema_graph._reduce_composite_type_history(history)
+        self.assertEqual(status, "REDUCED_COMPOSITE_TYPE_STATE_PARTIAL")
+        self.assertEqual(reason, "COMPOSITE_TYPE_ATTRIBUTE_CHAIN_REDUCED")
+        attributes = definition["CompositeType"]["coldeflist"]
+        self.assertEqual(len(attributes), 1)
+        self.assertEqual(attributes[0]["ColumnDef"]["colname"], "email")
+        self.assertEqual(
+            attributes[0]["ColumnDef"]["typeName"],
+            {"TypeName": {"names": [{"String": {"sval": "varchar"}}, {"String": {"sval": "120"}}]}},
+        )
+
+    def test_composite_type_reducer_rejects_alter_for_another_type(self):
+        create = {"CompositeTypeStmt": {
+            "typevar": {"RangeVar": {"relname": "first_type", "relpersistence": "p"}},
+            "coldeflist": [],
+        }}
+        alter = {"AlterTableStmt": {
+            "objtype": "OBJECT_TYPE",
+            "relation": {"RangeVar": {"relname": "second_type", "relpersistence": "p"}},
+            "cmds": [],
+        }}
+        status, definition, reason = schema_graph._reduce_composite_type_history([
+            {"operation": "CREATE", "object_name": "public.first_type", "normalized_ast": create},
+            {"operation": "ALTER", "object_name": "public.second_type", "normalized_ast": alter},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "COMPOSITE_TYPE_ALTER_TARGET_MISMATCH")
+
+
 if __name__ == "__main__":
     unittest.main()
