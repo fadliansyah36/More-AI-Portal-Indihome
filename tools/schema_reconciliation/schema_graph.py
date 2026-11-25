@@ -1030,15 +1030,15 @@ def _reduce_role_membership_history(history: list[dict[str, Any]]) -> tuple[str,
         if len(pairs) != 1:
             return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_EVENT_TARGET_NOT_UNIQUE"
         for member, role in pairs:
-                key = (member, role, grantor)
-                if is_grant:
-                    membership[key] = {
-                        "admin_option": admin_option,
-                        "inherit_option": inherit_option,
-                        "set_option": set_option,
-                    }
-                else:
-                    membership.pop(key, None)
+            key = (member, role, grantor)
+            if is_grant:
+                membership[key] = {
+                    "admin_option": admin_option,
+                    "inherit_option": inherit_option,
+                    "set_option": set_option,
+                }
+            else:
+                membership.pop(key, None)
     rows = [
         {"member": member, "role": role, "grantor": grantor, **options}
         for (member, role, grantor), options in sorted(membership.items())
