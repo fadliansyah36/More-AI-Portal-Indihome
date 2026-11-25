@@ -742,6 +742,14 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
             if not saw_create or current is None or node_tag != "AlterTableCmd" or not isinstance(payload, dict):
                 return "NOT_VERIFIABLE", None, "ALTER_WITHOUT_REDUCIBLE_COLUMN_BASE"
             subtype = str(payload.get("subtype") or "")
+            source_name = current.get("colname")
+            target_name = payload.get("name")
+            if not isinstance(source_name, str) or not source_name:
+                return "NOT_VERIFIABLE", None, "COLUMN_CREATE_NAME_UNRESOLVED"
+            if not isinstance(target_name, str) or not target_name:
+                return "NOT_VERIFIABLE", None, "COLUMN_ALTER_NAME_UNRESOLVED"
+            if target_name != source_name:
+                return "NOT_VERIFIABLE", None, "COLUMN_ALTER_TARGET_MISMATCH"
             definition = payload.get("def")
             if subtype == "AT_AlterColumnType" and definition is not None:
                 current["typeName"] = definition
