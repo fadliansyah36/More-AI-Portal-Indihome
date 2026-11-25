@@ -252,6 +252,56 @@ class SemanticObjectGraphTests(unittest.TestCase):
             ["analytics"],
         )
 
+    def test_policy_reducer_applies_only_explicit_alter_clauses(self):
+        table = {"RangeVar": {"schemaname": "public", "relname": "documents"}}
+        create = {
+            "policy_name": "documents_read",
+            "table": table,
+            "permissive": True,
+            "cmd_name": "CMD_SELECT",
+            "roles": [{"RoleSpec": {"roletype": "ROLESPEC_PUBLIC"}}],
+            "qual": {"A_Expr": {"kind": "AEXPR_OP", "name": [{"String": {"sval": "="}}]}},
+            "with_check": {"A_Expr": {"kind": "AEXPR_OP", "name": [{"String": {"sval": ">"}}]}},
+        }
+        alter = {
+            "policy_name": "documents_read",
+            "table": table,
+            "roles": [{"RoleSpec": {"roletype": "ROLESPEC_CSTRING", "rolename": "authenticated"}}],
+            "qual": {"A_Expr": {"kind": "AEXPR_OP", "name": [{"String": {"sval": "<>"}}]}},
+            "with_check": None,
+        }
+        status, definition, reason = schema_graph._reduce_policy_history([
+            {"operation": "CREATE", "normalized_ast": {"CreatePolicyStmt": create}},
+            {"operation": "ALTER", "normalized_ast": {"AlterPolicyStmt": alter}},
+        ])
+        self.assertEqual(status, "REDUCED_POLICY_STATE")
+        self.assertEqual(reason, "POLICY_CREATE_ALTER_CHAIN_REDUCED")
+        reduced = definition["CreatePolicyStmt"]
+        self.assertEqual(reduced["roles"], alter["roles"])
+        self.assertEqual(reduced["qual"], alter["qual"])
+        self.assertEqual(reduced["with_check"], create["with_check"])
+        self.assertEqual(reduced["cmd_name"], "CMD_SELECT")
+        self.assertTrue(reduced["permissive"])
+
+    def test_policy_reducer_fails_closed_when_alter_changes_table_identity(self):
+        create = {
+            "policy_name": "documents_read",
+            "table": {"RangeVar": {"schemaname": "public", "relname": "documents"}},
+            "roles": [],
+        }
+        alter = {
+            "policy_name": "documents_read",
+            "table": {"RangeVar": {"schemaname": "private", "relname": "documents"}},
+            "roles": [],
+        }
+        status, definition, reason = schema_graph._reduce_policy_history([
+            {"operation": "CREATE", "normalized_ast": {"CreatePolicyStmt": create}},
+            {"operation": "ALTER", "normalized_ast": {"AlterPolicyStmt": alter}},
+        ])
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "POLICY_TABLE_IDENTITY_CHANGED")
+
 
 if __name__ == "__main__":
     unittest.main()
