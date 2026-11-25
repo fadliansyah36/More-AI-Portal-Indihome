@@ -341,8 +341,15 @@ def _object_names(tag: str, payload: Any) -> list[str]:
             return ["ROLE_MEMBERSHIP:IDENTITY_NOT_VERIFIABLE"]
         return sorted({f"member:{member}->role:{role}" for member in grantees for role in granted})
     if tag == "AlterDefaultPrivilegesStmt":
-        values = _strings(payload.get("roles") or payload.get("grantees") or payload.get("schemas"))
-        return [".".join(values)] if values else ["DEFAULT_ACL:IDENTITY_NOT_VERIFIABLE"]
+        owner = _acl_role_name(payload.get("defaclrole")) if payload.get("defaclrole") else None
+        action_tag, action = _node_tag(payload.get("action"))
+        if owner is None or action_tag != "GrantStmt" or not isinstance(action, dict):
+            return ["DEFAULT_ACL:IDENTITY_NOT_VERIFIABLE"]
+        object_type = str(action.get("objtype") or "")
+        schemas = _strings(payload.get("defaclnamespace")) or ["*"]
+        if any(not isinstance(schema, str) or not schema for schema in schemas):
+            return ["DEFAULT_ACL:IDENTITY_NOT_VERIFIABLE"]
+        return sorted({f"role:{owner}|schema:{schema}|object:{object_type}" for schema in schemas})
     if tag == "CreateTableAsStmt":
         return _rangevars(payload.get("into") or payload)
     for key in ("relation", "view", "sequence", "typevar", "server", "publication"):
@@ -548,7 +555,7 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
         ast_json = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         ast_sha256 = hashlib.sha256(ast_json.encode("utf-8")).hexdigest()
         names = _object_names(tag, payload)
-        event_targets = names if tag in {"GrantStmt", "GrantRoleStmt", "DropStmt"} and names else [names[0] if names else None]
+        event_targets = names if tag in {"GrantStmt", "GrantRoleStmt", "AlterDefaultPrivilegesStmt", "DropStmt"} and names else [names[0] if names else None]
         event_status = "AST_PARSED"
         if not names:
             event_status = "NOT_VERIFIABLE"
@@ -1046,6 +1053,93 @@ def _reduce_role_membership_history(history: list[dict[str, Any]]) -> tuple[str,
     return "REDUCED_EXPLICIT_ROLE_MEMBERSHIP", {"RoleMembership": {"memberships": rows}}, "ROLE_MEMBERSHIP_EXPLICIT_GRANT_REVOKE_REDUCED"
 
 
+def _reduce_default_acl_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Reduce explicit ALTER DEFAULT PRIVILEGES transitions per owner/schema/object type."""
+    grants: dict[tuple[str, str, str], bool] = {}
+    owner: str | None = None
+    schema: str | None = None
+    object_type: str | None = None
+    all_privileges = {
+        "OBJECT_TABLE": ["delete", "insert", "maintain", "references", "select", "trigger", "truncate", "update"],
+        "OBJECT_SEQUENCE": ["select", "update", "usage"],
+        "OBJECT_FUNCTION": ["execute"],
+        "OBJECT_TYPE": ["usage"],
+    }
+    for event in history:
+        node_tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if node_tag != "AlterDefaultPrivilegesStmt" or not isinstance(payload, dict):
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_EVENT_SHAPE_UNSUPPORTED"
+        event_owner = _acl_role_name(payload.get("defaclrole")) if payload.get("defaclrole") else None
+        action_tag, action = _node_tag(payload.get("action"))
+        if event_owner is None:
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_OWNER_ROLE_UNRESOLVED"
+        if action_tag != "GrantStmt" or not isinstance(action, dict):
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_ACTION_NOT_GRANT_STMT"
+        event_type = str(action.get("objtype") or "")
+        if event_type not in all_privileges:
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_OBJECT_TYPE_UNSUPPORTED"
+        schemas = _strings(payload.get("defaclnamespace")) or ["*"]
+        target = event.get("object_name")
+        target_schemas = [str(item) for item in schemas if isinstance(item, str) and item]
+        if len(target_schemas) != len(schemas):
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_SCHEMA_IDENTITY_UNRESOLVED"
+        matching = [item for item in target_schemas if target == f"role:{event_owner}|schema:{item}|object:{event_type}"]
+        if len(matching) != 1:
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_EVENT_TARGET_NOT_UNIQUE"
+        event_schema = matching[0]
+        if owner is not None and (owner != event_owner or object_type != event_type):
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_IDENTITY_CHANGED_WITHIN_HISTORY"
+        owner, schema, object_type = event_owner, event_schema, event_type
+        grantees = action.get("grantees")
+        if not isinstance(grantees, list) or not grantees:
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_GRANTEE_LIST_MISSING"
+        grantee_names = [_acl_role_name(item) for item in grantees]
+        if any(item is None for item in grantee_names):
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_GRANTEE_ROLE_UNRESOLVED"
+        raw_privileges = action.get("privileges")
+        privilege_names: list[str] = []
+        if not isinstance(raw_privileges, list) or not raw_privileges:
+            privilege_names = list(all_privileges[event_type])
+        else:
+            for item in raw_privileges:
+                privilege_tag, privilege_payload = _node_tag(item)
+                if privilege_tag != "AccessPriv" or not isinstance(privilege_payload, dict):
+                    return "NOT_VERIFIABLE", None, "DEFAULT_ACL_PRIVILEGE_AST_UNSUPPORTED"
+                name = privilege_payload.get("priv_name")
+                if name is None:
+                    privilege_names = list(all_privileges[event_type])
+                    break
+                if not isinstance(name, str) or not name:
+                    return "NOT_VERIFIABLE", None, "DEFAULT_ACL_PRIVILEGE_NAME_UNRESOLVED"
+                privilege_names.append(name.lower())
+        is_grant = action.get("is_grant")
+        if not isinstance(is_grant, bool):
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_DIRECTION_UNRESOLVED"
+        grant_option = action.get("grant_option") is True
+        behavior = str(action.get("behavior") or "")
+        if not is_grant and behavior not in {"DROP_RESTRICT", ""}:
+            return "NOT_VERIFIABLE", None, "DEFAULT_ACL_REVOKE_CASCADE_UNRESOLVED"
+        for grantee in grantee_names:
+            for privilege in privilege_names:
+                key = (str(grantee), privilege, event_owner)
+                if is_grant:
+                    grants[key] = grant_option
+                elif grant_option:
+                    if key in grants:
+                        grants[key] = False
+                else:
+                    grants.pop(key, None)
+    if owner is None or schema is None or object_type is None:
+        return "NOT_VERIFIABLE", None, "DEFAULT_ACL_HISTORY_EMPTY"
+    rows = [
+        {"grantee": grantee, "privilege": privilege, "grantor": grantor, "grant_option": option}
+        for (grantee, privilege, grantor), option in sorted(grants.items())
+    ]
+    return "REDUCED_EXPLICIT_DEFAULT_ACL", {
+        "DefaultACL": {"owner": owner, "schema": schema, "object_type": object_type, "grants": rows}
+    }, "DEFAULT_ACL_EXPLICIT_GRANT_REVOKE_REDUCED"
+
+
 def _acl_role_name(value: Any) -> str | None:
     for tag, payload in _walk(value):
         if tag != "RoleSpec" or not isinstance(payload, dict):
@@ -1249,6 +1343,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state, expected_definition, reduction_status = _reduce_acl_history(history)
         elif latest["object_class"] == "ROLE_MEMBERSHIP":
             state, expected_definition, reduction_status = _reduce_role_membership_history(history)
+        elif latest["object_class"] == "DEFAULT_ACL":
+            state, expected_definition, reduction_status = _reduce_default_acl_history(history)
         elif latest["object_class"] == "OWNERSHIP":
             state, expected_definition, reduction_status = _reduce_ownership_history(history)
         elif latest["object_class"] == "RLS_POLICY":
