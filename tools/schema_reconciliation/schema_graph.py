@@ -1830,7 +1830,9 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         "parse_failures": parse_failures,
         "limitations": [
             "AST parsing proves grammar recognition, not migration execution.",
-            "Column and constraint ALTER folding is limited to explicitly supported PostgreSQL AlterTableCmd subtypes; rename and unsupported subtype chains remain NOT_VERIFIABLE.",
+            "Column, constraint and composite-type attribute ALTER folding is limited to explicitly supported PostgreSQL AlterTableCmd subtypes; rename and unsupported subtype chains remain NOT_VERIFIABLE.",
+            "Domain folding covers explicit PostgreSQL AlterDomainStmt constraint, validation, default and nullability transitions; unsupported subtype/identity shapes remain NOT_VERIFIABLE.",
+            "Range types preserve validated explicit CREATE parameters; range parameter dependencies are candidates only and no ALTER RANGE state is inferred.",
             "Named trigger enablement modes are reduced for CREATE plus ENABLE/DISABLE transitions; trigger renames, DROP identity binding, bulk trigger modes and other trigger DDL remain NOT_VERIFIABLE.",
             "Sequence CREATE/ALTER folding captures explicit scalar options only; PostgreSQL defaults, OWNED BY dependencies and RESTART runtime state remain outside the reducer.",
             "Explicit GRANT/REVOKE and ALL PRIVILEGES are reduced by PostgreSQL object class; implicit grantors remain unresolved unless the AST supplies a grantor.",
