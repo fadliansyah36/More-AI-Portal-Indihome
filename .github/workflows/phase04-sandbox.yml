@@ -95,6 +95,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
+      # Keep browser and scanner base images immutable and version-compatible
+      # with the pinned OpenFuse worker (Playwright 1.62.1).
+      MOREAI_OPENFUSE_BASE_IMAGE: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+      MOREAI_CLAMAV_IMAGE: clamav/clamav:1.5.5-debian@sha256:85f35b3eee903dbd96c5ca250c5aa13d230d97987c0f876f7d46f001f9414239
       MOREAI_BROWSER_ALLOWED_DOMAINS: example.com,httpbin.org
       MOREAI_BROWSER_SERVICE_TOKEN: ci-browser-service-token-0123456789abcdef
       MOREAI_BROWSER_PROXY_TOKEN: ci-browser-proxy-token-0123456789abcdef
