@@ -147,7 +147,7 @@ class CopyEngineAdapter:
                     "claims. Respect the exact channel, audience, constraints and forbidden claims. "
                     "For variants, keep the shared facts and positioning invariant; state the one intentional "
                     "creative delta for each variant and do not create a Cartesian combination. "
-                    "Return a compact structured result with: brand_voice_spec, core_message, variants "
+                    "Return only valid JSON (no Markdown fences or surrounding prose) as a compact structured object with: brand_voice_spec, core_message, variants "
                     "(label, strategic_delta, headline, body, CTA, channel_fit), factual_gaps, and compliance_notes. "
                     "For mode text_overlay, also return media_overlay_spec with exact copy strings, text_template, "
                     "variable slots, font family/weight, color, alignment, canvas dimensions, bounding box, "
