@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { platformAdminApi } from '@/lib/api/client';
 import { ShieldCheck, RefreshCw, Building2, Users, Activity, Bot, ClipboardList, AlertTriangle } from 'lucide-react';
 
 type Overview = {
@@ -17,37 +17,6 @@ type ProviderCatalog = {
   routing_policies: Array<{id:string;task_type:string;model_id:string;fallback_model_id:string|null;priority:number;enabled:boolean}>;
 };
 
-const API = (process.env.NEXT_PUBLIC_MOREAI_API_URL || '').replace(/\/$/, '');
-
-async function adminRequest<T>(path: string): Promise<T> {
-  if (!API) throw new Error('NEXT_PUBLIC_MOREAI_API_URL belum dikonfigurasi.');
-  const { data, error } = await createSupabaseBrowserClient().auth.getSession();
-  if (error || !data.session?.access_token) throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
-  const response = await fetch(API + path, {
-    headers: { Authorization: 'Bearer ' + data.session.access_token, Accept: 'application/json' },
-    cache: 'no-store',
-  });
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    throw new Error(payload?.detail || 'Akses Super Admin ditolak (' + response.status + ').');
-  }
-  return response.json() as Promise<T>;
-}
-
-async function adminMutation<T>(path: string, method: 'POST' | 'PATCH', body: Record<string, unknown>): Promise<T> {
-  if (!API) throw new Error('NEXT_PUBLIC_MOREAI_API_URL belum dikonfigurasi.');
-  const { data, error } = await createSupabaseBrowserClient().auth.getSession();
-  if (error || !data.session?.access_token) throw new Error('Sesi login tidak ditemukan. Silakan masuk kembali.');
-  const response = await fetch(API + path, {
-    method, headers: { Authorization: 'Bearer ' + data.session.access_token, Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify(body), cache: 'no-store',
-  });
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    throw new Error(payload?.detail || 'Perubahan Super Admin ditolak (' + response.status + ').');
-  }
-  return response.json() as Promise<T>;
-}
 
 type SkillReviewRow = {
   id: string; owner_user_id: string; slug: string; name: string;
@@ -91,12 +60,12 @@ export default function SuperAdminPage() {
   const load = useCallback(async () => {
     try {
       const [context, summary, partnerRows, runRows, auditRows, providerRows] = await Promise.all([
-        adminRequest<{ principal: { roles: string[] } }>('/api/v1/admin/context'),
-        adminRequest<Overview>('/api/v1/admin/overview'),
-        adminRequest<{ items: Row[] }>('/api/v1/admin/partners?limit=50'),
-        adminRequest<{ items: Row[] }>('/api/v1/admin/agent-runs?limit=50'),
-        adminRequest<{ items: Row[] }>('/api/v1/admin/audit?limit=50'),
-        adminRequest<ProviderCatalog>('/api/v1/admin/providers'),
+        platformAdminApi.request<{ principal: { roles: string[] } }>('/api/v1/admin/context'),
+        platformAdminApi.request<Overview>('/api/v1/admin/overview'),
+        platformAdminApi.request<{ items: Row[] }>('/api/v1/admin/partners?limit=50'),
+        platformAdminApi.request<{ items: Row[] }>('/api/v1/admin/agent-runs?limit=50'),
+        platformAdminApi.request<{ items: Row[] }>('/api/v1/admin/audit?limit=50'),
+        platformAdminApi.request<ProviderCatalog>('/api/v1/admin/providers'),
       ]);
       setPrincipal(context.principal.roles);
       setOverview(summary);
@@ -126,7 +95,7 @@ export default function SuperAdminPage() {
   const loadSkillReviews = useCallback(async () => {
     setSkillReviewError(null);
     try {
-      const result = await adminRequest<{ items: SkillReviewRow[] }>('/api/v1/admin/skills/pending');
+      const result = await platformAdminApi.request<{ items: SkillReviewRow[] }>('/api/v1/admin/skills/pending');
       setSkillReviews(result.items);
     } catch (cause) {
       setSkillReviewError(cause instanceof Error ? cause.message : 'Skill reviews tidak dapat dimuat.');
@@ -141,7 +110,7 @@ export default function SuperAdminPage() {
     setSkillReviewBusy('evidence:' + skillId);
     setSkillReviewError(null);
     try {
-      const result = await adminRequest<{ files: Array<{path:string;sha256:string;byte_size:number;text_content:string|null}> }>(
+      const result = await platformAdminApi.request<{ files: Array<{path:string;sha256:string;byte_size:number;text_content:string|null}> }>(
         '/api/v1/admin/skills/' + encodeURIComponent(skillId) + '/source-evidence',
       );
       setSkillEvidence(current => ({ ...current, [skillId]: result.files }));
@@ -156,7 +125,7 @@ export default function SuperAdminPage() {
     setSkillReviewBusy(skill.id);
     setSkillReviewError(null);
     try {
-      await adminMutation('/api/v1/admin/skills/' + encodeURIComponent(skill.id) + '/review', 'PATCH', {
+      await platformAdminApi.mutate('/api/v1/admin/skills/' + encodeURIComponent(skill.id) + '/review', 'PATCH', {
         license_status: licenseStatus,
         publication_status: licenseStatus === 'approved' && skill.validation_status === 'validated' ? 'published' : 'private',
         review_note: 'Reviewed from MoreAI Super Admin Skill Registry.',
@@ -173,7 +142,7 @@ export default function SuperAdminPage() {
     setSkillReviewBusy(install.id);
     setSkillReviewError(null);
     try {
-      await adminMutation(
+      await platformAdminApi.mutate(
         '/api/v1/admin/skills/' + encodeURIComponent(skill.id) + '/permissions?install_id=' + encodeURIComponent(install.id),
         'PATCH',
         {
@@ -345,7 +314,7 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
     event.preventDefault(); setBusy('provider'); setNotice(null); setFormError(null);
     try {
       const suffix = providerId ? '?provider_id=' + encodeURIComponent(providerId) : '';
-      await adminMutation('/api/v1/admin/providers' + suffix, 'POST', {
+      await platformAdminApi.mutate('/api/v1/admin/providers' + suffix, 'POST', {
         key: selectedProvider?.key || providerKey,
         display_name: providerName,
         enabled: credentialsReady,
@@ -363,7 +332,7 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
   async function submitModel(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy('model'); setNotice(null); setFormError(null);
     try {
-      await adminMutation('/api/v1/admin/models', 'POST', {
+      await platformAdminApi.mutate('/api/v1/admin/models', 'POST', {
         provider_id: modelProviderId, key: modelKey.trim(), display_name: modelName.trim(),
         input_cost_per_million: Number(inputCost), output_cost_per_million: Number(outputCost),
         max_input_tokens: maxInputTokens ? Number(maxInputTokens) : null,
@@ -380,7 +349,7 @@ function ProviderManagement({ catalog, onRefresh }: { catalog: ProviderCatalog; 
   async function submitRoute(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy('route'); setNotice(null); setFormError(null);
     try {
-      await adminMutation('/api/v1/admin/routing-policies', 'POST', {
+      await platformAdminApi.mutate('/api/v1/admin/routing-policies', 'POST', {
         task_type: routeTask, model_id: routeModelId, fallback_model_id: null,
         priority: Number(routePriority), enabled: routeEnabled,
       });
