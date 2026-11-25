@@ -223,7 +223,7 @@ def _object_names(tag: str, payload: Any) -> list[str]:
                     if argument_types:
                         identity += "(" + ",".join(argument_types) + ")"
                     targets.append(identity)
-            elif node_tag == "TypeName" and isinstance(node_payload, dict):
+            elif node_tag == "TypeName" and object_type not in {"OBJECT_FUNCTION", "OBJECT_PROCEDURE"} and isinstance(node_payload, dict):
                 names = _strings(node_payload.get("names"))
                 if names:
                     targets.append(_qualified_identifier(names))
