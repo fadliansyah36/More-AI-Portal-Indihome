@@ -1121,6 +1121,14 @@ export const notificationApi = {
 
 
 export const platformAdminApi = {
+  /** Shared authenticated FastAPI transport for Super Admin read contracts. */
+  request: <T>(path: string) => moreAiApi<T>(path),
+  /** Mutations are never retried against an alternate API origin. */
+  mutate: <T>(path: string, method: 'POST' | 'PATCH', body: Record<string, unknown>) =>
+    moreAiApi<T>(path, {
+      method,
+      body: JSON.stringify(body),
+    }),
   updatePartnerStatus: (partnerId: string, status: 'pending' | 'active' | 'suspended' | 'rejected' | 'closed', idempotencyKey: string) =>
     moreAiApi<{ partner_id: string; status: string; previous_status: string; updated_at: string }>(
       `/api/v1/admin/partners/${partnerId}/status`,
