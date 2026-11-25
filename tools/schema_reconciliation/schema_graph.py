@@ -718,7 +718,7 @@ def _reduce_acl_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, A
         if not isinstance(grantees, list) or not grantees:
             return "NOT_VERIFIABLE", None, "ACL_GRANTEE_LIST_MISSING"
         all_privileges = {
-            "OBJECT_TABLE": ["delete", "insert", "references", "select", "trigger", "truncate", "update"],
+            "OBJECT_TABLE": ["delete", "insert", "maintain", "references", "select", "trigger", "truncate", "update"],
             "OBJECT_SEQUENCE": ["select", "update", "usage"],
             "OBJECT_FUNCTION": ["execute"],
             "OBJECT_PROCEDURE": ["execute"],
@@ -939,10 +939,12 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
         "parse_failures": parse_failures,
         "limitations": [
             "AST parsing proves grammar recognition, not migration execution.",
-            "ALTER event folding into complete final definitions is not inferred; affected objects remain NOT_VERIFIABLE until a supported reducer exists.",
+            "Column and constraint ALTER folding is limited to explicitly supported PostgreSQL AlterTableCmd subtypes; rename and unsupported subtype chains remain NOT_VERIFIABLE.",
+            "Explicit GRANT/REVOKE and ALL PRIVILEGES are reduced by PostgreSQL object class; implicit grantors remain unresolved unless the AST supplies a grantor.",
+            "ALTER OWNER records the latest explicit owner role; ownership execution and catalog parity still require independent observed evidence.",
             "Function bodies and dynamic SQL are not treated as outer SQL AST; procedural bodies are explicitly marked opaque.",
-            "Dependency candidates are AST RangeVar references, not a complete PostgreSQL dependency resolver.",
-            "ACL, ownership, extension, policy and role effects require catalog-specific semantic folding before global MATCH can be assigned.",
+            "Dependency candidates are AST references and observed pg_depend edges are retained as evidence, but complete source-to-catalog dependency binding is not yet proven.",
+            "RLS policy definitions are preserved as AST; policy ALTER chains and role membership/default-ACL effects remain object-specific NOT_VERIFIABLE where no reducer exists.",
             "History path-reference statements have no SQL body and remain NOT_VERIFIABLE.",
         ],
     }
