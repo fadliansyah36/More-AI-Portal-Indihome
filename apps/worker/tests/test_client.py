@@ -56,8 +56,11 @@ def test_workspace_editor_uses_persisted_file_edit_approval_key():
                 )
 
     asyncio.run(run())
-    assert len(calls) == 1
-    path, payload = calls[0]
+    assert len(calls) == 2
+    event_path, event_payload = calls[0]
+    assert event_path.endswith("/rpc/moreai_worker_append_run_event")
+    assert event_payload["p_event_type"] == "tool.approval_requested"
+    path, payload = calls[1]
     assert path.endswith("/rpc/moreai_worker_pause_for_tool_approval")
     assert payload["p_tool_key"] == "file_edit"
     assert payload["p_run_id"] == "run-1"
