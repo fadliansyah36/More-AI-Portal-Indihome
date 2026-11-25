@@ -700,6 +700,36 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reason, "TRIGGER_ALTER_SUBTYPE_UNSUPPORTED:AT_EnableTrigAll")
 
 
+    def test_trigger_reducer_rejects_create_event_for_different_relation_identity(self):
+        history = [
+            {"operation": "CREATE", "object_name": "public.audit_log.audit_change",
+             "normalized_ast": {"CreateTrigStmt": {
+                 "trigname": "audit_change",
+                 "relation": {"RangeVar": {"schemaname": "public", "relname": "profiles"}},
+             }}},
+        ]
+        status, definition, reason = schema_graph._reduce_trigger_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "TRIGGER_CREATE_EVENT_IDENTITY_MISMATCH")
+
+    def test_trigger_reducer_rejects_alter_event_for_different_relation_identity(self):
+        history = [
+            {"operation": "CREATE", "object_name": "public.profiles.audit_change",
+             "normalized_ast": {"CreateTrigStmt": {
+                 "trigname": "audit_change",
+                 "relation": {"RangeVar": {"schemaname": "public", "relname": "profiles"}},
+             }}},
+            {"operation": "ALTER", "object_name": "public.audit_log.audit_change",
+             "normalized_ast": {"AlterTableCmd": {
+                 "subtype": "AT_DisableTrig", "name": "audit_change",
+             }}},
+        ]
+        status, definition, reason = schema_graph._reduce_trigger_history(history)
+        self.assertEqual(status, "NOT_VERIFIABLE")
+        self.assertIsNone(definition)
+        self.assertEqual(reason, "TRIGGER_ALTER_RELATION_IDENTITY_MISMATCH")
+
     def test_trigger_reducer_rejects_alter_for_different_trigger_name(self):
         history = [
             {"operation": "CREATE", "normalized_ast": {"CreateTrigStmt": {"trigname": "audit_change"}}},
