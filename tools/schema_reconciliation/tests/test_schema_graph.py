@@ -1142,5 +1142,25 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertEqual(reason, "COMPOSITE_TYPE_ALTER_TARGET_MISMATCH")
 
 
+    def test_domain_reducer_handles_absent_optional_constraint_list(self):
+        create = {"CreateDomainStmt": {
+            "domainname": [{"String": {"sval": "optional_domain"}}],
+            "typeName": {"TypeName": {"names": [{"String": {"sval": "text"}}]}},
+            "constraints": None,
+        }}
+        alter = {"AlterDomainStmt": {
+            "typeName": [{"String": {"sval": "optional_domain"}}],
+            "subtype": "O",
+        }}
+        status, definition, reason = schema_graph._reduce_domain_history([
+            {"operation": "CREATE", "normalized_ast": create},
+            {"operation": "ALTER", "normalized_ast": alter},
+        ])
+        self.assertEqual(status, "REDUCED_DOMAIN_EXPLICIT_STATE_PARTIAL")
+        self.assertTrue(definition["CreateDomainStmt"]["domain_not_null"])
+        self.assertEqual(definition["CreateDomainStmt"]["constraints"], [])
+        self.assertEqual(reason, "DOMAIN_CREATE_ALTER_EXPLICIT_STATE_REDUCED")
+
+
 if __name__ == "__main__":
     unittest.main()
