@@ -755,6 +755,68 @@ def _reduce_table_subobject_history(history: list[dict[str, Any]]) -> tuple[str,
 
 
 
+
+def _reduce_enum_type_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Fold CREATE TYPE AS ENUM with ADD VALUE and RENAME VALUE events."""
+    current: dict[str, Any] | None = None
+    for event in history:
+        operation = event.get("operation")
+        node_tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if operation == "CREATE" and node_tag == "CreateEnumStmt" and isinstance(payload, dict):
+            values = payload.get("vals")
+            if not isinstance(values, list):
+                return "NOT_VERIFIABLE", None, "ENUM_CREATE_VALUES_MISSING"
+            labels: list[str] = []
+            for value in values:
+                parsed = _strings(value)
+                if len(parsed) != 1 or parsed[0] in labels:
+                    return "NOT_VERIFIABLE", None, "ENUM_CREATE_LABEL_IDENTITY_INVALID"
+                labels.append(parsed[0])
+            current = json.loads(json.dumps(payload))
+            continue
+        if operation == "ALTER" and node_tag == "AlterEnumStmt" and isinstance(payload, dict):
+            if current is None:
+                return "NOT_VERIFIABLE", None, "ENUM_ALTER_WITHOUT_CREATE_BASE"
+            new_values = _strings(payload.get("newVal"))
+            old_values = _strings(payload.get("oldVal"))
+            neighbor_values = _strings(payload.get("newValNeighbor"))
+            labels = [
+                item[0] for item in (_strings(value) for value in current.get("vals", []))
+                if len(item) == 1
+            ]
+            if len(new_values) != 1 or len(old_values) > 1 or len(neighbor_values) > 1:
+                return "NOT_VERIFIABLE", None, "ENUM_ALTER_VALUE_SHAPE_INVALID"
+            new_value = new_values[0]
+            if old_values:
+                old_value = old_values[0]
+                if old_value not in labels or (new_value in labels and new_value != old_value):
+                    return "NOT_VERIFIABLE", None, "ENUM_RENAME_VALUE_IDENTITY_INVALID"
+                labels[labels.index(old_value)] = new_value
+            else:
+                if new_value in labels:
+                    if payload.get("skipIfNewValExists") is True:
+                        continue
+                    return "NOT_VERIFIABLE", None, "ENUM_ADD_DUPLICATE_VALUE"
+                if neighbor_values:
+                    neighbor = neighbor_values[0]
+                    if neighbor not in labels:
+                        return "NOT_VERIFIABLE", None, "ENUM_ADD_NEIGHBOR_NOT_FOUND"
+                    index = labels.index(neighbor) + (1 if payload.get("newValIsAfter") is True else 0)
+                    labels.insert(index, new_value)
+                else:
+                    labels.append(new_value)
+            current["vals"] = [{"String": {"sval": value}} for value in labels]
+            continue
+        if operation == "DROP":
+            current = None
+            continue
+        return "NOT_VERIFIABLE", None, "ENUM_EVENT_SHAPE_OR_OPERATION_UNSUPPORTED"
+    if current is None:
+        return "DROPPED_IN_SOURCE_LINEAGE", None, "ENUM_DROP_REDUCED"
+    return "REDUCED_ENUM_TYPE_STATE", {"CreateEnumStmt": current}, "ENUM_CREATE_ALTER_CHAIN_REDUCED"
+
+
+
 def _reduce_policy_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
     """Fold CREATE POLICY + ALTER POLICY without treating omitted fields as NULL."""
     current: dict[str, Any] | None = None
@@ -992,6 +1054,11 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state, expected_definition, reduction_status = _reduce_ownership_history(history)
         elif latest["object_class"] == "RLS_POLICY":
             state, expected_definition, reduction_status = _reduce_policy_history(history)
+        elif latest["object_class"] == "TYPE" and all(
+            _node_tag(item.get("normalized_ast") or {})[0] in {"CreateEnumStmt", "AlterEnumStmt"}
+            for item in history
+        ):
+            state, expected_definition, reduction_status = _reduce_enum_type_history(history)
         elif last_operation in {"ALTER", "GRANT_OR_REVOKE", "RENAME", "ALTER_SCHEMA"}:
             state = "EVOLVED_STATE_REQUIRES_SEMANTIC_REDUCER"
         objects.append({
