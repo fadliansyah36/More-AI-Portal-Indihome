@@ -39,10 +39,11 @@ def test_workspace_editor_uses_persisted_file_edit_approval_key():
 
     def handler(request):
         calls.append((request.url.path, json.loads(request.content)))
-        return httpx.Response(
-            200,
-            json={"status": "pending", "approval_id": "approval-1"},
-        )
+        if request.url.path.endswith("/rpc/moreai_worker_append_run_event"):
+            return httpx.Response(200, json={"sequence": 1})
+        if request.url.path.endswith("/rpc/moreai_worker_pause_for_tool_approval"):
+            return httpx.Response(200, json={"status": "pending", "approval_id": "approval-1"})
+        return httpx.Response(404, json={"error": "unexpected_rpc"})
 
     async def run():
         settings = WorkerSettings("https://project.supabase.co", "service-secret", "worker-test-01")
