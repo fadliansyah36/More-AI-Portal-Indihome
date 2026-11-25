@@ -362,6 +362,25 @@ class SemanticObjectGraphTests(unittest.TestCase):
         self.assertIsNone(definition)
         self.assertEqual(reason, "ENUM_ADD_NEIGHBOR_NOT_FOUND")
 
+    def test_alter_function_identity_matches_create_function_signature(self):
+        function = {
+            "ObjectWithArgs": {
+                "objname": [
+                    {"String": {"sval": "public"}},
+                    {"String": {"sval": "calculate_total"}},
+                ],
+                "objargs": [{
+                    "TypeName": {
+                        "names": [{"String": {"sval": "numeric"}}],
+                    },
+                }],
+            },
+        }
+        self.assertEqual(
+            schema_graph._object_names("AlterFunctionStmt", {"func": function}),
+            ["public.calculate_total(numeric)"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
