@@ -267,7 +267,8 @@ def _object_names(tag: str, payload: Any) -> list[str]:
     if not isinstance(payload, dict):
         return []
     if tag in {"IndexStmt", "CreateTrigStmt", "CreatePolicyStmt", "AlterPolicyStmt"}:
-        relation = _first_rangevar(payload.get("relation"))
+        relation_field = "table" if tag in {"CreatePolicyStmt", "AlterPolicyStmt"} else "relation"
+        relation = _first_rangevar(payload.get(relation_field))
         field = {"IndexStmt": "idxname", "CreateTrigStmt": "trigname", "CreatePolicyStmt": "policy_name", "AlterPolicyStmt": "policy_name"}[tag]
         names = _strings(payload.get(field))
         if relation and names:
