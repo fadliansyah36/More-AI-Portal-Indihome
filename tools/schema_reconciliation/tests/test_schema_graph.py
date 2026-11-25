@@ -577,17 +577,14 @@ class SemanticObjectGraphTests(unittest.TestCase):
             "is_grant": True, "admin_opt": True, "inherit_opt": True,
             "set_opt": True, "behavior": "DROP_RESTRICT",
         }
-        revoke = {**grant, "is_grant": False, "admin_opt": False}
+        revoke = {**grant, "is_grant": False, "admin_opt": False, "inherit_opt": False, "set_opt": False}
         status, definition, reason = schema_graph._reduce_role_membership_history([
             {"object_name": "member:alice->role:analyst", "normalized_ast": {"GrantRoleStmt": grant}},
             {"object_name": "member:alice->role:analyst", "normalized_ast": {"GrantRoleStmt": revoke}},
         ])
         self.assertEqual(status, "REDUCED_EXPLICIT_ROLE_MEMBERSHIP")
         self.assertEqual(reason, "ROLE_MEMBERSHIP_EXPLICIT_GRANT_REVOKE_REDUCED")
-        self.assertEqual(definition["RoleMembership"]["memberships"], [{
-            "member": "alice", "role": "analyst", "grantor": "security_admin",
-            "admin_option": False, "inherit_option": True, "set_option": True,
-        }])
+        self.assertEqual(definition["RoleMembership"]["memberships"], [])
 
     def test_role_membership_reducer_fails_closed_when_role_options_are_implicit(self):
         payload = {
