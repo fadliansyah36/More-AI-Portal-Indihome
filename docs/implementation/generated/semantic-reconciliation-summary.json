@@ -8,16 +8,16 @@
   "history_archive_statement_hash_variant_count": 0,
   "history_archive_statement_hash_not_verifiable_count": 0,
   "archive_source_file_count": 8,
-  "archive_ddl_event_count": 187,
+  "archive_ddl_event_count": 147,
   "history_statement_source_count": 150,
   "source_record_count": 279,
   "parsed_source_record_count": 275,
   "parse_failure_count": 4,
   "statement_count": 2404,
-  "ddl_event_count": 3841,
-  "object_key_count": 2544,
+  "ddl_event_count": 3134,
+  "object_key_count": 2543,
   "expected_object_class_counts": {
-    "ACL": 163,
+    "ACL": 162,
     "COLUMN": 954,
     "COMMENT": 10,
     "CONSTRAINT": 1018,
@@ -32,7 +32,7 @@
     "VIEW": 1
   },
   "semantic_reduction_status_counts": {
-    "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING": 157,
+    "ACL_PRIVILEGE_OR_GRANTEE_LIST_MISSING": 156,
     "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED": 6
   },
   "parse_failure_samples": [
@@ -100,13 +100,13 @@
       "execution_evidence_status": "HISTORY_RECORD_ONLY_NOT_EXECUTION_RECEIPT"
     }
   ],
-  "reconciled_object_count": 9204,
+  "reconciled_object_count": 9203,
   "classification_counts": {
     "DEFINITION_MISMATCH": 0,
     "DEPENDENCY_MISMATCH": 0,
     "MATCH": 42,
     "MISSING": 40,
-    "NOT_VERIFIABLE": 9122,
+    "NOT_VERIFIABLE": 9121,
     "SECURITY_MISMATCH": 0,
     "UNEXPECTED": 0
   },
@@ -120,7 +120,7 @@
     "Object is present on both sides, but one or both sides lack a complete normalized definition/security/dependency fingerprint.": 51,
     "The DROP source event is not proven applied; live presence or absence is not classified as drift.": 5,
     "The latest source event is not proven applied; absence is not classified as live drift.": 57,
-    "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance.": 1259
+    "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance.": 1258
   },
   "missing_samples": [
     {
@@ -406,7 +406,7 @@
   ],
   "not_verifiable_samples": [
     {
-      "object_key": "ACL:OBJECT_SCHEMA",
+      "object_key": "ACL:auth_private",
       "object_class": "ACL",
       "latest_migration_id": "20261112084047",
       "latest_operation": "GRANT_OR_REVOKE",
@@ -416,41 +416,6 @@
       "object_key": "ACL:auth_private.handle_new_user_profile",
       "object_class": "ACL",
       "latest_migration_id": "20261112084047",
-      "latest_operation": "GRANT_OR_REVOKE",
-      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
-    },
-    {
-      "object_key": "ACL:extensions.vector",
-      "object_class": "ACL",
-      "latest_migration_id": "20261113002601",
-      "latest_operation": "GRANT_OR_REVOKE",
-      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
-    },
-    {
-      "object_key": "ACL:pg_catalog.bool",
-      "object_class": "ACL",
-      "latest_migration_id": "20261115084405",
-      "latest_operation": "GRANT_OR_REVOKE",
-      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
-    },
-    {
-      "object_key": "ACL:pg_catalog.int4",
-      "object_class": "ACL",
-      "latest_migration_id": "20261116163000",
-      "latest_operation": "GRANT_OR_REVOKE",
-      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
-    },
-    {
-      "object_key": "ACL:pg_catalog.int8",
-      "object_class": "ACL",
-      "latest_migration_id": "20261113133736",
-      "latest_operation": "GRANT_OR_REVOKE",
-      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
-    },
-    {
-      "object_key": "ACL:pg_catalog.numeric",
-      "object_class": "ACL",
-      "latest_migration_id": "20261115090226",
       "latest_operation": "GRANT_OR_REVOKE",
       "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
     },
@@ -511,7 +476,7 @@
       "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
     },
     {
-      "object_key": "ACL:public.consume_network_gateway_nonce",
+      "object_key": "ACL:public.consume_network_gateway_nonce(uuid,text,timestamptz)",
       "object_class": "ACL",
       "latest_migration_id": "20261103100442",
       "latest_operation": "GRANT_OR_REVOKE",
@@ -546,13 +511,6 @@
       "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
     },
     {
-      "object_key": "ACL:public.jsonb",
-      "object_class": "ACL",
-      "latest_migration_id": "20261116162800",
-      "latest_operation": "GRANT_OR_REVOKE",
-      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
-    },
-    {
       "object_key": "ACL:public.knowledge_chunks",
       "object_class": "ACL",
       "latest_migration_id": "20261113002601",
@@ -581,37 +539,79 @@
       "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
     },
     {
-      "object_key": "ACL:public.moreai_ack_browser_profile_deleted",
+      "object_key": "ACL:public.moreai_ack_browser_profile_deleted(uuid,uuid)",
       "object_class": "ACL",
       "latest_migration_id": "20261116083510",
       "latest_operation": "GRANT_OR_REVOKE",
       "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
     },
     {
-      "object_key": "ACL:public.moreai_acquire_browser_capacity_lease",
+      "object_key": "ACL:public.moreai_acquire_browser_capacity_lease(uuid,uuid,text,pg_catalog.int4)",
       "object_class": "ACL",
       "latest_migration_id": "20261116084745",
       "latest_operation": "GRANT_OR_REVOKE",
       "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
     },
     {
-      "object_key": "ACL:public.moreai_admin_assign_platform_role",
+      "object_key": "ACL:public.moreai_admin_assign_platform_role(uuid,uuid,text,timestamptz,text)",
       "object_class": "ACL",
       "latest_migration_id": "20261103102141",
       "latest_operation": "GRANT_OR_REVOKE",
       "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
     },
     {
-      "object_key": "ACL:public.moreai_admin_configure_llm_provider",
+      "object_key": "ACL:public.moreai_admin_configure_llm_provider(uuid,uuid,text,text,text)",
       "object_class": "ACL",
       "latest_migration_id": "20261115092653",
       "latest_operation": "GRANT_OR_REVOKE",
       "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
     },
     {
-      "object_key": "ACL:public.moreai_admin_mutate_llm_model",
+      "object_key": "ACL:public.moreai_admin_mutate_llm_model(uuid,uuid,uuid,text,text,pg_catalog.numeric,pg_catalog.numeric,pg_catalog.int4,pg_catalog.int4,text,pg_catalog.bool,text)",
       "object_class": "ACL",
       "latest_migration_id": "20261103101453",
+      "latest_operation": "GRANT_OR_REVOKE",
+      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
+    },
+    {
+      "object_key": "ACL:public.moreai_admin_mutate_llm_provider(uuid,uuid,text,text,pg_catalog.bool,pg_catalog.bool,text)",
+      "object_class": "ACL",
+      "latest_migration_id": "20261103101453",
+      "latest_operation": "GRANT_OR_REVOKE",
+      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
+    },
+    {
+      "object_key": "ACL:public.moreai_admin_mutate_llm_route(uuid,uuid,text,uuid,uuid,pg_catalog.int4,pg_catalog.bool,text)",
+      "object_class": "ACL",
+      "latest_migration_id": "20261103101453",
+      "latest_operation": "GRANT_OR_REVOKE",
+      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
+    },
+    {
+      "object_key": "ACL:public.moreai_admin_review_partner(uuid,uuid,text,text,text)",
+      "object_class": "ACL",
+      "latest_migration_id": "20261103101208",
+      "latest_operation": "GRANT_OR_REVOKE",
+      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
+    },
+    {
+      "object_key": "ACL:public.moreai_admin_revoke_platform_role(uuid,uuid,text,text)",
+      "object_class": "ACL",
+      "latest_migration_id": "20261103102141",
+      "latest_operation": "GRANT_OR_REVOKE",
+      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
+    },
+    {
+      "object_key": "ACL:public.moreai_admin_set_role_permission(uuid,text,text,pg_catalog.bool,text)",
+      "object_class": "ACL",
+      "latest_migration_id": "20261103122824",
+      "latest_operation": "GRANT_OR_REVOKE",
+      "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
+    },
+    {
+      "object_key": "ACL:public.moreai_admin_update_partner_status(uuid,uuid,text,text,text)",
+      "object_class": "ACL",
+      "latest_migration_id": "20261111083342",
       "latest_operation": "GRANT_OR_REVOKE",
       "reason": "The source AST does not provide a normalized identity compatible with the observed catalog representation or has conflicting provenance."
     }
