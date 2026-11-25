@@ -44,6 +44,69 @@ def _root_tag(value: Any) -> str | None:
         return next(iter(value))
     return None
 
+
+def _candidate_matches_observed_reference(candidate: str, reference: str) -> bool:
+    value = candidate.strip()
+    observed = reference.strip()
+    if value.startswith("function:"):
+        name = value[len("function:"):]
+        leaf = name.split(".")[-1]
+        return observed == name or observed.startswith(name + "(") or observed.endswith("." + leaf + "(") or ("." + leaf + "(") in observed
+    if value.startswith("type:"):
+        name = value[len("type:"):]
+        return observed == name or observed.endswith("." + name.split(".")[-1])
+    return observed == value or observed.startswith(value + ".")
+
+
+def _dependency_binding_evidence(expected_item: dict[str, Any], dependency_map: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
+    object_class = expected_item.get("object_class")
+    object_name = expected_item.get("object_name")
+    candidates = expected_item.get("dependency_candidates") or []
+    if not isinstance(candidates, list):
+        candidates = []
+    if not candidates:
+        return {
+            "expected_ast_candidates": [],
+            "observed_catalog_edges": [],
+            "comparison_status": "NO_AST_DEPENDENCY_CANDIDATES",
+            "bound_candidate_count": 0,
+            "unbound_candidates": [],
+        }
+    if object_class not in {"TABLE", "VIEW", "INDEX", "FUNCTION", "COLUMN"} or not isinstance(object_name, str):
+        return {
+            "expected_ast_candidates": candidates,
+            "observed_catalog_edges": [],
+            "comparison_status": "DEPENDENT_IDENTITY_CLASS_NOT_SUPPORTED_FOR_EXACT_BINDING",
+            "bound_candidate_count": 0,
+            "unbound_candidates": candidates,
+        }
+    edges = dependency_map.get(object_name, [])
+    references = [
+        str(edge.get("referenced_identity"))
+        for edge in edges
+        if isinstance(edge, dict) and isinstance(edge.get("referenced_identity"), str)
+    ]
+    bound = [
+        candidate for candidate in candidates
+        if any(_candidate_matches_observed_reference(str(candidate), reference) for reference in references)
+    ]
+    unbound = [candidate for candidate in candidates if candidate not in bound]
+    status = (
+        "ALL_AST_CANDIDATES_FOUND_IN_OBSERVED_PG_DEPEND_EDGES"
+        if not unbound else
+        "PARTIAL_AST_CANDIDATES_FOUND_IN_OBSERVED_PG_DEPEND_EDGES"
+        if bound else
+        "NO_AST_CANDIDATE_BOUND_TO_OBSERVED_PG_DEPEND_EDGES"
+    )
+    return {
+        "expected_ast_candidates": candidates,
+        "observed_catalog_edges": edges,
+        "comparison_status": status,
+        "bound_candidate_count": len(bound),
+        "unbound_candidates": unbound,
+        "observed_referenced_identities": sorted(set(references)),
+    }
+
 def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, Any]:
     expected_objects = expected.get("objects")
     observed_objects = observed.get("objects")
@@ -140,11 +203,7 @@ def reconcile(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, A
                 "migration_lineage": lineage,
             },
             "observed_evidence": observed_item,
-            "dependency_evidence": {
-                "expected_ast_candidates": expected_item.get("dependency_candidates") or [],
-                "observed_catalog_edges": dependency_map.get(str(expected_item.get("object_name") or ""), []),
-                "comparison_status": "NOT_VERIFIABLE_AST_CANDIDATES_ARE_NOT_A_COMPLETE_DEPENDENCY_BINDING",
-            },
+            "dependency_evidence": _dependency_binding_evidence(expected_item, dependency_map),
         })
 
     for key, observed_item in sorted(observed_by_key.items()):
