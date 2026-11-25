@@ -44,3 +44,9 @@ Focused regression source was added but **not executed**. No test/build/lint/typ
 - Global expected-versus-observed schema parity.
 
 Task 1 remains `REVIEW_REQUIRED`; Phase 05 is not complete.
+
+## Follow-up AST hardening
+
+A focused review against the pglast AST reference corrected the domain reducer to use PostgreSQL's actual `AlterDomainStmt` subtype codes and its `name` / `def` fields. Optional null domain constraint arrays are normalized safely. Composite type identity is schema-qualified consistently for CREATE and ALTER, and attribute subobject reducer dispatch is explicitly wired. Additional commits: `de758fbd1f28b0e8c2f89cb60b1cf0e7c0ae469a`, `d58a8a557490c5819de763739ead222ac6e9ee2e`, `94261391d3994aa9411aa859699ff07fd3621c40`, `026e77a99e95040d51e4f9a420c53905d9fd63a5`.
+
+Regression source still has not been executed.
