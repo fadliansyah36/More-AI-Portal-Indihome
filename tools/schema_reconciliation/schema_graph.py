@@ -1010,7 +1010,10 @@ def _reduce_domain_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
             definition = payload.get("def") if "def" in payload else payload.get("def_")
             constraint_name = payload.get("name")
             subtype = str(payload.get("subtype") or "")
-            constraints = current.setdefault("constraints", [])
+            constraints = current.get("constraints")
+            if constraints is None:
+                constraints = []
+                current["constraints"] = constraints
             if not isinstance(constraints, list):
                 return "NOT_VERIFIABLE", None, "DOMAIN_CONSTRAINTS_SHAPE_UNSUPPORTED"
             if subtype == "C":
