@@ -1,5 +1,8 @@
 # MoreAI Implementation Phase Tracker
 
+**Task 1 continuation — 2026-11-25 (domain identity and reducer):** Fixed CREATE DOMAIN identity to use `CreateDomainStmt.domainname` rather than the base type, registered `AlterDomainStmt`, and added fail-closed identity-bound folding for named constraint add/drop/validate, NOT NULL, and default changes. Removed stale CREATE-time default/nullability constraint nodes when explicit ALTER state supersedes them. Regression source added but not executed. Commits: `8f2f9bcda35f3ce55e98d19b5fa4d8ba6dc835f0`, `e31c2cccf0545e6fe54e7e26a79f5864bda05ced`, `339c93384a08bf316af285ef5df3b7eeff051ef4`, `0638f2aae0d734c95baef675cb9cf4e4d7cccca0`. Task 1 remains `REVIEW_REQUIRED`; range/composite, trigger completeness, ACL/ownership parity, dependency semantics, migration provenance and global schema parity remain open. See [domain reducer report](./TASK1-DOMAIN-IDENTITY-AND-SEMANTIC-REDUCER-20261125.md).
+
+
 **Execution authorization — 2026-11-25:** Project owner explicitly authorized source implementation for Task 1 and Phase 04–09 on `main`; written exception: [ENGINEERING-EXECUTION-EXCEPTION-20261125.md](./ENGINEERING-EXECUTION-EXCEPTION-20261125.md). Master PRD §37 now records this exception. Test/build/lint/type-check execution, provider calls, migration apply, Supabase mutation, staging and deployment remain prohibited; source implementation and focused regression-source additions are allowed. This exception does not certify any phase as complete.
 
 
