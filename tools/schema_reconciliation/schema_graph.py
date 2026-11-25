@@ -180,6 +180,18 @@ DROP_OBJECT_CLASS = {
     "OBJECT_PUBLICATION": "PUBLICATION",
     "OBJECT_SUBSCRIPTION": "SUBSCRIPTION",
     "OBJECT_FOREIGN_TABLE": "FOREIGN_TABLE",
+    "OBJECT_OPERATOR": "OPERATOR",
+    "OBJECT_OPCLASS": "OPERATOR_CLASS",
+    "OBJECT_OPFAMILY": "OPERATOR_FAMILY",
+    "OBJECT_CAST": "CAST",
+    "OBJECT_CONVERSION": "CONVERSION",
+    "OBJECT_COLLATION": "COLLATION",
+    "OBJECT_STATISTIC_EXT": "STATISTICS",
+    "OBJECT_ACCESS_METHOD": "ACCESS_METHOD",
+    "OBJECT_FDW": "FOREIGN_DATA_WRAPPER",
+    "OBJECT_FOREIGN_SERVER": "FOREIGN_SERVER",
+    "OBJECT_USER_MAPPING": "USER_MAPPING",
+    "OBJECT_EVENT_TRIGGER": "TRIGGER",
 }
 
 
@@ -222,7 +234,12 @@ def _drop_object_names(payload: dict[str, Any]) -> list[str]:
         if node_tag == "TypeName" and isinstance(node_payload, dict):
             names = _strings(node_payload.get("names"))
             if names:
-                identities.append(_qualified_identifier(names))
+                object_type = str(payload.get("removeType") or "")
+                identities.append(
+                    _qualified_identifier(names)
+                    if object_type in {"OBJECT_TYPE", "OBJECT_DOMAIN"}
+                    else ".".join(names)
+                )
             continue
         if node_tag == "RangeVar" and isinstance(node_payload, dict):
             relation = _rangevars(item)
@@ -233,7 +250,16 @@ def _drop_object_names(payload: dict[str, Any]) -> list[str]:
         # object. Keep each top-level target separate.
         names = _strings(item)
         if names:
-            identities.append(_qualified_identifier(names))
+            object_type = str(payload.get("removeType") or "")
+            # Relation names preserve whether the migration explicitly
+            # qualified the schema; do not invent public when search_path is
+            # not present in the source AST. Global objects (roles, schemas,
+            # extensions, publications, etc.) are likewise not schema names.
+            identities.append(
+                _qualified_identifier(names)
+                if object_type in {"OBJECT_TYPE", "OBJECT_DOMAIN"}
+                else ".".join(names)
+            )
     return list(dict.fromkeys(identities))
 
 
