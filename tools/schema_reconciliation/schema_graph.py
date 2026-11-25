@@ -334,9 +334,15 @@ def _object_names(tag: str, payload: Any) -> list[str]:
                 if names:
                     targets.append(_qualified_identifier(names))
         return list(dict.fromkeys(targets)) or [object_type or tag]
-    if tag in {"GrantRoleStmt", "AlterDefaultPrivilegesStmt"}:
+    if tag == "GrantRoleStmt":
+        granted = [_acl_role_name(item) for item in (payload.get("granted_roles") or [])]
+        grantees = [_acl_role_name(item) for item in (payload.get("grantee_roles") or [])]
+        if not granted or not grantees or any(item is None for item in granted + grantees):
+            return ["ROLE_MEMBERSHIP:IDENTITY_NOT_VERIFIABLE"]
+        return sorted({f"member:{member}->role:{role}" for member in grantees for role in granted})
+    if tag == "AlterDefaultPrivilegesStmt":
         values = _strings(payload.get("roles") or payload.get("grantees") or payload.get("schemas"))
-        return [".".join(values)] if values else [str(payload.get("objtype") or tag)]
+        return [".".join(values)] if values else ["DEFAULT_ACL:IDENTITY_NOT_VERIFIABLE"]
     if tag == "CreateTableAsStmt":
         return _rangevars(payload.get("into") or payload)
     for key in ("relation", "view", "sequence", "typevar", "server", "publication"):
@@ -542,7 +548,7 @@ def parse_source(path: Path, root: Path) -> tuple[list[dict[str, Any]], dict[str
         ast_json = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         ast_sha256 = hashlib.sha256(ast_json.encode("utf-8")).hexdigest()
         names = _object_names(tag, payload)
-        event_targets = names if tag in {"GrantStmt", "DropStmt"} and names else [names[0] if names else None]
+        event_targets = names if tag in {"GrantStmt", "GrantRoleStmt", "DropStmt"} and names else [names[0] if names else None]
         event_status = "AST_PARSED"
         if not names:
             event_status = "NOT_VERIFIABLE"
@@ -987,6 +993,52 @@ def _reduce_policy_history(history: list[dict[str, Any]]) -> tuple[str, dict[str
 
 
 
+
+
+def _reduce_role_membership_history(history: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None, str]:
+    """Reduce explicit role membership grants/revokes without deriving role defaults."""
+    membership: dict[tuple[str, str, str], dict[str, bool]] = {}
+    for event in history:
+        node_tag, payload = _node_tag(event.get("normalized_ast") or {})
+        if node_tag != "GrantRoleStmt" or not isinstance(payload, dict):
+            return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_EVENT_SHAPE_UNSUPPORTED"
+        granted = [_acl_role_name(item) for item in (payload.get("granted_roles") or [])]
+        grantees = [_acl_role_name(item) for item in (payload.get("grantee_roles") or [])]
+        if not granted or not grantees or any(item is None for item in granted + grantees):
+            return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_ROLE_IDENTITY_UNRESOLVED"
+        grantor = _acl_role_name(payload.get("grantor")) if payload.get("grantor") else None
+        if grantor is None:
+            return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_GRANTOR_UNRESOLVED"
+        is_grant = payload.get("is_grant")
+        if not isinstance(is_grant, bool):
+            return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_DIRECTION_UNRESOLVED"
+        options = (payload.get("admin_opt"), payload.get("inherit_opt"), payload.get("set_opt"))
+        if not all(isinstance(value, bool) for value in options):
+            return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_OPTIONS_REQUIRE_ROLE_CATALOG"
+        admin_option, inherit_option, set_option = options
+        if not is_grant and (admin_option or inherit_option or set_option):
+            return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_OPTION_ONLY_REVOKE_UNSUPPORTED"
+        behavior = str(payload.get("behavior") or "")
+        if not is_grant and behavior not in {"DROP_RESTRICT", ""}:
+            return "NOT_VERIFIABLE", None, "ROLE_MEMBERSHIP_REVOKE_CASCADE_UNRESOLVED"
+        for role in granted:
+            for member in grantees:
+                key = (str(member), str(role), grantor)
+                if is_grant:
+                    membership[key] = {
+                        "admin_option": admin_option,
+                        "inherit_option": inherit_option,
+                        "set_option": set_option,
+                    }
+                else:
+                    membership.pop(key, None)
+    rows = [
+        {"member": member, "role": role, "grantor": grantor, **options}
+        for (member, role, grantor), options in sorted(membership.items())
+    ]
+    return "REDUCED_EXPLICIT_ROLE_MEMBERSHIP", {"RoleMembership": {"memberships": rows}}, "ROLE_MEMBERSHIP_EXPLICIT_GRANT_REVOKE_REDUCED"
+
+
 def _acl_role_name(value: Any) -> str | None:
     for tag, payload in _walk(value):
         if tag != "RoleSpec" or not isinstance(payload, dict):
@@ -1188,6 +1240,8 @@ def build_graph(root: Path, history_dir: Path | None = None, archive_dir: Path |
             state, expected_definition, reduction_status = _reduce_table_subobject_history(history)
         elif latest["object_class"] == "ACL":
             state, expected_definition, reduction_status = _reduce_acl_history(history)
+        elif latest["object_class"] == "ROLE_MEMBERSHIP":
+            state, expected_definition, reduction_status = _reduce_role_membership_history(history)
         elif latest["object_class"] == "OWNERSHIP":
             state, expected_definition, reduction_status = _reduce_ownership_history(history)
         elif latest["object_class"] == "RLS_POLICY":
