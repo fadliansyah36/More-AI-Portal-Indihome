@@ -130,6 +130,14 @@ class SemanticObjectGraphTests(unittest.TestCase):
         status, definition, _ = schema_graph._reduce_acl_history(history)
         self.assertEqual(status, "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED")
         self.assertEqual(definition["EffectiveACL"]["grants"], [])
+        grant_status, grant_definition, _ = schema_graph._reduce_acl_history([
+            {"normalized_ast": {"GrantStmt": {**base, "is_grant": True, "grant_option": False}}},
+        ])
+        self.assertEqual(grant_status, "REDUCED_PRIVILEGE_SET_GRANTOR_UNVERIFIED")
+        self.assertIn(
+            "maintain",
+            [item["privilege"] for item in grant_definition["EffectiveACL"]["grants"]],
+        )
 
     def test_acl_reducer_removes_explicitly_revoked_privilege(self):
         base = {
